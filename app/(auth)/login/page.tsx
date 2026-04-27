@@ -39,6 +39,18 @@ function LoginInner() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  /* 로그인 화면 마운트 시 body scroll 잠금 — 외부 컨텐츠 스크롤 차단으로 화면 고정 */
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
+  }, []);
+
   async function installApp() {
     if (!installEvt) {
       alert(
@@ -100,19 +112,21 @@ function LoginInner() {
 
   return (
     <main
-      /* svh — 모바일 주소바 노출/숨김 변동에 맞춰 안정 높이.
-         overflow-hidden — 가로/세로 스크롤 차단.
-         touch-action manipulation — 더블탭 zoom 비활성으로 키보드 입력 안정 */
-      className="w-full flex items-center justify-center px-4 py-4 overflow-hidden"
+      /* 완전 고정: position fixed + inset 0 + overflow hidden — 어떤 경우에도 움직임 없음.
+         overscroll-behavior none — pull-to-refresh / bounce 차단.
+         touch-action manipulation — pinch zoom/double tap zoom 차단. */
       style={{
-        minHeight: '100svh',
-        height: '100svh',
+        position: 'fixed',
+        inset: 0,
         background:
           'radial-gradient(circle at 20% 0%, #0e7490 0%, #164e63 45%, #0f172a 100%)',
         touchAction: 'manipulation',
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
       }}
     >
-      <div className="w-full max-w-[400px]">
+      <div className="absolute inset-0 flex items-center justify-center px-4">
+       <div className="w-full max-w-[400px]">
         {/* 로고 — 모바일에서 컴팩트 */}
         <div className="flex justify-center mb-4 sm:mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -199,6 +213,7 @@ function LoginInner() {
         <div className="text-center mt-3 sm:mt-6 text-[10px] sm:text-[11px] font-semibold text-white/50">
           © 공비랩 GONGBI LAB
         </div>
+       </div>
       </div>
     </main>
   );
