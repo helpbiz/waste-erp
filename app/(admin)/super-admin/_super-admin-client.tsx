@@ -3,6 +3,7 @@
 // Design Ref: §5.1.1, §7.1 — 처리시설 마스터 탭 추가 + ALL_REPORTS에 f02 코드
 import { useEffect, useState } from 'react';
 import { FacilitiesTab } from './facilities/_facilities-tab';
+import { BottomSheet } from '@/components/BottomSheet';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -398,19 +399,16 @@ function MuniEditModal({
       : '지자체 신규 등록';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onClose}>
-      <div className="w-full max-w-[520px] bg-surface rounded-xl shadow-modal" onClick={(e) => e.stopPropagation()}>
-        <header className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3">
-          <h3 className="text-base font-extrabold text-ink flex-1">{headerTitle}</h3>
-          {isActivationMode && (
-            <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300">
-              기존 데이터
-            </span>
-          )}
-          <button onClick={onClose} className="text-ink-muted text-2xl font-bold leading-none px-2">&times;</button>
-        </header>
+    <BottomSheet open={true} onClose={onClose} title={headerTitle} desktopMaxWidth="520px">
+      {isActivationMode && (
+        <div className="px-5 pt-3 -mb-1">
+          <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300">
+            기존 데이터
+          </span>
+        </div>
+      )}
 
-        {isNew && (
+      {isNew && (
           <div className="px-5 pt-4 pb-2 text-[11px] font-bold text-ink-muted">
             💡 지자체명을 입력하면 행정안전부 표준 지자체 267개에서 자동으로 검색됩니다. 선택하면 행정코드·광역이 자동 입력됩니다.
           </div>
@@ -518,14 +516,13 @@ function MuniEditModal({
           </Field>
           {err && <div className="px-3 py-2 rounded-md bg-red-50 border border-red-200 text-xs font-bold text-red-700">{err}</div>}
         </div>
-        <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface">취소</button>
-          <button onClick={save} disabled={saving} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
-            {saving ? '저장 중…' : isActivationMode ? '활성화/저장' : isNew ? '등록' : '저장'}
-          </button>
-        </footer>
-      </div>
-    </div>
+      <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
+        <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface min-h-[44px]">취소</button>
+        <button onClick={save} disabled={saving} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50 min-h-[44px]">
+          {saving ? '저장 중…' : isActivationMode ? '활성화/저장' : isNew ? '등록' : '저장'}
+        </button>
+      </footer>
+    </BottomSheet>
   );
 }
 
@@ -800,64 +797,61 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-[640px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-3 border-b border-line bg-purple-50">
-          <h3 className="font-extrabold text-ink">{muni.name} — 권한 정책</h3>
-          <div className="text-[11px] font-mono text-slate-600 mt-0.5">{muni.code} · 관할 거래처 {muni.contractorCount}</div>
-        </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <div className="font-extrabold text-ink text-sm mb-2">허용 화면 ({screens.size}/{ALL_SCREENS.length})</div>
-            <div className="grid grid-cols-3 gap-2">
-              {ALL_SCREENS.map((s) => (
-                <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition ${
-                  screens.has(s.code) ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-line bg-white text-slate-600 hover:border-blue-300'
-                }`}>
-                  <input type="checkbox" checked={screens.has(s.code)} onChange={() => setScreens(toggle(screens, s.code))} />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="font-extrabold text-ink text-sm mb-2">허용 보고서 ({reports.size}/{ALL_REPORTS.length})</div>
-            <div className="grid grid-cols-3 gap-2">
-              {ALL_REPORTS.map((s) => (
-                <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition ${
-                  reports.has(s.code) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-line bg-white text-slate-600 hover:border-emerald-300'
-                }`}>
-                  <input type="checkbox" checked={reports.has(s.code)} onChange={() => setReports(toggle(reports, s.code))} />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-bold">
-              <input type="checkbox" checked={exportEnabled} onChange={(e) => setExportEnabled(e.target.checked)} />
-              자료 출력(인쇄·다운로드) 허용
-            </label>
-            <label className="flex items-center gap-2 text-sm font-bold">
-              <input type="checkbox" checked={bulkExportEnabled} onChange={(e) => setBulkExportEnabled(e.target.checked)} />
-              관할 거래처 일괄 출력 허용 (대량 데이터)
-            </label>
-          </div>
-          <div>
-            <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">메모</div>
-            <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-1.5 rounded border border-line text-sm" />
+    <BottomSheet open={true} onClose={onClose} title={`${muni.name} — 권한 정책`} desktopMaxWidth="640px">
+      <div className="px-5 py-2 bg-purple-50 border-b border-line">
+        <div className="text-[11px] font-mono text-slate-600">{muni.code} · 관할 거래처 {muni.contractorCount}</div>
+      </div>
+      <div className="p-5 space-y-4">
+        <div>
+          <div className="font-extrabold text-ink text-sm mb-2">허용 화면 ({screens.size}/{ALL_SCREENS.length})</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {ALL_SCREENS.map((s) => (
+              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition min-h-[44px] sm:min-h-0 ${
+                screens.has(s.code) ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-line bg-white text-slate-600 hover:border-blue-300'
+              }`}>
+                <input type="checkbox" checked={screens.has(s.code)} onChange={() => setScreens(toggle(screens, s.code))} />
+                {s.label}
+              </label>
+            ))}
           </div>
         </div>
-        <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-1.5 rounded text-sm font-bold bg-white border border-line">취소</button>
-          <button disabled={saving} onClick={save}
-            className="px-5 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white disabled:opacity-50">
-            {saving ? '저장 중…' : '저장'}
-          </button>
+        <div>
+          <div className="font-extrabold text-ink text-sm mb-2">허용 보고서 ({reports.size}/{ALL_REPORTS.length})</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {ALL_REPORTS.map((s) => (
+              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition min-h-[44px] sm:min-h-0 ${
+                reports.has(s.code) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-line bg-white text-slate-600 hover:border-emerald-300'
+              }`}>
+                <input type="checkbox" checked={reports.has(s.code)} onChange={() => setReports(toggle(reports, s.code))} />
+                {s.label}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-bold">
+            <input type="checkbox" checked={exportEnabled} onChange={(e) => setExportEnabled(e.target.checked)} />
+            자료 출력(인쇄·다운로드) 허용
+          </label>
+          <label className="flex items-center gap-2 text-sm font-bold">
+            <input type="checkbox" checked={bulkExportEnabled} onChange={(e) => setBulkExportEnabled(e.target.checked)} />
+            관할 거래처 일괄 출력 허용 (대량 데이터)
+          </label>
+        </div>
+        <div>
+          <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">메모</div>
+          <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)}
+            className="w-full px-3 py-1.5 rounded border border-line text-sm" />
         </div>
       </div>
-    </div>
+      <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2 sticky bottom-0">
+        <button onClick={onClose} className="px-4 py-2 rounded text-sm font-bold bg-white border border-line min-h-[44px]">취소</button>
+        <button disabled={saving} onClick={save}
+          className="px-5 py-2 rounded text-sm font-extrabold bg-purple-600 text-white disabled:opacity-50 min-h-[44px]">
+          {saving ? '저장 중…' : '저장'}
+        </button>
+      </div>
+    </BottomSheet>
   );
 }
 

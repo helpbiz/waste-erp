@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
+import { BottomSheet } from '@/components/BottomSheet';
+import { FilterToggle } from '@/components/FilterToggle';
 
 /* leaflet은 SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -151,25 +153,30 @@ export default function ComplaintsClient({
         </div>
       </header>
 
-      {/* 탭 */}
-      <nav className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-extrabold whitespace-nowrap transition ${
-              tab === t.key
-                ? 'bg-accent text-white shadow-sm'
-                : 'text-ink hover:bg-surface-soft'
-            }`}
-          >
-            {t.label}
-            <span className={`ml-1.5 text-[11px] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
-              {counts[t.key]}
-            </span>
-          </button>
-        ))}
-      </nav>
+      {/* 탭 — 모바일에서는 FilterToggle로 collapsible */}
+      <FilterToggle
+        label={`상태: ${tabs.find((t) => t.key === tab)?.label ?? '전체'}`}
+        activeCount={tab === 'ALL' ? 0 : 1}
+      >
+        <nav className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card overflow-x-auto">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-extrabold whitespace-nowrap transition ${
+                tab === t.key
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-ink hover:bg-surface-soft'
+              }`}
+            >
+              {t.label}
+              <span className={`ml-1.5 text-[11px] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
+                {counts[t.key]}
+              </span>
+            </button>
+          ))}
+        </nav>
+      </FilterToggle>
 
       {error && (
         <div className="bg-red-50 border border-red-300 rounded-md px-4 py-2.5 text-sm font-bold text-red-700">
@@ -260,7 +267,7 @@ export default function ComplaintsClient({
                   <button
                     onClick={() => { setOpenAssignId(c.id); setOpenCompleteId(null); setOpenRejectId(null); }}
                     disabled={busy}
-                    className="px-3 py-1.5 rounded-md border-2 border-accent text-accent text-xs font-extrabold hover:bg-accent hover:text-white transition active:scale-95 disabled:opacity-50"
+                    className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-accent text-accent text-sm sm:text-xs font-extrabold hover:bg-accent hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                   >
                     {c.assignee ? '담당 변경' : '담당 배정'}
                   </button>
@@ -270,7 +277,7 @@ export default function ComplaintsClient({
                     <button
                       onClick={() => call(`/api/complaints/${c.id}/start`)}
                       disabled={busy}
-                      className="px-3 py-1.5 rounded-md border-2 border-info text-info text-xs font-extrabold hover:bg-info hover:text-white transition active:scale-95 disabled:opacity-50"
+                      className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-info text-info text-sm sm:text-xs font-extrabold hover:bg-info hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                     >
                       처리 시작
                     </button>
@@ -279,7 +286,7 @@ export default function ComplaintsClient({
                   <button
                     onClick={() => { setOpenCompleteId(c.id); setOpenAssignId(null); setOpenRejectId(null); }}
                     disabled={busy}
-                    className="px-3 py-1.5 rounded-md bg-success text-white text-xs font-extrabold hover:bg-green-700 transition active:scale-95 disabled:opacity-50"
+                    className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md bg-success text-white text-sm sm:text-xs font-extrabold hover:bg-green-700 transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                   >
                     처리 완료
                   </button>
@@ -288,7 +295,7 @@ export default function ComplaintsClient({
                   <button
                     onClick={() => setEditTarget(c)}
                     disabled={busy}
-                    className="px-3 py-1.5 rounded-md border-2 border-warn text-warn text-xs font-extrabold hover:bg-warn hover:text-white transition active:scale-95 disabled:opacity-50"
+                    className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-warn text-warn text-sm sm:text-xs font-extrabold hover:bg-warn hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                   >
                     수정
                   </button>
@@ -297,7 +304,7 @@ export default function ComplaintsClient({
                   <button
                     onClick={() => { setOpenRejectId(c.id); setOpenAssignId(null); setOpenCompleteId(null); }}
                     disabled={busy}
-                    className="ml-auto px-3 py-1.5 rounded-md border-2 border-danger text-danger text-xs font-extrabold hover:bg-danger hover:text-white transition active:scale-95 disabled:opacity-50"
+                    className="ml-auto px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-danger text-danger text-sm sm:text-xs font-extrabold hover:bg-danger hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                   >
                     반려
                   </button>
@@ -390,51 +397,46 @@ function EditComplaintModal({ row, onClose, onSaved }: { row: Row; onClose: () =
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onClose}>
-      <div className="w-full max-w-[600px] bg-surface rounded-xl shadow-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <header className="px-5 py-4 bg-surface-soft border-b-2 border-line">
-          <h3 className="text-base font-extrabold text-ink">민원 수정 #{row.id}</h3>
-        </header>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-extrabold text-ink mb-1">민원 유형</label>
-            <select value={type} onChange={(e) => setType(e.target.value as Row['type'])}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface">
-              <option value="PICKUP_MISS">수거 누락</option>
-              <option value="BULKY_WASTE">대형폐기물</option>
-              <option value="ILLEGAL_DUMP">무단 투기</option>
-              <option value="ODOR_NOISE">악취·소음</option>
-              <option value="OTHER">기타</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-extrabold text-ink mb-1">발생 위치 (GIS 자동)</label>
-            <input value={address} onChange={(e) => setAddress(e.target.value)}
-              placeholder="상세 주소" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold" />
-          </div>
-          <div>
-            <label className="block text-xs font-extrabold text-ink mb-1">민원 내용</label>
-            <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-extrabold text-ink mb-1">현장 사진 교체 (선택)</label>
-            <ProfilePhotoUploader onChange={(d) => { setPhoto(d); setPhotoChanged(true); }} size={64} />
-            {row.id && (
-              <div className="text-[10px] font-mono text-slate-600 mt-1">기존 사진은 변경 시에만 교체됩니다.</div>
-            )}
-          </div>
-          {error && <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
+    <BottomSheet open={true} onClose={onClose} title={`민원 수정 #${row.id}`}>
+      <div className="p-5 space-y-4">
+        <div>
+          <label className="block text-xs font-extrabold text-ink mb-1">민원 유형</label>
+          <select value={type} onChange={(e) => setType(e.target.value as Row['type'])}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface">
+            <option value="PICKUP_MISS">수거 누락</option>
+            <option value="BULKY_WASTE">대형폐기물</option>
+            <option value="ILLEGAL_DUMP">무단 투기</option>
+            <option value="ODOR_NOISE">악취·소음</option>
+            <option value="OTHER">기타</option>
+          </select>
         </div>
-        <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold">취소</button>
-          <button onClick={save} disabled={saving}
-            className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold disabled:opacity-50">
-            {saving ? '저장 중…' : '저장'}
-          </button>
-        </footer>
+        <div>
+          <label className="block text-xs font-extrabold text-ink mb-1">발생 위치 (GIS 자동)</label>
+          <input value={address} onChange={(e) => setAddress(e.target.value)}
+            placeholder="상세 주소" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold" />
+        </div>
+        <div>
+          <label className="block text-xs font-extrabold text-ink mb-1">민원 내용</label>
+          <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold resize-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-extrabold text-ink mb-1">현장 사진 교체 (선택)</label>
+          <ProfilePhotoUploader onChange={(d) => { setPhoto(d); setPhotoChanged(true); }} size={64} />
+          {row.id && (
+            <div className="text-[10px] font-mono text-slate-600 mt-1">기존 사진은 변경 시에만 교체됩니다.</div>
+          )}
+        </div>
+        {error && <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
       </div>
-    </div>
+      <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
+        <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold min-h-[44px]">취소</button>
+        <button onClick={save} disabled={saving}
+          className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold disabled:opacity-50 min-h-[44px]">
+          {saving ? '저장 중…' : '저장'}
+        </button>
+      </footer>
+    </BottomSheet>
   );
 }
 
@@ -683,17 +685,8 @@ function CreateComplaintModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onCancel}>
-      <div className="w-full max-w-[600px] bg-surface rounded-xl shadow-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <header className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} className="text-accent">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-          </svg>
-          <h3 className="text-base font-extrabold text-ink flex-1">민원 신규 등록</h3>
-          <button onClick={onCancel} className="text-ink-muted hover:text-ink text-2xl font-bold leading-none px-2">&times;</button>
-        </header>
-
-        <div className="p-5 space-y-4">
+    <BottomSheet open={true} onClose={onCancel} title="민원 신규 등록">
+      <div className="p-5 space-y-4">
           {needsContractorPicker && (
             <div>
               <label className="block text-xs font-extrabold text-ink mb-2">위탁업체 선택 *</label>
@@ -817,14 +810,13 @@ function CreateComplaintModal({
           </div>
         </div>
 
-        <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
-          <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface">취소</button>
-          <button onClick={save} disabled={busy || !type || (needsContractorPicker && !contractorId)} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
-            {busy ? '등록 중…' : '민원 등록'}
-          </button>
-        </footer>
-      </div>
-    </div>
+      <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
+        <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface min-h-[44px]">취소</button>
+        <button onClick={save} disabled={busy || !type || (needsContractorPicker && !contractorId)} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50 min-h-[44px]">
+          {busy ? '등록 중…' : '민원 등록'}
+        </button>
+      </footer>
+    </BottomSheet>
   );
 }
 function fmtDate(iso: string) {
