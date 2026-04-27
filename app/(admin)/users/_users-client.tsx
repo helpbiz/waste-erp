@@ -23,6 +23,10 @@ export type UserRow = {
   role: string;
   status: string;
   contractorName: string | null;
+  contractorId: string | null;
+  municipalityName: string | null;
+  municipalityId: string | null;
+  municipalityRegion: string | null;
   phone: string | null;
   employeeNo: string | null;
   birthDate: string | null;
@@ -148,6 +152,7 @@ export default function UsersClient({
           rows={rows}
           canManage={canManage}
           currentUserId={session.userId}
+          isSuperAdmin={session.role === 'SUPER_ADMIN'}
           onSelectProfile={(id) => { setSelectedId(id); setTab('profile'); }}
           onAdd={() => setShowCreate(true)}
           positions={positions}
@@ -227,22 +232,58 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 
 /* ────────────────────────  탭 1: 사용자 등록  ──────────────────────── */
 function RegisterTab({
-  rows, canManage, currentUserId, onSelectProfile, onAdd, positions, departments,
+  rows, canManage, currentUserId, isSuperAdmin, onSelectProfile, onAdd, positions, departments,
 }: {
-  rows: UserRow[]; canManage: boolean; currentUserId: string;
+  rows: UserRow[]; canManage: boolean; currentUserId: string; isSuperAdmin: boolean;
   onSelectProfile: (id: string) => void; onAdd: () => void;
   positions: PositionRow[]; departments: DepartmentRow[];
 }) {
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [muniFilter, setMuniFilter] = useState('');       // 지자체 ID
+  const [contractorFilter, setContractorFilter] = useState(''); // 위탁업체 ID
   const [editTarget, setEditTarget] = useState<UserRow | null>(null);
   const router = useRouter();
+
+  /* SUPER_ADMIN 용 — rows에서 추출한 지자체·위탁업체 옵션 (계층 의존) */
+  const muniOptions = useMemo(() => {
+    const map = new Map<string, { name: string; region: string | null }>();
+    for (const r of rows) {
+      if (r.municipalityId && r.municipalityName) {
+        map.set(r.municipalityId, { name: r.municipalityName, region: r.municipalityRegion });
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, v]) => ({ id, name: v.name, region: v.region }))
+      .sort((a, b) => (a.region ?? '').localeCompare(b.region ?? '', 'ko') || a.name.localeCompare(b.name, 'ko'));
+  }, [rows]);
+
+  const contractorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rows) {
+      if (!r.contractorId || !r.contractorName) continue;
+      if (muniFilter && r.municipalityId !== muniFilter) continue;
+      map.set(r.contractorId, r.contractorName);
+    }
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [rows, muniFilter]);
+
+  /* 지자체 변경 시 위탁업체 자동 초기화 */
+  useEffect(() => {
+    if (contractorFilter && !contractorOptions.find((c) => c.id === contractorFilter)) {
+      setContractorFilter('');
+    }
+  }, [contractorOptions, contractorFilter]);
 
   const filtered = rows.filter((r) => {
     if (q && !(r.name.includes(q) || r.username.includes(q) || (r.employeeNo ?? '').includes(q))) return false;
     if (roleFilter && r.role !== roleFilter) return false;
     if (statusFilter && r.status !== statusFilter) return false;
+    if (muniFilter && r.municipalityId !== muniFilter) return false;
+    if (contractorFilter && r.contractorId !== contractorFilter) return false;
     return true;
   });
 
@@ -269,6 +310,24 @@ function RegisterTab({
           <option value="">전체 상태</option>
           {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
+        {isSuperAdmin && (
+          <>
+            <select value={muniFilter} onChange={(e) => setMuniFilter(e.target.value)} aria-label="지자체 필터" className="px-3 py-1.5 rounded border border-line bg-white text-sm">
+              <option value="">전체 지자체</option>
+              {muniOptions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.region ? `[${m.region}] ` : ''}{m.name}
+                </option>
+              ))}
+            </select>
+            <select value={contractorFilter} onChange={(e) => setContractorFilter(e.target.value)} aria-label="위탁업체 필터" className="px-3 py-1.5 rounded border border-line bg-white text-sm" disabled={contractorOptions.length === 0}>
+              <option value="">전체 업체</option>
+              {contractorOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </>
+        )}
         {canManage && (
           <button onClick={onAdd} className="ml-auto px-4 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
             + 신규 사용자
@@ -279,12 +338,13 @@ function RegisterTab({
       <div className="bg-surface border border-line rounded-lg overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-600 uppercase tracking-wider">
+          <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2 text-left w-[50px]"></th>
               <th className="px-3 py-2 text-left">이름·직책</th>
               <th className="px-3 py-2 text-left">아이디·사번</th>
               <th className="px-3 py-2 text-left">권한</th>
+              {isSuperAdmin && <th className="px-3 py-2 text-left">지자체·업체</th>}
               <th className="px-3 py-2 text-left">부서</th>
               <th className="px-3 py-2 text-left">전화</th>
               <th className="px-3 py-2 text-left">입사일</th>
@@ -295,7 +355,7 @@ function RegisterTab({
           </thead>
           <tbody className="divide-y divide-line">
             {filtered.length === 0 && (
-              <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-500">조건에 맞는 사용자가 없습니다.</td></tr>
+              <tr><td colSpan={isSuperAdmin ? 11 : 10} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
@@ -309,7 +369,15 @@ function RegisterTab({
                   <div className="font-mono text-[10px] text-slate-600">{u.employeeNo ?? '—'}</div>
                 </td>
                 <td className="px-3 py-2"><RoleBadge role={u.role} /></td>
-                <td className="px-3 py-2 text-xs text-slate-600">{u.department?.name ?? '—'}</td>
+                {isSuperAdmin && (
+                  <td className="px-3 py-2 text-xs">
+                    <div className="font-bold text-ink">{u.contractorName ?? '—'}</div>
+                    <div className="text-[10px] font-mono text-ink-muted mt-0.5">
+                      {u.municipalityRegion ? `[${u.municipalityRegion}] ` : ''}{u.municipalityName ?? '—'}
+                    </div>
+                  </td>
+                )}
+                <td className="px-3 py-2 text-xs text-slate-700">{u.department?.name ?? '—'}</td>
                 <td className="px-3 py-2 font-mono text-xs">{formatPhone(u.phone)}</td>
                 <td className="px-3 py-2 font-mono text-xs">{u.hireDate ?? '—'}</td>
                 <td className="px-3 py-2">{u.activeSignatureRef ? <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-300">✓ {u.activeSignatureRef.slice(0, 8)}</span> : <span className="text-[10px] font-mono text-slate-500">미등록</span>}</td>
