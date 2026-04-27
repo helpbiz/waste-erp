@@ -104,8 +104,9 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
       {/* 컨트롤 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">대상 일자</label>
+          <label htmlFor="f02-date" className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">대상 일자</label>
           <input
+            id="f02-date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -114,8 +115,9 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
         </div>
         {needsContractorPicker && (
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">위탁업체</label>
+            <label htmlFor="f02-contractor" className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">위탁업체</label>
             <select
+              id="f02-contractor"
               value={contractorId}
               onChange={(e) => setContractorId(e.target.value)}
               className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent min-h-[44px]"
@@ -137,7 +139,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
         <button
           onClick={downloadPdf}
           disabled={!data || data.rows.length === 0}
-          className="ml-auto px-5 py-2 rounded-md bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50 min-h-[44px]"
+          className="ml-auto px-5 py-2 rounded-md bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 min-h-[44px]"
         >
           📄 PDF 다운로드
         </button>

@@ -9,6 +9,9 @@ export const ADMIN_PAGES = [
   '/health',
   '/bulky-waste',
   '/performance',
+  '/complaints',
+  '/super-admin',
+  '/reports',
 ] as const;
 
 export type AdminPage = (typeof ADMIN_PAGES)[number];
