@@ -13,6 +13,14 @@ on:
     paths-ignore:
       - 'docs/**'
       - '*.md'
+  # baseline 갱신 모드 — GHA UI에서 수동 트리거. update_snapshots=true 시
+  # visual 실패 무시 + 새 baseline을 자동 commit/push.
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: 'Regenerate visual baselines from CI environment'
+        type: boolean
+        default: false
 
 # 동일 브랜치/PR에서 새 push가 오면 이전 실행 취소 (CI 시간 절약)
 concurrency:
@@ -83,6 +91,12 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+
+      - name: Install Korean fonts (visual baseline 안정성)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
 
       - name: Prisma generate
         run: npx prisma generate
@@ -198,6 +212,12 @@ jobs:
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      - name: Install Korean fonts (visual baseline 안정성)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
+
       - name: Prisma generate
         run: npx prisma generate
 
@@ -225,13 +245,37 @@ jobs:
           exit 1
 
       - name: Run visual regression
-        run: npx playwright test visual-regression.spec.ts --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad
+        # workflow_dispatch.update_snapshots=true 시 baseline 재생성 모드
+        run: |
+          if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
+            npx playwright test visual-regression.spec.ts \
+              --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad \
+              --update-snapshots
+          else
+            npx playwright test visual-regression.spec.ts \
+              --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad
+          fi
 
       - name: Stop app
         if: always()
         run: |
           if [ -n "${APP_PID:-}" ]; then
             kill $APP_PID || true
+          fi
+
+      - name: Commit updated baselines (workflow_dispatch only)
+        if: github.event.inputs.update_snapshots == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual-regression.spec.ts-snapshots/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(e2e): regenerate visual baselines from CI environment
+
+[skip ci] — auto-commit by e2e workflow update_snapshots=true"
+            git push
+          else
+            echo "No baseline changes to commit"
           fi
 
       - name: Upload Playwright report
@@ -242,8 +286,16 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
+      - name: Upload updated baselines (workflow_dispatch only)
+        if: github.event.inputs.update_snapshots == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines-updated
+          path: e2e/visual-regression.spec.ts-snapshots/
+          retention-days: 30
+
       - name: Upload visual diffs (on failure)
-        if: failure()
+        if: failure() && github.event.inputs.update_snapshots != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: visual-diffs
