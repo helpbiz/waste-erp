@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wci-waste-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wciuser
+      POSTGRES_PASSWORD: wcipass
+      POSTGRES_DB: wci_waste_erp
+    ports:
+      - "5433:5432"
+    volumes:
+      - wci-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wciuser -d wci_waste_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  wci-pg-data:

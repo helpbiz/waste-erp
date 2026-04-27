@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CleanERP - 생활폐기물 수집운반 관리시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* color.png 라이트 시안 톤 팔레트 (Plan §5.1 + 콘트라스트 강화) */
+    --bg: #94a3b8;          /* 페이지 배경 (slate-400, 카드 경계 강조) */
+    --bg2: #1e3a5f;         /* 사이드바 (다크 네이비, 본문과 강한 대비) */
+    --bg3: #cbd5e1;         /* 서브 영역 (slate-300) */
+    --surface: #ffffff;     /* 카드 표면 */
+    --surface2: #e2e8f0;    /* 카드 내 서브 영역 (slate-200) */
+    --border: #64748b;      /* 일반 라인 (slate-500, 진하게) */
+    --border2: #334155;     /* 강조 라인 (slate-700) */
+    --accent: #0e7490;      /* Primary Teal */
+    --accent2: #06b6d4;     /* Hover / Highlight Cyan */
+    --accent3: #cffafe;     /* Soft Teal */
+    --warn: #b45309;        /* 경고 (amber-700, 진하게) */
+    --danger: #b91c1c;      /* 위험 (red-700, 진하게) */
+    --info: #1d4ed8;        /* 정보 (blue-700, 진하게) */
+    --success: #15803d;     /* 성공 (green-700, 진하게) */
+    --text: #000000;        /* 본문 (순수 검정) */
+    --text2: #0f172a;        /* 보조 텍스트 (slate-900) */
+    --text3: #1e293b;       /* 흐린 라벨도 진하게 (slate-800) */
+    --sidebar-text: #cbd5e1;     /* 사이드바 텍스트 */
+    --sidebar-text2: #94a3b8;    /* 사이드바 보조 */
+    --sidebar-text3: #64748b;    /* 사이드바 흐림 */
+    --gauge-track: #cbd5e1; /* 게이지/막대 트랙 (slate-300) */
+    --row-zebra: #f1f5f9;   /* 테이블 교차행 (slate-100) */
+    --row-hover: #bae6fd;   /* 테이블 hover (sky-200) */
+    --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.12); /* 카드 부양감 강화 */
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border2);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    color: var(--sidebar-text);
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.12);
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(14, 116, 144, 0.25);
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; stroke: #ffffff; }
+
+  .logo-text {
+    font-size: 18px;
+    font-weight: 900;
+    color: #67e8f9;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    color: var(--sidebar-text3);
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .sidebar-org {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    border-left: 3px solid var(--accent2);
+  }
+
+  .org-label { font-size: 10px; color: var(--sidebar-text3); letter-spacing: 1px; margin-bottom: 4px; }
+  .org-name { font-size: 14px; font-weight: 700; color: #ffffff; }
+  .org-sub { font-size: 11px; color: var(--sidebar-text); margin-top: 3px; }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 12px 0;
+    overflow-y: auto;
+  }
+
+  .nav-section-title {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--sidebar-text3);
+    padding: 14px 20px 6px;
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+    font-size: 13px;
+    color: var(--sidebar-text);
+    position: relative;
+  }
+
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
+  .nav-item.active {
+    background: rgba(6, 182, 212, 0.18);
+    color: #67e8f9;
+    border-left-color: var(--accent2);
+    font-weight: 700;
+  }
+
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--danger);
+    color: #ffffff;
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .nav-badge.warn { background: var(--warn); color: #ffffff; }
+  .nav-badge.info { background: var(--info); color: #ffffff; }
+
+  .sidebar-user {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(203, 213, 225, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffffff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(14, 116, 144, 0.25);
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 700; color: #ffffff; }
+  .user-role { font-size: 10px; color: var(--sidebar-text2); font-family: var(--mono); margin-top: 2px; }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(15,23,42,0.04);
+  }
+
+  .topbar-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+    flex: 1;
+    letter-spacing: -0.3px;
+  }
+
+  .topbar-date {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .topbar-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--success);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.18);
+  }
+
+  /* 토픽바 우측 Role 배지 (보안 UX 힌트) */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--accent3);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+  .role-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* 다운로드 버튼 (지자체 화면용 outline) */
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { background: var(--accent); color: #ffffff; }
+  .btn-outline svg { width: 12px; height: 12px; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+    box-shadow: var(--shadow-card);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 1;
+  }
+
+  .kpi-card.warn::before { background: var(--warn); }
+  .kpi-card.danger::before { background: var(--danger); }
+  .kpi-card.info::before { background: var(--info); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text2);
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .kpi-value { font-size: 30px; font-weight: 900; color: var(--text); line-height: 1; font-family: var(--mono); letter-spacing: -0.5px; }
+  .kpi-value .unit { font-size: 14px; font-weight: 600; color: var(--text2); margin-left: 5px; }
+  .kpi-change {
+    font-size: 12px;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .kpi-change.up { color: var(--success); }
+  .kpi-change.down { color: var(--danger); }
+  .kpi-change.neutral { color: var(--text2); }
+
+  .kpi-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    opacity: 0.18;
+    width: 44px;
+    height: 44px;
+    color: var(--accent);
+  }
+  .kpi-card.warn   .kpi-icon { color: var(--warn); }
+  .kpi-card.danger .kpi-icon { color: var(--danger); }
+  .kpi-card.info   .kpi-icon { color: var(--info); }
+
+  /* GRID LAYOUT */
+  .grid-2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease 0.25s both;
+    box-shadow: var(--shadow-card);
+  }
+
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 2px solid #cbd5e1;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.2px;
+  }
+
+  .panel-title svg { width: 16px; height: 16px; color: var(--accent); stroke-width: 2.5; }
+
+  .panel-action {
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-weight: 700;
+  }
+  .panel-action:hover { text-decoration: underline; }
+
+  .panel-body { padding: 16px 18px; }
+
+  /* 근태 현황 */
+  .attend-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .attend-stat {
+    text-align: center;
+    padding: 14px 8px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+  }
+
+  .attend-stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    font-family: var(--mono);
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .attend-stat-value.green { color: var(--success); }
+  .attend-stat-value.warn { color: var(--warn); }
+  .attend-stat-value.red { color: var(--danger); }
+
+  .attend-stat-label {
+    font-size: 12px;
+    color: var(--text);
+    margin-top: 6px;
+    font-weight: 700;
+  }
+
+  /* 테이블 */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 10px 10px;
+    color: var(--text);
+    font-weight: 800;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    border-bottom: 2px solid var(--border2);
+    background: var(--surface2);
+    text-transform: uppercase;
+  }
+
+  .data-table td {
+    padding: 11px 10px;
+    border-bottom: 1px solid #cbd5e1;
+    color: var(--text);
+    vertical-align: middle;
+    font-weight: 600;
+  }
+
+  .data-table tbody tr:nth-child(even) td { background: var(--row-zebra); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--row-hover); color: var(--text); }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 800;
+    border: 1px solid transparent;
+    letter-spacing: 0.3px;
+  }
+
+  /* filled-soft 패턴 (frontend-architect 지침) */
+  .status-chip.active  { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+  .status-chip.pending { background: #fef9c3; color: #a16207; border-color: #fde68a; }
+  .status-chip.alert   { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+  .status-chip.info    { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+
+  /* 바 차트 */
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 100px;
+    padding: 8px 0;
+  }
+
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar-fill {
+    width: 100%;
+    background: var(--accent);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+    position: relative;
+  }
+
+  .bar-fill:hover { opacity: 1; }
+  .bar-fill.warn { background: var(--warn); }
+
+  .bar-label { font-size: 11px; color: var(--text); font-family: var(--mono); font-weight: 700; }
+
+  /* 민원 현황 */
+  .complaint-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .complaint-item:last-child { border-bottom: none; }
+
+  .complaint-type {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .complaint-type svg { width: 16px; height: 16px; }
+  .complaint-type.miss    { background: #fee2e2; color: var(--danger); }
+  .complaint-type.illegal { background: #fef9c3; color: var(--warn); }
+  .complaint-type.odor    { background: #dbeafe; color: var(--info); }
+
+  .complaint-info { flex: 1; }
+  .complaint-title { font-size: 13px; color: var(--text); font-weight: 700; }
+  .complaint-meta { font-size: 11px; color: var(--text2); margin-top: 4px; font-family: var(--mono); font-weight: 600; }
+
+  /* 알림 영역 */
+  .alerts-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* 좌측 4px accent bar 패턴 (라이트 알림 강조) */
+  .alert-item { border-left-width: 4px; }
+  .alert-item.critical { border-color: var(--border); border-left-color: var(--danger); background: #fef2f2; }
+  .alert-item.warn     { border-color: var(--border); border-left-color: var(--warn);   background: #fffbeb; }
+  .alert-item.info     { border-color: var(--border); border-left-color: var(--info);   background: #eff6ff; }
+
+  .alert-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .critical .alert-dot { background: var(--danger); }
+  .warn .alert-dot { background: var(--warn); }
+  .info .alert-dot { background: var(--info); }
+
+  .alert-text { font-size: 13px; color: var(--text); line-height: 1.5; font-weight: 600; }
+  .alert-time { font-size: 11px; color: var(--text2); font-family: var(--mono); margin-top: 4px; font-weight: 700; }
+
+  /* 원가 게이지 */
+  .cost-gauge {
+    margin-top: 12px;
+  }
+
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .gauge-label { font-size: 12px; color: var(--text); width: 64px; flex-shrink: 0; font-weight: 700; }
+  .gauge-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--gauge-track);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width 1s ease;
+  }
+  .gauge-fill.warn { background: var(--warn); }
+  .gauge-fill.danger { background: var(--danger); }
+  .gauge-fill.success { background: var(--success); }
+  .gauge-value { font-size: 12px; color: var(--text); font-family: var(--mono); width: 44px; text-align: right; flex-shrink: 0; font-weight: 700; }
+
+  /* 차량 현황 */
+  .vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .vehicle-card {
+    background: var(--surface2);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .vehicle-no { font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--text); letter-spacing: -0.2px; }
+  .vehicle-type { font-size: 11px; color: var(--text2); margin: 3px 0; font-weight: 600; }
+  .vehicle-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin: 6px auto 0;
+  }
+
+  .vehicle-status-dot.on    { background: var(--success); box-shadow: 0 0 0 3px rgba(22,163,74,0.18); }
+  .vehicle-status-dot.off   { background: var(--text3); }
+  .vehicle-status-dot.maint { background: var(--warn); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* GIS 통합 — 외부 실시간 차량조회 (gis.helpbiz.kr) */
+  .gis-view { display: none; flex-direction: column; height: calc(100vh - 56px); background: var(--bg); }
+  .gis-view.show { display: flex; }
+  .gis-toolbar {
+    height: 48px;
+    padding: 0 18px;
+    background: var(--surface);
+    border-bottom: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gis-toolbar-title { font-size: 14px; font-weight: 800; color: var(--text); }
+  .gis-key-display {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 700;
+    padding: 4px 10px;
+    background: var(--accent3);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+  }
+  .gis-frame-wrap { flex: 1; position: relative; background: var(--surface); }
+  #gis-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--surface);
+  }
+  .gis-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: var(--surface);
+    padding: 40px;
+    text-align: center;
+  }
+  .gis-fallback.show { display: flex; }
+  .gis-fallback h3 { font-size: 18px; color: var(--text); font-weight: 800; }
+  .gis-fallback p { font-size: 13px; color: var(--text2); line-height: 1.7; max-width: 520px; font-weight: 600; }
+  .gis-fallback .gis-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .gis-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    gap: 10px;
+  }
+  .gis-loading.hide { display: none; }
+  .gis-spinner {
+    width: 18px; height: 18px;
+    border: 3px solid var(--gauge-track);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 모달 — API 키 입력 */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    width: 460px;
+    max-width: calc(100vw - 32px);
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.25);
+    overflow: hidden;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .modal-header {
+    padding: 18px 22px;
+    border-bottom: 2px solid #cbd5e1;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-header svg { width: 20px; height: 20px; color: var(--accent); stroke-width: 2.5; }
+  .modal-title { font-size: 16px; font-weight: 800; color: var(--text); flex: 1; }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text2);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+  }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+  .modal-body { padding: 22px; }
+  .modal-body label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+  .modal-body input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--text);
+    background: var(--surface);
+    font-weight: 600;
+    transition: border-color 0.15s;
+  }
+  .modal-body input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15);
+  }
+  .modal-hint {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 8px;
+    line-height: 1.6;
+    font-weight: 600;
+  }
+  .modal-security {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    font-size: 11px;
+    color: #78350f;
+    line-height: 1.6;
+    font-weight: 600;
+  }
+  .modal-security strong { color: #78350f; font-weight: 800; }
+  .modal-error {
+    display: none;
+    margin-top: 10px;
+    padding: 9px 12px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #991b1b;
+    font-weight: 700;
+  }
+  .modal-error.show { display: block; }
+  .modal-footer {
+    padding: 14px 22px;
+    background: var(--surface2);
+    border-top: 1px solid #cbd5e1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .btn-primary, .btn-ghost {
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    border: 2px solid transparent;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #ffffff; }
+  .btn-primary:hover { background: #155e75; }
+  .btn-ghost { background: var(--surface); color: var(--text); border-color: #cbd5e1; }
+  .btn-ghost:hover { background: var(--surface2); border-color: var(--text2); }
+
+  /* 모달 권한 strip */
+  .acl-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--accent3);
+    border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+  }
+  .acl-label { font-size: 11px; color: var(--text2); font-weight: 700; }
+  .acl-role { font-size: 13px; color: var(--text); font-weight: 800; margin-top: 3px; font-family: var(--mono); letter-spacing: 0.3px; }
+  .acl-status { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-family: var(--mono); }
+  .acl-status.ok { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .acl-status.deny { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+  /* 업체 select */
+  .gis-select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--sans);
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+  }
+  .gis-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15); }
+
+  /* 등록 키 목록 */
+  .key-list-wrap { margin-top: 14px; }
+  .key-list-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+  .key-list-count { font-family: var(--mono); color: var(--text2); font-weight: 700; }
+  .key-list {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: var(--surface2);
+    max-height: 140px;
+    overflow-y: auto;
+  }
+  .key-row {
+    display: flex;
+    align-items: center;
+    padding: 9px 12px;
+    border-bottom: 1px solid #cbd5e1;
+    font-size: 12px;
+    gap: 10px;
+  }
+  .key-row:last-child { border-bottom: none; }
+  .key-row.empty { padding: 18px; text-align: center; color: var(--text2); font-weight: 600; justify-content: center; }
+  .key-row .kr-name { flex: 1; font-weight: 700; color: var(--text); }
+  .key-row .kr-mask { font-family: var(--mono); font-weight: 700; color: var(--accent); }
+  .key-row .kr-stat { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-family: var(--mono); font-weight: 800; }
+  .key-row .kr-stat.set { background: #dcfce7; color: #15803d; }
+  .key-row .kr-stat.unset { background: #fef3c7; color: #92400e; }
+  .key-row.active { background: var(--accent3); border-left: 3px solid var(--accent); padding-left: 9px; }
+
+  /* 데모 GIS 뷰 */
+  .gis-demo {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    background: #0b1d2d;
+  }
+  .gis-demo.show { display: flex; }
+  .gis-demo-banner {
+    background: #fef3c7;
+    border-bottom: 2px solid #f59e0b;
+    padding: 10px 18px;
+    font-size: 12px;
+    color: #78350f;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .gis-demo-banner svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .gis-demo-body { flex: 1; display: flex; min-height: 0; }
+  .gis-demo-map {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 30% 40%, #1e3a5f 0%, #0b1d2d 60%),
+      linear-gradient(180deg, #0b1d2d 0%, #051828 100%);
+  }
+  .gis-demo-map::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(90deg, rgba(14,165,233,0.07) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(14,165,233,0.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .gis-road {
+    position: absolute;
+    background: rgba(148,163,184,0.18);
+    border: 1px solid rgba(148,163,184,0.28);
+  }
+  .gis-poi {
+    position: absolute;
+    color: rgba(186,230,253,0.55);
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  }
+  .gis-marker {
+    position: absolute;
+    width: 36px; height: 36px;
+    transform: translate(-50%, -100%);
+    cursor: pointer;
+    z-index: 5;
+  }
+  .gis-marker .pin {
+    width: 36px; height: 36px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--success);
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border: 3px solid #ffffff;
+  }
+  .gis-marker .pin span {
+    transform: rotate(45deg);
+    color: #ffffff;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1;
+  }
+  .gis-marker.maint .pin { background: var(--warn); }
+  .gis-marker.off .pin { background: #64748b; }
+  .gis-marker .ripple {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--success);
+    opacity: 0.6;
+    animation: ripple 1.8s infinite;
+  }
+  .gis-marker.maint .ripple { border-color: var(--warn); }
+  .gis-marker.off .ripple { display: none; }
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  .gis-tooltip {
+    position: absolute;
+    bottom: 42px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    display: none;
+    z-index: 6;
+  }
+  .gis-marker:hover .gis-tooltip { display: block; }
+  .gis-tooltip .tt-mono { font-family: var(--mono); color: var(--accent); }
+
+  .gis-legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .gis-legend-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  .gis-legend-row .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .gis-zoom {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .gis-zoom button {
+    display: block;
+    width: 32px; height: 32px;
+    border: none;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .gis-zoom button:hover { background: var(--surface2); }
+  .gis-zoom button + button { border-top: 1px solid #cbd5e1; }
+
+  .gis-side {
+    width: 280px;
+    background: #ffffff;
+    border-left: 2px solid #cbd5e1;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .gis-side-header {
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-bottom: 2px solid #cbd5e1;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .gis-side-list { padding: 6px; }
+  .gis-veh-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .gis-veh-item:hover { background: var(--surface2); border-color: #cbd5e1; }
+  .gis-veh-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .gis-veh-no { font-family: var(--mono); font-size: 12px; font-weight: 800; color: var(--text); }
+  .gis-veh-meta { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 600; }
+  .gis-veh-info { flex: 1; min-width: 0; }
+  .gis-veh-speed { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--accent); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .gis-side { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <div class="logo-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="#ffffff" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">CleanERP</div>
+        <div class="logo-sub">WASTE MGMT SYSTEM</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-org">
+    <div class="org-label">현재 지자체</div>
+    <div class="org-name">서울특별시 강남구</div>
+    <div class="org-sub">위탁: (주)한국청소서비스</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">OVERVIEW</div>
+    <div class="nav-item active" id="nav-dashboard" data-view="dashboard">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      메인 대시보드
+    </div>
+
+    <div class="nav-section-title">CORE MODULES</div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      원가산정
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+      </svg>
+      인건비 정산
+      <span class="nav-badge warn">마감</span>
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+      </svg>
+      민원관리
+      <span class="nav-badge">7</span>
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+      </svg>
+      산업안전보건
+      <span class="nav-badge">3</span>
+    </div>
+
+    <div class="nav-section-title">OPERATIONS</div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      근태관리
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+      </svg>
+      차량관리
+    </div>
+    <div class="nav-item" id="nav-gis" data-view="gis">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      실시간 차량조회
+      <span class="nav-badge info">LIVE</span>
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      통계/보고서
+    </div>
+
+    <div class="nav-section-title">SETTINGS</div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+      </svg>
+      기초자료관리
+    </div>
+    <div class="nav-item">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      시스템관리
+    </div>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">김</div>
+    <div class="user-info">
+      <div class="user-name">김관리</div>
+      <div class="user-role">INTERNAL_ADMIN</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-title" id="topbar-title">메인 대시보드</div>
+    <span class="role-badge" title="현재 로그인 권한 — Plan §5.4 보안 UX 힌트">INTERNAL_ADMIN</span>
+    <button class="btn-outline" title="기간별 운영 보고서 (Plan §7-2 형식)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+      Excel
+    </button>
+    <button class="btn-outline" title="개별 보고서 PDF 다운로드">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      PDF
+    </button>
+    <div class="topbar-date">2026-04-25 (토) 09:38</div>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      시스템 정상
+    </div>
+  </header>
+
+  <div class="content" id="view-dashboard">
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <div class="kpi-label">오늘 출근 현황</div>
+        <div class="kpi-value">87<span class="unit">/ 92명</span></div>
+        <div class="kpi-change up">+ 출근율 94.6%</div>
+      </div>
+      <div class="kpi-card warn">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+        </svg>
+        <div class="kpi-label">미처리 민원</div>
+        <div class="kpi-value">7<span class="unit">건</span></div>
+        <div class="kpi-change down">- 처리기한 초과 2건 포함</div>
+      </div>
+      <div class="kpi-card info">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+        <div class="kpi-label">금일 운행 차량</div>
+        <div class="kpi-value">14<span class="unit">/ 18대</span></div>
+        <div class="kpi-change neutral">정비중 2 / 대기 2</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+        </svg>
+        <div class="kpi-label">금일 수집량</div>
+        <div class="kpi-value">42.7<span class="unit">톤</span></div>
+        <div class="kpi-change up">+ 목표 대비 101.4%</div>
+      </div>
+    </div>
+
+    <!-- ROW 2: 근태 + 알림 -->
+    <div class="grid-2-1">
+
+      <!-- 근태 현황 패널 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            오늘 근태 현황
+          </div>
+          <div class="panel-action">전체보기 &gt;</div>
+        </div>
+        <div class="panel-body">
+          <div class="attend-stats">
+            <div class="attend-stat">
+              <div class="attend-stat-value green">87</div>
+              <div class="attend-stat-label">정상출근</div>
+            </div>
+            <div class="attend-stat">
+              <div class="attend-stat-value warn">3</div>
+              <div class="attend-stat-label">지각</div>
+            </div>
+            <div class="attend-stat">
+              <div class="attend-stat-value red">2</div>
+              <div class="attend-stat-label">결근</div>
+            </div>
+            <div class="attend-stat">
+              <div class="attend-stat-value" style="color:var(--info)">5</div>
+              <div class="attend-stat-label">조정필요</div>
+            </div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>사원명</th>
+                <th>구역</th>
+                <th>출근시각</th>
+                <th>근무유형</th>
+                <th>상태</th>
+                <th>조치</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>이철수</td>
+                <td>역삼1동</td>
+                <td style="font-family:var(--mono);font-weight:700;">08:02</td>
+                <td>정상</td>
+                <td><span class="status-chip active">승인</span></td>
+                <td style="color:var(--text3)">-</td>
+              </tr>
+              <tr>
+                <td>박영희</td>
+                <td>개포2동</td>
+                <td style="font-family:var(--mono);font-weight:700;color:var(--warn);">08:47</td>
+                <td>지각</td>
+                <td><span class="status-chip pending">대기</span></td>
+                <td style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:800;text-decoration:underline;">조정</td>
+              </tr>
+              <tr>
+                <td>최민준</td>
+                <td>대치4동</td>
+                <td style="font-family:var(--mono);color:var(--danger);font-weight:800;">미출근</td>
+                <td>결근</td>
+                <td><span class="status-chip alert">미처리</span></td>
+                <td style="color:var(--danger);cursor:pointer;font-size:12px;font-weight:800;text-decoration:underline;">확인</td>
+              </tr>
+              <tr>
+                <td>정수연</td>
+                <td>삼성1동</td>
+                <td style="font-family:var(--mono);font-weight:700;color:var(--info);">07:55</td>
+                <td>조기출근</td>
+                <td><span class="status-chip info">조정중</span></td>
+                <td style="color:var(--accent);cursor:pointer;font-size:12px;font-weight:800;text-decoration:underline;">조정</td>
+              </tr>
+              <tr>
+                <td>김대호</td>
+                <td>논현1동</td>
+                <td style="font-family:var(--mono);font-weight:700;">08:05</td>
+                <td>정상</td>
+                <td><span class="status-chip active">승인</span></td>
+                <td style="color:var(--text3)">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 알림 패널 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            시스템 알림
+          </div>
+          <div class="panel-action">전체 &gt;</div>
+        </div>
+        <div class="panel-body">
+          <div class="alerts-list">
+            <div class="alert-item critical">
+              <div class="alert-dot"></div>
+              <div>
+                <div class="alert-text">최민준 근로자 오늘 미출근 상태입니다. 결근 처리가 필요합니다.</div>
+                <div class="alert-time">09:31 &middot; 근태관리</div>
+              </div>
+            </div>
+            <div class="alert-item warn">
+              <div class="alert-dot"></div>
+              <div>
+                <div class="alert-text">민원 #2025-0423 처리기한이 1일 초과되었습니다.</div>
+                <div class="alert-time">09:15 &middot; 민원관리</div>
+              </div>
+            </div>
+            <div class="alert-item warn">
+              <div class="alert-dot"></div>
+              <div>
+                <div class="alert-text">4월 인건비 정산 마감일이 5일 남았습니다.</div>
+                <div class="alert-time">09:00 &middot; 인건비정산</div>
+              </div>
+            </div>
+            <div class="alert-item info">
+              <div class="alert-dot"></div>
+              <div>
+                <div class="alert-text">안전점검 미제출 차량 2대 (11가1234, 11가5678)</div>
+                <div class="alert-time">08:45 &middot; 차량관리</div>
+              </div>
+            </div>
+            <div class="alert-item info">
+              <div class="alert-dot"></div>
+              <div>
+                <div class="alert-text">김철호 근로자 이번 달 연장근로 48시간 접근 중</div>
+                <div class="alert-time">08:00 &middot; 근태관리</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: 원가 + 민원 + 차량 -->
+    <div class="grid-3">
+
+      <!-- 원가 구성 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            4월 원가 구성
+          </div>
+          <div class="panel-action">상세 &gt;</div>
+        </div>
+        <div class="panel-body">
+          <div style="text-align:center;margin-bottom:14px;">
+            <div style="font-size:12px;color:var(--text);margin-bottom:6px;font-weight:700;">이번달 총 원가 (예상)</div>
+            <div style="font-family:var(--mono);font-size:28px;font-weight:900;color:var(--accent);letter-spacing:-0.5px;">148,320<span style="font-size:14px;color:var(--text);font-weight:700;margin-left:4px;">천원</span></div>
+            <div style="font-size:12px;color:var(--text);font-family:var(--mono);margin-top:6px;font-weight:700;">톤당 원가 3,474원</div>
+          </div>
+          <div class="cost-gauge">
+            <div class="gauge-row">
+              <div class="gauge-label">인건비</div>
+              <div class="gauge-bar"><div class="gauge-fill" style="width:68%"></div></div>
+              <div class="gauge-value">68%</div>
+            </div>
+            <div class="gauge-row">
+              <div class="gauge-label">차량비</div>
+              <div class="gauge-bar"><div class="gauge-fill" style="width:15%"></div></div>
+              <div class="gauge-value">15%</div>
+            </div>
+            <div class="gauge-row">
+              <div class="gauge-label">유류비</div>
+              <div class="gauge-bar"><div class="gauge-fill warn" style="width:9%"></div></div>
+              <div class="gauge-value">9%</div>
+            </div>
+            <div class="gauge-row">
+              <div class="gauge-label">간접비</div>
+              <div class="gauge-bar"><div class="gauge-fill" style="width:8%"></div></div>
+              <div class="gauge-value">8%</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <div style="font-size:12px;color:var(--text);margin-bottom:10px;font-family:var(--mono);font-weight:700;">월별 원가 추이 (천원/톤)</div>
+            <div class="bar-chart">
+              <div class="bar-group">
+                <div class="bar-fill" style="height:55%"></div>
+                <div class="bar-label">1월</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-fill" style="height:62%"></div>
+                <div class="bar-label">2월</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-fill" style="height:70%"></div>
+                <div class="bar-label">3월</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-fill warn" style="height:80%"></div>
+                <div class="bar-label">4월</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 민원 현황 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+            </svg>
+            최근 민원
+          </div>
+          <div class="panel-action">전체 &gt;</div>
+        </div>
+        <div class="panel-body">
+          <div class="complaint-item">
+            <div class="complaint-type miss">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <div class="complaint-info">
+              <div class="complaint-title">수거 미비 - 역삼1동 123번지</div>
+              <div class="complaint-meta">2025-04-25 08:15 &middot; 처리기한 초과</div>
+            </div>
+            <span class="status-chip alert">초과</span>
+          </div>
+          <div class="complaint-item">
+            <div class="complaint-type illegal">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+              </svg>
+            </div>
+            <div class="complaint-info">
+              <div class="complaint-title">불법투기 - 개포동 456 앞</div>
+              <div class="complaint-meta">2025-04-25 07:40 &middot; 담당: 박영희</div>
+            </div>
+            <span class="status-chip pending">처리중</span>
+          </div>
+          <div class="complaint-item">
+            <div class="complaint-type odor">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <div class="complaint-info">
+              <div class="complaint-title">악취 민원 - 대치4동 수거함</div>
+              <div class="complaint-meta">2025-04-24 16:30 &middot; 미배정</div>
+            </div>
+            <span class="status-chip alert">미배정</span>
+          </div>
+          <div class="complaint-item">
+            <div class="complaint-type miss">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <div class="complaint-info">
+              <div class="complaint-title">수거 미비 - 논현1동 789</div>
+              <div class="complaint-meta">2025-04-24 14:10 &middot; 담당: 이철수</div>
+            </div>
+            <span class="status-chip active">완료</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 차량 현황 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            차량 현황
+          </div>
+          <div class="panel-action">상세 &gt;</div>
+        </div>
+        <div class="panel-body">
+          <div style="display:flex;gap:18px;margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid #cbd5e1;">
+            <div style="text-align:center;flex:1;">
+              <div style="font-family:var(--mono);font-size:22px;font-weight:900;color:var(--success);letter-spacing:-0.5px;">14</div>
+              <div style="font-size:11px;color:var(--text);font-weight:700;margin-top:2px;">운행중</div>
+            </div>
+            <div style="text-align:center;flex:1;border-left:1px solid #cbd5e1;border-right:1px solid #cbd5e1;">
+              <div style="font-family:var(--mono);font-size:22px;font-weight:900;color:var(--warn);letter-spacing:-0.5px;">2</div>
+              <div style="font-size:11px;color:var(--text);font-weight:700;margin-top:2px;">정비중</div>
+            </div>
+            <div style="text-align:center;flex:1;">
+              <div style="font-family:var(--mono);font-size:22px;font-weight:900;color:var(--text2);letter-spacing:-0.5px;">2</div>
+              <div style="font-size:11px;color:var(--text);font-weight:700;margin-top:2px;">대기</div>
+            </div>
+          </div>
+          <div class="vehicle-grid">
+            <div class="vehicle-card">
+              <div class="vehicle-no">11가1234</div>
+              <div class="vehicle-type">압축차 4.5t</div>
+              <div class="vehicle-status-dot on"></div>
+            </div>
+            <div class="vehicle-card">
+              <div class="vehicle-no">11나5678</div>
+              <div class="vehicle-type">압축차 4.5t</div>
+              <div class="vehicle-status-dot on"></div>
+            </div>
+            <div class="vehicle-card">
+              <div class="vehicle-no">11다9012</div>
+              <div class="vehicle-type">청소차 2.5t</div>
+              <div class="vehicle-status-dot maint"></div>
+            </div>
+            <div class="vehicle-card">
+              <div class="vehicle-no">11라3456</div>
+              <div class="vehicle-type">압축차 4.5t</div>
+              <div class="vehicle-status-dot on"></div>
+            </div>
+            <div class="vehicle-card">
+              <div class="vehicle-no">11마7890</div>
+              <div class="vehicle-type">살수차 3t</div>
+              <div class="vehicle-status-dot off"></div>
+            </div>
+            <div class="vehicle-card">
+              <div class="vehicle-no">11바1357</div>
+              <div class="vehicle-type">압축차 4.5t</div>
+              <div class="vehicle-status-dot on"></div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text);margin-bottom:8px;font-family:var(--mono);font-weight:700;">금일 안전점검 미제출</div>
+            <div style="display:flex;gap:8px;">
+              <span class="status-chip alert">11다9012</span>
+              <span class="status-chip alert">11마7890</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GIS 외부 통합 뷰 (gis.helpbiz.kr 실시간 차량조회) -->
+  <div class="gis-view" id="view-gis">
+    <div class="gis-toolbar">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="gis-toolbar-title">실시간 차량조회 — gis.helpbiz.kr</div>
+      <span class="status-chip info" style="font-size:10px;">외부 연동</span>
+      <span class="gis-key-display" id="gis-key-mask" title="현재 세션 API 키"></span>
+      <button class="btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="clearGisKey()">키 변경</button>
+      <button class="btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="openGisInNewTab()">새 탭</button>
+    </div>
+    <div class="gis-frame-wrap">
+      <iframe id="gis-frame" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      <div class="gis-loading" id="gis-loading">
+        <div class="gis-spinner"></div>
+        GIS 서버에 연결 중…
+      </div>
+
+      <!-- 데모 모드: 외부 GIS 차단 시 자동 표시 -->
+      <div class="gis-demo" id="gis-demo">
+        <div class="gis-demo-banner">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span><strong>데모 모드 표시 중</strong> — 외부 GIS 서버(gis.helpbiz.kr) 직접 임베드가 차단되어 모의 데이터로 화면 구성을 안내합니다. 운영망(허용 IP) 또는 백엔드 프록시 적용 시 실제 GIS 화면으로 자동 전환됩니다.</span>
+          <button class="btn-ghost" style="margin-left:auto;padding:4px 10px;font-size:11px;" onclick="openGisInNewTab()">새 탭으로 실제 GIS 열기</button>
+        </div>
+        <div class="gis-demo-body">
+          <div class="gis-demo-map" id="gis-demo-map">
+            <!-- 시뮬레이션 도로 -->
+            <div class="gis-road" style="left:0;right:0;top:32%;height:14px;"></div>
+            <div class="gis-road" style="left:0;right:0;top:68%;height:14px;"></div>
+            <div class="gis-road" style="top:0;bottom:0;left:22%;width:14px;"></div>
+            <div class="gis-road" style="top:0;bottom:0;left:58%;width:14px;"></div>
+            <div class="gis-road" style="top:0;bottom:0;left:82%;width:10px;"></div>
+
+            <!-- 행정동 라벨 -->
+            <div class="gis-poi" style="left:8%;top:6%;">강남구 역삼1동</div>
+            <div class="gis-poi" style="left:62%;top:8%;">강남구 개포2동</div>
+            <div class="gis-poi" style="left:8%;top:74%;">강남구 삼성1동</div>
+            <div class="gis-poi" style="left:62%;top:74%;">강남구 논현1동</div>
+            <div class="gis-poi" style="left:34%;top:36%;">강남구 대치4동</div>
+
+            <!-- 차량 마커 (실제 차량 데이터 기반) -->
+            <div class="gis-marker" style="left:18%;top:28%;" data-no="11가1234" data-type="압축차 4.5t" data-zone="역삼1동" data-speed="22">
+              <div class="ripple"></div>
+              <div class="pin"><span>11가<br>1234</span></div>
+              <div class="gis-tooltip">11가1234 · 압축차 4.5t<br>역삼1동 · <span class="tt-mono">22 km/h</span></div>
+            </div>
+            <div class="gis-marker" style="left:46%;top:24%;" data-no="11나5678" data-type="압축차 4.5t" data-zone="개포2동" data-speed="14">
+              <div class="ripple"></div>
+              <div class="pin"><span>11나<br>5678</span></div>
+              <div class="gis-tooltip">11나5678 · 압축차 4.5t<br>개포2동 · <span class="tt-mono">14 km/h</span></div>
+            </div>
+            <div class="gis-marker maint" style="left:38%;top:62%;" data-no="11다9012" data-type="청소차 2.5t" data-zone="대치4동" data-speed="0">
+              <div class="ripple"></div>
+              <div class="pin"><span>11다<br>9012</span></div>
+              <div class="gis-tooltip">11다9012 · 청소차 2.5t<br>정비 입고 · <span class="tt-mono">정지</span></div>
+            </div>
+            <div class="gis-marker" style="left:70%;top:58%;" data-no="11라3456" data-type="압축차 4.5t" data-zone="논현1동" data-speed="30">
+              <div class="ripple"></div>
+              <div class="pin"><span>11라<br>3456</span></div>
+              <div class="gis-tooltip">11라3456 · 압축차 4.5t<br>논현1동 · <span class="tt-mono">30 km/h</span></div>
+            </div>
+            <div class="gis-marker off" style="left:90%;top:38%;" data-no="11마7890" data-type="살수차 3t" data-zone="대기" data-speed="0">
+              <div class="pin"><span>11마<br>7890</span></div>
+              <div class="gis-tooltip">11마7890 · 살수차 3t<br>차고지 대기</div>
+            </div>
+            <div class="gis-marker" style="left:14%;top:84%;" data-no="11바1357" data-type="압축차 4.5t" data-zone="삼성1동" data-speed="18">
+              <div class="ripple"></div>
+              <div class="pin"><span>11바<br>1357</span></div>
+              <div class="gis-tooltip">11바1357 · 압축차 4.5t<br>삼성1동 · <span class="tt-mono">18 km/h</span></div>
+            </div>
+
+            <div class="gis-legend">
+              <div class="gis-legend-row"><span class="dot" style="background:var(--success);"></span>운행중 (4)</div>
+              <div class="gis-legend-row"><span class="dot" style="background:var(--warn);"></span>정비중 (1)</div>
+              <div class="gis-legend-row"><span class="dot" style="background:#64748b;"></span>대기 (1)</div>
+            </div>
+
+            <div class="gis-zoom">
+              <button title="확대">+</button>
+              <button title="축소">−</button>
+              <button title="현재 위치" style="font-size:13px;">⌖</button>
+            </div>
+          </div>
+
+          <aside class="gis-side">
+            <div class="gis-side-header">금일 운행 차량 (6대)</div>
+            <div class="gis-side-list">
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:var(--success);"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11가1234</div>
+                  <div class="gis-veh-meta">역삼1동 · 이철수</div>
+                </div>
+                <div class="gis-veh-speed">22</div>
+              </div>
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:var(--success);"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11나5678</div>
+                  <div class="gis-veh-meta">개포2동 · 박영희</div>
+                </div>
+                <div class="gis-veh-speed">14</div>
+              </div>
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:var(--warn);"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11다9012</div>
+                  <div class="gis-veh-meta">정비 입고 · -</div>
+                </div>
+                <div class="gis-veh-speed" style="color:var(--warn);">정비</div>
+              </div>
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:var(--success);"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11라3456</div>
+                  <div class="gis-veh-meta">논현1동 · 김대호</div>
+                </div>
+                <div class="gis-veh-speed">30</div>
+              </div>
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:#64748b;"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11마7890</div>
+                  <div class="gis-veh-meta">차고지 대기 · -</div>
+                </div>
+                <div class="gis-veh-speed" style="color:#64748b;">대기</div>
+              </div>
+              <div class="gis-veh-item">
+                <div class="gis-veh-dot" style="background:var(--success);"></div>
+                <div class="gis-veh-info">
+                  <div class="gis-veh-no">11바1357</div>
+                  <div class="gis-veh-meta">삼성1동 · 정수연</div>
+                </div>
+                <div class="gis-veh-speed">18</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- 차단 명시 폴백 (사용자가 명시적으로 호출 시) -->
+      <div class="gis-fallback" id="gis-fallback">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:var(--warn)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <h3>GIS 화면을 불러올 수 없습니다</h3>
+        <p>외부 GIS 서버(<strong>gis.helpbiz.kr</strong>)의 보안 정책으로 임베드가 제한되었습니다.</p>
+        <div class="gis-actions">
+          <button class="btn-primary" onclick="openGisInNewTab()">새 탭에서 GIS 열기</button>
+          <button class="btn-ghost" onclick="showDemoMode()">데모 모드로 전환</button>
+          <button class="btn-ghost" onclick="clearGisKey()">키 다시 등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- API Key 등록·연결 모달 (관리자 전용) -->
+<div class="modal-backdrop" id="gis-modal" role="dialog" aria-modal="true" aria-labelledby="gis-modal-title">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+      <div class="modal-title" id="gis-modal-title">실시간 차량조회 — API 키 등록</div>
+      <span class="status-chip alert" style="font-size:10px;">관리자 전용</span>
+      <button class="modal-close" onclick="closeGisModal()" aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 권한 확인 영역 -->
+      <div class="acl-strip" id="gis-acl-strip">
+        <div>
+          <div class="acl-label">현재 로그인 권한</div>
+          <div class="acl-role" id="gis-current-role">INTERNAL_ADMIN · 김관리</div>
+        </div>
+        <div class="acl-status ok" id="gis-acl-status">접근 허용</div>
+      </div>
+
+      <!-- 업체 선택 -->
+      <label for="gis-contractor-select" style="margin-top:18px;">위탁업체 선택 (업체별 키 분리 보관)</label>
+      <select id="gis-contractor-select" class="gis-select"></select>
+      <div class="modal-hint">슈퍼·지자체 관리자는 업체를 변경할 수 있습니다. 위탁업체 관리자는 본인 소속 업체만 표시됩니다.</div>
+
+      <!-- 등록된 키 목록 -->
+      <div class="key-list-wrap">
+        <div class="key-list-title">
+          <span>등록된 키</span>
+          <span class="key-list-count" id="gis-key-count">0개 업체</span>
+        </div>
+        <div class="key-list" id="gis-key-list"></div>
+      </div>
+
+      <!-- 신규/수정 키 입력 -->
+      <label for="gis-key-input" style="margin-top:18px;">선택 업체의 API Key</label>
+      <input type="password" id="gis-key-input" autocomplete="off" spellcheck="false"
+             placeholder="발급받으신 API 키를 입력하세요 (영문/숫자/-/_, 16~128자)" maxlength="128" />
+      <div class="modal-hint">
+        입력 후 화면·로그·다운로드 파일에는 항상 마지막 4자리만 노출됩니다 (예: <span style="font-family:var(--mono);font-weight:700;">abcd••••wxyz</span>).
+      </div>
+      <div class="modal-error" id="gis-modal-error"></div>
+
+      <div class="modal-security">
+        <strong>보안 안내 (시안 단계)</strong><br>
+        본 시안은 데모 목적입니다. 등록하신 API 키는 브라우저의 <strong>sessionStorage</strong>에 위탁업체별로 분리 보관되며, 탭을 닫으면 즉시 소거됩니다. 키는 외부 GIS 서비스 호출에만 사용되고 본 시안 서버로 전송되지 않습니다.<br>
+        <strong>운영 단계</strong>에서는 위탁업체별 키를 백엔드 보안 저장소(KMS)에 보관하고, 단기 세션 토큰을 발급하여 iframe URL에는 토큰만 전달합니다. <code>Referrer-Policy: no-referrer</code> · CSP <code>frame-src</code> 화이트리스트가 함께 적용됩니다.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeGisModal()">취소</button>
+      <button class="btn-ghost" onclick="removeCurrentKey()" id="gis-btn-remove" style="display:none;color:var(--danger);border-color:var(--danger);">현재 업체 키 삭제</button>
+      <button class="btn-primary" onclick="submitGisKey()" id="gis-btn-submit">저장 후 접속</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* GIS 외부 시스템(gis.helpbiz.kr) 통합 — 시안 단계
+   * 권한: 관리자(SUPER_ADMIN, MUNI_ADMIN, CONTRACTOR_ADMIN, INTERNAL_ADMIN)만 키 등록 가능
+   * 보관: 위탁업체별 sessionStorage (탭 종료 시 소거)
+   * 표시: iframe 시도 → 5초 타임아웃 시 데모 모드 자동 전환
+   */
+  (function () {
+    const GIS_BASE = 'https://gis.helpbiz.kr/'; // 운영 시 실제 엔드포인트로 교체
+    const KEY_STORAGE = 'gis-keys-by-contractor'; // {contractorId: apiKey} JSON
+    const ACTIVE_STORAGE = 'gis-active-contractor';
+    const KEY_REGEX = /^[A-Za-z0-9_-]{16,128}$/;
+    const ALLOWED_ROLES = ['SUPER_ADMIN', 'MUNI_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'];
+
+    /* 시안 컨텍스트: 현재 사용자(로그인 정보 mockup) */
+    const CURRENT_USER = {
+      role: 'INTERNAL_ADMIN',
+      name: '김관리',
+      contractorId: 'C001',
+    };
+
+    /* 시안 컨텍스트: 위탁업체 목록 (실서비스에서는 API에서 조회)
+     * 권한별 가시성:
+     *  - SUPER_ADMIN: 전체
+     *  - MUNI_ADMIN: 본인 지자체 소속 업체
+     *  - CONTRACTOR_ADMIN/INTERNAL_ADMIN: 본인 소속 업체만
+     */
+    const CONTRACTORS = [
+      { id: 'C001', name: '(주)한국청소서비스', municipality: '서울특별시 강남구' },
+      { id: 'C002', name: '(주)그린클린', municipality: '서울특별시 강남구' },
+      { id: 'C003', name: '(주)강남환경', municipality: '서울특별시 강남구' },
+    ];
+
+    let loadTimer = null;
+
+    function $(id) { return document.getElementById(id); }
+    function escapeHtml(s) { return String(s).replace(/[&<>"'`=\/]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;','=':'&#61;','/':'&#47;'}[c])); }
+    function maskKey(k) { return k.length <= 8 ? '••••' : k.slice(0, 4) + '••••' + k.slice(-4); }
+
+    function loadKeys() {
+      try { return JSON.parse(sessionStorage.getItem(KEY_STORAGE) || '{}'); }
+      catch (e) { return {}; }
+    }
+    function saveKeys(map) { sessionStorage.setItem(KEY_STORAGE, JSON.stringify(map)); }
+    function getKey(cid) { return loadKeys()[cid] || ''; }
+    function setKey(cid, k) { const m = loadKeys(); m[cid] = k; saveKeys(m); }
+    function delKey(cid) { const m = loadKeys(); delete m[cid]; saveKeys(m); }
+
+    function visibleContractors() {
+      if (CURRENT_USER.role === 'SUPER_ADMIN') return CONTRACTORS;
+      if (CURRENT_USER.role === 'MUNI_ADMIN') return CONTRACTORS;
+      return CONTRACTORS.filter(c => c.id === CURRENT_USER.contractorId);
+    }
+
+    function isAllowed() { return ALLOWED_ROLES.indexOf(CURRENT_USER.role) >= 0; }
+
+    function showView(name) {
+      $('view-dashboard').style.display = (name === 'gis') ? 'none' : '';
+      $('view-gis').classList.toggle('show', name === 'gis');
+      document.querySelectorAll('.sidebar .nav-item').forEach(el => el.classList.remove('active'));
+      if (name === 'gis') $('nav-gis').classList.add('active');
+      else $('nav-dashboard').classList.add('active');
+      const t = $('topbar-title');
+      if (t) t.textContent = (name === 'gis') ? '실시간 차량조회' : '메인 대시보드';
+    }
+
+    function renderModalState() {
+      /* 권한 표시 */
+      $('gis-current-role').textContent = CURRENT_USER.role + ' · ' + CURRENT_USER.name;
+      const aclStatus = $('gis-acl-status');
+      if (isAllowed()) {
+        aclStatus.textContent = '접근 허용';
+        aclStatus.classList.remove('deny'); aclStatus.classList.add('ok');
+        $('gis-btn-submit').disabled = false;
+        $('gis-btn-submit').style.opacity = '';
+      } else {
+        aclStatus.textContent = '접근 불가';
+        aclStatus.classList.add('deny'); aclStatus.classList.remove('ok');
+        $('gis-btn-submit').disabled = true;
+        $('gis-btn-submit').style.opacity = '0.5';
+      }
+
+      /* 업체 selector */
+      const sel = $('gis-contractor-select');
+      const visible = visibleContractors();
+      sel.innerHTML = visible.map(c =>
+        '<option value="' + escapeHtml(c.id) + '">' +
+        escapeHtml(c.name) + ' — ' + escapeHtml(c.municipality) +
+        '</option>'
+      ).join('');
+      const active = sessionStorage.getItem(ACTIVE_STORAGE) || CURRENT_USER.contractorId;
+      sel.value = active;
+
+      renderKeyList();
+      onSelectorChange();
+    }
+
+    function renderKeyList() {
+      const keys = loadKeys();
+      const visible = visibleContractors();
+      const list = $('gis-key-list');
+      const count = $('gis-key-count');
+      const filled = visible.filter(c => keys[c.id]).length;
+      count.textContent = filled + ' / ' + visible.length + '개 업체 등록';
+
+      if (visible.length === 0) {
+        list.innerHTML = '<div class="key-row empty">표시 가능한 업체가 없습니다</div>';
+        return;
+      }
+      const activeId = $('gis-contractor-select').value;
+      list.innerHTML = visible.map(c => {
+        const k = keys[c.id];
+        const isActive = c.id === activeId;
+        return '<div class="key-row' + (isActive ? ' active' : '') + '">' +
+          '<div class="kr-name">' + escapeHtml(c.name) + '</div>' +
+          (k ? '<div class="kr-mask">' + escapeHtml(maskKey(k)) + '</div>' +
+               '<span class="kr-stat set">등록</span>'
+             : '<span class="kr-stat unset">미등록</span>') +
+          '</div>';
+      }).join('');
+    }
+
+    function onSelectorChange() {
+      renderKeyList();
+      const cid = $('gis-contractor-select').value;
+      const existing = getKey(cid);
+      $('gis-key-input').placeholder = existing
+        ? '기존 키 ' + maskKey(existing) + ' 등록됨 — 변경하려면 새 키 입력'
+        : '발급받으신 API 키를 입력하세요 (영문/숫자/-/_, 16~128자)';
+      $('gis-key-input').value = '';
+      $('gis-btn-remove').style.display = existing ? '' : 'none';
+    }
+
+    function openGisModal() {
+      $('gis-modal-error').classList.remove('show');
+      renderModalState();
+      $('gis-modal').classList.add('show');
+      setTimeout(() => $('gis-key-input').focus(), 50);
+    }
+    window.closeGisModal = function () { $('gis-modal').classList.remove('show'); };
+
+    window.submitGisKey = function () {
+      if (!isAllowed()) {
+        const err = $('gis-modal-error');
+        err.textContent = '관리자 권한이 없습니다. 시스템 관리자에게 문의해 주세요.';
+        err.classList.add('show');
+        return;
+      }
+      const cid = $('gis-contractor-select').value;
+      const raw = $('gis-key-input').value.trim();
+      const err = $('gis-modal-error');
+
+      let useKey = raw;
+      if (!raw) {
+        /* 입력 비어 있으면 기존 키 사용 */
+        const existing = getKey(cid);
+        if (!existing) {
+          err.textContent = '신규 등록입니다. API 키를 입력해 주세요.';
+          err.classList.add('show');
+          return;
+        }
+        useKey = existing;
+      } else {
+        if (!KEY_REGEX.test(raw)) {
+          err.textContent = 'API 키 형식이 올바르지 않습니다 (영문/숫자/-/_ 조합 16~128자).';
+          err.classList.add('show');
+          return;
+        }
+        setKey(cid, raw);
+      }
+      sessionStorage.setItem(ACTIVE_STORAGE, cid);
+      closeGisModal();
+      mountGisFrame(useKey, cid);
+    };
+
+    window.removeCurrentKey = function () {
+      const cid = $('gis-contractor-select').value;
+      if (!confirm('해당 업체의 API 키를 삭제하시겠습니까?')) return;
+      delKey(cid);
+      renderModalState();
+    };
+
+    function mountGisFrame(apiKey, contractorId) {
+      const contractor = CONTRACTORS.find(c => c.id === contractorId) || { name: '-' };
+      $('gis-key-mask').textContent = '🔑 ' + escapeHtml(contractor.name) + ' · ' + escapeHtml(maskKey(apiKey));
+      const frame = $('gis-frame');
+      const loading = $('gis-loading');
+      const fallback = $('gis-fallback');
+      const demo = $('gis-demo');
+      loading.classList.remove('hide');
+      fallback.classList.remove('show');
+      demo.classList.remove('show');
+
+      let loaded = false;
+      frame.onload = function () {
+        loaded = true;
+        loading.classList.add('hide');
+        try {
+          const doc = frame.contentDocument;
+          if (!doc || !doc.body || doc.body.innerHTML.trim() === '') throw new Error('empty');
+          /* 정상 로드 */
+        } catch (e) {
+          /* 동일 출처 정책으로 접근 불가 — 차단 가능성 → 데모 모드 */
+          showDemoMode();
+        }
+      };
+
+      if (loadTimer) clearTimeout(loadTimer);
+      loadTimer = setTimeout(() => {
+        if (!loaded) {
+          loading.classList.add('hide');
+          showDemoMode();
+        }
+      }, 5000);
+
+      frame.src = GIS_BASE + '?key=' + encodeURIComponent(apiKey);
+      showView('gis');
+    }
+
+    window.showDemoMode = function () {
+      $('gis-fallback').classList.remove('show');
+      $('gis-loading').classList.add('hide');
+      $('gis-demo').classList.add('show');
+    };
+
+    window.retryGisLoad = function () {
+      const cid = sessionStorage.getItem(ACTIVE_STORAGE) || CURRENT_USER.contractorId;
+      const k = getKey(cid);
+      if (k) mountGisFrame(k, cid);
+      else openGisModal();
+    };
+
+    window.clearGisKey = function () {
+      $('gis-frame').src = 'about:blank';
+      $('gis-key-mask').textContent = '';
+      $('gis-demo').classList.remove('show');
+      openGisModal();
+    };
+
+    window.openGisInNewTab = function () {
+      const cid = sessionStorage.getItem(ACTIVE_STORAGE) || CURRENT_USER.contractorId;
+      const k = getKey(cid);
+      if (!k) { openGisModal(); return; }
+      window.open(GIS_BASE + '?key=' + encodeURIComponent(k), '_blank', 'noopener,noreferrer');
+    };
+
+    /* 사이드바 메뉴 클릭 라우팅 */
+    document.addEventListener('click', function (ev) {
+      const item = ev.target.closest('.nav-item');
+      if (!item) return;
+      const view = item.dataset.view;
+      if (view === 'gis') {
+        ev.preventDefault();
+        if (!isAllowed()) { openGisModal(); return; } /* 모달에서 거부 메시지 표시 */
+        const cid = sessionStorage.getItem(ACTIVE_STORAGE) || CURRENT_USER.contractorId;
+        const stored = getKey(cid);
+        if (stored && KEY_REGEX.test(stored)) mountGisFrame(stored, cid);
+        else openGisModal();
+      } else if (view === 'dashboard') {
+        showView('dashboard');
+      }
+    });
+
+    /* 모달 내부 selector change 핸들러 */
+    document.addEventListener('change', function (ev) {
+      if (ev.target && ev.target.id === 'gis-contractor-select') onSelectorChange();
+    });
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && $('gis-modal').classList.contains('show')) closeGisModal();
+    });
+  })();
+</script>
+</body>
+</html>

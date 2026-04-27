@@ -1,0 +1,97 @@
+version: '3.8'
+
+# CleanERP 프로덕션 스택
+# 사용:
+#   1) cp .env.example .env  (시크릿 채우기)
+#   2) docker compose -f docker-compose.prod.yml up -d
+#   3) docker compose -f docker-compose.prod.yml exec app npx prisma db push
+#   4) docker compose -f docker-compose.prod.yml exec app npx tsx prisma/seed.ts
+#   5) docker compose -f docker-compose.prod.yml exec app npx tsx prisma/seeds/positions.ts
+#   6) docker compose -f docker-compose.prod.yml exec app npx tsx prisma/seeds/departments.ts
+#   7) docker compose -f docker-compose.prod.yml exec app npx tsx prisma/seeds/approval-policies.ts
+#
+# 옵션 — ORS 자체호스팅 활성화:
+#   docker compose -f docker-compose.prod.yml --profile with-ors up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cleanerp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cleanerp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD env required}
+      POSTGRES_DB: ${POSTGRES_DB:-cleanerp_prod}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cleanerp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cleanerp-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cleanerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cleanerp_prod}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET env required}
+      KMS_PROVIDER: ${KMS_PROVIDER:-local}
+      KMS_LOCAL_KEY: ${KMS_LOCAL_KEY:?KMS_LOCAL_KEY env required}
+      AWS_KMS_ENCRYPTED_DEK_BASE64: ${AWS_KMS_ENCRYPTED_DEK_BASE64:-}
+      VAULT_ADDR: ${VAULT_ADDR:-}
+      VAULT_TOKEN: ${VAULT_TOKEN:-}
+      VAULT_KEY_NAME: ${VAULT_KEY_NAME:-}
+      SMS_PROVIDER: ${SMS_PROVIDER:-simulation}
+      SOLAPI_API_KEY: ${SOLAPI_API_KEY:-}
+      SOLAPI_API_SECRET: ${SOLAPI_API_SECRET:-}
+      SMS_FROM: ${SMS_FROM:-}
+      WEATHER_PROVIDER: ${WEATHER_PROVIDER:-open-meteo}
+      KMA_API_KEY: ${KMA_API_KEY:-}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET env required}
+      ORS_URL: ${ORS_URL:-}
+      ORS_PROFILE: ${ORS_PROFILE:-driving-car}
+      ORS_API_KEY: ${ORS_API_KEY:-}
+      PPAEGI_API_BASE: ${PPAEGI_API_BASE:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ORS 자체호스팅 (선택) — `--profile with-ors` 활성화
+  ors:
+    image: openrouteservice/openrouteservice:latest
+    container_name: cleanerp-ors
+    restart: unless-stopped
+    profiles: ["with-ors"]
+    environment:
+      ors.engine.profile_default.enabled: "true"
+      ors.engine.profile_default.profiles: "driving-car"
+    ports:
+      - "${ORS_PORT:-8080}:8080"
+    volumes:
+      - ./ors-data:/home/ors/openrouteservice/data
+      - ./ors-graphs:/home/ors/openrouteservice/graphs
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/ors/v2/health"]
+      interval: 1m
+      timeout: 30s
+      retries: 5
+      start_period: 5m
+
+volumes:
+  postgres-data:

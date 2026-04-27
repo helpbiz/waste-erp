@@ -1,0 +1,62 @@
+/**
+ * PATCH /api/recycling-intake/[id]
+ * DELETE /api/recycling-intake/[id]
+ */
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { readSession } from '@/lib/auth';
+
+export const runtime = 'nodejs';
+
+const Patch = z.object({
+  intakeDate: z.string().optional(),
+  intakeTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  materialCategory: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD']).optional(),
+  weightTon: z.number().min(0).max(99_999).optional(),
+  note: z.string().max(500).nullable().optional(),
+});
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  if (session.role === 'MUNI_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
+
+  const id = BigInt(params.id);
+  const target = await prisma.recyclingCenterIntake.findFirst({
+    where: { id, contractorId: BigInt(session.contractorId) },
+    select: { id: true },
+  });
+  if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  const parsed = Patch.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+  const b = parsed.data;
+  const data: Record<string, unknown> = {};
+  if (b.intakeDate !== undefined) data.intakeDate = new Date(b.intakeDate);
+  if (b.intakeTime !== undefined) data.intakeTime = b.intakeTime;
+  if (b.materialCategory !== undefined) data.materialCategory = b.materialCategory;
+  if (b.weightTon !== undefined) data.weightTon = b.weightTon;
+  if (b.note !== undefined) data.note = b.note;
+
+  await prisma.recyclingCenterIntake.update({ where: { id }, data });
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  if (session.role === 'MUNI_ADMIN' || session.role === 'WORKER') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
+
+  const id = BigInt(params.id);
+  const target = await prisma.recyclingCenterIntake.findFirst({
+    where: { id, contractorId: BigInt(session.contractorId) },
+    select: { id: true },
+  });
+  if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  await prisma.recyclingCenterIntake.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

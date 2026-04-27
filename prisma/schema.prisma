@@ -1,0 +1,1010 @@
+// 지자체 생활폐기물 수집운반 ERP — Phase 1A 데이터 모델
+// Plan §2 핵심 테이블 + §3-2-D 감사로그 + security-architect 권고 통합
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────── ENUM ───────────────────
+
+enum Role {
+  SUPER_ADMIN
+  MUNI_ADMIN
+  CONTRACTOR_ADMIN
+  INTERNAL_ADMIN
+  WORKER
+}
+
+enum MunicipalityStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ContractorStatus {
+  SETUP
+  ACTIVE
+  EXPIRED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum ZoneType {
+  GENERAL          // 일반
+  FOOD             // 음식물
+  RECYCLING        // 재활용
+  BULKY            // 대형폐기물
+  STREET_CLEANING  // 가로청소
+}
+
+enum WorkType {
+  NORMAL    // 정상
+  EARLY     // 조기출근
+  EXTENDED  // 연장
+  NIGHT     // 야간
+  HOLIDAY   // 휴일
+  ON_DUTY   // 당직
+}
+
+enum AttendanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ADJUSTED
+}
+
+enum AdjustmentType {
+  CORRECTION
+  ADDITION
+  DELETION
+  LEAVE
+}
+
+enum LeaveType {
+  ANNUAL          // 연차
+  ANNUAL_HALF     // 연차(반차) — 0.5일
+  SPECIAL         // 경조사
+  MATERNITY       // 출산휴가
+  FAMILY_CARE     // 가족돌봄휴가
+  MENSTRUAL       // 생리휴가
+  OFFICIAL        // 공가
+  SICK            // 병가 (관리자 입력 보존)
+  BUSINESS_TRIP   // 출장 (관리자 입력 보존)
+  TRAINING        // 교육 (관리자 입력 보존)
+  OTHER           // 기타
+}
+
+enum LeaveStatus {
+  PENDING       // 신청 (1차 결재 대기)
+  IN_REVIEW     // 결재 중 (1차 통과, 대표 최종 결재 대기)
+  APPROVED      // 결재 완료 (대표 결재 완료)
+  REJECTED      // 반려
+}
+
+enum VehicleType {
+  PRESS_REFUSE       // 압착진개
+  COMPACTOR_REFUSE   // 압축진개
+  ARM_ROLL           // 암롤차
+  DUMP_TRUCK         // 덤프트럭
+  GRAB_TRUCK         // 집게차
+  CARGO_TRUCK        // 카고트럭
+  REFUSE_DUMP        // 진개덤프
+  TANK_LORRY         // 탱크로리
+  WING_BODY          // 윙바디
+  FORKLIFT           // 지게차
+  OTHER              // 기타
+}
+
+enum FuelType {
+  DIESEL
+  LPG
+  ELECTRIC
+  CNG
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum VehicleLogStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum CostStatus {
+  DRAFT
+  SUBMITTED
+  CONFIRMED
+}
+
+enum ComplaintType {
+  PICKUP_MISS    // 수거 미비
+  ILLEGAL_DUMP   // 불법투기
+  ODOR_NOISE     // 악취/소음
+  BULKY_WASTE    // 대형폐기물 (빼기 앱 연동)
+  OTHER          // 기타
+}
+
+enum ComplaintStatus {
+  RECEIVED       // 접수
+  ASSIGNED       // 배정
+  IN_PROGRESS    // 처리중
+  COMPLETED      // 완료
+  REJECTED       // 반려
+}
+
+enum SafetyReportType {
+  DAILY_CHECKLIST   // 일일 안전점검 체크리스트
+  NEAR_MISS         // 아차사고
+  INCIDENT          // 재해 발생
+  TBM_SIGNATURE     // TBM 안전교육 서명
+}
+
+enum IncidentSeverity {
+  NONE              // 일반(점검·교육)
+  MINOR             // 경미 (응급처치)
+  INJURY            // 부상 (산안법 §57 1개월 보고)
+  SEVERE            // 중상 (산안법 §54 24시간 보고)
+  FATAL             // 사망 (산안법 §54 24시간 보고)
+}
+
+enum SafetyReportStatus {
+  SUBMITTED         // 접수
+  REVIEWED          // 검토 완료
+  MOL_REPORTED      // 고용노동부 보고 완료
+  RESOLVED          // 종결
+}
+
+// ─────────────────── 테넌트 계층 ───────────────────
+
+model Municipality {
+  id          BigInt              @id @default(autoincrement())
+  name        String              @db.VarChar(100)
+  code        String              @unique @db.VarChar(20)
+  // 광역시·도 (서울특별시, 경기도 등) — 필터·그룹핑용
+  region      String?             @db.VarChar(50)
+  status      MunicipalityStatus  @default(PENDING)
+  createdAt   DateTime            @default(now()) @map("created_at")
+  createdBy   BigInt?             @map("created_by")
+
+  contractors Contractor[]
+  adminDongs  AdminDong[]
+  accessPolicy MuniAccessPolicy?
+
+  @@index([region, status])
+  @@map("municipalities")
+}
+
+model Contractor {
+  id              BigInt              @id @default(autoincrement())
+  municipalityId  BigInt              @map("municipality_id")
+  companyName     String              @map("company_name") @db.VarChar(100)
+  businessNo      String              @unique @map("business_no") @db.VarChar(20)
+  contractStart   DateTime?           @map("contract_start") @db.Date
+  contractEnd     DateTime?           @map("contract_end") @db.Date
+  status          ContractorStatus    @default(SETUP)
+  dbSchemaName    String?             @map("db_schema_name") @db.VarChar(50)
+  // 회사 정보
+  ceoName         String?             @map("ceo_name") @db.VarChar(50)
+  phoneMain       String?             @map("phone_main") @db.VarChar(20)
+  emailMain       String?             @map("email_main") @db.VarChar(100)
+  // 차고지 (운행 출발/종료점 — 추천경로 최적화 기본 시작점)
+  garageAddress   String?             @map("garage_address") @db.VarChar(255)
+  garageLat       Decimal?            @map("garage_lat") @db.Decimal(10, 7)
+  garageLng       Decimal?            @map("garage_lng") @db.Decimal(11, 7)
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  municipality    Municipality        @relation(fields: [municipalityId], references: [id])
+  cleaningZones   CleaningZone[]
+  adminDongs      AdminDong[]
+  users           User[]
+  departments     Department[]
+  approvalPolicies ApprovalPolicy[]
+  bulkyWasteConfig BulkyWasteConfig?
+  liveTrackingConfig LiveTrackingConfig?
+  wasteRecords     WasteTreatmentRecord[]
+  recyclingIntakes RecyclingCenterIntake[]
+  attendances     AttendanceRecord[]
+  vehicles        Vehicle[]
+  costCalcs       CostCalculation[]
+  complaints      Complaint[]
+  safetyReports   SafetyReport[]
+  tbmSessions     TbmSession[]
+  healthRecords   HealthRecord[]
+
+  @@index([municipalityId])
+  @@map("contractors")
+}
+
+model CleaningZone {
+  id            BigInt              @id @default(autoincrement())
+  contractorId  BigInt              @map("contractor_id")
+  zoneName      String              @map("zone_name") @db.VarChar(100)
+  zoneCode      String              @map("zone_code") @db.VarChar(20)
+  zoneType      ZoneType            @map("zone_type")
+  areaKm2       Decimal?            @map("area_km2") @db.Decimal(10, 4)
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  contractor    Contractor          @relation(fields: [contractorId], references: [id])
+  adminDongs    AdminDong[]
+  attendances   AttendanceRecord[]
+  vehicleLogs   VehicleLog[]
+  complaints    Complaint[]
+
+  @@index([contractorId])
+  @@map("cleaning_zones")
+}
+
+model AdminDong {
+  id              BigInt          @id @default(autoincrement())
+  municipalityId  BigInt          @map("municipality_id")
+  contractorId    BigInt          @map("contractor_id")
+  zoneId          BigInt          @map("zone_id")
+  dongName        String          @map("dong_name") @db.VarChar(50)
+  dongCode        String          @map("dong_code") @db.VarChar(20)
+  population      Int?
+  householdCount  Int?            @map("household_count")
+
+  municipality    Municipality    @relation(fields: [municipalityId], references: [id])
+  contractor      Contractor      @relation(fields: [contractorId], references: [id])
+  zone            CleaningZone    @relation(fields: [zoneId], references: [id])
+
+  @@index([contractorId, zoneId])
+  @@map("admin_dongs")
+}
+
+// ─────────────────── 사용자 ───────────────────
+
+model User {
+  id              BigInt              @id @default(autoincrement())
+  contractorId    BigInt?             @map("contractor_id")
+  municipalityId  BigInt?             @map("municipality_id")
+  username        String              @unique @db.VarChar(50)
+  passwordHash    String              @map("password_hash") @db.VarChar(255)
+  role            Role
+  name            String              @db.VarChar(50)
+  phone           String?             @db.VarChar(20)
+  employeeNo      String?             @map("employee_no") @db.VarChar(30)
+  status          UserStatus          @default(PENDING)
+  lastLogin       DateTime?           @map("last_login")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  // 인적사항 (사용자관리 §2)
+  birthDate         DateTime?         @map("birth_date") @db.Date
+  gender            String?           @db.VarChar(10)
+  address           String?           @db.Text
+  hireDate          DateTime?         @map("hire_date") @db.Date
+  resignDate        DateTime?         @map("resign_date") @db.Date
+  emergencyContact  String?           @map("emergency_contact") @db.VarChar(50)
+  emergencyPhone    String?           @map("emergency_phone")   @db.VarChar(20)
+  bankName          String?           @map("bank_name")    @db.VarChar(30)
+  bankAccount       String?           @map("bank_account") @db.Text
+  memo              String?           @db.Text
+
+  // 직무·자료 (user-mgmt-extended Design §2.2)
+  positionId        BigInt?           @map("position_id")
+  departmentId      BigInt?           @map("department_id")
+  profilePhotoId    BigInt?           @map("profile_photo_id")
+  activeSignatureId BigInt?           @unique @map("active_signature_id")
+
+  // 개인정보 수집·이용 동의 (개인정보보호법 §15·22)
+  privacyConsentAt      DateTime? @map("privacy_consent_at")
+  privacyConsentVersion String?   @map("privacy_consent_version") @db.VarChar(20)
+
+  contractor              Contractor?         @relation(fields: [contractorId], references: [id])
+  position                Position?           @relation(fields: [positionId], references: [id])
+  department              Department?         @relation(fields: [departmentId], references: [id])
+  profilePhoto            MediaAsset?         @relation("UserPhotoAsset", fields: [profilePhotoId], references: [id])
+  activeSignature         Signature?          @relation("UserActiveSignature", fields: [activeSignatureId], references: [id])
+  signatures              Signature[]         @relation("UserSignatures")
+  approvalEvents          ApprovalEvent[]     @relation("ApprovalActor")
+  approvalDelegated       ApprovalEvent[]     @relation("ApprovalDelegatedFrom")
+  delegationsAsDelegator  DelegationRule[]    @relation("DelegationDelegator")
+  delegationsAsDelegate   DelegationRule[]    @relation("DelegationDelegate")
+  headOfDepartments       Department[]        @relation("DepartmentHead")
+  wasteRecords            WasteTreatmentRecord[] @relation("WasteRecorder")
+  intakeRecords           RecyclingCenterIntake[] @relation("IntakeRecorder")
+  attendances             AttendanceRecord[]
+  leaveRequests           LeaveRequest[]
+  leaveBalances           AnnualLeaveBalance[]
+  vehicleLogs             VehicleLog[]
+  reportedComplaints      Complaint[]         @relation("ReportedComplaints")
+  assignedComplaints      Complaint[]         @relation("AssignedComplaints")
+  driverVehicles          Vehicle[]           @relation("VehicleDriver")
+  passenger1Vehicles      Vehicle[]           @relation("VehiclePassenger1")
+  passenger2Vehicles      Vehicle[]           @relation("VehiclePassenger2")
+  reportedSafety          SafetyReport[]      @relation("ReportedSafety")
+  reviewedSafety          SafetyReport[]      @relation("ReviewedSafety")
+  tbmCreated              TbmSession[]        @relation("TbmCreator")
+  tbmSignatures           TbmSignature[]      @relation("TbmSigner")
+  healthRecord            HealthRecord?       @relation("HealthSubject")
+
+  @@index([contractorId])
+  @@index([role])
+  @@map("users")
+}
+
+/// 연차 잔여 — 워커 × 연도 단위 (근로기준법 §60: 1년 80% 이상 출근시 15일,
+/// 3년차부터 2년마다 1일 추가, 한도 25일)
+model AnnualLeaveBalance {
+  id           BigInt    @id @default(autoincrement())
+  workerId     BigInt    @map("worker_id")
+  year         Int
+  granted      Decimal   @default(0) @db.Decimal(5, 1)
+  used         Decimal   @default(0) @db.Decimal(5, 1)
+  carriedOver  Decimal   @default(0) @map("carried_over") @db.Decimal(5, 1)
+  note         String?   @db.VarChar(255)
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  worker       User      @relation(fields: [workerId], references: [id])
+
+  @@unique([workerId, year])
+  @@index([year])
+  @@map("annual_leave_balances")
+}
+
+// ─────────────────── 근태 (Plan §2-3) ───────────────────
+
+model AttendanceRecord {
+  id            BigInt                 @id @default(autoincrement())
+  workerId      BigInt                 @map("worker_id")
+  contractorId  BigInt                 @map("contractor_id")
+  workDate      DateTime               @map("work_date") @db.Date
+  checkInTime   DateTime?              @map("check_in_time")
+  checkOutTime  DateTime?              @map("check_out_time")
+  checkInLat    Decimal?               @map("check_in_lat")  @db.Decimal(10, 8)
+  checkInLng    Decimal?               @map("check_in_lng")  @db.Decimal(11, 8)
+  checkOutLat   Decimal?               @map("check_out_lat") @db.Decimal(10, 8)
+  checkOutLng   Decimal?               @map("check_out_lng") @db.Decimal(11, 8)
+  workType      WorkType               @default(NORMAL) @map("work_type")
+  zoneId        BigInt?                @map("zone_id")
+  status        AttendanceStatus       @default(PENDING)
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  worker        User                   @relation(fields: [workerId], references: [id])
+  contractor    Contractor             @relation(fields: [contractorId], references: [id])
+  zone          CleaningZone?          @relation(fields: [zoneId], references: [id])
+  adjustments   AttendanceAdjustment[]
+
+  @@unique([workerId, workDate])
+  @@index([contractorId, workDate])
+  @@map("attendance_records")
+}
+
+/// Append-only audit table.
+/// 운영 마이그레이션 단계에서: REVOKE UPDATE, DELETE ON attendance_adjustments FROM app_user;
+/// security-architect 권고 — prevHash/thisHash로 SHA-256 체인 무결성
+model AttendanceAdjustment {
+  id                 BigInt              @id @default(autoincrement())
+  recordId           BigInt              @map("record_id")
+  adjustedBy         BigInt              @map("adjusted_by")
+  originalCheckIn    DateTime?           @map("original_check_in")
+  originalCheckOut   DateTime?           @map("original_check_out")
+  adjustedCheckIn    DateTime?           @map("adjusted_check_in")
+  adjustedCheckOut   DateTime?           @map("adjusted_check_out")
+  originalWorkType   WorkType?           @map("original_work_type")
+  adjustedWorkType   WorkType?           @map("adjusted_work_type")
+  reason             String              @db.VarChar(500)
+  adjustmentType     AdjustmentType      @map("adjustment_type")
+  approvedBy         BigInt?             @map("approved_by")
+  prevHash           String?             @map("prev_hash") @db.Char(64)
+  thisHash           String              @map("this_hash") @db.Char(64)
+  createdAt          DateTime            @default(now()) @map("created_at")
+
+  record             AttendanceRecord    @relation(fields: [recordId], references: [id])
+
+  @@index([recordId])
+  @@index([adjustedBy])
+  @@map("attendance_adjustments")
+}
+
+model LeaveRequest {
+  id                      BigInt          @id @default(autoincrement())
+  workerId                BigInt          @map("worker_id")
+  requestType             LeaveType       @map("request_type")
+  startDate               DateTime        @map("start_date") @db.Date
+  endDate                 DateTime        @map("end_date") @db.Date
+  reason                  String?         @db.Text
+  status                  LeaveStatus     @default(PENDING)
+  // 2단계 결재 (user-mgmt-extended Phase 2)
+  approvedBy              BigInt?         @map("approved_by")
+  approvalEventId         BigInt?         @unique @map("approval_event_id")
+  firstApprovedBy         BigInt?         @map("first_approved_by")
+  firstApprovalEventId    BigInt?         @unique @map("first_approval_event_id")
+  finalApprovedBy         BigInt?         @map("final_approved_by")
+  finalApprovalEventId    BigInt?         @unique @map("final_approval_event_id")
+  createdAt               DateTime        @default(now()) @map("created_at")
+
+  worker                  User            @relation(fields: [workerId], references: [id])
+  approvalEvent           ApprovalEvent?  @relation("LeaveRequestApproval", fields: [approvalEventId], references: [id])
+  firstApprovalEvent      ApprovalEvent?  @relation("LeaveRequestFirstApproval", fields: [firstApprovalEventId], references: [id])
+  finalApprovalEvent      ApprovalEvent?  @relation("LeaveRequestFinalApproval", fields: [finalApprovalEventId], references: [id])
+
+  @@index([workerId, startDate])
+  @@map("leave_requests")
+}
+
+model MonthlyAttendanceSummary {
+  id              BigInt          @id @default(autoincrement())
+  workerId        BigInt          @map("worker_id")
+  yearMonth       String          @map("year_month") @db.Char(7)
+  totalWorkDays   Int             @default(0) @map("total_work_days")
+  totalWorkHours  Decimal         @default(0) @map("total_work_hours") @db.Decimal(6, 2)
+  overtimeHours   Decimal         @default(0) @map("overtime_hours")   @db.Decimal(6, 2)
+  nightHours      Decimal         @default(0) @map("night_hours")      @db.Decimal(6, 2)
+  holidayHours    Decimal         @default(0) @map("holiday_hours")    @db.Decimal(6, 2)
+  absenceDays     Int             @default(0) @map("absence_days")
+  annualLeaveUsed Decimal         @default(0) @map("annual_leave_used") @db.Decimal(4, 1)
+  isFinalized     Boolean         @default(false) @map("is_finalized")
+  finalizedAt     DateTime?       @map("finalized_at")
+  finalizedBy     BigInt?         @map("finalized_by")
+
+  @@unique([workerId, yearMonth])
+  @@map("monthly_attendance_summary")
+}
+
+// ─────────────────── 차량 (Plan §2-4) ───────────────────
+
+model Vehicle {
+  id                 BigInt              @id @default(autoincrement())
+  contractorId       BigInt              @map("contractor_id")
+  vehicleNo          String              @map("vehicle_no") @db.VarChar(20)
+  vehicleTon         String?             @map("vehicle_ton") @db.VarChar(8)
+  vehicleType        VehicleType         @map("vehicle_type")
+  capacityTon        Decimal?            @map("capacity_ton") @db.Decimal(5, 2)
+  fuelType           FuelType            @map("fuel_type")
+  yearManufactured   Int?                @map("year_manufactured") @db.SmallInt
+  status             VehicleStatus       @default(ACTIVE)
+
+  // 운영 정보 (Phase 1A-3)
+  driverId           BigInt?             @map("driver_id")
+  passenger1Id       BigInt?             @map("passenger1_id")
+  passenger2Id       BigInt?             @map("passenger2_id")
+  operationStartDate DateTime?           @map("operation_start_date") @db.Date
+  initialMileage     Int?                @map("initial_mileage")  // 등록 시 odometer
+  totalMileage       Int?                @map("total_mileage")    // 자동 갱신 = initial + sum approved logs
+
+  contractor         Contractor          @relation(fields: [contractorId], references: [id])
+  driver             User?               @relation("VehicleDriver", fields: [driverId], references: [id])
+  passenger1         User?               @relation("VehiclePassenger1", fields: [passenger1Id], references: [id])
+  passenger2         User?               @relation("VehiclePassenger2", fields: [passenger2Id], references: [id])
+  logs               VehicleLog[]
+  intakes            RecyclingCenterIntake[] @relation("VehicleIntake")
+
+  @@unique([contractorId, vehicleNo])
+  @@index([driverId])
+  @@map("vehicles")
+}
+
+model VehicleLog {
+  id            BigInt              @id @default(autoincrement())
+  vehicleId     BigInt              @map("vehicle_id")
+  driverId      BigInt              @map("driver_id")
+  logDate       DateTime            @map("log_date") @db.Date
+  zoneId        BigInt?             @map("zone_id")
+  startMileage  Int?                @map("start_mileage")
+  endMileage    Int?                @map("end_mileage")
+  fuelUsed      Decimal?            @map("fuel_used") @db.Decimal(7, 2)
+  wasteWeightKg Decimal?            @map("waste_weight_kg") @db.Decimal(10, 2)
+  tripCount     Int?                @map("trip_count")
+  routeDetail   String?             @map("route_detail") @db.Text
+  status        VehicleLogStatus    @default(DRAFT)
+
+  vehicle       Vehicle             @relation(fields: [vehicleId], references: [id])
+  driver        User                @relation(fields: [driverId], references: [id])
+  zone          CleaningZone?       @relation(fields: [zoneId], references: [id])
+
+  @@index([vehicleId, logDate])
+  @@map("vehicle_logs")
+}
+
+model CostCalculation {
+  id              BigInt          @id @default(autoincrement())
+  contractorId    BigInt          @map("contractor_id")
+  calcYearMonth   String          @map("calc_year_month") @db.Char(7)
+  laborCost       Decimal         @default(0) @map("labor_cost")       @db.Decimal(15, 2)
+  vehicleCost     Decimal         @default(0) @map("vehicle_cost")     @db.Decimal(15, 2)
+  fuelCost        Decimal         @default(0) @map("fuel_cost")        @db.Decimal(15, 2)
+  maintenanceCost Decimal         @default(0) @map("maintenance_cost") @db.Decimal(15, 2)
+  overheadCost    Decimal         @default(0) @map("overhead_cost")    @db.Decimal(15, 2)
+  totalCost       Decimal         @default(0) @map("total_cost")       @db.Decimal(15, 2)
+  costPerTon      Decimal?        @map("cost_per_ton") @db.Decimal(10, 2)
+  status          CostStatus      @default(DRAFT)
+
+  contractor      Contractor      @relation(fields: [contractorId], references: [id])
+
+  @@unique([contractorId, calcYearMonth])
+  @@map("cost_calculations")
+}
+
+// ─────────────────── 민원 (Plan §3-3) ───────────────────
+
+/// 특허 10-2024-0084638 청구항 4·5·6·7 충실 반영 모델
+model Complaint {
+  id                BigInt              @id @default(autoincrement())
+  contractorId      BigInt              @map("contractor_id")
+  reportedBy        BigInt?             @map("reported_by")  // 시민(민원인 디바이스)일 경우 NULL — citizenPhone으로 식별
+  complainantPhone  String?             @map("complainant_phone") @db.VarChar(20)
+  type              ComplaintType
+  description       String?             @db.Text
+  reportedAt        DateTime            @default(now()) @map("reported_at")
+
+  // 청구항 4: 시민 민원앱 식별
+  citizenPhone      String?             @map("citizen_phone") @db.VarChar(20)
+  citizenName       String?             @map("citizen_name") @db.VarChar(50)
+
+  // 발생 위치 (제1 위치)
+  locationLat       Decimal?            @map("location_lat") @db.Decimal(10, 8)
+  locationLng       Decimal?            @map("location_lng") @db.Decimal(11, 8)
+  locationAddress   String?             @map("location_address") @db.VarChar(255)
+  zoneId            BigInt?             @map("zone_id")
+
+  // 청구항 4: 긴급 처리 특이사항 (도7 713: LONG_NEGLECTED / ROAD_KILL / KIDS_DANGER / OTHER)
+  urgentTag         String?             @map("urgent_tag") @db.VarChar(40)
+  isUrgent          Boolean             @default(false) @map("is_urgent")
+
+  // 청구항 4: 처리 대상 폐기물 촬영 이미지 + 처리 완료 촬영 이미지
+  requestImage      String?             @map("request_image") @db.Text  // base64 또는 URL
+  completionImage   String?             @map("completion_image") @db.Text
+
+  // 처리
+  status            ComplaintStatus     @default(RECEIVED)
+  assignedTo        BigInt?             @map("assigned_to")
+  dueDate           DateTime?           @map("due_date") @db.Date
+  resolveNote       String?             @map("resolve_note") @db.Text
+  resolvedAt        DateTime?           @map("resolved_at")
+
+  // 청구항 7: 도착 예정 시각 (배출 수행 기관 위치/경로 기반)
+  arrivalEta        DateTime?           @map("arrival_eta")
+
+  // 청구항 5: 만족도 평가 (도7 740)
+  satisfactionScore Int?                @map("satisfaction_score")  // 1-5
+  satisfactionComment String?           @map("satisfaction_comment") @db.Text
+  satisfactionAt    DateTime?           @map("satisfaction_at")
+
+  // 청구항 6: 무단 투기/허위 신고 후보
+  flaggedAsCandidate  Boolean           @default(false) @map("flagged_as_candidate")
+  flaggedReason       String?           @map("flagged_reason") @db.VarChar(200)
+  cctvRequestSentAt   DateTime?         @map("cctv_request_sent_at")
+
+  // 사진 (Phase 1B 멀티 업로드)
+  photosBefore      Json?               @map("photos_before")
+  photosAfter       Json?               @map("photos_after")
+
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt        @map("updated_at")
+
+  contractor        Contractor          @relation(fields: [contractorId], references: [id])
+  reporter          User?               @relation("ReportedComplaints", fields: [reportedBy], references: [id])
+  assignee          User?               @relation("AssignedComplaints", fields: [assignedTo], references: [id])
+  zone              CleaningZone?       @relation(fields: [zoneId], references: [id])
+
+  @@index([contractorId, status])
+  @@index([assignedTo])
+  @@index([reportedAt])
+  @@index([citizenPhone])
+  @@index([flaggedAsCandidate])
+  @@map("complaints")
+}
+
+// ─────────────────── TBM (안전교육 서명) ───────────────────
+
+model TbmSession {
+  id            BigInt          @id @default(autoincrement())
+  contractorId  BigInt          @map("contractor_id")
+  sessionDate   DateTime        @map("session_date") @db.Date
+  topic         String          @db.VarChar(255)
+  content       String?         @db.Text
+  createdBy     BigInt          @map("created_by")
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  contractor    Contractor      @relation(fields: [contractorId], references: [id])
+  creator       User            @relation("TbmCreator", fields: [createdBy], references: [id])
+  signatures    TbmSignature[]
+
+  @@unique([contractorId, sessionDate])
+  @@map("tbm_sessions")
+}
+
+model TbmSignature {
+  id            BigInt        @id @default(autoincrement())
+  sessionId     BigInt        @map("session_id")
+  workerId      BigInt        @map("worker_id")
+  signedAt      DateTime      @default(now()) @map("signed_at")
+  ipAddress     String?       @map("ip_address") @db.VarChar(45)
+  signatureData String?       @map("signature_data") @db.Text  // base64 PNG (canvas)
+
+  session       TbmSession    @relation(fields: [sessionId], references: [id])
+  worker        User          @relation("TbmSigner", fields: [workerId], references: [id])
+
+  @@unique([sessionId, workerId])
+  @@index([workerId])
+  @@map("tbm_signatures")
+}
+
+// ─────────────────── 건강기록카드 (Plan §3-4 — 매니저만 조회) ───────────────────
+
+/// 모든 민감 필드는 AES-256-GCM 암호화 (lib/crypto.ts) — 형식 'v1:iv:tag:ct'
+model HealthRecord {
+  id                 BigInt        @id @default(autoincrement())
+  workerId           BigInt        @unique @map("worker_id")
+  contractorId       BigInt        @map("contractor_id")
+  lastCheckupDate    DateTime?     @map("last_checkup_date") @db.Date
+  bloodPressureSys   String?       @map("bp_sys")        @db.Text
+  bloodPressureDia   String?       @map("bp_dia")        @db.Text
+  heartRate          String?       @map("heart_rate")    @db.Text
+  bloodSugar         String?       @map("blood_sugar")   @db.Text
+  visionLeft         String?       @map("vision_left")   @db.Text
+  visionRight        String?       @map("vision_right")  @db.Text
+  hearingLeft        String?       @map("hearing_left")  @db.Text
+  hearingRight       String?       @map("hearing_right") @db.Text
+  bloodType          String?       @map("blood_type")    @db.Text
+  allergies          String?       @db.Text
+  chronicConditions  String?       @map("chronic_conditions") @db.Text
+  emergencyContact   String?       @map("emergency_contact")  @db.Text
+  notes              String?       @db.Text
+
+  updatedBy          BigInt?       @map("updated_by")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  worker             User          @relation("HealthSubject", fields: [workerId], references: [id])
+  contractor         Contractor    @relation(fields: [contractorId], references: [id])
+
+  @@index([contractorId])
+  @@map("health_records")
+}
+
+// ─────────────────── 산업안전보건 (Plan §3-4) ───────────────────
+
+model SafetyReport {
+  id                BigInt              @id @default(autoincrement())
+  contractorId      BigInt              @map("contractor_id")
+  reportedBy        BigInt              @map("reported_by")
+  reportType        SafetyReportType    @map("report_type")
+  severity          IncidentSeverity    @default(NONE)
+
+  reportDate        DateTime            @map("report_date") @db.Date
+  occurredAt        DateTime?           @map("occurred_at")
+
+  // 일일 점검 체크리스트 (DAILY_CHECKLIST 전용)
+  checklistItems    Json?               @map("checklist_items")  // [{key, label, ok}]
+  allChecked        Boolean             @default(false) @map("all_checked")
+
+  // 위치 (NEAR_MISS / INCIDENT)
+  locationLat       Decimal?            @map("location_lat") @db.Decimal(10, 8)
+  locationLng       Decimal?            @map("location_lng") @db.Decimal(11, 8)
+  locationAddress   String?             @map("location_address") @db.VarChar(255)
+
+  description       String?             @db.Text
+
+  // 검토
+  status            SafetyReportStatus  @default(SUBMITTED)
+  reviewedBy        BigInt?             @map("reviewed_by")
+  reviewedAt        DateTime?           @map("reviewed_at")
+  reviewNote        String?             @map("review_note") @db.Text
+
+  // 고용노동부 보고 (산안법 §54/§57)
+  molDeadline       DateTime?           @map("mol_deadline")
+  molReportedAt     DateTime?           @map("mol_reported_at")
+
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  contractor        Contractor          @relation(fields: [contractorId], references: [id])
+  reporter          User                @relation("ReportedSafety", fields: [reportedBy], references: [id])
+  reviewer          User?               @relation("ReviewedSafety", fields: [reviewedBy], references: [id])
+
+  // 일일 체크리스트 중복 방지는 application-level (POST에서 검증)
+  // INCIDENT/NEAR_MISS/SOS는 동일자 다회 발생 가능하므로 unique 제거
+  @@index([contractorId, reportType])
+  @@index([reportedBy, reportDate, reportType])
+  @@index([severity])
+  @@map("safety_reports")
+}
+
+// ─────────────────── 감사로그 (security-architect 권고) ───────────────────
+
+model AuditLog {
+  id           BigInt      @id @default(autoincrement())
+  actorId      BigInt?     @map("actor_id")
+  actorRole    Role?       @map("actor_role")
+  action       String      @db.VarChar(100)
+  resourceType String      @map("resource_type") @db.VarChar(50)
+  resourceId   String?     @map("resource_id") @db.VarChar(100)
+  ipAddress    String?     @map("ip_address") @db.VarChar(45)
+  userAgent    String?     @map("user_agent") @db.VarChar(500)
+  metadata     Json?
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+// ─────────────────── 직무·결재 (user-mgmt-extended) ───────────────────
+
+/// 직책 마스터 — Design §2.1 D1
+model Position {
+  id         BigInt   @id @default(autoincrement())
+  code       String   @unique @db.VarChar(20)
+  label      String   @db.VarChar(40)
+  category   String   @db.VarChar(10)
+  sortOrder  Int      @default(0) @map("sort_order")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  users      User[]
+
+  @@map("positions")
+}
+
+/// 부서 — Design §2.1 D2 (self-FK 트리) + 부서장
+model Department {
+  id           BigInt    @id @default(autoincrement())
+  contractorId BigInt    @map("contractor_id")
+  parentId     BigInt?   @map("parent_id")
+  headUserId   BigInt?   @map("head_user_id")
+  name         String    @db.VarChar(60)
+  sortOrder    Int       @default(0) @map("sort_order")
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  contractor   Contractor   @relation(fields: [contractorId], references: [id])
+  parent       Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children     Department[] @relation("DeptTree")
+  head         User?        @relation("DepartmentHead", fields: [headUserId], references: [id])
+  users        User[]
+
+  @@unique([contractorId, parentId, name])
+  @@index([contractorId])
+  @@map("departments")
+}
+
+/// 결재 권한 정책 — Position 코드 기반 stage 1·2 매트릭스
+/// 운영: 활성 정책은 (contractorId, resourceType, stage) 단일 ACTIVE
+model ApprovalPolicy {
+  id              BigInt    @id @default(autoincrement())
+  contractorId    BigInt    @map("contractor_id")
+  resourceType    String    @map("resource_type") @db.VarChar(30)  // 'leave_request' 등
+  stage           Int       // 1 = 1차, 2 = 최종
+  positionCodes   String    @map("position_codes") @db.VarChar(255) // CSV: 'TEAM_LEAD,HEAD,DIRECTOR'
+  active          Boolean   @default(true)
+  createdBy       BigInt?   @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  contractor      Contractor @relation(fields: [contractorId], references: [id])
+
+  @@index([contractorId, resourceType, stage, active])
+  @@map("approval_policies")
+}
+
+/// 미디어 자산 — Design §2.1 D4 (provider 추상화)
+model MediaAsset {
+  id          BigInt    @id @default(autoincrement())
+  ownerType   String    @map("owner_type") @db.VarChar(20)
+  ownerId     BigInt    @map("owner_id")
+  provider    String    @db.VarChar(20)
+  mimeType    String    @map("mime_type") @db.VarChar(60)
+  sizeBytes   Int       @map("size_bytes")
+  contentRef  String    @map("content_ref") @db.Text
+  sha256      String    @db.Char(64)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   BigInt?   @map("created_by")
+
+  signatures      Signature[]   @relation("SignatureAsset")
+  userPhotoOwner  User[]        @relation("UserPhotoAsset")
+
+  @@index([ownerType, ownerId])
+  @@index([sha256])
+  @@map("media_assets")
+}
+
+/// 서명 — Design §2.1 D3 (이력 보존)
+model Signature {
+  id            BigInt    @id @default(autoincrement())
+  userId        BigInt    @map("user_id")
+  assetId       BigInt    @map("asset_id")
+  signatureRef  String    @map("signature_ref") @db.Char(16)
+  activatedAt   DateTime  @default(now()) @map("activated_at")
+  deactivatedAt DateTime? @map("deactivated_at")
+  createdBy     BigInt?   @map("created_by")
+
+  user           User             @relation("UserSignatures", fields: [userId], references: [id])
+  asset          MediaAsset       @relation("SignatureAsset", fields: [assetId], references: [id])
+  activeForUser  User?            @relation("UserActiveSignature")
+  approvalEvents ApprovalEvent[]
+
+  @@index([userId])
+  @@index([signatureRef])
+  @@map("signatures")
+}
+
+/// 대형폐기물 (빼기 앱) 연동 설정 — contractor 단위
+model BulkyWasteConfig {
+  id                  BigInt    @id @default(autoincrement())
+  contractorId        BigInt    @unique @map("contractor_id")
+  ppaegiUsername      String?   @map("ppaegi_username") @db.VarChar(100)
+  ppaegiPasswordEnc   String?   @map("ppaegi_password_enc") @db.Text
+  lastLoginAt         DateTime? @map("last_login_at")
+  lastLoginOk         Boolean?  @map("last_login_ok")
+  lastLoginMessage    String?   @map("last_login_message") @db.VarChar(255)
+  importTimeKst       String    @default("03:00") @map("import_time_kst") @db.VarChar(5)
+  resolveTimeKst      String    @default("17:00") @map("resolve_time_kst") @db.VarChar(5)
+  autoEnabled         Boolean   @default(true) @map("auto_enabled")
+  adminDongCodes      String?   @map("admin_dong_codes") @db.VarChar(500)
+  lastImportAt        DateTime? @map("last_import_at")
+  lastImportCount     Int       @default(0) @map("last_import_count")
+  lastResolveAt       DateTime? @map("last_resolve_at")
+  lastResolveCount    Int       @default(0) @map("last_resolve_count")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  contractor          Contractor @relation(fields: [contractorId], references: [id])
+  imports             BulkyWasteImport[]
+
+  @@map("bulky_waste_configs")
+}
+
+/// 빼기 import 이력 (cron 또는 수동 트리거 결과)
+model BulkyWasteImport {
+  id            BigInt    @id @default(autoincrement())
+  configId      BigInt    @map("config_id")
+  triggerType   String    @map("trigger_type") @db.VarChar(20)  // 'cron' | 'manual'
+  resultStatus  String    @map("result_status") @db.VarChar(20) // 'ok' | 'failed'
+  fetched       Int       @default(0)
+  created       Int       @default(0)
+  resolved      Int       @default(0)
+  errorMessage  String?   @map("error_message") @db.Text
+  triggeredBy   BigInt?   @map("triggered_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  config        BulkyWasteConfig @relation(fields: [configId], references: [id])
+
+  @@index([configId, createdAt])
+  @@map("bulky_waste_imports")
+}
+
+/// 생활폐기물 처리실적 — 일별 × 14성상 × 톤
+/// 성상 코드: GENERAL/FOOD/RECYCLING/WOOD/COAL_ASH/MIXED_BLDG/PLASTIC/BATTERY/
+///            FLUORESCENT/MILK_CARTON/VINYL/POCKET_SPRING/SCRAP_IRON/STYROFOAM
+model WasteTreatmentRecord {
+  id           BigInt    @id @default(autoincrement())
+  contractorId BigInt    @map("contractor_id")
+  recordDate   DateTime  @map("record_date") @db.Date
+  materialCode String    @map("material_code") @db.VarChar(20)
+  weightTon    Decimal   @map("weight_ton") @db.Decimal(10, 3)
+  note         String?   @db.Text
+  recordedBy   BigInt    @map("recorded_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  recorder     User       @relation("WasteRecorder", fields: [recordedBy], references: [id])
+
+  @@unique([contractorId, recordDate, materialCode])
+  @@index([contractorId, recordDate])
+  @@map("waste_treatment_records")
+}
+
+/// 자원순환센터 반입실적 — 일별 × 차량별 × 4성상
+model RecyclingCenterIntake {
+  id                BigInt    @id @default(autoincrement())
+  contractorId      BigInt    @map("contractor_id")
+  intakeDate        DateTime  @map("intake_date") @db.Date
+  intakeTime        String    @map("intake_time") @db.VarChar(5)  // HH:MM
+  vehicleId         BigInt    @map("vehicle_id")
+  materialCategory  String    @map("material_category") @db.VarChar(20) // GENERAL/FOOD/RECYCLING/WOOD
+  weightTon         Decimal   @map("weight_ton") @db.Decimal(10, 3)
+  note              String?   @db.Text
+  recordedBy        BigInt    @map("recorded_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  contractor        Contractor @relation(fields: [contractorId], references: [id])
+  vehicle           Vehicle    @relation("VehicleIntake", fields: [vehicleId], references: [id])
+  recorder          User       @relation("IntakeRecorder", fields: [recordedBy], references: [id])
+
+  @@index([contractorId, intakeDate])
+  @@index([vehicleId, intakeDate])
+  @@map("recycling_center_intakes")
+}
+
+/// 실시간 차량조회 (GIS 연동) 설정 — contractor 단위
+model LiveTrackingConfig {
+  id            BigInt    @id @default(autoincrement())
+  contractorId  BigInt    @unique @map("contractor_id")
+  gisProvider   String    @default("simulation") @map("gis_provider") @db.VarChar(20)
+  gisBaseUrl    String?   @map("gis_base_url") @db.VarChar(255)
+  apiKeyEnc     String?   @map("api_key_enc") @db.Text
+  embedUrl      String?   @map("embed_url") @db.VarChar(500)
+  refreshSec    Int       @default(5) @map("refresh_sec")
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  contractor    Contractor @relation(fields: [contractorId], references: [id])
+
+  @@map("live_tracking_configs")
+}
+
+/// 지자체 관리자 접근 정책 — 슈퍼관리자가 지자체별로 화면·보고서 권한 지정
+model MuniAccessPolicy {
+  id              BigInt    @id @default(autoincrement())
+  municipalityId  BigInt    @unique @map("municipality_id")
+  allowedScreens  String    @default("dashboard,complaints,reports") @map("allowed_screens") @db.VarChar(500)
+  allowedReports  String    @default("complaints,attendance,leave,waste,intake,safety") @map("allowed_reports") @db.VarChar(500)
+  exportEnabled   Boolean   @default(true) @map("export_enabled")
+  bulkExportEnabled Boolean @default(false) @map("bulk_export_enabled")
+  note            String?   @db.Text
+  updatedBy       BigInt    @map("updated_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  municipality    Municipality @relation(fields: [municipalityId], references: [id])
+
+  @@map("muni_access_policies")
+}
+
+/// 결재 위임 규칙 — TEAM_LEAD 부재 시 DIRECTOR 대결 등
+/// 운영: 활성 규칙은 (delegatorId, resourceType) 단일 ACTIVE만 허용 (소프트 제약)
+model DelegationRule {
+  id            BigInt    @id @default(autoincrement())
+  delegatorId   BigInt    @map("delegator_id")
+  delegateId    BigInt    @map("delegate_id")
+  resourceType  String    @map("resource_type") @db.VarChar(30)  // 'leave_request' 등 또는 '*'
+  reason        String?   @db.VarChar(255)
+  startsAt      DateTime  @map("starts_at")
+  endsAt        DateTime  @map("ends_at")
+  active        Boolean   @default(true)
+  createdBy     BigInt    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  delegator     User      @relation("DelegationDelegator", fields: [delegatorId], references: [id])
+  delegate      User      @relation("DelegationDelegate", fields: [delegateId], references: [id])
+
+  @@index([delegatorId, resourceType, active])
+  @@index([delegateId])
+  @@map("delegation_rules")
+}
+
+/// 결재 이벤트 — Design §2.1 D5 (도메인 액션과 결재 분리)
+model ApprovalEvent {
+  id              BigInt    @id @default(autoincrement())
+  actorId         BigInt    @map("actor_id")
+  delegatedFromId BigInt?   @map("delegated_from_id")            // 위임 받아 대결 시 원 결재자
+  signatureId     BigInt?   @map("signature_id")
+  resourceType    String    @map("resource_type") @db.VarChar(30)
+  resourceId      String    @map("resource_id") @db.VarChar(30)
+  action          String    @db.VarChar(30)
+  comment         String?   @db.Text
+  signatureRef    String?   @map("signature_ref") @db.Char(16)
+  ipAddress       String?   @map("ip_address") @db.VarChar(45)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  actor           User       @relation("ApprovalActor", fields: [actorId], references: [id])
+  delegatedFrom   User?      @relation("ApprovalDelegatedFrom", fields: [delegatedFromId], references: [id])
+  signature       Signature? @relation(fields: [signatureId], references: [id])
+  leaveRequest    LeaveRequest? @relation("LeaveRequestApproval")
+  leaveRequestFirst LeaveRequest? @relation("LeaveRequestFirstApproval")
+  leaveRequestFinal LeaveRequest? @relation("LeaveRequestFinalApproval")
+
+  @@index([resourceType, resourceId])
+  @@index([actorId])
+  @@index([signatureRef])
+  @@map("approval_events")
+}

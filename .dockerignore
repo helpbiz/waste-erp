@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.env*
+!.env.example
+.bkit
+.claude
+docs
+tests
+*.md
+README.md
+Dockerfile
+docker-compose.yml
+.dockerignore
+.DS_Store
+*.log
+/tmp

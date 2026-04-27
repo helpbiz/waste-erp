@@ -1,0 +1,22 @@
+{
+  "name": "CleanERP — 생활폐기물 수집운반 ERP",
+  "short_name": "CleanERP",
+  "description": "지자체 위탁 폐기물 수거운반 통합 ERP — 근태, 차량, 민원, 안전, 실적관리",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0e7490",
+  "lang": "ko-KR",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "대시보드", "url": "/dashboard", "description": "메인 대시보드" },
+    { "name": "민원관리", "url": "/complaints" },
+    { "name": "차량관리", "url": "/vehicles" }
+  ]
+}

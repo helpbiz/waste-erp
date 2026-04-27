@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<title>공비랩 Clean ERP — 로고 프리뷰</title>
+<style>
+  :root { --bg:#f8fafc; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: 'Pretendard', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { padding: 32px 40px; border-bottom: 1px solid var(--line); }
+  header h1 { margin:0 0 4px; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  header p  { margin:0; color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+  section { background: #fff; padding: 60px 40px; min-height: 280px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  section.dark { background: #0f172a; color:#cbd5e1; }
+  section.brand { background: linear-gradient(135deg, #ecfeff, #f0fdfa); }
+  section h2 { margin: 0; font-size: 12px; letter-spacing: 4px; color: var(--muted); font-weight: 700; }
+  section.dark h2 { color: #64748b; }
+  .logo-large img { width: 480px; max-width: 100%; height: auto; }
+  .logo-medium img { width: 320px; max-width: 100%; height: auto; }
+  .logo-small  img { width: 200px; max-width: 100%; height: auto; }
+  .grid-row { display:flex; gap: 32px; align-items: center; flex-wrap: wrap; justify-content:center; }
+  footer { padding: 24px 40px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); background:#fff; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>공비랩 · Clean ERP — 로고 시안</h1>
+    <p>상단 한글 회사명(공비랩) + 하단 영문 제품명(Clean ERP) 스택형 워드마크. 액센트: cyan / lime.</p>
+  </header>
+
+  <main>
+    <section class="brand logo-large">
+      <h2>PRIMARY · LIGHT</h2>
+      <img src="./logo-horizontal.svg" alt="공비랩 Clean ERP"/>
+    </section>
+
+    <section class="dark logo-large">
+      <h2>PRIMARY · DARK BG (logo-horizontal-dark.svg)</h2>
+      <img src="./logo-horizontal-dark.svg" alt="공비랩 Clean ERP"/>
+    </section>
+
+    <section>
+      <h2>SCALE TEST</h2>
+      <div class="grid-row">
+        <div class="logo-medium"><img src="./logo-horizontal.svg" alt=""/></div>
+        <div class="logo-small"><img  src="./logo-horizontal.svg" alt=""/></div>
+      </div>
+    </section>
+
+    <section style="background:#fff">
+      <h2>PALETTE</h2>
+      <div class="grid-row" style="gap:12px">
+        <div style="width:64px;height:64px;background:#22d3ee;border-radius:12px"></div>
+        <div style="width:64px;height:64px;background:#06b6d4;border-radius:12px"></div>
+        <div style="width:64px;height:64px;background:#0e7490;border-radius:12px"></div>
+        <div style="width:64px;height:64px;background:#0f172a;border-radius:12px"></div>
+        <div style="width:64px;height:64px;background:#84cc16;border-radius:12px"></div>
+      </div>
+      <p style="margin:0;color:var(--muted);font-size:12px;letter-spacing:2px">
+        cyan-400 · cyan-500 · cyan-700 · slate-900 · lime-500
+      </p>
+    </section>
+  </main>
+
+  <footer>file: <code>public/brand/logo-horizontal.svg</code> — 브라우저에서 <code>/brand/preview.html</code> 로 확인하세요.</footer>
+</body>
+</html>

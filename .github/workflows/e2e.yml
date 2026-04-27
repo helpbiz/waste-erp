@@ -1,0 +1,253 @@
+# Design Ref: §2 Option C — 2-Job (Functional + Visual) workflow
+# Plan SC: FR-01, FR-02 (PR + main push), FR-03 (postgres service), FR-06 (artifact)
+name: e2e
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'mobile-issues.md'
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+# 동일 브랜치/PR에서 새 push가 오면 이전 실행 취소 (CI 시간 절약)
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  E2E_BASE_URL: http://localhost:3000
+  # 로그인 시드 + JWT — 모두 CI 전용 dummy
+  POSTGRES_PASSWORD: ci-test
+  POSTGRES_USER: ci-user
+  POSTGRES_DB: waste_erp_ci
+  DATABASE_URL: postgresql://ci-user:ci-test@localhost:5432/waste_erp_ci
+  JWT_SECRET: ci-dummy-secret-32chars-padding-x
+  KMS_PROVIDER: local
+  KMS_LOCAL_KEY: ci-dummy-kms-key-32chars-padding
+  CRON_SECRET: ci-dummy-cron-secret
+  SMS_PROVIDER: simulation
+  WEATHER_PROVIDER: open-meteo
+  NODE_ENV: production
+
+jobs:
+  functional:
+    name: Functional (mobile + tab-modal + login + a11y)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci-user
+          POSTGRES_PASSWORD: ci-test
+          POSTGRES_DB: waste_erp_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci-user -d waste_erp_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy
+        run: npx prisma db push --skip-generate
+
+      - name: Seed database
+        run: npx tsx prisma/seed.ts
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Start app (background)
+        run: |
+          npm run start &
+          echo "APP_PID=$!" >> $GITHUB_ENV
+          # health check 폴링 (최대 60초)
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "App ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not start in time"
+          exit 1
+
+      - name: Run mobile-responsive (36 tests)
+        run: npx playwright test mobile-responsive.spec.ts --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad
+
+      - name: Run tab-modal
+        if: success() || failure()
+        run: npx playwright test tab-modal.spec.ts --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad
+
+      - name: Run login-flow
+        if: success() || failure()
+        run: npx playwright test login-flow.spec.ts --project=375-iPhone-SE
+
+      - name: Run a11y (critical-only)
+        if: success() || failure()
+        run: npx playwright test a11y.spec.ts --project=375-iPhone-SE
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -n "${APP_PID:-}" ]; then
+            kill $APP_PID || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-functional
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test traces (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-functional
+          path: test-results/
+          retention-days: 14
+
+  visual:
+    name: Visual Regression (36 baselines)
+    runs-on: ubuntu-latest
+    needs: functional
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci-user
+          POSTGRES_PASSWORD: ci-test
+          POSTGRES_DB: waste_erp_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci-user -d waste_erp_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy
+        run: npx prisma db push --skip-generate
+
+      - name: Seed database
+        run: npx tsx prisma/seed.ts
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Start app (background)
+        run: |
+          npm run start &
+          echo "APP_PID=$!" >> $GITHUB_ENV
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "App ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not start in time"
+          exit 1
+
+      - name: Run visual regression
+        run: npx playwright test visual-regression.spec.ts --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -n "${APP_PID:-}" ]; then
+            kill $APP_PID || true
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-visual
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload visual diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-diff.png
+            test-results/**/*-expected.png
+          retention-days: 30
