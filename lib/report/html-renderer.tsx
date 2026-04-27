@@ -1,5 +1,6 @@
 // Design Ref: §2.1 lib/report/html-renderer — renderToStaticMarkup → 인쇄용 HTML
-import { renderToStaticMarkup } from 'react-dom/server';
+// Note: react-dom/server는 동적 import — Next.js Server Components 제약 회피
+import 'server-only';
 import type { ReportSpec, ReportData } from './spec-types';
 import { ReportPage } from './components/ReportPage';
 
@@ -43,7 +44,8 @@ const REPORT_CSS = `
   .report-footer__meta-item { margin-left: 12px; }
 `;
 
-export function renderReportHtml(spec: ReportSpec, data: ReportData): string {
+export async function renderReportHtml(spec: ReportSpec, data: ReportData): Promise<string> {
+  const { renderToStaticMarkup } = await import('react-dom/server');
   const body = renderToStaticMarkup(<ReportPage spec={spec} data={data} />);
   const orientation = spec.page.orientation === 'landscape' ? 'landscape' : 'portrait';
   const margin = spec.page.margin || '10mm';

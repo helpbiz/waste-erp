@@ -57,7 +57,7 @@ export async function GET(req: Request) {
       user: { id: session.userId, name: session.name },
     });
 
-    const html = renderReportHtml(tpl.spec, data);
+    const html = await renderReportHtml(tpl.spec, data);
     const pdf = await renderPdf(html);
 
     /* AuditLog — report_download */
