@@ -304,10 +304,10 @@ function MunicipalitiesTab() {
                   <MTd className="font-extrabold text-ink">{m.name}</MTd>
                   <MTd className="font-mono text-[11px] text-ink-muted">{m.code}</MTd>
                   <MTd>
-                    {m.contractorCount === 0
-                      ? <MuniStatusBadge status="SUSPENDED" />
-                      : <MuniStatusBadge status={m.status} />
-                    }
+                    <span className="inline-flex items-center gap-1">
+                      <MuniStatusBadge status={m.status} />
+                      {m.status === 'ACTIVE' && m.contractorCount === 0 && <DormantBadge />}
+                    </span>
                   </MTd>
                   <MTd align="right">
                     {m.contractorCount > 0
@@ -387,9 +387,10 @@ function MunicipalitiesTab() {
                             <MTd className="font-extrabold text-ink">{m.name}</MTd>
                             <MTd className="font-mono text-[11px] text-ink-muted">{m.code}</MTd>
                             <MTd>
-                              {m.contractorCount === 0
-                                ? <MuniStatusBadge status="SUSPENDED" />
-                                : <MuniStatusBadge status={m.status} />}
+                              <span className="inline-flex items-center gap-1">
+                                <MuniStatusBadge status={m.status} />
+                                {m.status === 'ACTIVE' && m.contractorCount === 0 && <DormantBadge />}
+                              </span>
                             </MTd>
                             <MTd align="right">
                               {m.contractorCount > 0
@@ -609,10 +610,10 @@ function MuniEditModal({
                           코드: {s.code} {s.contractorCount > 0 && `· 위탁업체 ${s.contractorCount}곳`}
                         </div>
                       </div>
-                      {s.contractorCount === 0
-                        ? <MuniStatusBadge status="SUSPENDED" />
-                        : <MuniStatusBadge status={s.status} />
-                      }
+                      <span className="inline-flex items-center gap-1">
+                        <MuniStatusBadge status={s.status} />
+                        {s.status === 'ACTIVE' && s.contractorCount === 0 && <DormantBadge />}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -679,10 +680,15 @@ function MuniStatusBadge({ status }: { status: 'PENDING' | 'ACTIVE' | 'SUSPENDED
   const map = {
     ACTIVE:    { label: '활성',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     PENDING:   { label: '대기',   cls: 'bg-amber-100 text-amber-800 border-amber-300' },
-    SUSPENDED: { label: '비활성', cls: 'bg-slate-100 text-slate-600 border-slate-300' },
+    SUSPENDED: { label: '비활성', cls: 'bg-slate-100 text-slate-700 border-slate-300' },
   } as const;
   const m = map[status];
   return <span className={`text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full border ${m.cls}`}>{m.label}</span>;
+}
+
+/* 휴면 표시 — DB status는 ACTIVE이지만 산하 위탁업체가 0인 상태 (운영 미시작) */
+function DormantBadge() {
+  return <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-800 border-amber-300">휴면</span>;
 }
 
 function MuniStat({ label, value, accent = 'text-ink' }: { label: string; value: number; accent?: string }) {
