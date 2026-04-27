@@ -221,7 +221,7 @@ export default function LiveVehiclesClient({ canManage: _canManage }: { canManag
           {/* 지도 그리드 (시안) */}
           <div className="bg-emerald-50/40 border-2 border-line rounded-lg p-3 relative" style={{ minHeight: 600 }}>
             <div className="text-[10px] font-mono font-bold text-slate-600 mb-2">
-              📍 강남구 중심 ({data?.center.lat.toFixed(4)}, {data?.center.lng.toFixed(4)}) · 시안: 30초 단위 시뮬 위치
+              📍 강남구 중심 ({data?.center?.lat?.toFixed(4) ?? '—'}, {data?.center?.lng?.toFixed(4) ?? '—'}) · 시안: 30초 단위 시뮬 위치
             </div>
             {/* 격자 */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
