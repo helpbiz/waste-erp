@@ -26,7 +26,7 @@ export default function LogoutButton() {
       title="로그아웃"
       aria-label="로그아웃"
       className="text-[12px] font-extrabold tracking-tight
-                 text-slate-500 hover:text-red-400
+                 text-slate-200 hover:text-red-300
                  hover:underline underline-offset-2
                  disabled:opacity-50 disabled:cursor-not-allowed
                  bg-transparent border-0 px-1 py-0.5
