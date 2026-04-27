@@ -376,10 +376,10 @@ export default function SafetyWorkerClient({
             <p className="text-xs text-danger font-extrabold">정말 긴급 SOS를 발신하시겠습니까?</p>
             <p className="text-[11px] text-ink-muted font-bold">위탁업체 매니저 + 119(시뮬레이션)에 즉시 알림이 발송되며, SafetyReport(중상)가 자동 생성됩니다.</p>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              <button onClick={fireSos} disabled={busy} className="py-3 rounded-lg bg-danger text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50">
+              <button onClick={fireSos} disabled={busy} className="py-3.5 rounded-lg bg-danger text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50">
                 {busy ? '발신 중…' : '🚨 발신 확정'}
               </button>
-              <button onClick={() => setSosArmed(false)} className="py-3 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95">
+              <button onClick={() => setSosArmed(false)} className="py-3.5 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95">
                 취소
               </button>
             </div>
