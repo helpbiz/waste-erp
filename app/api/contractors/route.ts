@@ -32,12 +32,14 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const onlyActive = url.searchParams.get('active') === 'true';
+  const queryMuniId = url.searchParams.get('municipalityId');
 
   const where: { status?: 'ACTIVE'; municipalityId?: bigint; id?: bigint } = {};
   if (onlyActive) where.status = 'ACTIVE';
 
   if (session.role === 'SUPER_ADMIN') {
-    /* 전체 */
+    /* SUPER_ADMIN — ?municipalityId 옵션으로 특정 지자체만 필터 */
+    if (queryMuniId) where.municipalityId = BigInt(queryMuniId);
   } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
     where.municipalityId = BigInt(session.municipalityId);
   } else if (session.contractorId) {
@@ -48,7 +50,7 @@ export async function GET(req: Request) {
 
   const items = await prisma.contractor.findMany({
     where,
-    include: { municipality: { select: { id: true, name: true } } },
+    include: { municipality: { select: { id: true, name: true, region: true } } },
     orderBy: [{ companyName: 'asc' }],
   });
 
@@ -59,7 +61,9 @@ export async function GET(req: Request) {
       businessNo: c.businessNo,
       status: c.status,
       active: c.status === 'ACTIVE',
+      municipalityId: c.municipality?.id?.toString() ?? null,
       municipalityName: c.municipality?.name ?? null,
+      municipalityRegion: c.municipality?.region ?? null,
     })),
   });
 }

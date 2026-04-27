@@ -709,8 +709,10 @@ function MTd({ children, align = 'left', className = '' }: { children: React.Rea
 }
 
 function CompanyInfoTab() {
-  /* SUPER_ADMIN 은 contractorId=null. 위탁업체 선택 picker 필수 */
-  const [contractorOpts, setContractorOpts] = useState<{ id: string; companyName: string }[]>([]);
+  /* SUPER_ADMIN 은 contractorId=null. 지자체 → 위탁업체 계층 picker. */
+  const [munis, setMunis] = useState<{ id: string; name: string; region: string | null }[]>([]);
+  const [selectedMuniId, setSelectedMuniId] = useState<string>('');
+  const [contractorOpts, setContractorOpts] = useState<{ id: string; companyName: string; municipalityId: string | null }[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
   const [showCreate, setShowCreate] = useState(false);
   const [c, setC] = useState<{ id: string; companyName: string; businessNo: string; municipalityName: string; ceoName: string | null; phoneMain: string | null; emailMain: string | null; garageAddress: string | null; garageLat: number | null; garageLng: number | null; status: string } | null>(null);
@@ -718,19 +720,38 @@ function CompanyInfoTab() {
   const [saving, setSaving] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
 
-  /* 위탁업체 목록 로드 */
-  function loadContractors(autoSelectId?: string) {
-    fetch('/api/contractors')
+  /* 지자체 목록 로드 (1회) */
+  useEffect(() => {
+    fetch('/api/super-admin/municipalities?limit=500&status=ACTIVE')
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((j) => {
-        const opts = (j.items ?? []).map((x: { id: string; companyName: string }) => ({ id: x.id, companyName: x.companyName }));
+        const opts = (j.items ?? []).map((m: { id: string; name: string; region: string | null }) => ({
+          id: m.id, name: m.name, region: m.region,
+        }));
+        setMunis(opts);
+        if (opts.length > 0 && !selectedMuniId) setSelectedMuniId(opts[0].id);
+      })
+      .catch(() => undefined);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
+  /* 위탁업체 목록 로드 — 지자체 선택 시 그 지자체 산하만 */
+  function loadContractors(autoSelectId?: string) {
+    if (!selectedMuniId) { setContractorOpts([]); setSelectedId(''); return; }
+    fetch(`/api/contractors?municipalityId=${selectedMuniId}`)
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => {
+        const opts = (j.items ?? []).map((x: { id: string; companyName: string; municipalityId: string | null }) => ({
+          id: x.id, companyName: x.companyName, municipalityId: x.municipalityId,
+        }));
         setContractorOpts(opts);
         if (autoSelectId) setSelectedId(autoSelectId);
-        else if (opts.length > 0 && !selectedId) setSelectedId(opts[0].id);
+        else if (opts.length > 0) setSelectedId(opts[0].id);
+        else setSelectedId('');
       })
       .catch(() => undefined);
   }
-  useEffect(() => { loadContractors(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => { loadContractors(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [selectedMuniId]);
 
   function load() {
     if (!selectedId) return;
@@ -790,16 +811,35 @@ function CompanyInfoTab() {
 
   return (
     <div className="bg-surface border border-line rounded-lg p-5 max-w-[720px] space-y-4">
-      {/* 위탁업체 선택 picker + 신규 등록 (SUPER_ADMIN 전용) */}
+      {/* 1단계 — 지자체 picker (SUPER_ADMIN 계층 진입) */}
+      <div className="flex items-center gap-2 pb-2 border-b border-line">
+        <label htmlFor="company-muni-picker" className="text-xs font-extrabold text-slate-700 whitespace-nowrap">지자체</label>
+        <select
+          id="company-muni-picker"
+          value={selectedMuniId}
+          onChange={(e) => setSelectedMuniId(e.target.value)}
+          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500 min-h-[40px]"
+        >
+          {munis.length === 0 && <option value="">— 지자체 없음 —</option>}
+          {munis.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.region ? `[${m.region}] ` : ''}{m.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 2단계 — 위탁업체 picker + 신규 등록 (선택된 지자체 산하만) */}
       <div className="flex items-center gap-2 pb-3 border-b border-line">
-        <label htmlFor="contractor-picker" className="text-xs font-extrabold text-slate-700">위탁업체 선택</label>
+        <label htmlFor="contractor-picker" className="text-xs font-extrabold text-slate-700 whitespace-nowrap">위탁업체</label>
         <select
           id="contractor-picker"
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500"
+          disabled={!selectedMuniId || contractorOpts.length === 0}
+          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500 disabled:bg-slate-100 min-h-[40px]"
         >
-          {contractorOpts.length === 0 && <option value="">— 위탁업체 없음 —</option>}
+          {contractorOpts.length === 0 && <option value="">— 산하 위탁업체 없음 —</option>}
           {contractorOpts.map((o) => (
             <option key={o.id} value={o.id}>{o.companyName}</option>
           ))}
@@ -807,14 +847,16 @@ function CompanyInfoTab() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="px-3 py-2 rounded-md bg-emerald-700 text-white text-xs font-extrabold hover:bg-emerald-800 active:scale-95"
+          disabled={!selectedMuniId}
+          className="px-3 py-2 rounded-md bg-emerald-700 text-white text-xs font-extrabold hover:bg-emerald-800 active:scale-95 disabled:opacity-50"
         >
-          + 위탁업체 신규 등록
+          + 신규 등록
         </button>
       </div>
 
       {showCreate && (
         <ContractorCreateModal
+          defaultMunicipalityId={selectedMuniId}
           onClose={() => setShowCreate(false)}
           onCreated={(newId) => {
             setShowCreate(false);
@@ -1349,13 +1391,15 @@ function Field(props: FieldArgs) {
 function ContractorCreateModal({
   onClose,
   onCreated,
+  defaultMunicipalityId,
 }: {
   onClose: () => void;
   onCreated: (newId: string) => void;
+  defaultMunicipalityId?: string;
 }) {
   const [munis, setMunis] = useState<{ id: string; name: string; region: string | null }[]>([]);
   const [form, setForm] = useState({
-    municipalityId: '',
+    municipalityId: defaultMunicipalityId ?? '',
     companyName: '',
     businessNo: '',
     contractStart: '',
