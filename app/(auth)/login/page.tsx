@@ -100,27 +100,33 @@ function LoginInner() {
 
   return (
     <main
-      className="min-h-screen w-full flex items-center justify-center px-4 py-8"
+      /* svh — 모바일 주소바 노출/숨김 변동에 맞춰 안정 높이.
+         overflow-hidden — 가로/세로 스크롤 차단.
+         touch-action manipulation — 더블탭 zoom 비활성으로 키보드 입력 안정 */
+      className="w-full flex items-center justify-center px-4 py-4 overflow-hidden"
       style={{
+        minHeight: '100svh',
+        height: '100svh',
         background:
           'radial-gradient(circle at 20% 0%, #0e7490 0%, #164e63 45%, #0f172a 100%)',
+        touchAction: 'manipulation',
       }}
     >
       <div className="w-full max-w-[400px]">
-        {/* 로고 */}
-        <div className="flex justify-center mb-8">
+        {/* 로고 — 모바일에서 컴팩트 */}
+        <div className="flex justify-center mb-4 sm:mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/logo-horizontal-dark.svg"
             alt="공비랩 Clean ERP"
-            className="block w-[260px] sm:w-[300px] h-auto drop-shadow-lg"
+            className="block w-[200px] sm:w-[300px] h-auto drop-shadow-lg"
           />
         </div>
 
         {/* 카드 */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-7 sm:p-8"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-5 sm:p-8"
         >
           <input
             type="text"
@@ -130,7 +136,8 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-[15px] font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
+            /* font-size 16px 이상 — iOS Safari focus 시 zoom 방지 */
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
           />
 
           <div className="relative mb-2">
@@ -140,7 +147,8 @@ function LoginInner() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="비밀번호"
-              className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 text-[15px] font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              /* font-size 16px 이상 — iOS Safari focus 시 zoom 방지 */
+              className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"
@@ -187,8 +195,8 @@ function LoginInner() {
           </button>
         </form>
 
-        {/* 푸터 (최소화) */}
-        <div className="text-center mt-6 text-[11px] font-semibold text-white/50">
+        {/* 푸터 — 모바일에서 컴팩트 */}
+        <div className="text-center mt-3 sm:mt-6 text-[10px] sm:text-[11px] font-semibold text-white/50">
           © 공비랩 GONGBI LAB
         </div>
       </div>
