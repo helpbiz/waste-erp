@@ -31,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: '/complaints', label: '민원관리', badge: pendingComplaints > 0 ? String(pendingComplaints) : undefined },
         { href: '/safety', label: '산업안전보건', badge: pendingSafety > 0 ? String(pendingSafety) : undefined },
-        { href: '/payroll', label: '인건비 정산' },
+        /* 인건비 정산: Clean ERP 모듈로 분리 — 향후 add-on 방식으로 지자체 옵션 적용. 메뉴는 숨김, 페이지/코드는 보존 (직접 URL 접근 가능) */
         ...(isInternal ? [{ href: '/health', label: '건강기록카드' }] : []),
       ],
     },

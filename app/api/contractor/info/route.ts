@@ -11,6 +11,7 @@ import { canManageUsers } from '@/lib/users';
 export const runtime = 'nodejs';
 
 const Patch = z.object({
+  contractorId: z.string().optional(), // SUPER_ADMIN 전용
   ceoName: z.string().max(50).nullable().optional(),
   phoneMain: z.string().max(20).nullable().optional(),
   emailMain: z.string().max(100).nullable().optional(),
@@ -19,13 +20,24 @@ const Patch = z.object({
   garageLng: z.number().min(-180).max(180).nullable().optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!session.contractorId) return NextResponse.json({ contractor: null });
+
+  /* SUPER_ADMIN 은 ?contractorId 쿼리로 다른 위탁업체 정보 조회 가능 */
+  const url = new URL(req.url);
+  const queryContractorId = url.searchParams.get('contractorId');
+  let targetId: string | null = null;
+  if (session.role === 'SUPER_ADMIN' && queryContractorId) {
+    targetId = queryContractorId;
+  } else if (session.contractorId) {
+    targetId = session.contractorId;
+  }
+
+  if (!targetId) return NextResponse.json({ contractor: null });
 
   const c = await prisma.contractor.findUnique({
-    where: { id: BigInt(session.contractorId) },
+    where: { id: BigInt(targetId) },
     include: { municipality: { select: { name: true, code: true } } },
   });
   if (!c) return NextResponse.json({ contractor: null });
@@ -52,15 +64,22 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
   const parsed = Patch.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   const b = parsed.data;
 
+  /* 대상 contractor 결정: SUPER_ADMIN 은 body.contractorId, 그 외는 본인 contractorId */
+  let targetId: string | null = null;
+  if (session.role === 'SUPER_ADMIN' && b.contractorId) {
+    targetId = b.contractorId;
+  } else if (canManageUsers(session.role) && session.contractorId) {
+    targetId = session.contractorId;
+  }
+  if (!targetId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
+
   await prisma.contractor.update({
-    where: { id: BigInt(session.contractorId) },
+    where: { id: BigInt(targetId) },
     data: {
       ...(b.ceoName !== undefined ? { ceoName: b.ceoName } : {}),
       ...(b.phoneMain !== undefined ? { phoneMain: b.phoneMain } : {}),
@@ -77,9 +96,9 @@ export async function PATCH(req: Request) {
       actorRole: session.role,
       action: 'CONTRACTOR_INFO_UPDATE',
       resourceType: 'contractor',
-      resourceId: session.contractorId,
+      resourceId: targetId,
       ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { fields: Object.keys(b) } as object,
+      metadata: { fields: Object.keys(b).filter((k) => k !== 'contractorId') } as object,
     },
   });
 

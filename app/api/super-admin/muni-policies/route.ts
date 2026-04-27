@@ -39,6 +39,7 @@ export async function GET() {
       id: m.id.toString(),
       name: m.name,
       code: m.code,
+      region: m.region ?? null, // Plan SC-02 — Tab 2 계층 그룹핑 키
       status: m.status,
       contractorCount: m._count.contractors,
       policy: m.accessPolicy ? {

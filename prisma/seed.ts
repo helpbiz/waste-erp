@@ -76,7 +76,8 @@ async function main() {
   for (const acc of accounts) {
     await prisma.user.upsert({
       where: { username: acc.username },
-      update: {},
+      /* 개발/CI 빠른 진입 — 기존 사용자도 privacyConsentAt 채워서 middleware consent_required 회피 */
+      update: { privacyConsentAt: new Date() },
       create: {
         username: acc.username,
         passwordHash: hash,
@@ -85,6 +86,7 @@ async function main() {
         contractorId: acc.contractorId,
         municipalityId: acc.role === 'MUNI_ADMIN' ? muni.id : null,
         status: 'ACTIVE',
+        privacyConsentAt: new Date(), // E2E/CI 용 — 운영 진입 전 사용자가 직접 동의
       },
     });
     console.log(`  ✓ User: ${acc.username} (${acc.role}) — ${acc.name}`);

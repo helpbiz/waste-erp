@@ -63,6 +63,7 @@ services:
       ORS_PROFILE: ${ORS_PROFILE:-driving-car}
       ORS_API_KEY: ${ORS_API_KEY:-}
       PPAEGI_API_BASE: ${PPAEGI_API_BASE:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
     ports:
       - "${APP_PORT:-3000}:3000"
     healthcheck:

@@ -53,11 +53,11 @@ export function FacilitySelect({
   }, [contractorId]);
 
   // Design Ref: §5.4 + §6.1 facility_not_configured — 안내 메시지
+  // 슈퍼관리자 콘솔 링크는 비-SUPER_ADMIN 에게 노출하지 않음 (텍스트 안내만)
   if (!loading && !error && items.length === 0) {
     return (
       <div className={`text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 ${className}`}>
-        ⚠ 처리시설이 등록되어 있지 않습니다.{' '}
-        <a href="/super-admin?tab=facilities" className="underline hover:text-amber-900">슈퍼관리자에서 등록</a>
+        ⚠ 처리시설이 등록되어 있지 않습니다. 슈퍼관리자에 등록을 요청하세요.
       </div>
     );
   }

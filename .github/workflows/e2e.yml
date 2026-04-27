@@ -40,6 +40,8 @@ env:
   CRON_SECRET: ci-dummy-cron-secret
   SMS_PROVIDER: simulation
   WEATHER_PROVIDER: open-meteo
+  # E2E http://localhost 환경 → secure 쿠키 차단 회피 (lib/auth.ts COOKIE_SECURE 분기)
+  COOKIE_SECURE: 'false'
   # NODE_ENV는 npm ci가 devDeps(tailwind/postcss 등) 설치하도록 미설정.
   # next build/start가 자체적으로 NODE_ENV=production 설정함.
 
@@ -143,6 +145,10 @@ jobs:
       - name: Run F-02 daily-treatment (API + UI)
         if: success() || failure()
         run: npx playwright test f02-daily-treatment.spec.ts --project=375-iPhone-SE
+
+      - name: Run super-admin Phase 1 (muni-policy roundtrip + region)
+        if: success() || failure()
+        run: npx playwright test muni-policy-roundtrip.spec.ts --project=375-iPhone-SE
 
       - name: Stop app
         if: always()

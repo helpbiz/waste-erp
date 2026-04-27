@@ -366,7 +366,6 @@ function StatusChip({
 const ALERTS = [
   { kind: 'critical' as const, text: '최민준 근로자 오늘 미출근 상태입니다. 결근 처리가 필요합니다.', time: '09:31 · 근태관리' },
   { kind: 'warn'     as const, text: '민원 #2025-0423 처리기한이 1일 초과되었습니다.',                     time: '09:15 · 민원관리' },
-  { kind: 'warn'     as const, text: '4월 인건비 정산 마감일이 5일 남았습니다.',                            time: '09:00 · 인건비정산' },
   { kind: 'info'     as const, text: '안전점검 미제출 차량 2대 (11가1234, 11가5678)',                      time: '08:45 · 차량관리' },
   { kind: 'info'     as const, text: '김철호 근로자 이번 달 연장근로 48시간 접근 중',                       time: '08:00 · 근태관리' },
 ];

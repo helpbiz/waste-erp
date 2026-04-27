@@ -48,7 +48,7 @@ type Config = {
   updatedAt: string;
 };
 
-export default function LiveVehiclesClient({ canManage: _canManage }: { canManage: boolean }) {
+export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin = false }: { canManage: boolean; isSuperAdmin?: boolean }) {
   const [data, setData] = useState<PositionsResponse | null>(null);
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -163,11 +163,13 @@ export default function LiveVehiclesClient({ canManage: _canManage }: { canManag
             className="px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50">
             🔄 즉시 갱신
           </button>
-          <a href="/super-admin"
-            className="px-3 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
-            title="GIS API 설정은 슈퍼관리자 메뉴로 이관됨">
-            ⚙ GIS 설정 (슈퍼관리자)
-          </a>
+          {isSuperAdmin && (
+            <a href="/super-admin"
+              className="px-3 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
+              title="GIS API 설정은 슈퍼관리자 메뉴로 이관됨">
+              ⚙ GIS 설정 (슈퍼관리자)
+            </a>
+          )}
         </div>
       </div>
 
@@ -221,7 +223,7 @@ export default function LiveVehiclesClient({ canManage: _canManage }: { canManag
           {/* 지도 그리드 (시안) */}
           <div className="bg-emerald-50/40 border-2 border-line rounded-lg p-3 relative" style={{ minHeight: 600 }}>
             <div className="text-[10px] font-mono font-bold text-slate-600 mb-2">
-              📍 강남구 중심 ({data?.center.lat.toFixed(4)}, {data?.center.lng.toFixed(4)}) · 시안: 30초 단위 시뮬 위치
+              📍 강남구 중심 ({data?.center?.lat?.toFixed(4) ?? '—'}, {data?.center?.lng?.toFixed(4) ?? '—'}) · 시안: 30초 단위 시뮬 위치
             </div>
             {/* 격자 */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">

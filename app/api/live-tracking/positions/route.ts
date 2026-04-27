@@ -31,7 +31,16 @@ function simulatePosition(vehicleId: bigint, seedTime: number): { lat: number; l
 export async function GET() {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!session.contractorId) return NextResponse.json({ vehicles: [] });
+  /* SUPER_ADMIN/MUNI_ADMIN(contractorId=null) — center 포함한 빈 응답 (클라이언트 throw 방지) */
+  if (!session.contractorId) {
+    return NextResponse.json({
+      provider: 'simulation',
+      refreshSec: 5,
+      center: CENTER,
+      vehicles: [],
+      note: '위탁업체에 소속되지 않은 계정 — 표시할 차량 없음',
+    });
+  }
 
   const contractorId = BigInt(session.contractorId);
   const config = await prisma.liveTrackingConfig.findUnique({ where: { contractorId } });
