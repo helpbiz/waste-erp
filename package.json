@@ -21,6 +21,7 @@
     "e2e:tab-modal": "playwright test --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad tab-modal.spec.ts",
     "e2e:login-flow": "playwright test --project=375-iPhone-SE login-flow.spec.ts",
     "e2e:a11y": "playwright test --project=375-iPhone-SE a11y.spec.ts",
+    "e2e:f02": "playwright test --project=375-iPhone-SE f02-daily-treatment.spec.ts",
     "e2e:update": "playwright test --update-snapshots --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad visual-regression.spec.ts",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report"
@@ -34,6 +35,7 @@
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
     "next": "14.2.5",
+    "puppeteer-core": "^23.11.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
