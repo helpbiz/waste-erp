@@ -11,9 +11,12 @@ import type { Role } from '@prisma/client';
 export const SESSION_COOKIE = 'wciSession';
 const SESSION_TTL_SEC = 60 * 60 * 8; // 8h
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'dev-secret-change-me-please-32-bytes-minimum-required'
-);
+/* deploy-readiness P0-1: fallback 제거. dev 환경 빠른 시작 시에는 32자 이상 dev secret 명시 강제 */
+const RAW_SECRET = process.env.JWT_SECRET;
+if (!RAW_SECRET || RAW_SECRET.length < 32) {
+  throw new Error('JWT_SECRET 환경변수가 설정되지 않았거나 32자 미만입니다. .env 또는 운영 env 에 설정 필요.');
+}
+const SECRET = new TextEncoder().encode(RAW_SECRET);
 
 export type SessionPayload = {
   userId: string;
