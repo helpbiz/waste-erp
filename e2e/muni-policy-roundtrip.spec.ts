@@ -2,27 +2,39 @@
 // Plan SC-01: POST 후 GET 응답이 입력 권한 집합과 동일한지 검증
 import { test, expect } from '@playwright/test';
 
-/* SUPER_ADMIN 전용 — global setup의 test 사용자(INTERNAL_ADMIN) cookie를 super로 덮어쓴다 */
+/* SUPER_ADMIN 전용 — Set-Cookie 직접 추출 + extraHTTPHeaders 로 전달 (CI secure flag 회피) */
 const SEED_PWD = process.env.SEED_PASSWORD ?? 'changeme1234!';
+
+type LoginResult = { ctx: import('@playwright/test').APIRequestContext };
 
 async function loginAsSuper(
   baseURL: string,
-  playwright: { request: { newContext: (opts: { baseURL: string; ignoreHTTPSErrors?: boolean }) => Promise<import('@playwright/test').APIRequestContext> } },
-): Promise<import('@playwright/test').APIRequestContext> {
-  /* 신규 isolated context — 쿠키를 처음부터 본 테스트가 통제 */
-  const ctx = await playwright.request.newContext({ baseURL, ignoreHTTPSErrors: true });
-  const res = await ctx.post('/api/auth/login', {
+  playwright: { request: { newContext: (opts: Record<string, unknown>) => Promise<import('@playwright/test').APIRequestContext> } },
+): Promise<LoginResult> {
+  /* 1) 임시 ctx로 로그인 → Set-Cookie 헤더 추출 */
+  const tmp = await playwright.request.newContext({ baseURL });
+  const res = await tmp.post('/api/auth/login', {
     data: { username: 'super', password: SEED_PWD },
   });
   if (!res.ok()) {
     const body = await res.text().catch(() => '');
     throw new Error(`super login failed: ${res.status()} ${body}`);
   }
-  return ctx;
+  /* Set-Cookie 헤더에서 session 쿠키만 발췌 */
+  const setCookie = res.headersArray().find((h) => h.name.toLowerCase() === 'set-cookie')?.value ?? '';
+  const sessionCookie = setCookie.split(';')[0]; // "session=eyJ..."
+  await tmp.dispose();
+
+  /* 2) 신규 ctx에 Cookie 헤더로 직접 부착 — secure 플래그 무시하고 강제 전달 */
+  const ctx = await playwright.request.newContext({
+    baseURL,
+    extraHTTPHeaders: { Cookie: sessionCookie },
+  });
+  return { ctx };
 }
 
 test('CSV 직렬화 라운드트립: POST → GET 권한 집합 동일', async ({ playwright, baseURL }) => {
-  const ctx = await loginAsSuper(baseURL!, playwright);
+  const { ctx } = await loginAsSuper(baseURL!, playwright);
 
   /* 1. 현재 정책 조회 */
   const before = await ctx.get('/api/super-admin/muni-policies');
@@ -59,7 +71,7 @@ test('CSV 직렬화 라운드트립: POST → GET 권한 집합 동일', async (
 });
 
 test('region 필드 응답 포함 (P1-2 검증)', async ({ playwright, baseURL }) => {
-  const ctx = await loginAsSuper(baseURL!, playwright);
+  const { ctx } = await loginAsSuper(baseURL!, playwright);
 
   const res = await ctx.get('/api/super-admin/muni-policies');
   expect(res.ok()).toBeTruthy();
