@@ -112,21 +112,20 @@ function LoginInner() {
 
   return (
     <main
-      /* position fixed + inset 0 — 모바일 주소바·키보드 변동에 viewport 고정.
-         overflow-y auto — 키보드로 콘텐츠 squish 시 inner scroll (background 는 정지).
-         overscroll-contain + touch-action manipulation — bounce/zoom 비활성. */
+      /* 완전 고정: position fixed + inset 0 + overflow hidden — 어떤 경우에도 움직임 없음.
+         overscroll-behavior none — pull-to-refresh / bounce 차단.
+         touch-action manipulation — pinch zoom/double tap zoom 차단. */
       style={{
         position: 'fixed',
         inset: 0,
         background:
           'radial-gradient(circle at 20% 0%, #0e7490 0%, #164e63 45%, #0f172a 100%)',
         touchAction: 'manipulation',
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
       }}
     >
-      <div className="min-h-full w-full flex items-center justify-center px-4 py-4">
+      <div className="absolute inset-0 flex items-center justify-center px-4">
        <div className="w-full max-w-[400px]">
         {/* 로고 — 모바일에서 컴팩트 */}
         <div className="flex justify-center mb-4 sm:mb-8">
