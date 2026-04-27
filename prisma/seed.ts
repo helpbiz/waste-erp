@@ -94,7 +94,7 @@ async function main() {
   // 운영 진입 전 반드시 삭제. 매 시드마다 비밀번호 강제 재설정 (update 블록)
   await prisma.user.upsert({
     where: { username: 'test' },
-    update: { passwordHash: testHash, status: 'ACTIVE' },
+    update: { passwordHash: testHash, status: 'ACTIVE', privacyConsentAt: new Date() },
     create: {
       username: 'test',
       passwordHash: testHash,
@@ -102,6 +102,8 @@ async function main() {
       name: '테스트관리자',
       contractorId: contractor.id,
       status: 'ACTIVE',
+      // e2e 사용 — fresh seed 후에도 /consent redirect 없이 admin 페이지 접근
+      privacyConsentAt: new Date(),
     },
   });
   console.log(`  ✓ User: test (INTERNAL_ADMIN) — 테스트관리자 [개발용]`);
@@ -403,6 +405,53 @@ async function main() {
     });
   }
   console.log(`  ✓ Complaints: 4 (1 초과, 1 처리중, 1 미배정, 1 완료)`);
+
+  // Design Ref: §3.1.1 — 처리시설 마스터 시드 (4종 type별 1개씩)
+  const facilities = [
+    { type: 'RECYCLING_CENTER', name: '강남구 자원순환센터',  address: '서울특별시 강남구 일원동 ...' },
+    { type: 'INCINERATOR',      name: '○○ 소각장',           address: '서울특별시 ○○구 ...'         },
+    { type: 'OUTSOURCED',       name: '한강 위탁처리장',       address: '경기도 ○○시 ...'             },
+    { type: 'LANDFILL',         name: '수도권 매립시설',       address: '인천광역시 ○○구 ...'         },
+  ];
+  for (const f of facilities) {
+    await prisma.wasteTreatmentFacility.upsert({
+      where: { contractorId_type_name: { contractorId: contractor.id, type: f.type, name: f.name } },
+      update: {},
+      create: { contractorId: contractor.id, type: f.type, name: f.name, address: f.address, active: true },
+    });
+  }
+  console.log(`  ✓ Facilities: ${facilities.length} (소각장/위탁/매립/자원순환)`);
+
+  // Design Ref: §3.1.3, §3.4 — F-02 일일 처리실적 일보 표준 ReportTemplate 시드
+  // Note: municipalityId NULL 케이스는 Prisma upsert 복합키와 맞지 않아 findFirst 패턴 사용
+  const f02SpecRaw = (await import('node:fs')).readFileSync(
+    new URL('./seeds/report-templates/F-02.json', import.meta.url),
+    'utf-8',
+  );
+  const f02Spec = JSON.parse(f02SpecRaw);
+  const existingF02 = await prisma.reportTemplate.findFirst({
+    where: { contractorId: contractor.id, municipalityId: null, code: 'F-02', version: 1 },
+  });
+  if (existingF02) {
+    await prisma.reportTemplate.update({
+      where: { id: existingF02.id },
+      data: { spec: f02Spec, active: true },
+    });
+  } else {
+    await prisma.reportTemplate.create({
+      data: {
+        contractorId: contractor.id,
+        municipalityId: null,
+        code: 'F-02',
+        name: '일일 처리실적 일보',
+        spec: f02Spec,
+        outputFormats: 'pdf',
+        version: 1,
+        active: true,
+      },
+    });
+  }
+  console.log(`  ✓ ReportTemplate: F-02 일일 처리실적 일보 (표준 양식)`);
 
   console.log(`\n✅ Done. Login with: super / muni / company / manager / worker / worker2~5`);
   console.log(`   Password: ${SEED_PWD}`);
