@@ -61,6 +61,14 @@ export default function AdminShell({
     return () => { document.body.style.overflow = ''; };
   }, [drawerOpen]);
 
+  /* 드로어 열림 시 Escape 키로 닫기 (WCAG 2.1.2 키보드 트랩 회피) */
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
   return (
     <div className="min-h-screen flex">
       {/* 사이드바 (md+ 항상 노출) */}
