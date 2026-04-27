@@ -140,6 +140,10 @@ jobs:
         if: success() || failure()
         run: npx playwright test a11y.spec.ts --project=375-iPhone-SE
 
+      - name: Run F-02 daily-treatment (API + UI)
+        if: success() || failure()
+        run: npx playwright test f02-daily-treatment.spec.ts --project=375-iPhone-SE
+
       - name: Stop app
         if: always()
         run: |

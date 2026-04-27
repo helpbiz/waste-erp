@@ -17,7 +17,13 @@ RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-RUN apk add --no-cache openssl ca-certificates && update-ca-certificates
+# F-02 PDF 렌더링용 Chromium + 한글 폰트 (Design Ref: §2.3 puppeteer-core)
+RUN apk add --no-cache \
+  openssl ca-certificates \
+  chromium nss freetype harfbuzz \
+  font-noto-cjk \
+  && update-ca-certificates
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 # Node fetch HTTPS 외부 호출용 CA 번들

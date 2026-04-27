@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import DailyTreatmentTab from './daily-treatment/_daily-treatment-tab';
+
+type ReportTab = 'master' | 'f02';
 
 const ROLE_LABEL: Record<string, string> = {
   SUPER_ADMIN: '슈퍼관리자', MUNI_ADMIN: '지자체 관리자', CONTRACTOR_ADMIN: '업체관리자',
@@ -44,6 +47,34 @@ type Stats = {
 };
 
 export default function ReportsClient({ session }: { session: { role: string; name: string } }) {
+  const [reportTab, setReportTab] = useState<ReportTab>('master');
+
+  return (
+    <div className="space-y-4">
+      <nav className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card overflow-x-auto print:hidden">
+        <TabBtn active={reportTab === 'master'} onClick={() => setReportTab('master')}>📊 통합 운영 보고서</TabBtn>
+        <TabBtn active={reportTab === 'f02'} onClick={() => setReportTab('f02')}>📄 일일 처리실적 일보 (F-02)</TabBtn>
+      </nav>
+      {reportTab === 'master' && <MasterStatsView session={session} />}
+      {reportTab === 'f02' && <DailyTreatmentTab role={session.role} />}
+    </div>
+  );
+}
+
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg text-sm font-extrabold whitespace-nowrap transition min-h-[44px] ${
+        active ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function MasterStatsView({ session }: { session: { role: string; name: string } }) {
   const ymStart = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
   const ymEnd = new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
   const [from, setFrom] = useState(ymStart);
