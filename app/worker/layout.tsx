@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 import LogoutButton from '../(admin)/_logout-button';
 import { TabLink } from './_tab-link';
 
@@ -7,6 +8,13 @@ export default async function WorkerLayout({ children }: { children: React.React
   const session = await readSession();
   if (!session) redirect('/login');
   if (session.role !== 'WORKER') redirect('/dashboard'); // 관리자 차단
+
+  /* 직책 RAPID(기동반)만 추천경로 탭 노출 — position 단위 권한 게이트 */
+  const me = await prisma.user.findUnique({
+    where: { id: BigInt(session.userId) },
+    select: { position: { select: { code: true } } },
+  });
+  const isRapid = me?.position?.code === 'RAPID';
 
   return (
     <div className="min-h-screen flex justify-center bg-page">
@@ -36,6 +44,7 @@ export default async function WorkerLayout({ children }: { children: React.React
           <TabLink href="/worker" label="홈" icon="home" />
           <TabLink href="/worker/punch" label="출퇴근" icon="clock" />
           <TabLink href="/worker/complaint" label="민원" icon="camera" />
+          {isRapid && <TabLink href="/worker/route" label="경로" icon="route" />}
           <TabLink href="/worker/safety" label="안전" icon="shield" />
           <TabLink href="/worker/performance" label="실적" icon="chart" />
         </nav>
