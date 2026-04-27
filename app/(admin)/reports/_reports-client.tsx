@@ -308,7 +308,7 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             {['담당자', '관리자', '대표'].map((role) => (
               <div key={role} className="text-center">
                 <div className="font-bold mb-1">{role}</div>
-                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden">
+                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden" aria-hidden="true">
                   <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
                     서명
                   </span>
