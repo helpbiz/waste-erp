@@ -48,7 +48,7 @@ type Config = {
   updatedAt: string;
 };
 
-export default function LiveVehiclesClient({ canManage: _canManage }: { canManage: boolean }) {
+export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin = false }: { canManage: boolean; isSuperAdmin?: boolean }) {
   const [data, setData] = useState<PositionsResponse | null>(null);
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -163,11 +163,13 @@ export default function LiveVehiclesClient({ canManage: _canManage }: { canManag
             className="px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50">
             🔄 즉시 갱신
           </button>
-          <a href="/super-admin"
-            className="px-3 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
-            title="GIS API 설정은 슈퍼관리자 메뉴로 이관됨">
-            ⚙ GIS 설정 (슈퍼관리자)
-          </a>
+          {isSuperAdmin && (
+            <a href="/super-admin"
+              className="px-3 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
+              title="GIS API 설정은 슈퍼관리자 메뉴로 이관됨">
+              ⚙ GIS 설정 (슈퍼관리자)
+            </a>
+          )}
         </div>
       </div>
 
