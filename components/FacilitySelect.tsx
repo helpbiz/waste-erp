@@ -1,6 +1,6 @@
 'use client';
 
-// Design Ref: §5.3 — 처리시설 드롭다운 (재사용)
+// Design Ref: §5.3 — 처리시설 드롭다운 (재사용, 지자체 단위)
 // Plan SC: /performance 반입 입력 폼에 처리시설 선택 가능
 
 import { useEffect, useState } from 'react';
@@ -19,14 +19,17 @@ export function FacilitySelect({
   className = '',
   ariaLabel = '처리시설 선택',
   required = false,
-  contractorId,
+  municipalityId,
+  /* 역호환 — 일부 caller 가 contractorId 로 전달하던 것 무시. 서버가 자동 scope 처리 */
+  contractorId: _contractorId,
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
   className?: string;
   ariaLabel?: string;
   required?: boolean;
-  contractorId?: string;  // SUPER_ADMIN이 다른 위탁업체 facility 선택 시
+  municipalityId?: string;  // SUPER_ADMIN이 다른 지자체 facility 선택 시
+  contractorId?: string;    // deprecated, server-side auto scope
 }) {
   const [items, setItems] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +37,8 @@ export function FacilitySelect({
 
   useEffect(() => {
     setLoading(true);
-    const url = contractorId
-      ? `/api/super-admin/facilities?active=true&contractorId=${contractorId}`
+    const url = municipalityId
+      ? `/api/super-admin/facilities?active=true&municipalityId=${municipalityId}`
       : '/api/super-admin/facilities?active=true';
     fetch(url)
       .then((r) => r.json())
@@ -50,10 +53,9 @@ export function FacilitySelect({
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
-  }, [contractorId]);
+  }, [municipalityId]);
 
-  // Design Ref: §5.4 + §6.1 facility_not_configured — 안내 메시지
-  // 슈퍼관리자 콘솔 링크는 비-SUPER_ADMIN 에게 노출하지 않음 (텍스트 안내만)
+  // 안내 메시지 — 슈퍼관리자 콘솔 링크는 비-SUPER_ADMIN 에게 노출하지 않음
   if (!loading && !error && items.length === 0) {
     return (
       <div className={`text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 ${className}`}>

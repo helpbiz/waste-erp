@@ -44,10 +44,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (b.facilityId === null) {
       data.facilityId = null;
     } else {
-      const f = await prisma.wasteTreatmentFacility.findFirst({
-        where: { id: BigInt(b.facilityId), contractorId: BigInt(session.contractorId), active: true },
-        select: { id: true },
-      });
+      /* 지자체 단위 — 본인 contractor 의 muni 산하 facility 만 허용 */
+      const myMuniId = (await prisma.contractor.findUnique({
+        where: { id: BigInt(session.contractorId) },
+        select: { municipalityId: true },
+      }))?.municipalityId;
+      const f = myMuniId
+        ? await prisma.wasteTreatmentFacility.findFirst({
+            where: { id: BigInt(b.facilityId), municipalityId: myMuniId, active: true },
+            select: { id: true },
+          })
+        : null;
       if (!f) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 });
       data.facilityId = f.id;
     }

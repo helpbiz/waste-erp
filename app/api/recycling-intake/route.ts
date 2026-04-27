@@ -97,13 +97,20 @@ export async function POST(req: Request) {
   });
   if (!v) return NextResponse.json({ error: 'invalid_vehicle' }, { status: 400 });
 
-  /* Design Ref: §3.1.2 — facilityId 가시범위 검증 (자사 facility만 허용) */
+  /* Design Ref: §3.1.2 — facilityId 가시범위 검증
+     (지자체 단위로 변경됨 — 본인 contractor의 muni 산하 facility 만 허용) */
   let facilityIdBig: bigint | null = null;
   if (b.facilityId) {
-    const f = await prisma.wasteTreatmentFacility.findFirst({
-      where: { id: BigInt(b.facilityId), contractorId, active: true },
-      select: { id: true },
-    });
+    const myMuniId = (await prisma.contractor.findUnique({
+      where: { id: contractorId },
+      select: { municipalityId: true },
+    }))?.municipalityId;
+    const f = myMuniId
+      ? await prisma.wasteTreatmentFacility.findFirst({
+          where: { id: BigInt(b.facilityId), municipalityId: myMuniId, active: true },
+          select: { id: true },
+        })
+      : null;
     if (!f) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 });
     facilityIdBig = f.id;
   }
