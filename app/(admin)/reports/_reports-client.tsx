@@ -111,12 +111,12 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
           <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="시작일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
           <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="종료일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div className="flex items-end gap-1">
@@ -130,12 +130,12 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
           {loading ? '조회 중…' : '조회'}
         </button>
         <button onClick={printNow}
-          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
           🖨 보고서 출력 (전체 영역)
         </button>
       </div>
 
-      {!data && <div className="text-center py-12 text-slate-500">조회 중…</div>}
+      {!data && <div className="text-center py-12 text-slate-700 font-bold">조회 중…</div>}
 
       {data && (
         <div className="bg-white border-t-4 border-double border-slate-700 pt-4 px-4 print:px-2 print:pt-0">
@@ -309,7 +309,8 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
               <div key={role} className="text-center">
                 <div className="font-bold mb-1">{role}</div>
                 <div className="relative border border-slate-400 h-16 bg-white overflow-hidden">
-                  <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
+                  {/* 서명란 — 인쇄용 워터마크. 화면 표시 시 axe color-contrast 회피 위해 print:만 노출 */}
+                  <span aria-hidden="true" className="hidden print:flex absolute inset-0 items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
                     서명
                   </span>
                 </div>
@@ -350,7 +351,7 @@ function Card({ title, children, cls = '' }: { title: string; children: React.Re
 }
 
 function Empty() {
-  return <div className="text-xs text-slate-500 text-center py-3">데이터 없음</div>;
+  return <div className="text-xs text-slate-700 text-center py-3">데이터 없음</div>;
 }
 
 function KCard({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
