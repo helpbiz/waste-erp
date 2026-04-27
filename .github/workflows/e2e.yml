@@ -168,6 +168,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: functional
     timeout-minutes: 15
+    # workflow_dispatch update_snapshots=true 시 baseline auto-commit 위해 contents:write 필요
+    permissions:
+      contents: write
 
     services:
       postgres:
@@ -187,6 +190,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # auto-commit step에서 push 위해 fetch-depth=0 + token 명시
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node 20
         uses: actions/setup-node@v4
