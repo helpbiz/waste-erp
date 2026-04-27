@@ -712,23 +712,25 @@ function CompanyInfoTab() {
   /* SUPER_ADMIN 은 contractorId=null. 위탁업체 선택 picker 필수 */
   const [contractorOpts, setContractorOpts] = useState<{ id: string; companyName: string }[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
+  const [showCreate, setShowCreate] = useState(false);
   const [c, setC] = useState<{ id: string; companyName: string; businessNo: string; municipalityName: string; ceoName: string | null; phoneMain: string | null; emailMain: string | null; garageAddress: string | null; garageLat: number | null; garageLng: number | null; status: string } | null>(null);
   const [form, setForm] = useState({ ceoName: '', phoneMain: '', emailMain: '', garageAddress: '', garageLat: '', garageLng: '' });
   const [saving, setSaving] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
 
   /* 위탁업체 목록 로드 */
-  useEffect(() => {
+  function loadContractors(autoSelectId?: string) {
     fetch('/api/contractors')
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((j) => {
         const opts = (j.items ?? []).map((x: { id: string; companyName: string }) => ({ id: x.id, companyName: x.companyName }));
         setContractorOpts(opts);
-        if (opts.length > 0 && !selectedId) setSelectedId(opts[0].id);
+        if (autoSelectId) setSelectedId(autoSelectId);
+        else if (opts.length > 0 && !selectedId) setSelectedId(opts[0].id);
       })
       .catch(() => undefined);
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, []);
+  }
+  useEffect(() => { loadContractors(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   function load() {
     if (!selectedId) return;
@@ -788,7 +790,7 @@ function CompanyInfoTab() {
 
   return (
     <div className="bg-surface border border-line rounded-lg p-5 max-w-[720px] space-y-4">
-      {/* 위탁업체 선택 picker (SUPER_ADMIN 전용) */}
+      {/* 위탁업체 선택 picker + 신규 등록 (SUPER_ADMIN 전용) */}
       <div className="flex items-center gap-2 pb-3 border-b border-line">
         <label htmlFor="contractor-picker" className="text-xs font-extrabold text-slate-700">위탁업체 선택</label>
         <select
@@ -802,7 +804,24 @@ function CompanyInfoTab() {
             <option key={o.id} value={o.id}>{o.companyName}</option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="px-3 py-2 rounded-md bg-emerald-700 text-white text-xs font-extrabold hover:bg-emerald-800 active:scale-95"
+        >
+          + 위탁업체 신규 등록
+        </button>
       </div>
+
+      {showCreate && (
+        <ContractorCreateModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(newId) => {
+            setShowCreate(false);
+            loadContractors(newId);
+          }}
+        />
+      )}
 
       {!c && (
         <div className="text-center py-8 text-slate-700 font-bold">
@@ -1323,4 +1342,199 @@ import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
   return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
+}
+
+/* 위탁업체 신규 등록 모달 — SUPER_ADMIN 전용
+   POST /api/contractors → 등록 후 회사정보 탭에서 자동 picker 선택 */
+function ContractorCreateModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (newId: string) => void;
+}) {
+  const [munis, setMunis] = useState<{ id: string; name: string; region: string | null }[]>([]);
+  const [form, setForm] = useState({
+    municipalityId: '',
+    companyName: '',
+    businessNo: '',
+    contractStart: '',
+    contractEnd: '',
+    status: 'SETUP' as 'SETUP' | 'ACTIVE',
+    ceoName: '',
+    phoneMain: '',
+    emailMain: '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/super-admin/municipalities?limit=500&status=ACTIVE')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => {
+        const opts = (j.items ?? []).map((m: { id: string; name: string; region: string | null }) => ({
+          id: m.id,
+          name: m.name,
+          region: m.region,
+        }));
+        setMunis(opts);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  async function submit() {
+    setError(null);
+    if (!form.municipalityId) { setError('지자체를 선택해 주세요.'); return; }
+    if (!form.companyName.trim()) { setError('업체명을 입력해 주세요.'); return; }
+    if (!form.businessNo.trim()) { setError('사업자번호를 입력해 주세요.'); return; }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/contractors', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          municipalityId: form.municipalityId,
+          companyName: form.companyName.trim(),
+          businessNo: form.businessNo.trim(),
+          contractStart: form.contractStart || null,
+          contractEnd: form.contractEnd || null,
+          status: form.status,
+          ceoName: form.ceoName.trim() || null,
+          phoneMain: form.phoneMain.trim() || null,
+          emailMain: form.emailMain.trim() || null,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(j.detail ?? j.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      onCreated(j.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'fetch_failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <BottomSheet open={true} onClose={onClose} title="위탁업체 신규 등록" desktopMaxWidth="600px">
+      <div className="p-5 space-y-3">
+        <Field label="지자체 *">
+          <select
+            value={form.municipalityId}
+            onChange={(e) => setForm({ ...form, municipalityId: e.target.value })}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[44px]"
+          >
+            <option value="">— 지자체 선택 —</option>
+            {munis.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.region ? `[${m.region}] ` : ''}{m.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="업체명 *">
+          <input
+            value={form.companyName}
+            onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+            placeholder="(주)○○환경"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold min-h-[44px]"
+          />
+        </Field>
+
+        <Field label="사업자번호 *">
+          <input
+            value={form.businessNo}
+            onChange={(e) => setForm({ ...form, businessNo: e.target.value })}
+            placeholder="123-45-67890"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="계약 시작일">
+            <input
+              type="date"
+              value={form.contractStart}
+              onChange={(e) => setForm({ ...form, contractStart: e.target.value })}
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+            />
+          </Field>
+          <Field label="계약 종료일">
+            <input
+              type="date"
+              value={form.contractEnd}
+              onChange={(e) => setForm({ ...form, contractEnd: e.target.value })}
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+            />
+          </Field>
+        </div>
+
+        <Field label="상태">
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as 'SETUP' | 'ACTIVE' })}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[44px]"
+          >
+            <option value="SETUP">설정 중 (SETUP)</option>
+            <option value="ACTIVE">활성 (ACTIVE)</option>
+          </select>
+        </Field>
+
+        <div className="border-t-2 border-purple-200 pt-3">
+          <div className="text-xs font-extrabold text-purple-900 mb-2">📋 회사 기본 정보 (선택)</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="대표자">
+              <input
+                value={form.ceoName}
+                onChange={(e) => setForm({ ...form, ceoName: e.target.value })}
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold min-h-[44px]"
+              />
+            </Field>
+            <Field label="대표 전화">
+              <input
+                value={form.phoneMain}
+                onChange={(e) => setForm({ ...form, phoneMain: e.target.value })}
+                placeholder="02-1234-5678"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+              />
+            </Field>
+          </div>
+          <Field label="이메일">
+            <input
+              type="email"
+              value={form.emailMain}
+              onChange={(e) => setForm({ ...form, emailMain: e.target.value })}
+              placeholder="info@company.co.kr"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono min-h-[44px]"
+            />
+          </Field>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">
+            오류: {error}
+          </div>
+        )}
+      </div>
+
+      <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface min-h-[44px]"
+        >
+          취소
+        </button>
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="px-5 py-2 rounded-md bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 min-h-[44px]"
+        >
+          {busy ? '등록 중…' : '등록'}
+        </button>
+      </footer>
+    </BottomSheet>
+  );
 }
