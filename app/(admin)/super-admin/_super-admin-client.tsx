@@ -1433,22 +1433,40 @@ function Field(props: FieldArgs) {
   return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
 }
 
-/* 위탁업체 기본정보 수정 모달 — SUPER_ADMIN 전용
-   PATCH /api/contractors/[id] — companyName / contractStart/End / status */
+/* 위탁업체 수정 모달 — SUPER_ADMIN 전용
+   신규 등록과 동일한 필드 레이아웃. PATCH 2건 통합:
+   - PATCH /api/contractors/[id]   : companyName / contractStart/End / status
+   - PATCH /api/contractor/info     : ceoName / phoneMain / emailMain (회사 기본정보)
+   사업자번호 / 지자체는 read-only (UNIQUE 무결성 보호) */
 function ContractorEditModal({
   contractor,
   onClose,
   onSaved,
 }: {
-  contractor: { id: string; companyName: string; status: string; contractStart?: string | null; contractEnd?: string | null };
+  contractor: {
+    id: string;
+    companyName: string;
+    businessNo: string;
+    municipalityName: string;
+    status: string;
+    contractStart?: string | null;
+    contractEnd?: string | null;
+    ceoName: string | null;
+    phoneMain: string | null;
+    emailMain: string | null;
+  };
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState({
     companyName: contractor.companyName,
-    status: contractor.status as 'SETUP' | 'ACTIVE' | 'EXPIRED',
+    businessNo: contractor.businessNo,
     contractStart: contractor.contractStart ?? '',
     contractEnd: contractor.contractEnd ?? '',
+    status: contractor.status as 'SETUP' | 'ACTIVE' | 'EXPIRED',
+    ceoName: contractor.ceoName ?? '',
+    phoneMain: contractor.phoneMain ?? '',
+    emailMain: contractor.emailMain ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1457,7 +1475,8 @@ function ContractorEditModal({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/contractors/${contractor.id}`, {
+      /* 1) 위탁업체 기본 정보 */
+      const r1 = await fetch(`/api/contractors/${contractor.id}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -1467,9 +1486,25 @@ function ContractorEditModal({
           contractEnd: form.contractEnd || null,
         }),
       });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(j.detail ?? j.error ?? `HTTP ${res.status}`);
+      if (!r1.ok) {
+        const j = await r1.json().catch(() => ({}));
+        setError(j.detail ?? j.error ?? `HTTP ${r1.status}`);
+        return;
+      }
+      /* 2) 회사 기본 정보 (대표자/전화/이메일) */
+      const r2 = await fetch('/api/contractor/info', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contractorId: contractor.id,
+          ceoName: form.ceoName.trim() || null,
+          phoneMain: form.phoneMain.trim() || null,
+          emailMain: form.emailMain.trim() || null,
+        }),
+      });
+      if (!r2.ok) {
+        const j = await r2.json().catch(() => ({}));
+        setError('회사 기본정보 저장 실패: ' + (j.detail ?? j.error ?? `HTTP ${r2.status}`));
         return;
       }
       onSaved();
@@ -1479,8 +1514,17 @@ function ContractorEditModal({
   }
 
   return (
-    <BottomSheet open={true} onClose={onClose} title="업체 기본정보 수정" desktopMaxWidth="520px">
+    <BottomSheet open={true} onClose={onClose} title="위탁업체 수정" desktopMaxWidth="600px">
       <div className="p-5 space-y-3">
+        {/* 지자체 / 사업자번호 — read-only (변경 불가) */}
+        <Field label="지자체 (변경 불가)">
+          <input
+            value={contractor.municipalityName}
+            disabled
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-slate-100 text-slate-700 min-h-[44px]"
+          />
+        </Field>
+
         <Field label="업체명 *">
           <input
             value={form.companyName}
@@ -1488,17 +1532,15 @@ function ContractorEditModal({
             className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold min-h-[44px]"
           />
         </Field>
-        <Field label="상태">
-          <select
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as 'SETUP' | 'ACTIVE' | 'EXPIRED' })}
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[44px]"
-          >
-            <option value="SETUP">설정 중 (SETUP)</option>
-            <option value="ACTIVE">활성 (ACTIVE)</option>
-            <option value="EXPIRED">계약 만료 (EXPIRED)</option>
-          </select>
+
+        <Field label="사업자번호 (변경 불가)">
+          <input
+            value={form.businessNo}
+            disabled
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold bg-slate-100 text-slate-700 min-h-[44px]"
+          />
         </Field>
+
         <div className="grid grid-cols-2 gap-2">
           <Field label="계약 시작일">
             <input
@@ -1517,8 +1559,53 @@ function ContractorEditModal({
             />
           </Field>
         </div>
+
+        <Field label="상태">
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as 'SETUP' | 'ACTIVE' | 'EXPIRED' })}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[44px]"
+          >
+            <option value="SETUP">설정 중 (SETUP)</option>
+            <option value="ACTIVE">활성 (ACTIVE)</option>
+            <option value="EXPIRED">계약 만료 (EXPIRED)</option>
+          </select>
+        </Field>
+
+        <div className="border-t-2 border-purple-200 pt-3">
+          <div className="text-xs font-extrabold text-purple-900 mb-2">📋 회사 기본 정보</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="대표자">
+              <input
+                value={form.ceoName}
+                onChange={(e) => setForm({ ...form, ceoName: e.target.value })}
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold min-h-[44px]"
+              />
+            </Field>
+            <Field label="대표 전화">
+              <input
+                value={form.phoneMain}
+                onChange={(e) => setForm({ ...form, phoneMain: e.target.value })}
+                placeholder="02-1234-5678"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+              />
+            </Field>
+          </div>
+          <Field label="이메일">
+            <input
+              type="email"
+              value={form.emailMain}
+              onChange={(e) => setForm({ ...form, emailMain: e.target.value })}
+              placeholder="info@company.co.kr"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono min-h-[44px]"
+            />
+          </Field>
+        </div>
+
         {error && (
-          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">{error}</div>
+          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">
+            오류: {error}
+          </div>
         )}
       </div>
       <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
