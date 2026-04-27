@@ -32,7 +32,8 @@ env:
   CRON_SECRET: ci-dummy-cron-secret
   SMS_PROVIDER: simulation
   WEATHER_PROVIDER: open-meteo
-  NODE_ENV: production
+  # NODE_ENV는 npm ci가 devDeps(tailwind/postcss 등) 설치하도록 미설정.
+  # next build/start가 자체적으로 NODE_ENV=production 설정함.
 
 jobs:
   functional:
