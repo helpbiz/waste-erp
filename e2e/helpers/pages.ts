@@ -1,4 +1,5 @@
 // Design Ref: §11 — admin 페이지 목록을 spec간 공유
+// INTERNAL_ADMIN(test user) 가시 영역만 포함. SUPER_ADMIN 전용은 별도 spec.
 export const ADMIN_PAGES = [
   '/attendance',
   '/users',
@@ -10,7 +11,6 @@ export const ADMIN_PAGES = [
   '/bulky-waste',
   '/performance',
   '/complaints',
-  '/super-admin',
   '/reports',
 ] as const;
 
