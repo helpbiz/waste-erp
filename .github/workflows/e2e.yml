@@ -144,6 +144,10 @@ jobs:
         if: success() || failure()
         run: npx playwright test f02-daily-treatment.spec.ts --project=375-iPhone-SE
 
+      - name: Run super-admin Phase 1 (muni-policy roundtrip + region)
+        if: success() || failure()
+        run: npx playwright test muni-policy-roundtrip.spec.ts --project=375-iPhone-SE
+
       - name: Stop app
         if: always()
         run: |

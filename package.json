@@ -22,6 +22,7 @@
     "e2e:login-flow": "playwright test --project=375-iPhone-SE login-flow.spec.ts",
     "e2e:a11y": "playwright test --project=375-iPhone-SE a11y.spec.ts",
     "e2e:f02": "playwright test --project=375-iPhone-SE f02-daily-treatment.spec.ts",
+    "e2e:super-admin-phase1": "playwright test --project=375-iPhone-SE muni-policy-roundtrip.spec.ts",
     "e2e:update": "playwright test --update-snapshots --project=375-iPhone-SE --project=393-Pixel7 --project=360-GalaxyS --project=768-iPad visual-regression.spec.ts",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report"
