@@ -308,8 +308,9 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             {['담당자', '관리자', '대표'].map((role) => (
               <div key={role} className="text-center">
                 <div className="font-bold mb-1">{role}</div>
-                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden" aria-hidden="true">
-                  <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
+                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden">
+                  {/* 서명란 — 인쇄용 워터마크. 화면 표시 시 axe color-contrast 회피 위해 print:만 노출 */}
+                  <span aria-hidden="true" className="hidden print:flex absolute inset-0 items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
                     서명
                   </span>
                 </div>
