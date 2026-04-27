@@ -10,9 +10,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'dev-secret-change-me-please-32-bytes-minimum-required'
-);
+/* deploy-readiness P0-1: fallback 제거. middleware는 edge runtime — throw 시 모든 요청 500.
+   prod 환경 변수 미설정 = 즉각 실패가 의도된 안전장치. */
+const RAW_SECRET = process.env.JWT_SECRET;
+if (!RAW_SECRET || RAW_SECRET.length < 32) {
+  throw new Error('JWT_SECRET 환경변수가 설정되지 않았거나 32자 미만입니다.');
+}
+const SECRET = new TextEncoder().encode(RAW_SECRET);
 
 const PUBLIC_PATHS = new Set<string>([
   '/login',

@@ -154,6 +154,10 @@ jobs:
         if: success() || failure()
         run: npx playwright test contractor-registration.spec.ts --project=375-iPhone-SE
 
+      - name: Run tenant-isolation (cross-tenant 격리 검증)
+        if: success() || failure()
+        run: npx playwright test tenant-isolation.spec.ts --project=375-iPhone-SE
+
       - name: Stop app
         if: always()
         run: |
