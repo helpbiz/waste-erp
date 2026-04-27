@@ -9,7 +9,7 @@ const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
   { code: 'users',         label: '사용자관리' },
   { code: 'attendance',    label: '근태관리' },
-  { code: 'payroll',       label: '인건비 정산' },
+  /* 'payroll' 인건비 정산은 Clean ERP add-on 모듈로 분리 — 옵션 적용 시 코드 부활 */
   { code: 'complaints',    label: '민원관리' },
   { code: 'safety',        label: '산업안전보건' },
   { code: 'health',        label: '건강기록카드' },
