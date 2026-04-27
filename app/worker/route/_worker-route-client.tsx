@@ -13,21 +13,19 @@ const RouteMap = dynamic(() => import('@/app/(admin)/live-vehicles/_leaflet-map'
 type Stop = { lat: number; lng: number; label: string };
 
 type RouteResp = {
+  ok: boolean;
   stops: Stop[];
-  order: number[];
-  polyline?: Array<[number, number]>;
+  distanceKm: number;
+  durationMin: number;
+  baselineKm: number;
+  savedKm: number;
+  savedPct: number;
+  polylineCoords?: Array<[number, number]>;
   polylineSource?: 'ors' | 'osrm' | 'straight' | null;
-  stats: {
-    distanceKm: number;
-    durationMin: number;
-    baselineKm: number;
-    savedKm: number;
-    savedPct: number;
-    algorithm: string;
-    iterations: number;
-    elapsedMs: number;
-  };
-  startLabel: string;
+  startLabel?: string;
+  routingMode?: string;
+  note?: string;
+  error?: string;
 };
 
 export default function WorkerRouteClient({ positionLabel }: { positionLabel: string }) {
@@ -45,12 +43,11 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ source: 'complaints', maxStops }),
       });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
+      const j: RouteResp = await r.json();
+      if (!r.ok || !j.ok) {
         setError(j.error ?? `HTTP ${r.status}`);
         return;
       }
-      const j = await r.json();
       setData(j);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'fetch_failed');
@@ -58,6 +55,9 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
       setBusy(false);
     }
   }
+
+  /* 정렬된 stops 가 곧 순회 순서 (API 가 이미 TSP 적용) */
+  const order = data ? data.stops.map((_, i) => i) : [];
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -100,34 +100,36 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
       {/* 오류 */}
       {error && (
         <div className="bg-red-50 border border-red-300 rounded-md px-3 py-3 text-sm font-bold text-red-800">
-          오류: {error}
+          오류: {error === 'no_complaints' ? '미처리 민원이 없습니다.' : error}
         </div>
       )}
 
       {/* 결과 통계 */}
-      {data && (
+      {data && data.stops.length > 0 && (
         <div className="bg-cyan-50 border-2 border-accent rounded-lg p-3 space-y-2">
           <div className="grid grid-cols-2 gap-2 text-center">
             <div className="bg-white rounded p-2">
               <div className="text-[10px] font-mono font-extrabold text-slate-700">총 거리</div>
-              <div className="text-lg font-mono font-black text-accent">{data.stats.distanceKm} km</div>
+              <div className="text-lg font-mono font-black text-accent">{data.distanceKm} km</div>
             </div>
             <div className="bg-white rounded p-2">
               <div className="text-[10px] font-mono font-extrabold text-slate-700">예상 시간</div>
-              <div className="text-lg font-mono font-black text-accent">{data.stats.durationMin} 분</div>
+              <div className="text-lg font-mono font-black text-accent">{data.durationMin} 분</div>
             </div>
             <div className="bg-white rounded p-2">
               <div className="text-[10px] font-mono font-extrabold text-slate-700">절감 거리</div>
-              <div className="text-lg font-mono font-black text-emerald-700">{data.stats.savedKm} km</div>
+              <div className="text-lg font-mono font-black text-emerald-700">{data.savedKm} km</div>
             </div>
             <div className="bg-white rounded p-2">
               <div className="text-[10px] font-mono font-extrabold text-slate-700">절감률</div>
-              <div className="text-lg font-mono font-black text-emerald-700">{data.stats.savedPct}%</div>
+              <div className="text-lg font-mono font-black text-emerald-700">{data.savedPct}%</div>
             </div>
           </div>
-          <div className="text-[10px] font-mono text-slate-700 text-center pt-1 border-t border-cyan-200">
-            {data.startLabel} · {data.stops.length - 1}개 민원 순회
-          </div>
+          {data.startLabel && (
+            <div className="text-[10px] font-mono text-slate-700 text-center pt-1 border-t border-cyan-200">
+              {data.startLabel} · {Math.max(0, data.stops.length - 1)}개 민원 순회
+            </div>
+          )}
         </div>
       )}
 
@@ -138,8 +140,8 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
             mode="route"
             center={data.stops[0]}
             routeStops={data.stops}
-            routeOrder={data.order}
-            routePolyline={data.polyline ?? undefined}
+            routeOrder={order}
+            routePolyline={data.polylineCoords ?? undefined}
             baseTile="osm"
           />
         </div>
@@ -152,24 +154,21 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
             🛣 순회 순서
           </div>
           <ol className="divide-y divide-line">
-            {data.order.map((idx, i) => {
-              const stop = data.stops[idx];
-              return (
-                <li key={i} className="px-3 py-2.5 flex items-start gap-3">
-                  <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-black ${
-                    i === 0 ? 'bg-emerald-700 text-white' : i === data.order.length - 1 ? 'bg-purple-700 text-white' : 'bg-accent text-white'
-                  }`}>
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-ink leading-tight">{stop.label}</div>
-                    <div className="text-[10px] font-mono text-slate-700 mt-0.5">
-                      {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
-                    </div>
+            {data.stops.map((stop, i) => (
+              <li key={i} className="px-3 py-2.5 flex items-start gap-3">
+                <span className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-black ${
+                  i === 0 ? 'bg-emerald-700 text-white' : i === data.stops.length - 1 ? 'bg-purple-700 text-white' : 'bg-accent text-white'
+                }`}>
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-ink leading-tight">{stop.label}</div>
+                  <div className="text-[10px] font-mono text-slate-700 mt-0.5">
+                    {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
                   </div>
-                </li>
-              );
-            })}
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
       )}
