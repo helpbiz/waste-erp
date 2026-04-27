@@ -42,9 +42,11 @@ export async function issueSession(payload: SessionPayload): Promise<string> {
     .setExpirationTime(`${SESSION_TTL_SEC}s`)
     .sign(SECRET);
 
+  /* secure flag — prod 기본값 true. E2E/CI 에서 http localhost로 테스트 시 COOKIE_SECURE=false 로 우회 */
+  const secure = process.env.COOKIE_SECURE === 'false' ? false : process.env.NODE_ENV === 'production';
   cookies().set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure,
     sameSite: 'strict',
     path: '/',
     maxAge: SESSION_TTL_SEC,

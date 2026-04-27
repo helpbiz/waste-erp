@@ -40,6 +40,8 @@ env:
   CRON_SECRET: ci-dummy-cron-secret
   SMS_PROVIDER: simulation
   WEATHER_PROVIDER: open-meteo
+  # E2E http://localhost 환경 → secure 쿠키 차단 회피 (lib/auth.ts COOKIE_SECURE 분기)
+  COOKIE_SECURE: 'false'
   # NODE_ENV는 npm ci가 devDeps(tailwind/postcss 등) 설치하도록 미설정.
   # next build/start가 자체적으로 NODE_ENV=production 설정함.
 

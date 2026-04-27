@@ -1,21 +1,20 @@
 // Design Ref: Phase 1 P1-1 — Tab 3 권한설정 CSV 직렬화 라운드트립 smoke test
 // Plan SC-01: POST 후 GET 응답이 입력 권한 집합과 동일한지 검증
-// page.request 사용 — 브라우저 컨텍스트가 cookie + secure flag 자동 처리
+// UI 로그인으로 super 세션 확보 — 브라우저 cookie 처리 위임 (CI prod 모드 secure flag 회피)
 import { test, expect } from '@playwright/test';
 
 const SEED_PWD = process.env.SEED_PASSWORD ?? 'changeme1234!';
 
-/* SUPER_ADMIN 권한이 필요 — global setup의 INTERNAL_ADMIN 쿠키를 super 로그인으로 덮어씀 */
-test.beforeEach(async ({ page }) => {
-  /* 빈 페이지로 이동해 동일 origin 컨텍스트 확보 후 로그인 API 호출 */
+/* SUPER_ADMIN 권한 필요 — global setup의 INTERNAL_ADMIN cookie를 super UI 로그인으로 덮어씀 */
+test.beforeEach(async ({ page, context }) => {
+  /* 기존 세션 쿠키 제거 후 깨끗한 상태에서 super 로그인 */
+  await context.clearCookies();
   await page.goto('/login');
-  const res = await page.request.post('/api/auth/login', {
-    data: { username: 'super', password: SEED_PWD },
-  });
-  if (!res.ok()) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`super login failed: ${res.status()} ${body}`);
-  }
+  await page.locator('input[autocomplete="username"]').fill('super');
+  await page.locator('input[type="password"]').fill(SEED_PWD);
+  await page.getByRole('button', { name: /^로그인$/ }).click();
+  /* 로그인 성공 → admin 랜딩으로 이동. /login 에서 벗어나면 OK */
+  await page.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 10_000 });
 });
 
 test('CSV 직렬화 라운드트립: POST → GET 권한 집합 동일', async ({ page }) => {
@@ -58,7 +57,6 @@ test('region 필드 응답 포함 (P1-2 검증)', async ({ page }) => {
   expect(res.ok(), `status=${res.status()}`).toBeTruthy();
   const json = await res.json();
   expect(json.items.length).toBeGreaterThan(0);
-  /* 모든 item이 region 키를 가져야 함 (값은 null 가능) */
   for (const item of json.items) {
     expect(item, `item ${item.id} should have region key`).toHaveProperty('region');
   }
