@@ -30,9 +30,14 @@ const config: Config = {
           '0%':   { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(0)' },
         },
+        'slide-up': {
+          '0%':   { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'slide-in': 'slide-in 0.22s ease-out',
+        'slide-up': 'slide-up 0.25s ease-out',
       },
     },
   },
