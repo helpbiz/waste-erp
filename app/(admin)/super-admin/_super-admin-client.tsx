@@ -715,7 +715,8 @@ function CompanyInfoTab() {
   const [contractorOpts, setContractorOpts] = useState<{ id: string; companyName: string; municipalityId: string | null }[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
   const [showCreate, setShowCreate] = useState(false);
-  const [c, setC] = useState<{ id: string; companyName: string; businessNo: string; municipalityName: string; ceoName: string | null; phoneMain: string | null; emailMain: string | null; garageAddress: string | null; garageLat: number | null; garageLng: number | null; status: string } | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [c, setC] = useState<{ id: string; companyName: string; businessNo: string; municipalityName: string; ceoName: string | null; phoneMain: string | null; emailMain: string | null; garageAddress: string | null; garageLat: number | null; garageLng: number | null; status: string; contractStart?: string | null; contractEnd?: string | null } | null>(null);
   const [form, setForm] = useState({ ceoName: '', phoneMain: '', emailMain: '', garageAddress: '', garageLat: '', garageLng: '' });
   const [saving, setSaving] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
@@ -924,12 +925,58 @@ function CompanyInfoTab() {
         </div>
       </div>
 
-      <div className="flex justify-end pt-3 border-t border-line">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowEdit(true)}
+            disabled={!c}
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            ✏ 업체 기본정보 수정
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!c) return;
+              const ok = confirm(
+                `'${c.companyName}'을(를) 영구 삭제합니다.\n` +
+                  `연결된 사용자/차량/실적/민원이 있으면 삭제 불가 (409 차단).\n` +
+                  `정말 삭제하시겠습니까?`
+              );
+              if (!ok) return;
+              const res = await fetch(`/api/contractors/${selectedId}`, { method: 'DELETE' });
+              const j = await res.json().catch(() => ({}));
+              if (res.ok) {
+                alert('삭제 완료');
+                setSelectedId('');
+                setC(null);
+                loadContractors();
+              } else if (res.status === 409) {
+                alert(`삭제 차단:\n${j.detail ?? '연결된 데이터가 있습니다'}`);
+              } else {
+                alert(`실패: ${j.error ?? `HTTP ${res.status}`}`);
+              }
+            }}
+            disabled={!c}
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-danger text-white hover:bg-red-800 disabled:opacity-50"
+          >
+            🗑 업체 삭제
+          </button>
+        </div>
         <button disabled={saving} onClick={save}
           className="px-5 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
-          {saving ? '저장 중…' : '회사정보 저장'}
+          {saving ? '저장 중…' : '회사정보·차고지 저장'}
         </button>
       </div>
+
+      {showEdit && c && (
+        <ContractorEditModal
+          contractor={c}
+          onClose={() => setShowEdit(false)}
+          onSaved={() => { setShowEdit(false); load(); loadContractors(selectedId); }}
+        />
+      )}
       </>)}
     </div>
   );
@@ -1384,6 +1431,105 @@ import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
   return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
+}
+
+/* 위탁업체 기본정보 수정 모달 — SUPER_ADMIN 전용
+   PATCH /api/contractors/[id] — companyName / contractStart/End / status */
+function ContractorEditModal({
+  contractor,
+  onClose,
+  onSaved,
+}: {
+  contractor: { id: string; companyName: string; status: string; contractStart?: string | null; contractEnd?: string | null };
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    companyName: contractor.companyName,
+    status: contractor.status as 'SETUP' | 'ACTIVE' | 'EXPIRED',
+    contractStart: contractor.contractStart ?? '',
+    contractEnd: contractor.contractEnd ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/contractors/${contractor.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          companyName: form.companyName.trim(),
+          status: form.status,
+          contractStart: form.contractStart || null,
+          contractEnd: form.contractEnd || null,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(j.detail ?? j.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <BottomSheet open={true} onClose={onClose} title="업체 기본정보 수정" desktopMaxWidth="520px">
+      <div className="p-5 space-y-3">
+        <Field label="업체명 *">
+          <input
+            value={form.companyName}
+            onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold min-h-[44px]"
+          />
+        </Field>
+        <Field label="상태">
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as 'SETUP' | 'ACTIVE' | 'EXPIRED' })}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[44px]"
+          >
+            <option value="SETUP">설정 중 (SETUP)</option>
+            <option value="ACTIVE">활성 (ACTIVE)</option>
+            <option value="EXPIRED">계약 만료 (EXPIRED)</option>
+          </select>
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="계약 시작일">
+            <input
+              type="date"
+              value={form.contractStart}
+              onChange={(e) => setForm({ ...form, contractStart: e.target.value })}
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+            />
+          </Field>
+          <Field label="계약 종료일">
+            <input
+              type="date"
+              value={form.contractEnd}
+              onChange={(e) => setForm({ ...form, contractEnd: e.target.value })}
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold min-h-[44px]"
+            />
+          </Field>
+        </div>
+        {error && (
+          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">{error}</div>
+        )}
+      </div>
+      <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
+        <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold min-h-[44px]">취소</button>
+        <button onClick={submit} disabled={saving || !form.companyName.trim()}
+          className="px-5 py-2 rounded-md bg-amber-600 text-white text-sm font-extrabold disabled:opacity-50 min-h-[44px]">
+          {saving ? '저장 중…' : '수정 완료'}
+        </button>
+      </footer>
+    </BottomSheet>
+  );
 }
 
 /* 위탁업체 신규 등록 모달 — SUPER_ADMIN 전용

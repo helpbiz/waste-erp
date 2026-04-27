@@ -66,6 +66,15 @@ export function FacilitiesTab() {
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
   }
 
+  async function remove(f: Facility) {
+    if (!confirm(`'${f.name}'을(를) 영구 삭제합니다.\n반입실적이 있으면 삭제 불가 (409). 계속하시겠습니까?`)) return;
+    const res = await fetch(`/api/super-admin/facilities/${f.id}`, { method: 'DELETE' });
+    if (res.ok) { alert('삭제 완료'); load(); return; }
+    const j = await res.json().catch(() => ({}));
+    if (res.status === 409) alert(`삭제 차단:\n${j.detail ?? '연결된 데이터가 있습니다'}`);
+    else alert(`실패: ${j.error ?? `HTTP ${res.status}`}`);
+  }
+
   const selectedMuni = useMemo(() => munis.find((m) => m.id === selectedMuniId), [munis, selectedMuniId]);
 
   return (
@@ -136,9 +145,10 @@ export function FacilitiesTab() {
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
                       <button onClick={() => setEditing(f)} className="text-xs font-bold text-accent hover:underline mr-2">수정</button>
-                      <button onClick={() => toggleActive(f)} className="text-xs font-bold text-amber-700 hover:underline">
+                      <button onClick={() => toggleActive(f)} className="text-xs font-bold text-amber-700 hover:underline mr-2">
                         {f.active ? '비활성화' : '활성화'}
                       </button>
+                      <button onClick={() => remove(f)} className="text-xs font-bold text-danger hover:underline">삭제</button>
                     </td>
                   </tr>
                 ))}
@@ -200,7 +210,16 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
     if (res.ok) onSaved();
     else {
       const e = await res.json().catch(() => ({}));
-      setError(e.error === 'duplicate_facility' ? '이미 동일한 분류·이름의 시설이 등록되어 있습니다.' : (e.error ?? '저장 실패'));
+      const errorMap: Record<string, string> = {
+        duplicate_facility: '이미 동일한 분류·이름의 시설이 등록되어 있습니다.',
+        municipality_required: 'SUPER_ADMIN 은 지자체 선택이 필요합니다.',
+        forbidden: '권한이 없습니다. (SUPER_ADMIN 또는 MUNI_ADMIN 만 등록 가능)',
+        no_scope: '지자체가 지정되지 않았습니다.',
+        invalid_request: '입력값이 올바르지 않습니다.',
+      };
+      const baseMsg = errorMap[e.error] ?? e.error ?? `저장 실패 (HTTP ${res.status})`;
+      const fieldDetail = e.fieldErrors ? ' · ' + Object.entries(e.fieldErrors).map(([k, v]) => `${k}: ${(v as string[])?.join(',')}`).join(' / ') : '';
+      setError(baseMsg + fieldDetail);
     }
   }
 

@@ -88,3 +88,52 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const allowed = ['SUPER_ADMIN', 'MUNI_ADMIN'];
+  if (!allowed.includes(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const id = BigInt(params.id);
+  const target = await prisma.wasteTreatmentFacility.findUnique({
+    where: { id },
+    include: { _count: { select: { intakes: true } } },
+  });
+  if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  if (session.role === 'MUNI_ADMIN') {
+    if (!session.municipalityId || BigInt(session.municipalityId) !== target.municipalityId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
+
+  /* FK 의존성 — 반입실적이 이 facility 를 참조하면 삭제 차단 (비활성화 권장) */
+  if (target._count.intakes > 0) {
+    return NextResponse.json(
+      {
+        error: 'has_dependencies',
+        detail: `이 처리시설을 사용한 반입실적 ${target._count.intakes}건이 있어 삭제할 수 없습니다. '비활성화'를 사용하세요.`,
+        intakeCount: target._count.intakes,
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.wasteTreatmentFacility.delete({ where: { id } });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: BigInt(session.userId),
+      actorRole: session.role,
+      action: 'FACILITY_DELETE',
+      resourceType: 'waste_treatment_facility',
+      resourceId: id.toString(),
+      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+      metadata: { type: target.type, name: target.name } as object,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
+}
