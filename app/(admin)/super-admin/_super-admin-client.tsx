@@ -554,13 +554,30 @@ function MTd({ children, align = 'left', className = '' }: { children: React.Rea
 }
 
 function CompanyInfoTab() {
+  /* SUPER_ADMIN 은 contractorId=null. 위탁업체 선택 picker 필수 */
+  const [contractorOpts, setContractorOpts] = useState<{ id: string; companyName: string }[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
   const [c, setC] = useState<{ id: string; companyName: string; businessNo: string; municipalityName: string; ceoName: string | null; phoneMain: string | null; emailMain: string | null; garageAddress: string | null; garageLat: number | null; garageLng: number | null; status: string } | null>(null);
   const [form, setForm] = useState({ ceoName: '', phoneMain: '', emailMain: '', garageAddress: '', garageLat: '', garageLng: '' });
   const [saving, setSaving] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
 
+  /* 위탁업체 목록 로드 */
+  useEffect(() => {
+    fetch('/api/contractors')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => {
+        const opts = (j.items ?? []).map((x: { id: string; companyName: string }) => ({ id: x.id, companyName: x.companyName }));
+        setContractorOpts(opts);
+        if (opts.length > 0 && !selectedId) setSelectedId(opts[0].id);
+      })
+      .catch(() => undefined);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
   function load() {
-    fetch('/api/contractor/info').then((r) => r.json()).then((d) => {
+    if (!selectedId) return;
+    fetch(`/api/contractor/info?contractorId=${selectedId}`).then((r) => r.json()).then((d) => {
       const x = d.contractor;
       setC(x);
       if (x) setForm({
@@ -573,11 +590,13 @@ function CompanyInfoTab() {
       });
     });
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [selectedId]);
 
   async function save() {
+    if (!selectedId) return;
     setSaving(true);
     const body: Record<string, unknown> = {
+      contractorId: selectedId,
       ceoName: form.ceoName || null,
       phoneMain: form.phoneMain || null,
       emailMain: form.emailMain || null,
@@ -612,10 +631,31 @@ function CompanyInfoTab() {
     }
   }
 
-  if (!c) return <div className="text-center py-10 text-slate-500">회사 정보 로딩 중…</div>;
-
   return (
     <div className="bg-surface border border-line rounded-lg p-5 max-w-[720px] space-y-4">
+      {/* 위탁업체 선택 picker (SUPER_ADMIN 전용) */}
+      <div className="flex items-center gap-2 pb-3 border-b border-line">
+        <label htmlFor="contractor-picker" className="text-xs font-extrabold text-slate-700">위탁업체 선택</label>
+        <select
+          id="contractor-picker"
+          value={selectedId}
+          onChange={(e) => setSelectedId(e.target.value)}
+          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500"
+        >
+          {contractorOpts.length === 0 && <option value="">— 위탁업체 없음 —</option>}
+          {contractorOpts.map((o) => (
+            <option key={o.id} value={o.id}>{o.companyName}</option>
+          ))}
+        </select>
+      </div>
+
+      {!c && (
+        <div className="text-center py-8 text-slate-700 font-bold">
+          {selectedId ? '회사 정보 로딩 중…' : '위탁업체를 선택해 주세요.'}
+        </div>
+      )}
+
+      {c && (<>
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-extrabold text-ink">{c.companyName}</h3>
         <span className="text-[10px] font-mono font-bold text-slate-600">{c.businessNo}</span>
@@ -674,6 +714,7 @@ function CompanyInfoTab() {
           {saving ? '저장 중…' : '회사정보 저장'}
         </button>
       </div>
+      </>)}
     </div>
   );
 }
