@@ -1,7 +1,7 @@
 'use client';
 
 // Design Ref: §5.1.1, §7.1 — 처리시설 마스터 탭 추가 + ALL_REPORTS에 f02 코드
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FacilitiesTab } from './facilities/_facilities-tab';
 import { BottomSheet } from '@/components/BottomSheet';
 
@@ -115,6 +115,47 @@ function MunicipalitiesTab() {
   const [status, setStatus] = useState('');
   const [editing, setEditing] = useState<MuniRow | null>(null);
   const [creating, setCreating] = useState(false);
+  /* P1-3 — 광역-기초 아코디언 뷰 */
+  const [viewMode, setViewMode] = useState<'table' | 'grouped'>('grouped');
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
+
+  /* 광역별 그룹핑 — 검색·필터 결과를 region 기준으로 묶음 */
+  const grouped = useMemo(() => {
+    const map = new Map<string, MuniRow[]>();
+    for (const m of items) {
+      const key = m.region ?? '미분류';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(m);
+    }
+    /* 광역 정렬 — regions 배열 순서 우선, 그 외는 가나다 */
+    const orderedKeys = [...map.keys()].sort((a, b) => {
+      const ai = regions.indexOf(a);
+      const bi = regions.indexOf(b);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return a.localeCompare(b, 'ko');
+    });
+    return orderedKeys.map((key) => {
+      const list = map.get(key)!.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      const active = list.filter((m) => m.status === 'ACTIVE' && m.contractorCount > 0).length;
+      const dormant = list.filter((m) => m.contractorCount === 0).length;
+      const totalContractors = list.reduce((s, m) => s + m.contractorCount, 0);
+      return { region: key, list, active, dormant, totalContractors };
+    });
+  }, [items, regions]);
+
+  function toggleRegion(r: string) {
+    setExpandedRegions((prev) => {
+      const next = new Set(prev);
+      if (next.has(r)) next.delete(r);
+      else next.add(r);
+      return next;
+    });
+  }
+
+  function expandAll() { setExpandedRegions(new Set(grouped.map((g) => g.region))); }
+  function collapseAll() { setExpandedRegions(new Set()); }
 
   async function load() {
     setLoading(true);
@@ -193,6 +234,25 @@ function MunicipalitiesTab() {
         <button onClick={load} className="px-3 py-1.5 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800">
           🔍 조회
         </button>
+
+        {/* P1-3 — 광역-기초 아코디언 vs 테이블 토글 */}
+        <div className="flex items-center gap-1 ml-2 border border-line rounded-md overflow-hidden">
+          <button
+            onClick={() => setViewMode('grouped')}
+            className={`px-3 py-1.5 text-xs font-extrabold ${viewMode === 'grouped' ? 'bg-purple-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+            aria-pressed={viewMode === 'grouped'}
+          >
+            📂 광역 그룹
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-1.5 text-xs font-extrabold ${viewMode === 'table' ? 'bg-purple-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+            aria-pressed={viewMode === 'table'}
+          >
+            📋 테이블
+          </button>
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={async () => {
@@ -220,58 +280,147 @@ function MunicipalitiesTab() {
         </div>
       </div>
 
-      {/* 테이블 */}
-      <div className="bg-surface border border-line rounded-lg overflow-x-auto">
-        <table className="w-full text-sm min-w-[640px]">
-          <thead className="bg-surface-soft border-b-2 border-line">
-            <tr className="text-left">
-              <MTh>광역</MTh>
-              <MTh>지자체명</MTh>
-              <MTh>행정코드</MTh>
-              <MTh>상태</MTh>
-              <MTh align="right">위탁업체</MTh>
-              <MTh align="right">관리자</MTh>
-              <MTh align="right">작업</MTh>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <tr><td colSpan={7} className="text-center py-8 text-slate-500">로딩 중…</td></tr>}
-            {!loading && items.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-slate-500">조건에 맞는 지자체 없음</td></tr>}
-            {!loading && items.map((m) => (
-              <tr key={m.id} className="border-b border-line hover:bg-surface-soft">
-                <MTd className="text-[11px] font-mono font-bold text-ink-muted">{m.region ?? '—'}</MTd>
-                <MTd className="font-extrabold text-ink">{m.name}</MTd>
-                <MTd className="font-mono text-[11px] text-ink-muted">{m.code}</MTd>
-                <MTd>
-                  {m.contractorCount === 0
-                    ? <MuniStatusBadge status="SUSPENDED" />
-                    : <MuniStatusBadge status={m.status} />
-                  }
-                </MTd>
-                <MTd align="right">
-                  {m.contractorCount > 0
-                    ? <span className="font-mono font-bold text-info">{m.contractorCount}</span>
-                    : <span className="text-ink-faint">0</span>}
-                </MTd>
-                <MTd align="right">
-                  {m.adminCount > 0
-                    ? <span className="font-mono font-bold text-purple-700">{m.adminCount}</span>
-                    : <span className="text-ink-faint">0</span>}
-                </MTd>
-                <MTd align="right">
-                  <div className="flex justify-end gap-1.5">
-                    <button onClick={() => setEditing(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-line hover:bg-surface-soft">편집</button>
-                    <button onClick={() => toggleStatus(m)} className={`text-[11px] font-extrabold px-2 py-1 rounded ${m.status === 'ACTIVE' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
-                      {m.status === 'ACTIVE' ? '비활성화' : '활성화'}
-                    </button>
-                    <button onClick={() => remove(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50">삭제</button>
-                  </div>
-                </MTd>
+      {/* 본문 — 모드별 분기 */}
+      {viewMode === 'table' ? (
+        <div className="bg-surface border border-line rounded-lg overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead className="bg-surface-soft border-b-2 border-line">
+              <tr className="text-left">
+                <MTh>광역</MTh>
+                <MTh>지자체명</MTh>
+                <MTh>행정코드</MTh>
+                <MTh>상태</MTh>
+                <MTh align="right">위탁업체</MTh>
+                <MTh align="right">관리자</MTh>
+                <MTh align="right">작업</MTh>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading && <tr><td colSpan={7} className="text-center py-8 text-slate-700 font-bold">로딩 중…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-slate-700 font-bold">조건에 맞는 지자체 없음</td></tr>}
+              {!loading && items.map((m) => (
+                <tr key={m.id} className="border-b border-line hover:bg-surface-soft">
+                  <MTd className="text-[11px] font-mono font-bold text-ink-muted">{m.region ?? '—'}</MTd>
+                  <MTd className="font-extrabold text-ink">{m.name}</MTd>
+                  <MTd className="font-mono text-[11px] text-ink-muted">{m.code}</MTd>
+                  <MTd>
+                    {m.contractorCount === 0
+                      ? <MuniStatusBadge status="SUSPENDED" />
+                      : <MuniStatusBadge status={m.status} />
+                    }
+                  </MTd>
+                  <MTd align="right">
+                    {m.contractorCount > 0
+                      ? <span className="font-mono font-bold text-info">{m.contractorCount}</span>
+                      : <span className="text-ink-faint">0</span>}
+                  </MTd>
+                  <MTd align="right">
+                    {m.adminCount > 0
+                      ? <span className="font-mono font-bold text-purple-700">{m.adminCount}</span>
+                      : <span className="text-ink-faint">0</span>}
+                  </MTd>
+                  <MTd align="right">
+                    <div className="flex justify-end gap-1.5">
+                      <button onClick={() => setEditing(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-line hover:bg-surface-soft">편집</button>
+                      <button onClick={() => toggleStatus(m)} className={`text-[11px] font-extrabold px-2 py-1 rounded ${m.status === 'ACTIVE' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                        {m.status === 'ACTIVE' ? '비활성화' : '활성화'}
+                      </button>
+                      <button onClick={() => remove(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50">삭제</button>
+                    </div>
+                  </MTd>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* 광역-기초 아코디언 */
+        <div className="space-y-2">
+          {/* 광역 그룹 컨트롤 */}
+          <div className="flex items-center gap-2 text-xs">
+            <button onClick={expandAll} className="px-2 py-1 rounded border border-line bg-white font-bold hover:bg-slate-50">
+              ▼ 모두 펼치기
+            </button>
+            <button onClick={collapseAll} className="px-2 py-1 rounded border border-line bg-white font-bold hover:bg-slate-50">
+              ▶ 모두 접기
+            </button>
+            <span className="text-slate-700 font-bold ml-2">{grouped.length} 광역 · {items.length} 지자체</span>
+          </div>
+
+          {loading && <div className="text-center py-8 text-slate-700 font-bold">로딩 중…</div>}
+          {!loading && grouped.length === 0 && <div className="text-center py-8 text-slate-700 font-bold">조건에 맞는 지자체 없음</div>}
+
+          {!loading && grouped.map((g) => {
+            const open = expandedRegions.has(g.region);
+            return (
+              <div key={g.region} className="bg-surface border border-line rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleRegion(g.region)}
+                  aria-expanded={open}
+                  aria-controls={`region-panel-${g.region}`}
+                  className="w-full px-4 py-3 flex items-center gap-3 bg-surface-soft hover:bg-slate-100 transition text-left"
+                >
+                  <span className="text-purple-700 text-sm font-mono font-extrabold w-4">{open ? '▼' : '▶'}</span>
+                  <span className="font-black text-base text-ink flex-1">{g.region}</span>
+                  <span className="text-[11px] font-mono font-bold text-emerald-700">활성 {g.active}</span>
+                  <span className="text-[11px] font-mono font-bold text-slate-700">휴면 {g.dormant}</span>
+                  <span className="text-[11px] font-mono font-bold text-info">위탁 {g.totalContractors}</span>
+                  <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{g.list.length}</span>
+                </button>
+                {open && (
+                  <div id={`region-panel-${g.region}`} className="border-t border-line">
+                    <table className="w-full text-sm">
+                      <thead className="bg-surface-alt border-b border-line">
+                        <tr className="text-left">
+                          <MTh>지자체명</MTh>
+                          <MTh>행정코드</MTh>
+                          <MTh>상태</MTh>
+                          <MTh align="right">위탁업체</MTh>
+                          <MTh align="right">관리자</MTh>
+                          <MTh align="right">작업</MTh>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.list.map((m) => (
+                          <tr key={m.id} className="border-b border-line last:border-b-0 hover:bg-surface-soft">
+                            <MTd className="font-extrabold text-ink">{m.name}</MTd>
+                            <MTd className="font-mono text-[11px] text-ink-muted">{m.code}</MTd>
+                            <MTd>
+                              {m.contractorCount === 0
+                                ? <MuniStatusBadge status="SUSPENDED" />
+                                : <MuniStatusBadge status={m.status} />}
+                            </MTd>
+                            <MTd align="right">
+                              {m.contractorCount > 0
+                                ? <span className="font-mono font-bold text-info">{m.contractorCount}</span>
+                                : <span className="text-ink-faint">0</span>}
+                            </MTd>
+                            <MTd align="right">
+                              {m.adminCount > 0
+                                ? <span className="font-mono font-bold text-purple-700">{m.adminCount}</span>
+                                : <span className="text-ink-faint">0</span>}
+                            </MTd>
+                            <MTd align="right">
+                              <div className="flex justify-end gap-1.5">
+                                <button onClick={() => setEditing(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-line hover:bg-surface-soft">편집</button>
+                                <button onClick={() => toggleStatus(m)} className={`text-[11px] font-extrabold px-2 py-1 rounded ${m.status === 'ACTIVE' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>
+                                  {m.status === 'ACTIVE' ? '비활성화' : '활성화'}
+                                </button>
+                                <button onClick={() => remove(m)} className="text-[11px] font-extrabold px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50">삭제</button>
+                              </div>
+                            </MTd>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {(editing || creating) && (
         <MuniEditModal
