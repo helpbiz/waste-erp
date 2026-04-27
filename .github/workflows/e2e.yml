@@ -150,6 +150,10 @@ jobs:
         if: success() || failure()
         run: npx playwright test muni-policy-roundtrip.spec.ts --project=375-iPhone-SE
 
+      - name: Run contractor-registration (POST/GET API)
+        if: success() || failure()
+        run: npx playwright test contractor-registration.spec.ts --project=375-iPhone-SE
+
       - name: Stop app
         if: always()
         run: |
