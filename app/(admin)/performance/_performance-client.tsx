@@ -1,7 +1,9 @@
 'use client';
 
+// Design Ref: §5.1.2 — 처리시설 드롭다운 + 일자별 카드 PDF 출력 버튼 (FR-08)
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FacilitySelect } from '@/components/FacilitySelect';
 
 const WASTE_MATERIALS = [
   { code: 'GENERAL',       label: '일반' },
@@ -37,6 +39,9 @@ type IntakeRecord = {
   id: string; intakeDate: string; intakeTime: string; vehicleId: string;
   vehicleNo: string; materialCategory: string; weightTon: number; note: string | null;
   recorderName: string;
+  facilityId: string | null;     // Design Ref: §3.1.2
+  facilityName: string | null;
+  facilityType: string | null;
 };
 
 type WasteStats = {
@@ -300,6 +305,18 @@ function IntakeTab({ canEdit, vehicles }: {
         <div className="text-xs font-mono ml-auto">
           {items.length}건 · 합계 <span className="font-extrabold text-accent">{items.reduce((s, i) => s + i.weightTon, 0).toFixed(3)}</span> ton
         </div>
+        {/* Plan FR-08: 일자별 카드 PDF 출력 버튼 — from===to 일 때만 활성 (단일 일자 전제) */}
+        {from === to && items.length > 0 && (
+          <a
+            href={`/api/reports/daily-treatment/pdf?date=${from}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-1.5 rounded text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+            title="해당 일자 일일 처리실적 일보 PDF 다운로드 (Module 6에서 활성화 예정)"
+          >
+            📄 일보 PDF 출력
+          </a>
+        )}
         {canEdit && (
           <button onClick={() => setShowCreate(true)}
             className="px-4 py-1.5 rounded text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
@@ -310,12 +327,13 @@ function IntakeTab({ canEdit, vehicles }: {
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[820px] text-sm">
           <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase">
             <tr>
               <th className="px-3 py-2 text-left">일자</th>
               <th className="px-3 py-2 text-left">반입시간</th>
               <th className="px-3 py-2 text-left">차량</th>
+              <th className="px-3 py-2 text-left">처리시설</th>
               <th className="px-3 py-2 text-left">성상</th>
               <th className="px-3 py-2 text-right">반입량(ton)</th>
               <th className="px-3 py-2 text-left">비고</th>
@@ -325,13 +343,16 @@ function IntakeTab({ canEdit, vehicles }: {
           </thead>
           <tbody className="divide-y divide-line">
             {items.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-10 text-center text-slate-500">반입 기록이 없습니다.</td></tr>
+              <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-500">반입 기록이 없습니다.</td></tr>
             )}
             {items.map((i) => (
               <tr key={i.id} className="hover:bg-slate-50">
                 <td className="px-3 py-1.5 font-mono">{i.intakeDate}</td>
                 <td className="px-3 py-1.5 font-mono font-extrabold">{i.intakeTime}</td>
                 <td className="px-3 py-1.5 font-bold">{i.vehicleNo}</td>
+                <td className="px-3 py-1.5 text-xs">
+                  {i.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}
+                </td>
                 <td className="px-3 py-1.5">
                   <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent">
                     {CATEGORY_LABEL[i.materialCategory] ?? i.materialCategory}
@@ -376,6 +397,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     intakeDate: initial?.intakeDate ?? now.toISOString().slice(0, 10),
     intakeTime: initial?.intakeTime ?? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     vehicleId: initial?.vehicleId ?? (vehicles[0]?.id ?? ''),
+    facilityId: initial?.facilityId ?? null,  // Design Ref: §3.1.2
     materialCategory: initial?.materialCategory ?? 'GENERAL',
     weightTon: initial ? String(initial.weightTon) : '',
     note: initial?.note ?? '',
@@ -392,6 +414,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     const body: Record<string, unknown> = {
       intakeDate: form.intakeDate, intakeTime: form.intakeTime,
       materialCategory: form.materialCategory, weightTon: w, note: form.note || undefined,
+      facilityId: form.facilityId,  // null 허용
     };
     if (!initial) body.vehicleId = form.vehicleId;
     const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -436,6 +459,14 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">반입량 (ton)</div>
             <input type="number" step="0.001" value={form.weightTon} onChange={(e) => setForm({ ...form, weightTon: e.target.value })}
               placeholder="0.000" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
+          </div>
+          <div className="col-span-2">
+            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">처리시설 (Design §3.1.2)</div>
+            <FacilitySelect
+              value={form.facilityId}
+              onChange={(id) => setForm({ ...form, facilityId: id })}
+              className="w-full"
+            />
           </div>
           <div className="col-span-2">
             <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">비고</div>

@@ -15,7 +15,11 @@ dist
 .idea
 .vscode/*.code-workspace
 prisma/migrations/dev.db*
-.bkit/runtime/*.tmp
+
+# bkit + Claude Code 자동 갱신/세션 파일 (코드와 무관)
+.bkit/
+.claude/
+tsconfig.tsbuildinfo
 
 # Playwright
 /e2e/.auth/

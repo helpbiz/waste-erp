@@ -1,7 +1,9 @@
 /**
  * GET  /api/recycling-intake?from&to&vehicleId&category
  * POST /api/recycling-intake — 신규 등록
- *   body: { intakeDate, intakeTime, vehicleId, materialCategory, weightTon, note? }
+ *   body: { intakeDate, intakeTime, vehicleId, facilityId?, materialCategory, weightTon, note? }
+ *
+ * Design Ref: §3.1.2 — facilityId NULL 허용 (backward-compat)
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -15,6 +17,7 @@ const Body = z.object({
   intakeDate: z.string(),
   intakeTime: z.string().regex(/^\d{2}:\d{2}$/),
   vehicleId: z.string(),
+  facilityId: z.string().nullable().optional(),
   materialCategory: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD']),
   weightTon: z.number().min(0).max(99_999),
   note: z.string().max(500).optional(),
@@ -47,6 +50,7 @@ export async function GET(req: Request) {
     where,
     include: {
       vehicle: { select: { id: true, vehicleNo: true, vehicleType: true } },
+      facility: { select: { id: true, type: true, name: true } },
       recorder: { select: { id: true, name: true } },
     },
     orderBy: [{ intakeDate: 'desc' }, { intakeTime: 'desc' }],
@@ -61,6 +65,9 @@ export async function GET(req: Request) {
       vehicleId: i.vehicleId.toString(),
       vehicleNo: i.vehicle.vehicleNo,
       vehicleType: i.vehicle.vehicleType,
+      facilityId: i.facilityId?.toString() ?? null,
+      facilityName: i.facility?.name ?? null,
+      facilityType: i.facility?.type ?? null,
       materialCategory: i.materialCategory,
       weightTon: Number(i.weightTon.toString()),
       note: i.note,
@@ -90,12 +97,24 @@ export async function POST(req: Request) {
   });
   if (!v) return NextResponse.json({ error: 'invalid_vehicle' }, { status: 400 });
 
+  /* Design Ref: §3.1.2 — facilityId 가시범위 검증 (자사 facility만 허용) */
+  let facilityIdBig: bigint | null = null;
+  if (b.facilityId) {
+    const f = await prisma.wasteTreatmentFacility.findFirst({
+      where: { id: BigInt(b.facilityId), contractorId, active: true },
+      select: { id: true },
+    });
+    if (!f) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 });
+    facilityIdBig = f.id;
+  }
+
   const created = await prisma.recyclingCenterIntake.create({
     data: {
       contractorId,
       intakeDate: new Date(b.intakeDate),
       intakeTime: b.intakeTime,
       vehicleId: v.id,
+      facilityId: facilityIdBig,
       materialCategory: b.materialCategory,
       weightTon: b.weightTon,
       note: b.note ?? null,

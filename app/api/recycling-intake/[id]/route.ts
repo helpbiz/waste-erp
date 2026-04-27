@@ -12,6 +12,7 @@ export const runtime = 'nodejs';
 const Patch = z.object({
   intakeDate: z.string().optional(),
   intakeTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  facilityId: z.string().nullable().optional(),
   materialCategory: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD']).optional(),
   weightTon: z.number().min(0).max(99_999).optional(),
   note: z.string().max(500).nullable().optional(),
@@ -39,6 +40,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (b.materialCategory !== undefined) data.materialCategory = b.materialCategory;
   if (b.weightTon !== undefined) data.weightTon = b.weightTon;
   if (b.note !== undefined) data.note = b.note;
+  if (b.facilityId !== undefined) {
+    if (b.facilityId === null) {
+      data.facilityId = null;
+    } else {
+      const f = await prisma.wasteTreatmentFacility.findFirst({
+        where: { id: BigInt(b.facilityId), contractorId: BigInt(session.contractorId), active: true },
+        select: { id: true },
+      });
+      if (!f) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 });
+      data.facilityId = f.id;
+    }
+  }
 
   await prisma.recyclingCenterIntake.update({ where: { id }, data });
   return NextResponse.json({ ok: true });

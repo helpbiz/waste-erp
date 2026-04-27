@@ -1,0 +1,50 @@
+{
+  "page": { "format": "A4", "orientation": "landscape", "margin": "10mm" },
+  "header": {
+    "left":  { "type": "logo", "src": "{{contractor.logoUrl}}", "width": 60 },
+    "title": "일일 처리실적 일보",
+    "meta":  [
+      { "label": "위탁업체",   "value": "{{contractor.companyName}}" },
+      { "label": "지자체",     "value": "{{municipality.name}}" },
+      { "label": "사업자번호", "value": "{{contractor.businessNo}}" },
+      { "label": "날짜",       "value": "{{date | format('YYYY-MM-DD (ddd)')}}" }
+    ]
+  },
+  "summary": {
+    "type": "cards",
+    "groupBy": "materialCategory",
+    "metric": { "field": "weightTon", "agg": "sum", "unit": "t" },
+    "labels": {
+      "GENERAL": "생활",
+      "FOOD": "음식물",
+      "RECYCLING": "재활용",
+      "WOOD": "대형폐기물"
+    }
+  },
+  "table": {
+    "source": "RecyclingCenterIntake",
+    "filter": { "intakeDate": "{{date}}", "contractorId": "{{contractorId}}" },
+    "orderBy": [{ "intakeTime": "asc" }],
+    "include": { "vehicle": true, "facility": true },
+    "columns": [
+      { "label": "번호",     "type": "rowNumber",    "width": "5%" },
+      { "label": "차량번호", "field": "vehicle.plateNumber", "width": "15%" },
+      { "label": "반입시각", "field": "intakeTime",  "width": "10%" },
+      { "label": "처리시설", "field": "facility.name", "fallback": "(미지정)", "width": "25%" },
+      { "label": "성상",     "field": "materialCategory", "labelMap": "summary.labels", "width": "12%" },
+      { "label": "중량(t)",  "field": "weightTon",   "format": "0.000", "align": "right", "width": "13%" },
+      { "label": "비고",     "field": "note",        "width": "20%" }
+    ],
+    "footer": { "label": "합계", "totals": [{ "field": "weightTon", "agg": "sum" }] }
+  },
+  "footer": {
+    "signatures": [
+      { "label": "현장책임자", "width": 200 },
+      { "label": "지자체 담당", "width": 200 }
+    ],
+    "metadata": [
+      { "label": "생성",   "value": "{{now | format('YYYY-MM-DD HH:mm')}}" },
+      { "label": "생성자", "value": "{{user.name}}" }
+    ]
+  }
+}

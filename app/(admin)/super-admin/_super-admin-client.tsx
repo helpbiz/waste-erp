@@ -1,6 +1,8 @@
 'use client';
 
+// Design Ref: §5.1.1, §7.1 — 처리시설 마스터 탭 추가 + ALL_REPORTS에 f02 코드
 import { useEffect, useState } from 'react';
+import { FacilitiesTab } from './facilities/_facilities-tab';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -25,6 +27,8 @@ const ALL_REPORTS = [
   { code: 'intake',      label: '반입실적 보고서' },
   { code: 'safety',      label: '안전보건 보고서' },
   { code: 'hr',          label: '인사 보고서' },
+  // Design Ref: §7.1 — F-02 RBAC. MUNI_ADMIN 접근은 이 코드의 allowedReports 포함 필수
+  { code: 'f02',         label: 'F-02 일일 처리실적 일보' },
 ];
 
 type Muni = {
@@ -53,7 +57,13 @@ type Aggregate = {
 };
 
 export default function SuperAdminClient() {
-  const [tab, setTab] = useState<'munis' | 'policies' | 'aggregate' | 'gis' | 'company'>('munis');
+  const [tab, setTab] = useState<'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities'>(() => {
+    if (typeof window !== 'undefined') {
+      const t = new URLSearchParams(window.location.search).get('tab');
+      if (t === 'facilities') return 'facilities';
+    }
+    return 'munis';
+  });
 
   return (
     <div className="space-y-5">
@@ -68,6 +78,7 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'aggregate'} onClick={() => setTab('aggregate')}>관할 거래처 일괄 조회/출력</Tab>
         <Tab active={tab === 'company'} onClick={() => setTab('company')}>회사정보·차고지</Tab>
         <Tab active={tab === 'gis'} onClick={() => setTab('gis')}>GIS API 설정</Tab>
+        <Tab active={tab === 'facilities'} onClick={() => setTab('facilities')}>처리시설 마스터</Tab>
       </div>
 
       {tab === 'munis' && <MunicipalitiesTab />}
@@ -75,6 +86,7 @@ export default function SuperAdminClient() {
       {tab === 'aggregate' && <AggregateTab />}
       {tab === 'company' && <CompanyInfoTab />}
       {tab === 'gis' && <GisConfigTab />}
+      {tab === 'facilities' && <FacilitiesTab />}
     </div>
   );
 }
