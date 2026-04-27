@@ -108,6 +108,17 @@ async function main() {
   });
   console.log(`  ✓ User: test (INTERNAL_ADMIN) — 테스트관리자 [개발용]`);
 
+  // 기동반(RAPID) 직책 1명 부여 — /worker/route 메뉴 노출 검증용
+  // worker3(최민준)에게 적용 (position 시드 후 부착)
+  const rapid = await prisma.position.findUnique({ where: { code: 'RAPID' } });
+  if (rapid) {
+    await prisma.user.updateMany({
+      where: { username: 'worker3' },
+      data: { positionId: rapid.id },
+    });
+    console.log(`  ✓ Position assigned: worker3 → RAPID (기동반)`);
+  }
+
   // 오늘 근태 시드 (시안 5행 패턴과 동일하게 — 데모용)
   // 이철수 정상 / 박영희 지각 / 최민준 결근(레코드 없음) / 정수연 조기 / 김대호 정상
   const workers = await prisma.user.findMany({
