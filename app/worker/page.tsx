@@ -14,40 +14,35 @@ export default async function WorkerHomePage() {
   const checkedOut = !!me?.checkOutTime;
 
   return (
-    <div className="px-4 py-5 space-y-4">
-      {/* 인사말 */}
-      <div className="px-1">
-        <h1 className="text-2xl font-black text-ink tracking-tight">안녕하세요, {session.name}님</h1>
-        <p className="text-sm font-semibold text-ink-muted mt-1">{todayLabel()}</p>
+    <div className="px-3 py-3 space-y-3">
+      {/* 인사말 + 오늘 근무 — 1줄 컴팩트 헤더 */}
+      <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-xl p-3 text-white shadow-card">
+        <div className="flex items-baseline gap-2 mb-0.5">
+          <h1 className="text-base font-black truncate">{session.name}님</h1>
+          <span className="text-[10px] font-mono font-bold text-cyan-100 ml-auto">{todayLabel()}</span>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-[10px] font-mono font-extrabold tracking-widest text-cyan-100">오늘 근무</span>
+          {!checkedIn ? (
+            <span className="text-base font-black">출근 전</span>
+          ) : checkedOut ? (
+            <span className="text-base font-black">
+              근무 완료 ✓ <span className="text-xs font-mono font-bold text-cyan-100 ml-1">
+                {formatHmKst(new Date(me!.checkInTime!))} → {formatHmKst(new Date(me!.checkOutTime!))}
+              </span>
+            </span>
+          ) : (
+            <span className="text-base font-black">
+              근무 중 <span className="text-xs font-mono font-bold text-cyan-100 ml-1">
+                출근 {formatHmKst(new Date(me!.checkInTime!))}
+              </span>
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* 오늘 근무 카드 */}
-      <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-2xl p-5 text-white shadow-card">
-        <div className="text-xs font-mono font-extrabold tracking-widest text-cyan-100 mb-2">오늘 근무</div>
-        {!checkedIn ? (
-          <>
-            <div className="text-2xl font-black mb-1">출근 전</div>
-            <div className="text-sm font-semibold text-cyan-100">하단 [출퇴근] 탭에서 출근을 등록해 주세요.</div>
-          </>
-        ) : checkedOut ? (
-          <>
-            <div className="text-2xl font-black mb-1">근무 완료 ✓</div>
-            <div className="font-mono font-bold text-cyan-100">
-              {formatHmKst(new Date(me!.checkInTime!))} → {formatHmKst(new Date(me!.checkOutTime!))}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="text-2xl font-black mb-1">근무 중</div>
-            <div className="font-mono font-bold text-cyan-100">
-              출근 {formatHmKst(new Date(me!.checkInTime!))} · 퇴근 미등록
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 4개 메뉴 카드 */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* 메뉴 카드 grid (컴팩트) */}
+      <div className="grid grid-cols-2 gap-2">
         <MenuCard
           href="/worker/punch"
           color="bg-accent"
@@ -85,9 +80,9 @@ export default async function WorkerHomePage() {
         />
       </div>
 
-      {/* 알림 / 안내 */}
-      <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
-        <strong className="font-extrabold">개인정보 동의 안내</strong> · 출퇴근 GPS 좌표는 개인정보보호법에 따라 별도 동의 후 AES-256으로 저장되며, 6개월 후 자동 폐기됩니다.
+      {/* 알림 / 안내 — 컴팩트 1줄 */}
+      <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-1.5 text-[10px] text-amber-900 font-semibold leading-snug">
+        🔒 GPS 좌표는 AES-256 암호화 + 6개월 자동 폐기
       </div>
     </div>
   );
@@ -108,17 +103,17 @@ function MenuCard({
   iconPath: string;
   disabled?: boolean;
 }) {
-  const cls = `bg-surface border border-line rounded-xl p-4 shadow-card flex flex-col gap-2 ${disabled ? 'opacity-60' : 'active:scale-[0.98] cursor-pointer'} transition`;
+  const cls = `bg-surface border border-line rounded-lg p-3 shadow-card flex items-center gap-2 ${disabled ? 'opacity-60' : 'active:scale-[0.98] cursor-pointer'} transition`;
   const body = (
     <>
-      <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}>
-        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2}>
+      <div className={`w-9 h-9 rounded-lg ${color} flex items-center justify-center flex-shrink-0`}>
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
         </svg>
       </div>
-      <div>
-        <div className="text-[15px] font-extrabold text-ink">{title}</div>
-        <div className="text-[11px] font-bold text-ink-muted mt-0.5">{desc}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-extrabold text-ink truncate">{title}</div>
+        <div className="text-[10px] font-bold text-ink-muted mt-0.5 truncate">{desc}</div>
       </div>
     </>
   );
