@@ -119,6 +119,26 @@ EOF
 
 ## 5. 자주 발생하는 이슈
 
+### 5.0 `next build` 실패 — devDeps 누락 (Run #1에서 발견)
+
+증상: `Build Next.js` step에서 PostCSS/Tailwind 처리 실패. `Cannot find module 'tailwindcss'` 등.
+
+원인: 워크플로 env에 `NODE_ENV: production` 설정 → `npm ci`가 production-mode로 동작 → **devDependencies(tailwindcss, postcss, autoprefixer 등) 스킵**.
+
+해결: 워크플로 레벨 env에서 `NODE_ENV` 제거. `next build`/`next start`가 자체적으로 NODE_ENV 설정.
+
+```yaml
+# ❌ Before
+env:
+  NODE_ENV: production   # npm ci가 devDeps 스킵 → build fail
+
+# ✅ After
+env:
+  # NODE_ENV는 next build/start가 자체 설정하므로 워크플로 레벨 미설정
+```
+
+> 학습: 워크플로 env가 모든 step에 적용된다는 점 주의. step별 한정이 필요하면 step의 `env:`로 분리.
+
 ### 5.1 `App did not start in time` (functional/visual job)
 
 원인: postgres 부팅 지연 또는 next build 캐시 문제.
