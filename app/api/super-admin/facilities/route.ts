@@ -1,10 +1,12 @@
 /**
- * GET  /api/super-admin/facilities — 처리시설 목록 (자사 또는 SUPER_ADMIN의 경우 contractorId 지정)
- * POST /api/super-admin/facilities — 신규 등록
- *   body: { type, name, address?, contractorId? (SUPER_ADMIN 전용) }
+ * GET  /api/super-admin/facilities — 처리시설 목록 (지자체 단위)
+ *   query: ?active=true&municipalityId=N (SUPER_ADMIN 옵션) | ?contractorId=N (역호환)
+ * POST /api/super-admin/facilities — 신규 등록 (지자체 단위)
+ *   body: { type, name, address?, municipalityId? (SUPER_ADMIN 전용) }
  *
- * Design Ref: §4.1, §4.2 — F-02 일일 처리실적 일보 처리시설 마스터
- * 권한: SUPER_ADMIN, INTERNAL_ADMIN, CONTRACTOR_ADMIN (자사 scope)
+ * Design Ref: §3.1.1 — 처리시설은 지자체 단위. 같은 지자체 산하 위탁업체는 자동으로 동일 목록 사용.
+ * 권한: GET = SUPER_ADMIN/INTERNAL_ADMIN/CONTRACTOR_ADMIN/MUNI_ADMIN
+ *      POST = SUPER_ADMIN, MUNI_ADMIN(자기 지자체만)
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -18,55 +20,69 @@ const CreateBody = z.object({
   type: z.string().refine(isFacilityType, { message: 'invalid_type' }),
   name: z.string().min(1).max(100),
   address: z.string().max(255).nullable().optional(),
-  contractorId: z.string().optional(),  // SUPER_ADMIN 전용
+  municipalityId: z.string().optional(),  // SUPER_ADMIN 전용
+  /* 역호환 — 일부 기존 클라이언트는 contractorId 로 전달. 무시하되 음 처리. */
+  contractorId: z.string().optional(),
 });
 
-function resolveContractorId(
-  session: { role: string; contractorId: string | null },
-  bodyContractorId?: string,
-): bigint | null {
-  if (session.role === 'SUPER_ADMIN' && bodyContractorId) return BigInt(bodyContractorId);
-  if (session.contractorId) return BigInt(session.contractorId);
-  return null;
+/** 사용자의 가시 가능한 지자체 ID 목록 */
+async function visibleMunicipalityIds(session: {
+  role: string;
+  contractorId: string | null;
+  municipalityId: string | null;
+}): Promise<bigint[] | 'all' | 'none'> {
+  if (session.role === 'SUPER_ADMIN') return 'all';
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    return [BigInt(session.municipalityId)];
+  }
+  if (session.contractorId) {
+    /* CONTRACTOR_ADMIN/INTERNAL_ADMIN/WORKER — 본인 contractor의 muni */
+    const c = await prisma.contractor.findUnique({
+      where: { id: BigInt(session.contractorId) },
+      select: { municipalityId: true },
+    });
+    if (!c?.municipalityId) return 'none';
+    return [c.municipalityId];
+  }
+  return 'none';
 }
 
 export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const allowed = ['SUPER_ADMIN', 'INTERNAL_ADMIN', 'CONTRACTOR_ADMIN', 'MUNI_ADMIN'];
+  const allowed = ['SUPER_ADMIN', 'INTERNAL_ADMIN', 'CONTRACTOR_ADMIN', 'MUNI_ADMIN', 'WORKER'];
   if (!allowed.includes(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const url = new URL(req.url);
   const onlyActive = url.searchParams.get('active') === 'true';
-  const queryContractorId = url.searchParams.get('contractorId');
+  const queryMuniId = url.searchParams.get('municipalityId');
 
-  let contractorFilter: { contractorId?: bigint; contractor?: { municipalityId: bigint } } = {};
-  if (session.role === 'SUPER_ADMIN') {
-    if (queryContractorId) contractorFilter = { contractorId: BigInt(queryContractorId) };
-    // SUPER_ADMIN + no filter = 전체 조회
-  } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
-    contractorFilter = { contractor: { municipalityId: BigInt(session.municipalityId) } };
-  } else if (session.contractorId) {
-    contractorFilter = { contractorId: BigInt(session.contractorId) };
+  const visible = await visibleMunicipalityIds(session);
+  if (visible === 'none') return NextResponse.json({ error: 'no_scope' }, { status: 403 });
+
+  let where: { municipalityId?: bigint | { in: bigint[] }; active?: boolean } = {};
+  if (visible === 'all') {
+    if (queryMuniId) where.municipalityId = BigInt(queryMuniId);
+  } else if (queryMuniId && visible.some((id) => id === BigInt(queryMuniId))) {
+    where.municipalityId = BigInt(queryMuniId);
   } else {
-    return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
+    where.municipalityId = { in: visible };
   }
+  if (onlyActive) where.active = true;
 
   const items = await prisma.wasteTreatmentFacility.findMany({
-    where: {
-      ...contractorFilter,
-      ...(onlyActive ? { active: true } : {}),
-    },
-    include: { contractor: { select: { id: true, companyName: true } } },
+    where,
+    include: { municipality: { select: { id: true, name: true, region: true } } },
     orderBy: [{ active: 'desc' }, { type: 'asc' }, { name: 'asc' }],
   });
 
   return NextResponse.json({
     items: items.map((f) => ({
       id: f.id.toString(),
-      contractorId: f.contractorId.toString(),
-      contractorName: f.contractor.companyName,
+      municipalityId: f.municipalityId.toString(),
+      municipalityName: f.municipality.name,
+      municipalityRegion: f.municipality.region,
       type: f.type,
       name: f.name,
       address: f.address,
@@ -82,7 +98,8 @@ export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const allowed = ['SUPER_ADMIN', 'INTERNAL_ADMIN', 'CONTRACTOR_ADMIN'];
+  /* SUPER_ADMIN 또는 MUNI_ADMIN 만 등록 가능 (CONTRACTOR_ADMIN/INTERNAL_ADMIN 은 muni 단위 변경 권한 없음) */
+  const allowed = ['SUPER_ADMIN', 'MUNI_ADMIN'];
   if (!allowed.includes(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const parsed = CreateBody.safeParse(await req.json().catch(() => null));
@@ -93,19 +110,27 @@ export async function POST(req: Request) {
     );
   }
   const b = parsed.data;
-  const contractorId = resolveContractorId(session, b.contractorId);
-  if (!contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
-  // Design Ref: §6.1 — duplicate_facility (UNIQUE [contractorId, type, name])
+  /* 대상 지자체 결정 */
+  let municipalityId: bigint | null = null;
+  if (session.role === 'SUPER_ADMIN') {
+    if (!b.municipalityId) return NextResponse.json({ error: 'municipality_required' }, { status: 400 });
+    municipalityId = BigInt(b.municipalityId);
+  } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    municipalityId = BigInt(session.municipalityId);
+  }
+  if (!municipalityId) return NextResponse.json({ error: 'no_scope' }, { status: 403 });
+
+  /* duplicate_facility — UNIQUE [municipalityId, type, name] */
   const existing = await prisma.wasteTreatmentFacility.findFirst({
-    where: { contractorId, type: b.type, name: b.name },
+    where: { municipalityId, type: b.type, name: b.name },
     select: { id: true },
   });
   if (existing) return NextResponse.json({ error: 'duplicate_facility' }, { status: 400 });
 
   const created = await prisma.wasteTreatmentFacility.create({
     data: {
-      contractorId,
+      municipalityId,
       type: b.type,
       name: b.name,
       address: b.address ?? null,
@@ -121,7 +146,7 @@ export async function POST(req: Request) {
       resourceType: 'waste_treatment_facility',
       resourceId: created.id.toString(),
       ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { type: b.type, name: b.name } as object,
+      metadata: { type: b.type, name: b.name, municipalityId: municipalityId.toString() } as object,
     },
   });
 

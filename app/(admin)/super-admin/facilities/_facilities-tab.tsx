@@ -1,15 +1,16 @@
 'use client';
 
-// Design Ref: §5.1.1 — 처리시설 마스터 관리 탭
-// Plan SC: 처리시설 마스터 등록 가능 (4종 type)
+// Design Ref: §3.1.1 — 처리시설 마스터 관리 탭 (지자체 단위)
+// 같은 지자체 산하 위탁업체는 자동으로 동일 facility 목록 사용
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FACILITY_TYPES, FACILITY_TYPE_LABELS, type FacilityType } from '@/lib/facility';
 
 type Facility = {
   id: string;
-  contractorId: string;
-  contractorName: string;
+  municipalityId: string;
+  municipalityName: string;
+  municipalityRegion: string | null;
   type: FacilityType;
   name: string;
   address: string | null;
@@ -17,20 +18,42 @@ type Facility = {
   updatedAt: string;
 };
 
+type Muni = { id: string; name: string; region: string | null };
+
 export function FacilitiesTab() {
   const [items, setItems] = useState<Facility[]>([]);
+  const [munis, setMunis] = useState<Muni[]>([]);
+  const [selectedMuniId, setSelectedMuniId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Facility | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
+  /* 지자체 목록 로드 (SUPER_ADMIN — 전체 / MUNI_ADMIN — 자기 지자체만) */
+  useEffect(() => {
+    fetch('/api/super-admin/municipalities?limit=500&status=ACTIVE')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => {
+        const opts = (j.items ?? []).map((m: { id: string; name: string; region: string | null }) => ({
+          id: m.id,
+          name: m.name,
+          region: m.region,
+        }));
+        setMunis(opts);
+        if (opts.length > 0 && !selectedMuniId) setSelectedMuniId(opts[0].id);
+      })
+      .catch(() => undefined);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
   function load() {
+    if (!selectedMuniId) { setItems([]); return; }
     setLoading(true);
-    fetch('/api/super-admin/facilities')
+    fetch(`/api/super-admin/facilities?municipalityId=${selectedMuniId}`)
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [selectedMuniId]);
 
   async function toggleActive(f: Facility) {
     if (!confirm(f.active ? `'${f.name}'을(를) 비활성화하시겠습니까?` : `'${f.name}'을(를) 다시 활성화하시겠습니까?`)) return;
@@ -43,32 +66,53 @@ export function FacilitiesTab() {
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
   }
 
+  const selectedMuni = useMemo(() => munis.find((m) => m.id === selectedMuniId), [munis, selectedMuniId]);
+
   return (
     <div className="space-y-3">
-      <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3">
+      <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <span className="font-extrabold text-ink">처리시설 마스터</span>
-        <span className="text-[11px] font-mono text-slate-600">최종 처리시설(소각장·위탁처리장·매립시설·자원순환센터) 등록</span>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="ml-auto px-4 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700">
-          + 처리시설 등록
-        </button>
+        <span className="text-[11px] font-mono text-slate-700 font-bold">지자체 단위 — 산하 위탁업체 자동 반영</span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <label htmlFor="facility-muni-picker" className="text-xs font-extrabold text-slate-700">지자체</label>
+          <select
+            id="facility-muni-picker"
+            value={selectedMuniId}
+            onChange={(e) => setSelectedMuniId(e.target.value)}
+            className="px-3 py-1.5 rounded-md border-2 border-line text-sm font-bold bg-surface min-h-[36px]"
+          >
+            {munis.length === 0 && <option value="">— 지자체 없음 —</option>}
+            {munis.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.region ? `[${m.region}] ` : ''}{m.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setShowCreate(true)}
+            disabled={!selectedMuniId}
+            className="px-4 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
+            + 처리시설 등록
+          </button>
+        </div>
       </div>
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        {loading && <div className="text-center py-10 text-slate-400">로딩 중…</div>}
+        {loading && <div className="text-center py-10 text-slate-700 font-bold">로딩 중…</div>}
         {!loading && items.length === 0 && (
-          <div className="text-center py-10 text-slate-400">등록된 처리시설이 없습니다.</div>
+          <div className="text-center py-10 text-slate-700 font-bold">
+            {selectedMuni ? `${selectedMuni.name}에 등록된 처리시설이 없습니다.` : '지자체를 선택해 주세요.'}
+          </div>
         )}
         {!loading && items.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase">
                 <tr>
                   <th className="px-3 py-2 text-left">분류</th>
                   <th className="px-3 py-2 text-left">시설명</th>
                   <th className="px-3 py-2 text-left">주소</th>
-                  <th className="px-3 py-2 text-left">위탁업체</th>
                   <th className="px-3 py-2 text-center">상태</th>
                   <th className="px-3 py-2"></th>
                 </tr>
@@ -82,11 +126,10 @@ export function FacilitiesTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 font-bold">{f.name}</td>
-                    <td className="px-3 py-2 text-xs text-slate-600 max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
-                    <td className="px-3 py-2 text-xs">{f.contractorName}</td>
+                    <td className="px-3 py-2 text-xs text-slate-700 max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${
-                        f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-slate-600 border-slate-400'
+                        f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-slate-700 border-slate-400'
                       }`}>
                         {f.active ? '활성' : '비활성'}
                       </span>
@@ -105,14 +148,31 @@ export function FacilitiesTab() {
         )}
       </div>
 
-      {showCreate && <FacilityFormModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); load(); }} />}
-      {editing && <FacilityFormModal initial={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+      {showCreate && selectedMuniId && (
+        <FacilityFormModal
+          municipalityId={selectedMuniId}
+          municipalityName={selectedMuni?.name ?? ''}
+          onClose={() => setShowCreate(false)}
+          onSaved={() => { setShowCreate(false); load(); }}
+        />
+      )}
+      {editing && (
+        <FacilityFormModal
+          initial={editing}
+          municipalityId={editing.municipalityId}
+          municipalityName={editing.municipalityName}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load(); }}
+        />
+      )}
     </div>
   );
 }
 
-function FacilityFormModal({ initial, onClose, onSaved }: {
+function FacilityFormModal({ initial, municipalityId, municipalityName, onClose, onSaved }: {
   initial?: Facility;
+  municipalityId: string;
+  municipalityName: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -129,11 +189,12 @@ function FacilityFormModal({ initial, onClose, onSaved }: {
     setError(null);
     const url = initial ? `/api/super-admin/facilities/${initial.id}` : '/api/super-admin/facilities';
     const method = initial ? 'PATCH' : 'POST';
-    const body = {
+    const body: Record<string, unknown> = {
       type: form.type,
       name: form.name.trim(),
       address: form.address.trim() || null,
     };
+    if (!initial) body.municipalityId = municipalityId;
     const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) onSaved();
@@ -148,11 +209,13 @@ function FacilityFormModal({ initial, onClose, onSaved }: {
       <div className="bg-white rounded-lg shadow-xl w-[480px] max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-line bg-purple-50">
           <h3 className="font-extrabold text-ink">{initial ? '처리시설 수정' : '처리시설 신규 등록'}</h3>
+          <div className="text-[11px] font-mono font-bold text-slate-700 mt-0.5">{municipalityName}</div>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">분류</div>
+            <label htmlFor="fac-type" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">분류</label>
             <select
+              id="fac-type"
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value as FacilityType })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
@@ -160,16 +223,18 @@ function FacilityFormModal({ initial, onClose, onSaved }: {
             </select>
           </div>
           <div>
-            <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">시설명 *</div>
+            <label htmlFor="fac-name" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">시설명 *</label>
             <input
+              id="fac-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="예: ○○구 자원순환센터"
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold" />
           </div>
           <div>
-            <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">주소</div>
+            <label htmlFor="fac-address" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">주소</label>
             <input
+              id="fac-address"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               placeholder="(선택)"

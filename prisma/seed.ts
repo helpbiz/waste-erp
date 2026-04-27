@@ -419,7 +419,7 @@ async function main() {
   }
   console.log(`  ✓ Complaints: 4 (1 초과, 1 처리중, 1 미배정, 1 완료)`);
 
-  // Design Ref: §3.1.1 — 처리시설 마스터 시드 (4종 type별 1개씩)
+  // Design Ref: §3.1.1 — 처리시설 마스터 시드 (지자체 단위, 4종 type별 1개씩)
   const facilities = [
     { type: 'RECYCLING_CENTER', name: '강남구 자원순환센터',  address: '서울특별시 강남구 일원동 ...' },
     { type: 'INCINERATOR',      name: '○○ 소각장',           address: '서울특별시 ○○구 ...'         },
@@ -428,12 +428,12 @@ async function main() {
   ];
   for (const f of facilities) {
     await prisma.wasteTreatmentFacility.upsert({
-      where: { contractorId_type_name: { contractorId: contractor.id, type: f.type, name: f.name } },
+      where: { municipalityId_type_name: { municipalityId: muni.id, type: f.type, name: f.name } },
       update: {},
-      create: { contractorId: contractor.id, type: f.type, name: f.name, address: f.address, active: true },
+      create: { municipalityId: muni.id, type: f.type, name: f.name, address: f.address, active: true },
     });
   }
-  console.log(`  ✓ Facilities: ${facilities.length} (소각장/위탁/매립/자원순환)`);
+  console.log(`  ✓ Facilities (지자체 단위): ${facilities.length} (소각장/위탁/매립/자원순환)`);
 
   // Design Ref: §3.1.3, §3.4 — F-02 일일 처리실적 일보 표준 ReportTemplate 시드
   // Note: municipalityId NULL 케이스는 Prisma upsert 복합키와 맞지 않아 findFirst 패턴 사용

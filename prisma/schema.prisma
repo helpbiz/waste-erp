@@ -179,10 +179,11 @@ model Municipality {
   createdAt DateTime           @default(now()) @map("created_at")
   createdBy BigInt?            @map("created_by")
 
-  contractors     Contractor[]
-  adminDongs      AdminDong[]
-  accessPolicy    MuniAccessPolicy?
-  reportTemplates ReportTemplate[]
+  contractors         Contractor[]
+  adminDongs          AdminDong[]
+  accessPolicy        MuniAccessPolicy?
+  reportTemplates     ReportTemplate[]
+  treatmentFacilities WasteTreatmentFacility[]
 
   @@index([region, status])
   @@map("municipalities")
@@ -224,7 +225,7 @@ model Contractor {
   safetyReports       SafetyReport[]
   tbmSessions         TbmSession[]
   healthRecords       HealthRecord[]
-  treatmentFacilities WasteTreatmentFacility[]
+  // treatmentFacilities 는 Municipality 로 이관됨 — Contractor 는 muni 산하 facility 를 자동 사용
   reportTemplates     ReportTemplate[]
 
   @@index([municipalityId])
@@ -932,23 +933,24 @@ model RecyclingCenterIntake {
 }
 
 /// 폐기물 처리시설 마스터 — Design Ref: §3.1.1
-/// 위탁업체별로 등록한 최종 처리시설 (소각장/위탁처리장/매립시설/자원순환센터/기타)
+/// 지자체 단위로 등록한 최종 처리시설 (소각장/위탁처리장/매립시설/자원순환센터/기타)
+/// 같은 지자체 산하 위탁업체들은 자동으로 동일한 facility 목록을 사용
 /// type은 VARCHAR — Plan §5 Risk: 추가 시 코드 상수만 갱신, DB 마이그레이션 회피
 model WasteTreatmentFacility {
-  id           BigInt   @id @default(autoincrement())
-  contractorId BigInt   @map("contractor_id")
-  type         String   @db.VarChar(20) // FacilityType union (lib/facility.ts에서 검증)
-  name         String   @db.VarChar(100)
-  address      String?  @db.VarChar(255)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             BigInt   @id @default(autoincrement())
+  municipalityId BigInt   @map("municipality_id")
+  type           String   @db.VarChar(20) // FacilityType union (lib/facility.ts에서 검증)
+  name           String   @db.VarChar(100)
+  address        String?  @db.VarChar(255)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  contractor Contractor              @relation(fields: [contractorId], references: [id])
-  intakes    RecyclingCenterIntake[]
+  municipality Municipality            @relation(fields: [municipalityId], references: [id])
+  intakes      RecyclingCenterIntake[]
 
-  @@unique([contractorId, type, name])
-  @@index([contractorId, active])
+  @@unique([municipalityId, type, name])
+  @@index([municipalityId, active])
   @@map("waste_treatment_facilities")
 }
 
