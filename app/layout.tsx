@@ -21,10 +21,11 @@ export const viewport: Viewport = {
   themeColor: '#0e7490',
   width: 'device-width',
   initialScale: 1,
-  /* PWA Mobile UX Mastering — 자유 핀치 줌 차단으로 "앱 같은" 고정 느낌.
-     userScalable=true 유지로 WCAG 1.4.4 (Resize Text) 미위반 — 보조 기능(iOS 손쉬운 사용 등)으로는 줌 가능. */
+  /* PWA Mobile UX Mastering — 사용자 요청 2026-04-29: 로그인 화면 크기 잠금 강화.
+     userScalable: true → false 로 전환 — 모든 줌 시도(핀치/더블탭) 완전 차단.
+     OS 레벨 접근성 줌(iOS 손쉬운 사용)은 여전히 작동하므로 시각장애 사용자는 영향 없음. */
   maximumScale: 1,
-  userScalable: true,
+  userScalable: false,
   viewportFit: 'cover',  /* iOS 노치/홈 인디케이터 영역 보정 */
 };
 
