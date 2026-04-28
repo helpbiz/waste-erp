@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -48,19 +49,17 @@ export async function POST(req: Request) {
     });
   }
 
-  /* 3. 감사 로그 */
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'MUNICIPALITY_SYNC_STATUS',
-      resourceType: 'municipality',
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        suspended: toSuspend.length,
-        activated: toActivate.length,
-        total: munis.length,
-      } as object,
+  /* 3. 감사 로그 — bulk operation, muni 단일 ID 없음 */
+  await writeAudit(req, session, {
+    action: 'MUNICIPALITY_SYNC_STATUS',
+    resourceType: 'municipality',
+    metadata: {
+      suspended: toSuspend.length,
+      activated: toActivate.length,
+      total: munis.length,
+      suspendedIds: toSuspend.map((id) => id.toString()),
+      activatedIds: toActivate.map((id) => id.toString()),
+      crossTenant: true,
     },
   });
 

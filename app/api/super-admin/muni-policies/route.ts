@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -85,19 +86,17 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'MUNI_POLICY_SET',
-      resourceType: 'muni_access_policy',
-      resourceId: upserted.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        municipalityId: b.municipalityId,
-        screens: b.allowedScreens.length,
-        reports: b.allowedReports.length,
-      } as object,
+  /* SUPER cross-tenant — 정책 변경 대상 muni 명시 기록 */
+  await writeAudit(req, session, {
+    action: 'MUNI_POLICY_SET',
+    resourceType: 'muni_access_policy',
+    resourceId: upserted.id.toString(),
+    municipalityId,
+    metadata: {
+      municipalityId: b.municipalityId,
+      screens: b.allowedScreens.length,
+      reports: b.allowedReports.length,
+      crossTenant: true,
     },
   });
 

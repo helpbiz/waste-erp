@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -45,15 +46,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'MUNICIPALITY_UPDATE',
-      resourceType: 'municipality',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { changes: b, before: { name: target.name, region: target.region, status: target.status } } as object,
+  /* SUPER cross-tenant — 작업 대상 muni 명시 기록 */
+  await writeAudit(req, session, {
+    action: 'MUNICIPALITY_UPDATE',
+    resourceType: 'municipality',
+    resourceId: id.toString(),
+    municipalityId: id,
+    metadata: {
+      changes: b,
+      before: { name: target.name, region: target.region, status: target.status },
+      crossTenant: true,
     },
   });
 
@@ -94,16 +96,13 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await prisma.municipality.delete({ where: { id } });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'MUNICIPALITY_DELETE',
-      resourceType: 'municipality',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { name: target.name, code: target.code } as object,
-    },
+  /* SUPER cross-tenant DELETE */
+  await writeAudit(req, session, {
+    action: 'MUNICIPALITY_DELETE',
+    resourceType: 'municipality',
+    resourceId: id.toString(),
+    municipalityId: id,
+    metadata: { name: target.name, code: target.code, crossTenant: true },
   });
 
   return NextResponse.json({ ok: true });
