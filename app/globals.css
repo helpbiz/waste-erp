@@ -14,11 +14,10 @@
 
 :root { color-scheme: light; }
 
-/* 사용자 요청 2026-04-29: 앱 전체 폰트 12.5% 일괄 확대 (시니어/외부 가독성).
-   기본 16px → 18px. 모든 rem 기반 Tailwind 사이즈 (text-xs~text-9xl, p-*, m-*, gap-* 등)
-   가 자동으로 비율 유지하며 커짐. 고정 px(text-[10px] 등)는 영향 없음.
-   admin/worker/citizen/login 모든 페이지 일괄 적용. */
-html { font-size: 18px; }
+/* 사용자 요청 2026-04-29: 앱 전체 폰트 일괄 확대 — 시니어/현장 가독성 우선.
+   v1: 16 → 18px (+12.5%). 사용자 피드백 "여전히 작음" → v2: 20px (+25%).
+   고정 px 박힌 곳(text-[10px] 등)은 영향 없음 — 그건 별도 처리 필요. */
+html { font-size: 20px; }
 
 html, body { height: 100%; }
 body {
