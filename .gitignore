@@ -26,3 +26,7 @@ tsconfig.tsbuildinfo
 /e2e/__shots__/manual/
 /playwright-report/
 /test-results/
+
+# 로컬 HTTPS dev 인증서 (mkcert) — 절대 커밋 금지
+/certificates/
+*.pem
