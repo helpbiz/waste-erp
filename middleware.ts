@@ -60,6 +60,8 @@ function isPublic(path: string): boolean {
   /* PWA 정적 자산 — 인증 불필요 */
   if (path === '/manifest.json' || path === '/sw.js') return true;
   if (path.startsWith('/icons/')) return true;
+  /* 브랜드 자산 (로고 등) — 로그인 페이지에서 표시되어야 하므로 인증 불필요 (사용자 진단 2026-04-29) */
+  if (path.startsWith('/brand/')) return true;
   /* Let's Encrypt HTTP-01 ACME challenge — 인증 불필요 */
   if (path.startsWith('/.well-known/acme-challenge/')) return true;
   return false;
