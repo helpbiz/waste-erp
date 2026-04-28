@@ -186,9 +186,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: functional
     timeout-minutes: 15
-    # workflow_dispatch update_snapshots=true 시 baseline auto-commit 위해 contents:write 필요
+    # workflow_dispatch update_snapshots=true 시 baseline 브랜치 push + 자동 PR 생성
+    # contents:write — 새 브랜치 push, pull-requests:write — gh pr create
     permissions:
       contents: write
+      pull-requests: write
 
     services:
       postgres:
