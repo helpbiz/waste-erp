@@ -15,9 +15,9 @@
 :root { color-scheme: light; }
 
 /* 사용자 요청 2026-04-29: 앱 전체 폰트 일괄 확대 — 시니어/현장 가독성 우선.
-   v1: 18px(+12.5%) → v2: 20px(+25%) → v3: 30px(현재 20 의 +50%, 원본 16 대비 +87.5%).
-   고정 px(text-[10px] 등) 영향 없음 — 별도 처리 필요. */
-html { font-size: 30px; }
+   v1: 18px → v2: 20px → v3: 30px → v4: 32px (post-login 미세 더 키움 + 로그인은 컴팩트로 회귀).
+   고정 px → rem 변환 완료 (commit 0e949b3) → root 변경 시 자동 따라감. */
+html { font-size: 32px; }
 
 html, body { height: 100%; }
 body {

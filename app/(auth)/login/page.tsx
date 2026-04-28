@@ -160,8 +160,8 @@ function LoginInner() {
       }}
     >
       <div className="absolute inset-0 flex items-center justify-center px-4 overflow-y-auto py-6">
-       {/* 사용자 요청 2026-04-29 v3: 다시 3단계 더 업 (600 → 720 폭 + 폰트/높이 +3 단계). 로고 LOCK 유지. */}
-       <div className="w-full max-w-[720px]">
+       {/* 사용자 요청 2026-04-29 v4: 너무 컸음 — 원래 사이즈로 회귀. root 30px 가 자동으로 충분 확대. */}
+       <div className="w-full max-w-[460px]">
         {/* 🔒 LOGO LOCK — 사용자 명시 요청 2026-04-29.
             이 로고는 변경 금지. src 경로 / alt 텍스트 / 사이즈 절대 수정 X.
             동일 자산: app/(auth)/consent/_consent-client.tsx 도 동일하게 고정 유지. */}
@@ -174,10 +174,10 @@ function LoginInner() {
           />
         </div>
 
-        {/* 카드 — v3 3단계 업: padding p-10 sm:p-16, 입력 text-4xl/py-7, 아이콘 36px */}
+        {/* 카드 — v4: 원래 컴팩트 사이즈 회귀. root 30px scale 이 자동 확대 처리 */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-10 sm:p-16"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-5 sm:p-8"
         >
           <input
             type="text"
@@ -187,32 +187,31 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            /* font-size 36px (text-4xl) — v3 3단계 업 */
-            className="w-full px-7 py-6 rounded-2xl border-2 border-slate-300 text-4xl font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-6"
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
           />
 
-          <div className="relative mb-3">
+          <div className="relative mb-2">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="비밀번호"
-              className="w-full px-7 py-6 pr-20 rounded-2xl border-2 border-slate-300 text-4xl font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               tabIndex={-1}
               aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
-              className="absolute inset-y-0 right-0 px-5 flex items-center text-slate-500 hover:text-accent"
+              className="absolute inset-y-0 right-0 px-3.5 flex items-center text-slate-500 hover:text-accent"
             >
               {showPassword ? (
-                <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L14.12 14.12m0 0L21 21m-6.88-6.88a3 3 0 01-4.242-4.242" />
                 </svg>
               ) : (
-                <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
@@ -221,38 +220,38 @@ function LoginInner() {
           </div>
 
           {error && (
-            /* 에러 메시지 — v3: 36px (text-4xl) */
+            /* 에러 메시지 — 원래 컴팩트, root 30px 자동 스케일 */
             <div
               role="alert"
               aria-live="polite"
-              className="mt-6 px-7 py-6 rounded-2xl bg-red-50 border-2 border-red-300 text-4xl font-bold text-red-800"
+              className="mt-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-sm font-bold text-red-700"
             >
               {error}
             </div>
           )}
 
-          {/* 로그인 CTA — v3: 48px (text-5xl), min-h-28=112px */}
+          {/* 로그인 CTA — 원래 사이즈 (text-base + min-h-14) */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-8 min-h-28 py-7 rounded-2xl bg-accent text-white font-extrabold text-5xl tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-5 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-base tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* PWA 앱 설치 (보조 액션) — v3: 36px (text-4xl), min-h-24=96px */}
+          {/* 앱 설치 (보조) */}
           <button
             type="button"
             onClick={installApp}
             disabled={installed}
-            className="w-full mt-5 min-h-24 py-6 rounded-2xl bg-white border-2 border-line-strong text-ink-mid font-bold text-4xl hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full mt-2.5 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {installed ? '✓ 앱 설치됨' : '앱으로 설치하기'}
           </button>
         </form>
 
-        {/* 푸터 — v3: 32px (text-[2rem]) */}
-        <div className="text-center mt-7 sm:mt-10 text-[2rem] font-semibold text-white/85">
+        {/* 푸터 */}
+        <div className="text-center mt-3 sm:mt-6 text-xs font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>
