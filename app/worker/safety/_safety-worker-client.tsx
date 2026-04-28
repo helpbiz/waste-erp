@@ -212,9 +212,9 @@ export default function SafetyWorkerClient({
             <span className="text-lg">📋</span>
             <div className="flex-1">
               <div className="text-sm font-extrabold text-ink">오늘 TBM (안전교육)</div>
-              <div className="text-[11px] font-bold text-ink-muted mt-0.5">{tbm.signCount}명 서명 완료</div>
+              <div className="text-xs font-bold text-ink-muted mt-0.5">{tbm.signCount}명 서명 완료</div>
             </div>
-            {tbm.signed && <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-green-100 text-success border border-green-200">✓ 서명 완료</span>}
+            {tbm.signed && <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-extrabold bg-green-100 text-success border border-green-200">✓ 서명 완료</span>}
           </header>
           <div className="p-4">
             <div className="text-base font-extrabold text-ink mb-2">{tbm.topic}</div>
@@ -260,7 +260,7 @@ export default function SafetyWorkerClient({
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between">
           <div className="text-sm font-extrabold text-ink">일일 체크리스트</div>
-          <span className="text-[10px] font-mono font-extrabold text-ink-muted">{checkedCount} / {items.length}</span>
+          <span className="text-xs font-mono font-extrabold text-ink-muted">{checkedCount} / {items.length}</span>
         </header>
         {submitted && (
           <div className="px-4 py-3 bg-green-50 border-b border-success">
@@ -302,7 +302,7 @@ export default function SafetyWorkerClient({
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-4 py-3 bg-surface-soft border-b-2 border-line">
           <div className="text-sm font-extrabold text-ink">아차사고 / 재해 보고</div>
-          <div className="text-[11px] font-bold text-ink-muted mt-0.5">위험 상황을 발견했나요? 즉시 보고해 주세요.</div>
+          <div className="text-xs font-bold text-ink-muted mt-0.5">위험 상황을 발견했나요? 즉시 보고해 주세요.</div>
         </header>
         <div className="p-4 grid grid-cols-2 gap-2">
           <button
@@ -327,7 +327,7 @@ export default function SafetyWorkerClient({
             </div>
             {reportType === 'INCIDENT' && (
               <>
-                <label className="block text-[11px] font-extrabold text-ink mb-1">심각도</label>
+                <label className="block text-xs font-extrabold text-ink mb-1">심각도</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { v: 'MINOR', label: '경미', color: 'border-info text-info' },
@@ -362,7 +362,7 @@ export default function SafetyWorkerClient({
         {sosResult && (
           <div className="bg-surface border border-danger rounded-md px-3 py-2 mb-3 text-xs font-bold text-ink">
             ✓ 보고서 #{sosResult.reportId} 생성 · {sosResult.recipients}곳 알림
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold ${sosResult.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-mono font-extrabold ${sosResult.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
               {sosResult.provider === 'SIMULATION' ? 'SIMULATION' : `provider=${sosResult.provider}`}
             </span>
           </div>
@@ -374,7 +374,7 @@ export default function SafetyWorkerClient({
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-danger font-extrabold">정말 긴급 SOS를 발신하시겠습니까?</p>
-            <p className="text-[11px] text-ink-muted font-bold">위탁업체 매니저 + 119(시뮬레이션)에 즉시 알림이 발송되며, SafetyReport(중상)가 자동 생성됩니다.</p>
+            <p className="text-xs text-ink-muted font-bold">위탁업체 매니저 + 119(시뮬레이션)에 즉시 알림이 발송되며, SafetyReport(중상)가 자동 생성됩니다.</p>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <button onClick={fireSos} disabled={busy} className="py-3.5 rounded-lg bg-danger text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50">
                 {busy ? '발신 중…' : '🚨 발신 확정'}
@@ -393,11 +393,11 @@ export default function SafetyWorkerClient({
         <div className="grid grid-cols-3 gap-2">
           <a href="tel:119" className="bg-surface-alt rounded-lg border border-line py-2 text-center active:scale-95 transition">
             <div className="font-mono text-base font-black text-danger">119</div>
-            <div className="text-[10px] font-bold text-ink-muted">소방·구급</div>
+            <div className="text-xs font-bold text-ink-muted">소방·구급</div>
           </a>
           <a href="tel:112" className="bg-surface-alt rounded-lg border border-line py-2 text-center active:scale-95 transition">
             <div className="font-mono text-base font-black text-info">112</div>
-            <div className="text-[10px] font-bold text-ink-muted">경찰</div>
+            <div className="text-xs font-bold text-ink-muted">경찰</div>
           </a>
           {guardian.phone ? (
             <a
@@ -416,7 +416,7 @@ export default function SafetyWorkerClient({
               className="bg-surface-alt rounded-lg border-2 border-dashed border-warn/60 py-2 text-center active:scale-95 transition"
             >
               <div className="font-mono text-base font-black text-warn">＋</div>
-              <div className="text-[10px] font-bold text-warn">보호자 등록</div>
+              <div className="text-xs font-bold text-warn">보호자 등록</div>
             </a>
           )}
         </div>
@@ -439,16 +439,16 @@ function WeatherCard({ w }: { w: WeatherSnapshot }) {
           {w.condition === 'CLEAR' ? '☀️' : w.condition === 'CLOUDY' ? '⛅' : w.condition === 'RAIN' ? '🌧' : w.condition === 'SNOW' ? '❄️' : '🌪'}
         </div>
         <div className="flex-1">
-          <div className="text-[11px] font-extrabold tracking-widest">{w.region.replace('서울특별시 ', '')} · {w.conditionLabel}</div>
+          <div className="text-xs font-extrabold tracking-widest">{w.region.replace('서울특별시 ', '')} · {w.conditionLabel}</div>
           <div className="font-mono text-2xl font-black tracking-tight">
             {w.temp}°C
             <span className="text-sm font-bold ml-2">체감 {w.feelsLike}°C</span>
           </div>
-          <div className="text-[11px] font-bold mt-0.5 font-mono">
+          <div className="text-xs font-bold mt-0.5 font-mono">
             습도 {w.humidity}% · 풍속 {w.windSpeed}m/s · PM10 {w.pm10}㎍ ({w.pm10Label})
           </div>
         </div>
-        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold border bg-white/60">
+        <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-extrabold border bg-white/60">
           {w.hazardLabel}
         </span>
       </div>

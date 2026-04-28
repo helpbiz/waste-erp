@@ -96,7 +96,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
         <div className="flex-1 min-w-0">
           <div className="text-2xl font-black truncate">{user.name}</div>
           <div className="text-xs font-mono font-bold text-cyan-100 mt-0.5">사번 {user.employeeNo ?? '—'}</div>
-          <div className="text-[11px] font-bold text-cyan-100 mt-1">
+          <div className="text-xs font-bold text-cyan-100 mt-1">
             {user.positionLabel ?? '직책 미지정'} · {user.departmentName ?? '부서 미지정'}
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
           size={88}
         />
         {photoChanged && photo && (
-          <label className="flex items-center gap-2 mt-2 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1.5">
+          <label className="flex items-center gap-2 mt-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1.5">
             <input type="checkbox" checked={consentPII} onChange={(e) => setConsentPII(e.target.checked)} />
             개인정보(사진) 수집·이용 동의 (필수)
           </label>
@@ -125,27 +125,27 @@ export default function ProfileClient({ user }: { user: UserData }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={user.activeSignatureUrl} alt="signature" className="max-h-[120px]" />
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-700">
+            <div className="mt-2 flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               등록 완료 — 수정 불가
             </div>
-            <div className="text-[10px] font-mono text-emerald-700/70 mt-0.5">ref: {user.activeSignatureRef}</div>
-            <div className="text-[10px] text-amber-700 mt-2 leading-relaxed">
+            <div className="text-xs font-mono text-emerald-700/70 mt-0.5">ref: {user.activeSignatureRef}</div>
+            <div className="text-xs text-amber-700 mt-2 leading-relaxed">
               ⚠️ 서명은 한 번 등록하면 본인이 직접 수정할 수 없습니다. 변경이 필요하면 <strong>관리자</strong>에게 문의하세요.
             </div>
           </div>
         ) : (
           <>
-            <div className="text-[11px] font-mono font-extrabold text-slate-600 mb-1">
+            <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">
               서명 등록 (1회 등록 · 등록 후 수정 불가)
             </div>
             <SignaturePad
               onChange={(d) => { setSignature(d); setSignatureChanged(true); }}
               height={160}
             />
-            <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 mt-2 font-bold leading-relaxed">
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 mt-2 font-bold leading-relaxed">
               ⚠️ 서명은 <strong className="font-extrabold">한 번 등록하면 본인이 수정할 수 없습니다.</strong> 신중하게 작성하세요.
             </div>
           </>
@@ -154,7 +154,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
 
       {/* 연락처 */}
       <Section title="연락처">
-        <div className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 -mt-1">
+        <div className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 -mt-1">
           💡 전화번호는 <strong className="font-extrabold">숫자만</strong> 입력하세요. 하이픈(-)은 자동으로 표시됩니다.
         </div>
         <Field label="휴대전화">
@@ -202,7 +202,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-slate-600 mb-1'} />;
 }
 
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {

@@ -88,14 +88,14 @@ export default function LeaveClient({
               <BalanceStat label="이월" value={balance.carriedOver.toFixed(1)} />
             </div>
             {balance.note && (
-              <div className="mt-3 text-[11px] font-mono text-cyan-100">{balance.note}</div>
+              <div className="mt-3 text-xs font-mono text-cyan-100">{balance.note}</div>
             )}
           </>
         ) : (
           <>
             <div className="text-2xl font-black mb-1">아직 부여 안 됨</div>
             <div className="text-sm font-semibold text-cyan-100">관리자에게 연차 부여를 요청하세요.</div>
-            <div className="mt-3 text-[11px] font-mono text-cyan-100">
+            <div className="mt-3 text-xs font-mono text-cyan-100">
               근속 {recommend.years}년 → 권장 {recommend.days}일
             </div>
           </>
@@ -106,7 +106,7 @@ export default function LeaveClient({
       {hireDate && (
         <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
           <strong className="font-extrabold">근로기준법 §60 안내</strong> · 입사일 {hireDate} 기준 근속 {recommend.years}년차 → 권장 연차 {recommend.days}일.
-          <div className="mt-1 font-mono text-[10px]">{recommend.rule}</div>
+          <div className="mt-1 font-mono text-xs">{recommend.rule}</div>
         </div>
       )}
 
@@ -134,7 +134,7 @@ export default function LeaveClient({
             return (
               <div key={r.id} className="px-4 py-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[10px]">
+                  <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-xs">
                     {LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}
                   </span>
                   <StatusBadge status={r.status} />
@@ -143,13 +143,13 @@ export default function LeaveClient({
                 <div className="font-mono text-xs font-bold text-ink">
                   {r.startDate} ~ {r.endDate}
                 </div>
-                {r.reason && <div className="text-[11px] text-ink-muted mt-1">{r.reason}</div>}
+                {r.reason && <div className="text-xs text-ink-muted mt-1">{r.reason}</div>}
                 <div className="flex items-center mt-1.5">
-                  <span className="text-[10px] font-mono text-ink-faint">
+                  <span className="text-xs font-mono text-ink-faint">
                     {new Date(r.createdAt).toLocaleString('ko-KR')}
                   </span>
                   {r.status === 'PENDING' && (
-                    <button onClick={() => cancel(r.id)} className="ml-auto text-[11px] font-bold text-red-600 active:underline">
+                    <button onClick={() => cancel(r.id)} className="ml-auto text-xs font-bold text-red-600 active:underline">
                       취소
                     </button>
                   )}
@@ -257,7 +257,7 @@ function CreateLeaveModal({ workerId, balance, onClose }: {
               className="w-full px-3 py-2 rounded-lg border border-line bg-white text-sm" />
           </Field>
 
-          <div className="text-[10px] font-mono text-slate-600 px-2 py-1 bg-slate-50 rounded">
+          <div className="text-xs font-mono text-slate-600 px-2 py-1 bg-slate-50 rounded">
             ℹ 결재 흐름: 신청 → 1차 결재 (관리자) → <strong className="text-accent">대표 최종 결재</strong> → 완료
           </div>
         </div>
@@ -278,13 +278,13 @@ function CreateLeaveModal({ workerId, balance, onClose }: {
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-ink-muted mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-ink-muted mb-1'} />;
 }
 
 function BalanceStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white/15 rounded-lg py-2">
-      <div className="text-[10px] font-mono font-extrabold text-cyan-100">{label}</div>
+      <div className="text-xs font-mono font-extrabold text-cyan-100">{label}</div>
       <div className="text-base font-extrabold mt-0.5">{value}</div>
     </div>
   );
