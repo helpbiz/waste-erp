@@ -60,11 +60,45 @@ function isPublic(path: string): boolean {
   /* PWA 정적 자산 — 인증 불필요 */
   if (path === '/manifest.json' || path === '/sw.js') return true;
   if (path.startsWith('/icons/')) return true;
+  /* Let's Encrypt HTTP-01 ACME challenge — 인증 불필요 */
+  if (path.startsWith('/.well-known/acme-challenge/')) return true;
   return false;
 }
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  /* Let's Encrypt HTTP-01 ACME challenge — middleware에서 직접 응답
+     라우터가 wci.helpbiz.kr → cleanerp-app:3001 직접 포워딩하므로 nginx 거치지 않음.
+     ACME_CHALLENGES env JSON으로 토큰→응답 매핑.
+     예: ACME_CHALLENGES='{"abc123":"abc123.xyz789"}' */
+  if (pathname.startsWith('/.well-known/acme-challenge/')) {
+    const token = pathname.slice('/.well-known/acme-challenge/'.length);
+    const single = process.env.ACME_CHALLENGE_TOKEN;
+    const singleResp = process.env.ACME_CHALLENGE_RESPONSE;
+    if (single && singleResp && single === token) {
+      return new NextResponse(singleResp, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
+    const multiRaw = process.env.ACME_CHALLENGES;
+    if (multiRaw) {
+      try {
+        const map = JSON.parse(multiRaw) as Record<string, string>;
+        if (map[token]) {
+          return new NextResponse(map[token], {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        }
+      } catch {
+        /* invalid JSON */
+      }
+    }
+    return new NextResponse('token_not_configured', { status: 404 });
+  }
+
   if (isPublic(pathname)) return NextResponse.next();
 
   const token = req.cookies.get('wciSession')?.value;
