@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SignaturePad from '@/components/SignaturePad';
 import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
+import LogoutButton from '@/app/(admin)/_logout-button';
 
 type UserData = {
   id: string;
@@ -185,6 +186,17 @@ export default function ProfileClient({ user }: { user: UserData }) {
         className="w-full py-3.5 rounded-xl bg-accent text-white text-base font-extrabold shadow-card active:scale-[0.99] transition disabled:opacity-50">
         {saving ? '저장 중…' : '저장'}
       </button>
+
+      {/* 로그아웃 — Drawer에서 이동. 프로필 하단에 배치하여 발견율 유지 */}
+      <div className="border-t border-line pt-4 mt-4">
+        <div className="bg-surface rounded-xl border border-line shadow-card p-4 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-extrabold text-ink">로그아웃</div>
+            <div className="text-xs font-bold text-ink-muted mt-0.5">현재 계정에서 로그아웃합니다</div>
+          </div>
+          <LogoutButton />
+        </div>
+      </div>
     </div>
   );
 }
