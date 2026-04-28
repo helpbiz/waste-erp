@@ -69,16 +69,16 @@ export default function AdminShell({
     return () => document.removeEventListener('keydown', onKey);
   }, [drawerOpen]);
 
+  /* 사용자 요청 2026-04-29: 모든 viewport 에서 햄버거 + 드로어 패턴 고정.
+     이전: md+ 사이드바 자동 노출. 변경: 사이드바는 드로어로만, 햄버거 항상 표시.
+     PWA 설치 후 전체화면 desktop 모드에서도 일관된 모바일-퍼스트 UX. */
   return (
     <div className="min-h-screen flex">
-      {/* 사이드바 (md+ 항상 노출) */}
-      <SidebarBody session={session} groups={groups} pathname={pathname} className="hidden md:flex w-[240px]" />
-
-      {/* 모바일 드로어 */}
+      {/* 드로어 (모든 viewport — 클릭 시에만 노출) */}
       {drawerOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/55 md:hidden"
+            className="fixed inset-0 z-40 bg-black/55"
             onClick={() => setDrawerOpen(false)}
             aria-hidden
           />
@@ -86,45 +86,43 @@ export default function AdminShell({
             session={session}
             groups={groups}
             pathname={pathname}
-            className="fixed top-0 left-0 bottom-0 z-50 w-[260px] md:hidden animate-slide-in"
+            className="fixed top-0 left-0 bottom-0 z-50 w-[280px] animate-slide-in"
           />
         </>
       )}
 
       {/* 본문 */}
       <main className="flex-1 flex flex-col bg-page min-w-0">
-        <header className="h-14 bg-surface border-b-2 border-line flex items-center px-3 sm:px-5 md:px-7 gap-2 md:gap-3 shadow-sm">
-          {/* 햄버거 (모바일 only) */}
+        <header className="h-16 bg-surface border-b-2 border-line flex items-center px-4 sm:px-6 gap-3 shadow-sm">
+          {/* 햄버거 (모든 viewport — 사이즈 키움) */}
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="메뉴 열기"
-            className="md:hidden p-2 -ml-2 rounded-md hover:bg-surface-soft active:scale-95"
+            className="p-2 -ml-2 rounded-md hover:bg-surface-soft active:scale-95"
           >
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
-          <h1 className="text-base md:text-lg font-extrabold text-ink flex-1 tracking-tight truncate">{activeTitle}</h1>
+          {/* 헤더 타이틀 — 폰트 한 단계 업 (text-lg → text-xl) */}
+          <h1 className="text-lg sm:text-xl font-extrabold text-ink flex-1 tracking-tight truncate">{activeTitle}</h1>
 
-          {/* P1: 9-10px → 11-12px. 정보 가독성 유지 + 헤더 가로 공간 보존.
-              role 배지(2026-04-28 제거): 사이드바 "현재 권한" 카드 + footer 에 이미 표시 → 헤더 중복 제거.
-              tech jargon enum(`INTERNAL_ADMIN`) 노출 회피 + 로그아웃 버튼 자리 확보. */}
           {!canMutate && (
-            <span className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[11px] md:text-xs font-mono font-extrabold bg-red-100 text-red-800 border border-red-300">
+            <span className="hidden sm:inline-block px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-red-100 text-red-800 border border-red-300">
               READ-ONLY
             </span>
           )}
           <NowStamp className="hidden lg:inline-block" />
-          <span className="hidden lg:flex items-center gap-1.5 text-xs font-mono font-extrabold text-success">
+          <span className="hidden lg:flex items-center gap-1.5 text-sm font-mono font-extrabold text-success">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse shadow-[0_0_0_3px_rgba(22,163,74,0.18)]" />
             시스템 정상
           </span>
-          {/* 헤더 우측 끝 로그아웃 — worker AppBar 와 동일 패턴, light theme (흰 헤더). */}
+          {/* 헤더 우측 끝 로그아웃 */}
           <LogoutButton theme="light" />
         </header>
-        <section className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-7">{children}</section>
+        <section className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">{children}</section>
       </main>
     </div>
   );
