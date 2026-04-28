@@ -2,13 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Pretendard — 한글 가독성 최적화 (pm-research 권고).
+   Variable font 단일 파일로 모든 weight 커버 → 야외 환경 가독성 + 글자 두께 동적 조정 */
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+}
+
 :root { color-scheme: light; }
 
 html, body { height: 100%; }
-body { font-weight: 500; -webkit-font-smoothing: antialiased; }
+body {
+  /* Pretendard 우선, fallback chain. 한글 본문 가독성 ↑ */
+  font-family: 'Pretendard Variable', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  /* iOS 모바일 텍스트 자동 확대 차단 (사용자가 의도적 zoom 시에는 영향 없음) */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* hover 효과는 마우스 환경에서만 적용 — 터치 기기 sticky hover 방지 */
+@media (hover: none) {
+  *:hover { background-color: revert !important; }
+}
 
 /* 시안 HTML과 동일한 스크롤바 톤 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Toast 슬라이드 인 */
+@keyframes toast-in {
+  from { transform: translateY(100%) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.animate-toast-in {
+  animation: toast-in 200ms ease-out;
+}
+
+/* safe-area utility — Tailwind에 직접 utility 추가 */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pl-safe { padding-left: env(safe-area-inset-left); }
+.pr-safe { padding-right: env(safe-area-inset-right); }

@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { TabLink } from './_tab-link';
 import { AppBar, HamburgerButton } from '@/components/worker/AppBar';
 import { WorkerDrawer } from '@/components/worker/WorkerDrawer';
+import { ToastProvider } from '@/components/ui/Toast';
 
 type Props = {
   user: { name: string; userId: string; role: string };
@@ -24,6 +25,7 @@ export function WorkerLayoutShell({ user, isRapid, children }: Props) {
 
   return (
     /* PWA 고정 — fixed inset 0 + dvh로 viewport 변동 흡수. 100vw 풀폭. */
+    <ToastProvider>
     <div
       className="bg-surface"
       style={{ position: 'fixed', inset: 0, height: '100dvh', overscrollBehavior: 'none' }}
@@ -69,5 +71,6 @@ export function WorkerLayoutShell({ user, isRapid, children }: Props) {
         />
       </div>
     </div>
+    </ToastProvider>
   );
 }
