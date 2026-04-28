@@ -64,6 +64,10 @@ services:
       ORS_API_KEY: ${ORS_API_KEY:-}
       PPAEGI_API_BASE: ${PPAEGI_API_BASE:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-}
+      # Let's Encrypt HTTP-01 ACME challenge (middleware에서 직접 처리)
+      ACME_CHALLENGE_TOKEN: ${ACME_CHALLENGE_TOKEN:-}
+      ACME_CHALLENGE_RESPONSE: ${ACME_CHALLENGE_RESPONSE:-}
+      ACME_CHALLENGES: ${ACME_CHALLENGES:-}
     ports:
       - "${APP_PORT:-3000}:3000"
     healthcheck:
