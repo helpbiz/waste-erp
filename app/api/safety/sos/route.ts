@@ -13,9 +13,11 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { computeMolDeadline } from '@/lib/safety';
 import { getSmsProvider, type SmsRecipient } from '@/lib/sms';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -56,8 +58,8 @@ export async function POST(req: Request) {
       occurredAt: now,
       molDeadline: computeMolDeadline('SEVERE', now),
       description: '🚨 긴급 SOS 발신 — ' + (b.description ?? '근로자 긴급 호출 (현장 위급 상황)'),
-      locationLat: b.locationLat ?? null,
-      locationLng: b.locationLng ?? null,
+      locationLat: roundCoord(b.locationLat),
+      locationLng: roundCoord(b.locationLng),
       locationAddress: b.locationAddress ?? null,
       status: 'SUBMITTED',
     },
@@ -112,36 +114,26 @@ export async function POST(req: Request) {
   }
 
   /* audit_log: SOS + SMS 발송 결과 */
-  await prisma.auditLog.create({
-    data: {
-      actorId: reporterId,
-      actorRole: session.role,
-      action: 'EMERGENCY_SOS',
-      resourceType: 'safety_report',
-      resourceId: report.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        reportId: report.id.toString(),
-        recipientCount: recipients.length,
-        lat: b.locationLat ?? null,
-        lng: b.locationLng ?? null,
-      } as object,
+  await writeAudit(req, session, {
+    action: 'EMERGENCY_SOS',
+    resourceType: 'safety_report',
+    resourceId: report.id.toString(),
+    metadata: {
+      reportId: report.id.toString(),
+      recipientCount: recipients.length,
+      lat: roundCoord(b.locationLat),
+      lng: roundCoord(b.locationLng),
     },
   });
-  await prisma.auditLog.create({
-    data: {
-      actorId: reporterId,
-      actorRole: session.role,
-      action: 'EMERGENCY_SMS_DISPATCH',
-      resourceType: 'safety_report',
-      resourceId: report.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        provider: smsResult.provider,
-        sent: smsResult.sent,
-        failed: smsResult.failed,
-        recipients: smsResult.details.map((d) => ({ type: d.recipientType, name: d.recipientName, ok: d.ok })),
-      } as object,
+  await writeAudit(req, session, {
+    action: 'EMERGENCY_SMS_DISPATCH',
+    resourceType: 'safety_report',
+    resourceId: report.id.toString(),
+    metadata: {
+      provider: smsResult.provider,
+      sent: smsResult.sent,
+      failed: smsResult.failed,
+      recipients: smsResult.details.map((d) => ({ type: d.recipientType, name: d.recipientName, ok: d.ok })),
     },
   });
 

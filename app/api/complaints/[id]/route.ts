@@ -7,7 +7,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { roundCoord } from '@/lib/geo';
 import { complaintWhere, canTransitionComplaint } from '@/lib/complaints';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -49,24 +51,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (b.type !== undefined) data.type = b.type;
   if (b.description !== undefined) data.description = b.description;
   if (b.locationAddress !== undefined) data.locationAddress = b.locationAddress;
-  if (b.locationLat !== undefined) data.locationLat = b.locationLat;
-  if (b.locationLng !== undefined) data.locationLng = b.locationLng;
+  if (b.locationLat !== undefined) data.locationLat = roundCoord(b.locationLat);
+  if (b.locationLng !== undefined) data.locationLng = roundCoord(b.locationLng);
   if (b.urgentTag !== undefined) data.urgentTag = b.urgentTag;
   if (b.isUrgent !== undefined) data.isUrgent = b.isUrgent;
   if (b.requestImage !== undefined) data.requestImage = b.requestImage;
   if (b.complainantPhone !== undefined) data.complainantPhone = b.complainantPhone?.replace(/-/g, '') ?? null;
 
   await prisma.complaint.update({ where: { id }, data });
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'COMPLAINT_UPDATE',
-      resourceType: 'complaint',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { fields: Object.keys(data) } as object,
-    },
+  await writeAudit(req, session, {
+    action: 'COMPLAINT_UPDATE',
+    resourceType: 'complaint',
+    resourceId: id.toString(),
+    metadata: { fields: Object.keys(data) },
   });
   return NextResponse.json({ ok: true });
 }

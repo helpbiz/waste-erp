@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -35,7 +37,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { lat, lng, zoneId } = parsed.data;
+  /* P0-residual: PIPA — GPS 좌표는 ~10m 격자 라운딩 후 저장 */
+  const lat = roundCoord(parsed.data.lat) as number;
+  const lng = roundCoord(parsed.data.lng) as number;
+  const { zoneId } = parsed.data;
   if (!isInsideKorea(lat, lng)) {
     return NextResponse.json(
       { error: 'gps_out_of_range', message: '국내 위경도 박스 밖의 좌표입니다.' },
@@ -78,17 +83,11 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: workerId,
-      actorRole: session.role,
-      action: 'ATTENDANCE_CHECK_IN',
-      resourceType: 'attendance_record',
-      resourceId: record.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      userAgent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
-      metadata: { lat, lng, zoneId: zoneId ?? null } as object,
-    },
+  await writeAudit(req, session, {
+    action: 'ATTENDANCE_CHECK_IN',
+    resourceType: 'attendance_record',
+    resourceId: record.id.toString(),
+    metadata: { lat, lng, zoneId: zoneId ?? null },
   });
 
   return NextResponse.json({

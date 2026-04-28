@@ -12,7 +12,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { evaluateCandidateFlag, estimateArrivalEta } from '@/lib/citizen';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -49,6 +51,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'gps_out_of_range' }, { status: 422 });
   }
 
+  /* P0-residual: PIPA — GPS 좌표는 ~10m 격자 라운딩 후 저장 */
+  const lat = roundCoord(b.locationLat) as number;
+  const lng = roundCoord(b.locationLng) as number;
+
   /* 위탁업체 자동 매칭 — 시안: 첫 번째 ACTIVE (실서비스: 좌표 기반 zone 매칭) */
   const contractor = await prisma.contractor.findFirst({
     where: { status: 'ACTIVE' },
@@ -78,7 +84,7 @@ export async function POST(req: Request) {
   const vehicleLat = 37.4979;
   const vehicleLng = 127.0473;
   void todayLog;
-  const eta = estimateArrivalEta(vehicleLat, vehicleLng, b.locationLat, b.locationLng);
+  const eta = estimateArrivalEta(vehicleLat, vehicleLng, lat, lng);
 
   /* 사진 정규화 — 다중이면 JSON 배열, 단일이면 그대로 */
   let imageBlob: string | null = null;
@@ -97,8 +103,8 @@ export async function POST(req: Request) {
       complainantPhone: phoneNorm,
       type: b.type,
       description: b.description ?? null,
-      locationLat: b.locationLat,
-      locationLng: b.locationLng,
+      locationLat: lat,
+      locationLng: lng,
       locationAddress: b.locationAddress ?? null,
       urgentTag: b.urgentTag ?? null,
       isUrgent: b.isUrgent ?? false,
@@ -116,34 +122,30 @@ export async function POST(req: Request) {
       where: { id: created.id },
       data: { cctvRequestSentAt: new Date() },
     });
-    await prisma.auditLog.create({
-      data: {
-        action: 'CCTV_VIDEO_REQUEST',
-        resourceType: 'complaint',
-        resourceId: created.id.toString(),
-        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-        metadata: {
-          targetCitizenPhone: phoneNorm.slice(0, 3) + '****' + phoneNorm.slice(-4),
-          locationLat: b.locationLat,
-          locationLng: b.locationLng,
-          reason: candidate.reason,
-        } as object,
+    await writeAudit(req, null, {
+      action: 'CCTV_VIDEO_REQUEST',
+      resourceType: 'complaint',
+      resourceId: created.id.toString(),
+      contractorId: contractor.id,
+      metadata: {
+        targetCitizenPhone: phoneNorm.slice(0, 3) + '****' + phoneNorm.slice(-4),
+        locationLat: lat,
+        locationLng: lng,
+        reason: candidate.reason,
       },
     });
   }
 
-  await prisma.auditLog.create({
-    data: {
-      action: 'CITIZEN_COMPLAINT_CREATE',
-      resourceType: 'complaint',
-      resourceId: created.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        type: b.type,
-        urgentTag: b.urgentTag ?? null,
-        isUrgent: b.isUrgent ?? false,
-        flagged: candidate.flagged,
-      } as object,
+  await writeAudit(req, null, {
+    action: 'CITIZEN_COMPLAINT_CREATE',
+    resourceType: 'complaint',
+    resourceId: created.id.toString(),
+    contractorId: contractor.id,
+    metadata: {
+      type: b.type,
+      urgentTag: b.urgentTag ?? null,
+      isUrgent: b.isUrgent ?? false,
+      flagged: candidate.flagged,
     },
   });
 

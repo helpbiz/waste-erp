@@ -722,20 +722,25 @@ model SafetyReport {
 // ─────────────────── 감사로그 (security-architect 권고) ───────────────────
 
 model AuditLog {
-  id           BigInt   @id @default(autoincrement())
-  actorId      BigInt?  @map("actor_id")
-  actorRole    Role?    @map("actor_role")
-  action       String   @db.VarChar(100)
-  resourceType String   @map("resource_type") @db.VarChar(50)
-  resourceId   String?  @map("resource_id") @db.VarChar(100)
-  ipAddress    String?  @map("ip_address") @db.VarChar(45)
-  userAgent    String?  @map("user_agent") @db.VarChar(500)
-  metadata     Json?
-  createdAt    DateTime @default(now()) @map("created_at")
+  id             BigInt   @id @default(autoincrement())
+  actorId        BigInt?  @map("actor_id")
+  actorRole      Role?    @map("actor_role")
+  // P0-residual: tenant 단위 forensic — 사고 발생 시 어느 contractor 영향인지 즉시 식별
+  contractorId   BigInt?  @map("contractor_id")
+  municipalityId BigInt?  @map("municipality_id")
+  action         String   @db.VarChar(100)
+  resourceType   String   @map("resource_type") @db.VarChar(50)
+  resourceId     String?  @map("resource_id") @db.VarChar(100)
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  userAgent      String?  @map("user_agent") @db.VarChar(500)
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([actorId])
   @@index([resourceType, resourceId])
   @@index([createdAt])
+  @@index([contractorId, createdAt])
+  @@index([municipalityId, createdAt])
   @@map("audit_log")
 }
 

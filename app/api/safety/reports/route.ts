@@ -9,8 +9,10 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { safetyWhere, computeMolDeadline, type ChecklistItem } from '@/lib/safety';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -152,8 +154,8 @@ export async function POST(req: Request) {
         occurredAt,
         checklistItems: b.checklistItems ? (b.checklistItems as object) : undefined,
         allChecked,
-        locationLat: b.locationLat ?? null,
-        locationLng: b.locationLng ?? null,
+        locationLat: roundCoord(b.locationLat),
+        locationLng: roundCoord(b.locationLng),
         locationAddress: b.locationAddress ?? null,
         description: b.description ?? null,
         molDeadline,
@@ -161,19 +163,14 @@ export async function POST(req: Request) {
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        actorId: BigInt(session.userId),
-        actorRole: session.role,
-        action: 'SAFETY_REPORT_CREATE',
-        resourceType: 'safety_report',
-        resourceId: created.id.toString(),
-        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-        metadata: {
-          reportType: b.reportType,
-          severity: b.severity ?? 'NONE',
-          molDeadline: molDeadline?.toISOString() ?? null,
-        } as object,
+    await writeAudit(req, session, {
+      action: 'SAFETY_REPORT_CREATE',
+      resourceType: 'safety_report',
+      resourceId: created.id.toString(),
+      metadata: {
+        reportType: b.reportType,
+        severity: b.severity ?? 'NONE',
+        molDeadline: molDeadline?.toISOString() ?? null,
       },
     });
 

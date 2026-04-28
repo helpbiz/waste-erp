@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -24,7 +26,9 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  const { lat, lng } = parsed.data;
+  /* P0-residual: PIPA — GPS 라운딩 */
+  const lat = roundCoord(parsed.data.lat) as number;
+  const lng = roundCoord(parsed.data.lng) as number;
   if (!isInsideKorea(lat, lng)) {
     return NextResponse.json({ error: 'gps_out_of_range' }, { status: 422 });
   }
@@ -51,16 +55,11 @@ export async function POST(req: Request) {
     data: { checkOutTime: now, checkOutLat: lat, checkOutLng: lng },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: workerId,
-      actorRole: session.role,
-      action: 'ATTENDANCE_CHECK_OUT',
-      resourceType: 'attendance_record',
-      resourceId: updated.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { lat, lng } as object,
-    },
+  await writeAudit(req, session, {
+    action: 'ATTENDANCE_CHECK_OUT',
+    resourceType: 'attendance_record',
+    resourceId: updated.id.toString(),
+    metadata: { lat, lng },
   });
 
   return NextResponse.json({
