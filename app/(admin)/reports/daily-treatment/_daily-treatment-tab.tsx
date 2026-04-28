@@ -186,44 +186,47 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             </tbody>
           </table>
 
-          {/* 합계 카드 */}
+          {/* 합계 카드 — 사용자 요청 2026-04-29: 순서 (생활→음식물→재활용→대형폐기물→합계),
+              글자 진하게 + 1폰트 업 (label 10→12px+bold, value 18→20px). */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-            {data.summary.map((s) => (
-              <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
-                <div className="text-[10px] font-mono text-slate-600 mb-1">{s.label}</div>
-                <div className="font-mono font-black text-lg text-ink">{s.totalTon.toFixed(3)}<span className="text-[10px] font-bold ml-0.5">t</span></div>
-              </div>
-            ))}
+            {(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD'] as const)
+              .map((cat) => data.summary.find((s) => s.category === cat))
+              .filter((s): s is NonNullable<typeof s> => Boolean(s))
+              .map((s) => (
+                <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
+                  <div className="text-xs font-mono font-extrabold text-ink mb-1">{s.label}</div>
+                  <div className="font-mono font-black text-xl text-ink">{s.totalTon.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span></div>
+                </div>
+              ))}
             <div className="border border-accent rounded-md p-3 text-center bg-cyan-50">
-              <div className="text-[10px] font-mono font-extrabold text-accent mb-1">합계</div>
-              <div className="font-mono font-black text-lg text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-[10px] font-bold ml-0.5">t</span></div>
+              <div className="text-xs font-mono font-extrabold text-accent mb-1">합계</div>
+              <div className="font-mono font-black text-xl text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span></div>
             </div>
           </div>
 
-          {/* 테이블 */}
+          {/* 테이블 — 사용자 요청 2026-04-29: 번호 컬럼 삭제 + 비고 컬럼 폭 축소 (20% → 12%).
+              번호 5% 제거 + 비고 8% 축소 = 13% 여유분을 차량번호/반입시각/처리시설/성상/중량에 분배. */}
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-sidebar text-white">
-                <th className="px-2 py-2 border border-sidebar w-[5%]">번호</th>
-                <th className="px-2 py-2 border border-sidebar w-[15%]">차량번호</th>
-                <th className="px-2 py-2 border border-sidebar w-[10%]">반입시각</th>
-                <th className="px-2 py-2 border border-sidebar w-[25%]">처리시설</th>
-                <th className="px-2 py-2 border border-sidebar w-[12%]">성상</th>
-                <th className="px-2 py-2 border border-sidebar w-[13%]">중량(t)</th>
-                <th className="px-2 py-2 border border-sidebar w-[20%]">비고</th>
+                <th className="px-2 py-2 border border-sidebar w-[17%]">차량번호</th>
+                <th className="px-2 py-2 border border-sidebar w-[12%]">반입시각</th>
+                <th className="px-2 py-2 border border-sidebar w-[30%]">처리시설</th>
+                <th className="px-2 py-2 border border-sidebar w-[14%]">성상</th>
+                <th className="px-2 py-2 border border-sidebar w-[15%]">중량(t)</th>
+                <th className="px-2 py-2 border border-sidebar w-[12%]">비고</th>
               </tr>
             </thead>
             <tbody>
               {data.rows.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 border border-line text-center text-slate-500 italic">
+                  <td colSpan={6} className="px-3 py-8 border border-line text-center text-slate-500 italic">
                     반입 데이터가 없습니다.
                   </td>
                 </tr>
               )}
               {data.rows.map((row) => (
                 <tr key={row.no} className="even:bg-slate-50">
-                  <td className="px-2 py-1.5 border border-line text-center font-mono">{row.no}</td>
                   <td className="px-2 py-1.5 border border-line font-mono">{row.vehiclePlate ?? '—'}</td>
                   <td className="px-2 py-1.5 border border-line font-mono text-center">{row.intakeTime}</td>
                   <td className="px-2 py-1.5 border border-line">{row.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}</td>
@@ -236,7 +239,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             {data.rows.length > 0 && (
               <tfoot>
                 <tr className="bg-slate-100 font-extrabold">
-                  <td colSpan={5} className="px-2 py-2 border border-line text-right">합계</td>
+                  <td colSpan={4} className="px-2 py-2 border border-line text-right">합계</td>
                   <td className="px-2 py-2 border border-line text-right font-mono">{data.totals.weightTon.toFixed(3)}</td>
                   <td className="px-2 py-2 border border-line"></td>
                 </tr>

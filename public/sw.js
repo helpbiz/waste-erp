@@ -5,7 +5,8 @@
  *  - fetch: 페이지는 network-first (캐시 의존 최소화) / 정적 자산만 SWR
  *  - 사용자 폰의 v1 SW가 v3로 자동 교체되도록 설계
  */
-const CACHE_NAME = 'cleanerp-v3-2026-04-26';
+/* PWA Mobile UX Mastering 적용 — v4 강제 캐시 무효화로 모바일 사용자에게 즉시 새 UI 배포 */
+const CACHE_NAME = 'cleanerp-v4-2026-04-28';
 const APP_SHELL = ['/login', '/manifest.json'];  /* 최소 셸만 — 페이지는 항상 네트워크 우선 */
 
 self.addEventListener('install', (event) => {

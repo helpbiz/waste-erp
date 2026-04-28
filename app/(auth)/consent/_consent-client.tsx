@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AccessibleConfirmDialog from '@/components/ui/AccessibleConfirmDialog';
 
 export default function ConsentClient({
   userName,
@@ -16,6 +17,7 @@ export default function ConsentClient({
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingReject, setConfirmingReject] = useState(false);
 
   async function onAgree() {
     if (!agreed || busy) return;
@@ -41,9 +43,11 @@ export default function ConsentClient({
     }
   }
 
-  async function onReject() {
+  /* 거부 → AccessibleConfirmDialog 로 명확한 다이얼로그 (P0-6).
+     window.confirm 은 모바일에서 OS 다이얼로그라 디자인/대비 통제 불가. */
+  async function doReject() {
+    setConfirmingReject(false);
     if (busy) return;
-    if (!window.confirm('동의하지 않으면 시스템을 사용할 수 없습니다. 로그아웃 하시겠습니까?')) return;
     setBusy(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -65,6 +69,9 @@ export default function ConsentClient({
       <div className="w-full max-w-[640px]">
         {/* 헤더 */}
         <div className="text-center mb-6">
+          {/* 🔒 LOGO LOCK — 사용자 명시 요청 2026-04-29.
+              이 로고는 변경 금지. src 경로 / alt 텍스트 / 사이즈 절대 수정 X.
+              동일 자산: app/(auth)/login/page.tsx 도 동일하게 고정 유지. */}
           <div className="inline-flex items-center justify-center mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -177,31 +184,44 @@ export default function ConsentClient({
               </div>
             )}
 
-            <div className="flex items-center gap-3">
+            {/* AAA 액션 (P0-6): 본문 버튼 18px / min-h-14, 거부 버튼 별도 강조 outline.
+                이전: 12px slate-600 hover-only — 시니어 발견 불가. */}
+            <div className="flex flex-col sm:flex-row items-stretch gap-3">
               <button
                 type="button"
                 onClick={onAgree}
                 disabled={!agreed || busy}
-                className="flex-1 py-2.5 rounded-lg bg-accent text-white text-sm font-black hover:bg-cyan-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 min-h-14 px-5 py-3 rounded-lg bg-accent text-white text-lg font-extrabold hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-card"
               >
                 {busy ? '등록 중…' : '동의하고 시작하기'}
               </button>
               <button
                 type="button"
-                onClick={onReject}
+                onClick={() => setConfirmingReject(true)}
                 disabled={busy}
-                className="text-[12px] font-extrabold tracking-tight text-slate-600 hover:text-red-500 hover:underline underline-offset-2 bg-transparent border-0 px-1 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="min-h-14 px-5 py-3 rounded-lg bg-white border-2 border-line-strong text-base font-extrabold text-ink-mid hover:border-danger hover:text-danger active:bg-surface-soft transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 동의 안 함 / 로그아웃
               </button>
             </div>
 
-            <p className="text-[10px] font-mono text-ink-faint text-center">
+            <p className="text-sm font-medium text-ink-faint text-center mt-2">
               동의 시각·IP·User-Agent는 감사로그에 기록되며 5년 보존됩니다.
             </p>
           </div>
         </div>
       </div>
+
+      <AccessibleConfirmDialog
+        open={confirmingReject}
+        tone="destructive"
+        title="동의하지 않으시겠습니까?"
+        message="동의하지 않으면 시스템을 사용할 수 없으며, 자동으로 로그아웃됩니다."
+        confirmLabel="로그아웃"
+        cancelLabel="다시 검토"
+        onConfirm={doReject}
+        onCancel={() => setConfirmingReject(false)}
+      />
     </main>
   );
 }

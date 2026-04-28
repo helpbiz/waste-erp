@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Clean ERP">
+  <title>Clean ERP — C 강조 디자인</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#a5f3fc"/>
+      <stop offset="35%"  stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <!-- 입체감을 위한 그림자 -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="6" />
+      <feOffset dx="0" dy="8" result="offsetblur"/>
+      <feFlood flood-color="#0a1628" flood-opacity="0.6"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 정사각 배경 (OS가 라운딩 자동 적용) -->
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- ═══ 메인 — 거대한 'C' (Clean 강조) ═══ -->
+  <!-- 마스커블 안전영역(중앙 80% = 102~922) 안에 배치 -->
+  <g filter="url(#softShadow)">
+    <text x="512" y="690"
+          text-anchor="middle"
+          font-family="DejaVu Sans, sans-serif"
+          font-weight="900"
+          font-size="780"
+          letter-spacing="-30"
+          fill="url(#cyan)">C</text>
+  </g>
+
+  <!-- C 내부의 라임 액센트 (브랜드 컬러 — 친환경 시그널) -->
+  <circle cx="700" cy="425" r="22" fill="#a3e635"/>
+
+  <!-- ═══ 하단 — ERP 텍스트 ═══ -->
+  <g>
+    <!-- 시안+라임 상단 구분 underline -->
+    <rect x="312" y="800" width="380" height="4" rx="2" fill="#22d3ee" opacity="0.5"/>
+    <rect x="660" y="800" width="32"  height="4" rx="2" fill="#a3e635"/>
+
+    <text x="512" y="912"
+          text-anchor="middle"
+          font-family="DejaVu Sans, sans-serif"
+          font-weight="900"
+          font-size="150"
+          letter-spacing="20"
+          fill="#ffffff">ERP</text>
+  </g>
+</svg>

@@ -35,6 +35,32 @@ body {
 ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
+/* WCAG AAA P0 — 접근성 글로벌 룰 (PWA Mobile UX Mastering 이니셔티브) */
+
+/* 1. 키보드 사용자 — 어떤 컴포넌트에서도 명확한 포커스 링이 보이도록 글로벌 강제.
+      개별 컴포넌트의 focus:outline-none 단독 사용 회귀를 방지하기 위해 :focus-visible 글로벌 우선. */
+*:focus-visible {
+  outline: 3px solid #0e7490;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* 2. prefers-reduced-motion — vestibular 장애 사용자 보호 (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 3. iOS 터치 하이라이트 제거 (시각 노이즈 감소) */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* 4. 폰트 합성 차단 — Pretendard variable weight 활용을 위해 브라우저 합성 weight 거부 */
+html { font-synthesis: none; }
+
 /* Toast 슬라이드 인 */
 @keyframes toast-in {
   from { transform: translateY(100%) scale(0.95); opacity: 0; }

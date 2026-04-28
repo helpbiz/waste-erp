@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SignaturePad from '@/components/SignaturePad';
 import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
-import LogoutButton from '@/app/(admin)/_logout-button';
+/* PWA Mobile UX Mastering 2026-04-28: 로그아웃은 AppBar 우상단(default LogoutButton compact)으로 이동.
+   이 페이지 하단 로그아웃 카드는 중복이 되어 제거. */
 
 type UserData = {
   id: string;
@@ -187,16 +188,8 @@ export default function ProfileClient({ user }: { user: UserData }) {
         {saving ? '저장 중…' : '저장'}
       </button>
 
-      {/* 로그아웃 — Drawer에서 이동. 프로필 하단에 배치하여 발견율 유지 */}
-      <div className="border-t border-line pt-4 mt-4">
-        <div className="bg-surface rounded-xl border border-line shadow-card p-4 flex items-center justify-between">
-          <div>
-            <div className="text-sm font-extrabold text-ink">로그아웃</div>
-            <div className="text-xs font-bold text-ink-muted mt-0.5">현재 계정에서 로그아웃합니다</div>
-          </div>
-          <LogoutButton />
-        </div>
-      </div>
+      {/* 로그아웃은 AppBar 우상단으로 이동 (PWA Mobile UX Mastering 2026-04-28).
+          하단 카드 제거 사유: 모든 worker 화면 우상단에 항상 보이므로 프로필 페이지에 별도 표시 중복. */}
     </div>
   );
 }

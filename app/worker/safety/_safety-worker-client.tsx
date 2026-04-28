@@ -195,8 +195,9 @@ export default function SafetyWorkerClient({
   return (
     <div className="px-4 py-5 space-y-4">
       <div className="px-1">
-        <h1 className="text-xl font-black text-ink">산업안전보건</h1>
-        <p className="text-xs font-bold text-ink-muted mt-1">출근 직후 일일 체크리스트와 TBM 서명을 완료해 주세요.</p>
+        <h1 className="text-2xl font-black text-ink">산업안전보건</h1>
+        {/* P1: 12px → 14px (text-sm), 시니어 가독성 */}
+        <p className="text-sm font-semibold text-ink-mid mt-1">출근 직후 일일 체크리스트와 TBM 서명을 완료해 주세요.</p>
       </div>
 
       {/* 인라인 에러/성공 배너 → Toast (Wave 3-C) */}
@@ -208,39 +209,40 @@ export default function SafetyWorkerClient({
       {tbm ? (
         <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
           <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center gap-2">
-            <span className="text-lg">📋</span>
+            <span className="text-xl">📋</span>
             <div className="flex-1">
-              <div className="text-sm font-extrabold text-ink">오늘 TBM (안전교육)</div>
-              <div className="text-xs font-bold text-ink-muted mt-0.5">{tbm.signCount}명 서명 완료</div>
+              <div className="text-base font-extrabold text-ink">오늘 TBM (안전교육)</div>
+              <div className="text-sm font-semibold text-ink-mid mt-0.5">{tbm.signCount}명 서명 완료</div>
             </div>
-            {tbm.signed && <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-extrabold bg-green-100 text-success border border-green-200">✓ 서명 완료</span>}
+            {tbm.signed && <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border-2 border-green-300">✓ 서명 완료</span>}
           </header>
           <div className="p-4">
-            <div className="text-base font-extrabold text-ink mb-2">{tbm.topic}</div>
-            {tbm.content && <p className="text-sm font-semibold text-ink-muted leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
+            <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
+            {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
             {!tbm.signed && !tbmShowPad && (
+              /* P1: CTA 14px → 16px (text-base) min-h-14 */
               <button
                 onClick={() => setTbmShowPad(true)}
-                className="w-full py-3 rounded-lg bg-info text-white text-sm font-black shadow-card active:scale-[0.98]"
+                className="w-full min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98]"
               >
                 ✍ TBM 서명하기
               </button>
             )}
             {!tbm.signed && tbmShowPad && (
               <div className="space-y-3 mt-2">
-                <div className="text-xs font-extrabold text-ink">아래 영역에 서명해 주세요 (마우스/터치 모두 가능)</div>
+                <div className="text-sm font-extrabold text-ink">아래 영역에 서명해 주세요 (마우스/터치 모두 가능)</div>
                 <SignaturePad onChange={setTbmSignaturePad} disabled={busy} />
                 <div className="flex gap-2">
                   <button
                     onClick={signTbm}
                     disabled={busy || !tbmSignaturePad}
-                    className="flex-1 py-3 rounded-lg bg-info text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50"
+                    className="flex-1 min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98] disabled:opacity-50"
                   >
                     {busy ? '제출 중…' : '서명 제출'}
                   </button>
                   <button
                     onClick={() => { setTbmShowPad(false); setTbmSignaturePad(null); }}
-                    className="px-4 py-3 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95"
+                    className="min-h-14 px-4 py-3 rounded-lg border-2 border-line-strong text-ink text-base font-bold active:scale-95"
                   >
                     취소
                   </button>
@@ -250,7 +252,7 @@ export default function SafetyWorkerClient({
           </div>
         </section>
       ) : (
-        <section className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold">
+        <section className="bg-amber-50 border-2 border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold">
           오늘 TBM 세션이 아직 등록되지 않았습니다. 관리자에게 문의해 주세요.
         </section>
       )}
@@ -258,12 +260,12 @@ export default function SafetyWorkerClient({
       {/* 일일 체크리스트 */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between">
-          <div className="text-sm font-extrabold text-ink">일일 체크리스트</div>
-          <span className="text-xs font-mono font-extrabold text-ink-muted">{checkedCount} / {items.length}</span>
+          <div className="text-base font-extrabold text-ink">일일 체크리스트</div>
+          <span className="text-sm font-mono font-extrabold text-ink-mid">{checkedCount} / {items.length}</span>
         </header>
         {submitted && (
           <div className="px-4 py-3 bg-green-50 border-b border-success">
-            <div className="text-xs font-extrabold text-success">
+            <div className="text-sm font-extrabold text-success">
               ✓ 오늘 점검 제출 완료 {submittedAt && '— ' + new Date(submittedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               {!allChecked && <span className="ml-2 text-warn">(일부 미완료)</span>}
             </div>
@@ -300,23 +302,23 @@ export default function SafetyWorkerClient({
       {/* 아차사고 / 재해 신고 */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-4 py-3 bg-surface-soft border-b-2 border-line">
-          <div className="text-sm font-extrabold text-ink">아차사고 / 재해 보고</div>
-          <div className="text-xs font-bold text-ink-muted mt-0.5">위험 상황을 발견했나요? 즉시 보고해 주세요.</div>
+          <div className="text-base font-extrabold text-ink">아차사고 / 재해 보고</div>
+          <div className="text-sm font-semibold text-ink-mid mt-1">위험 상황을 발견했나요? 즉시 보고해 주세요.</div>
         </header>
         <div className="p-4 grid grid-cols-2 gap-2">
           <button
             onClick={() => { setReportType('NEAR_MISS');   }}
-            className="px-3 py-3 rounded-lg border-2 border-dashed border-warn text-warn text-sm font-extrabold active:scale-[0.98] hover:bg-amber-50 transition text-center leading-tight"
+            className="min-h-14 px-3 py-3 rounded-lg border-2 border-dashed border-warn text-warn text-base font-extrabold active:scale-[0.98] hover:bg-amber-50 transition text-center leading-tight"
           >
             <div>⚠️ 아차사고</div>
-            <div className="underline underline-offset-2 decoration-2 text-[12px] font-bold mt-1">(위험요소)</div>
+            <div className="underline underline-offset-2 decoration-2 text-sm font-bold mt-1">(위험요소)</div>
           </button>
           <button
             onClick={() => { setReportType('INCIDENT');   }}
-            className="px-3 py-3 rounded-lg border-2 border-dashed border-danger text-danger text-sm font-extrabold active:scale-[0.98] hover:bg-red-50 transition text-center leading-tight"
+            className="min-h-14 px-3 py-3 rounded-lg border-2 border-dashed border-danger text-danger text-base font-extrabold active:scale-[0.98] hover:bg-red-50 transition text-center leading-tight"
           >
             <div>🚨 재해발생</div>
-            <div className="underline underline-offset-2 decoration-2 text-[12px] font-bold mt-1">(사고)</div>
+            <div className="underline underline-offset-2 decoration-2 text-sm font-bold mt-1">(사고)</div>
           </button>
         </div>
         {reportType && (
@@ -357,9 +359,9 @@ export default function SafetyWorkerClient({
 
       {/* 119 자동 SOS */}
       <section className="bg-red-50 border-2 border-danger rounded-xl px-4 py-4">
-        <div className="text-xs font-extrabold text-danger mb-2">🚨 긴급 SOS — 119 자동 발신</div>
+        <div className="text-base font-extrabold text-danger mb-2">🚨 긴급 SOS — 119 자동 발신</div>
         {sosResult && (
-          <div className="bg-surface border border-danger rounded-md px-3 py-2 mb-3 text-xs font-bold text-ink">
+          <div className="bg-surface border-2 border-danger rounded-md px-3 py-2 mb-3 text-sm font-bold text-ink">
             ✓ 보고서 #{sosResult.reportId} 생성 · {sosResult.recipients}곳 알림
             <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-mono font-extrabold ${sosResult.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
               {sosResult.provider === 'SIMULATION' ? 'SIMULATION' : `provider=${sosResult.provider}`}
@@ -367,18 +369,18 @@ export default function SafetyWorkerClient({
           </div>
         )}
         {!sosArmed ? (
-          <button onClick={() => setSosArmed(true)} className="w-full py-4 rounded-xl bg-danger text-white text-lg font-black shadow-card active:scale-[0.98]">
+          <button onClick={() => setSosArmed(true)} className="w-full min-h-14 py-4 rounded-xl bg-danger text-white text-xl font-black shadow-card active:scale-[0.98]">
             🚨 SOS 버튼
           </button>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-danger font-extrabold">정말 긴급 SOS를 발신하시겠습니까?</p>
-            <p className="text-xs text-ink-muted font-bold">위탁업체 매니저 + 119(시뮬레이션)에 즉시 알림이 발송되며, SafetyReport(중상)가 자동 생성됩니다.</p>
+            <p className="text-base text-danger font-extrabold">정말 긴급 SOS를 발신하시겠습니까?</p>
+            <p className="text-sm text-ink-mid font-semibold leading-relaxed">위탁업체 매니저 + 119(시뮬레이션)에 즉시 알림이 발송되며, SafetyReport(중상)가 자동 생성됩니다.</p>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              <button onClick={fireSos} disabled={busy} className="py-3.5 rounded-lg bg-danger text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50">
+              <button onClick={fireSos} disabled={busy} className="min-h-14 py-3.5 rounded-lg bg-danger text-white text-base font-black shadow-card active:scale-[0.98] disabled:opacity-50">
                 {busy ? '발신 중…' : '🚨 발신 확정'}
               </button>
-              <button onClick={() => setSosArmed(false)} className="py-3.5 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95">
+              <button onClick={() => setSosArmed(false)} className="min-h-14 py-3.5 rounded-lg border-2 border-line-strong text-ink text-base font-bold active:scale-95">
                 취소
               </button>
             </div>
@@ -388,34 +390,34 @@ export default function SafetyWorkerClient({
 
       {/* 비상연락처 */}
       <section className="bg-surface border border-line rounded-xl px-4 py-3">
-        <div className="text-xs font-extrabold text-ink mb-2">긴급 비상연락처</div>
+        <div className="text-base font-extrabold text-ink mb-2">긴급 비상연락처</div>
         <div className="grid grid-cols-3 gap-2">
-          <a href="tel:119" className="bg-surface-alt rounded-lg border border-line py-2 text-center active:scale-95 transition">
-            <div className="font-mono text-base font-black text-danger">119</div>
-            <div className="text-xs font-bold text-ink-muted">소방·구급</div>
+          <a href="tel:119" className="bg-surface-alt rounded-lg border-2 border-line py-3 text-center active:scale-95 transition min-h-14 flex flex-col items-center justify-center">
+            <div className="font-mono text-lg font-black text-danger">119</div>
+            <div className="text-sm font-bold text-ink-mid">소방·구급</div>
           </a>
-          <a href="tel:112" className="bg-surface-alt rounded-lg border border-line py-2 text-center active:scale-95 transition">
-            <div className="font-mono text-base font-black text-info">112</div>
-            <div className="text-xs font-bold text-ink-muted">경찰</div>
+          <a href="tel:112" className="bg-surface-alt rounded-lg border-2 border-line py-3 text-center active:scale-95 transition min-h-14 flex flex-col items-center justify-center">
+            <div className="font-mono text-lg font-black text-info">112</div>
+            <div className="text-sm font-bold text-ink-mid">경찰</div>
           </a>
           {guardian.phone ? (
             <a
               href={`tel:${guardian.phone.replace(/[^\d+]/g, '')}`}
-              className="bg-warn/10 border border-warn rounded-lg py-2 text-center leading-tight active:scale-95 transition flex flex-col items-center justify-center"
+              className="bg-warn/10 border-2 border-warn rounded-lg py-3 text-center leading-tight active:scale-95 transition flex flex-col items-center justify-center min-h-14"
               title={`보호자 ${guardian.name ?? ''} ${guardian.phone}`}
             >
-              <div className="text-[13px] font-black text-warn">보호자</div>
-              <div className="text-[12px] font-extrabold text-warn mt-0.5 truncate px-1 max-w-full">
+              <div className="text-base font-black text-warn">보호자</div>
+              <div className="text-sm font-extrabold text-warn mt-0.5 truncate px-1 max-w-full">
                 {guardian.name ?? '등록됨'}
               </div>
             </a>
           ) : (
             <a
               href="/worker/profile"
-              className="bg-surface-alt rounded-lg border-2 border-dashed border-warn/60 py-2 text-center active:scale-95 transition"
+              className="bg-surface-alt rounded-lg border-2 border-dashed border-warn/60 py-3 text-center active:scale-95 transition min-h-14 flex flex-col items-center justify-center"
             >
-              <div className="font-mono text-base font-black text-warn">＋</div>
-              <div className="text-xs font-bold text-warn">보호자 등록</div>
+              <div className="font-mono text-lg font-black text-warn">＋</div>
+              <div className="text-sm font-bold text-warn">보호자 등록</div>
             </a>
           )}
         </div>

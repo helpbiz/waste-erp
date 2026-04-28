@@ -18,7 +18,8 @@ const config: Config = {
         success: '#15803d',
       },
       fontFamily: {
-        sans: ['"Noto Sans KR"', 'system-ui', 'sans-serif'],
+        /* Pretendard Variable 우선 (한글 가독성 + variable weight) — globals.css @font-face 와 동기화 */
+        sans: ['"Pretendard Variable"', '"Noto Sans KR"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       boxShadow: {

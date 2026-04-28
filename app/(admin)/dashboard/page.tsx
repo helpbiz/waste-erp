@@ -85,10 +85,22 @@ export default async function DashboardPage() {
     }),
   ]);
 
+  /* 휴가 패널 노출 조건 — super/company/manager 권한만 */
+  const showLeavePanel =
+    session.role === 'SUPER_ADMIN' ||
+    session.role === 'CONTRACTOR_ADMIN' ||
+    session.role === 'INTERNAL_ADMIN';
+
   return (
-    <div className="space-y-5">
-      {/* KPI 4 */}
-      <section className="grid grid-cols-4 gap-3.5">
+    /* 사용자 요청 2026-04-28 — 새 레이아웃:
+         Row 1: KPI 4 카드 (mobile 2x2 → desktop 1x4)
+         Row 2: 휴가신청대기 + 시스템 알림 (mobile 1열 → desktop 2열)
+         Row 3: 오늘 근태 현황 (full)
+         Row 4: 최근 민원 + 차량 현황 (mobile 1열 → desktop 2열)
+       원가 구성 카드 삭제. AdminShell <section> 이 이미 overflow-y-auto 이므로 PWA 스크롤 자동. */
+    <div className="space-y-3.5 md:space-y-5">
+      {/* Row 1: KPI 4 — mobile 2x2 / desktop 1x4 */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-3.5">
         <KpiCard
           label="오늘 출근 현황"
           value={String(summary.checkedIn)}
@@ -127,18 +139,28 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* Row 2: 근태(2/3) + 알림(1/3) */}
-      <section className="grid grid-cols-3 gap-3.5">
-        <Panel
-          className="col-span-2"
-          title="오늘 근태 현황"
-          action="전체보기 >"
-          iconPath="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-        >
-          <AttendStats summary={summary} />
-          <AttendTable readOnly={readOnly} cards={cards} />
-        </Panel>
-
+      {/* Row 2: 휴가신청대기 + 시스템 알림 (휴가는 권한 조건부, 미노출 시 알림이 full width) */}
+      <section className={`grid gap-3.5 ${showLeavePanel ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+        {showLeavePanel && (
+          <Panel
+            title={`휴가 신청 대기 (${pendingLeaveCount}건)`}
+            action="사용자관리 >"
+            iconPath="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          >
+            <PendingLeavePanel
+              items={pendingLeaves.map((r) => ({
+                id: r.id.toString(),
+                workerName: r.worker.name,
+                employeeNo: r.worker.employeeNo,
+                requestType: r.requestType,
+                startDate: r.startDate.toISOString().slice(0, 10),
+                endDate: r.endDate.toISOString().slice(0, 10),
+                reason: r.reason,
+                createdAt: r.createdAt.toISOString(),
+              }))}
+            />
+          </Panel>
+        )}
         <Panel
           title="시스템 알림"
           action="전체 >"
@@ -148,16 +170,20 @@ export default async function DashboardPage() {
         </Panel>
       </section>
 
-      {/* Row 3: 원가 + 민원 + 차량 */}
-      <section className="grid grid-cols-3 gap-3.5">
+      {/* Row 3: 오늘 근태 현황 (full width) */}
+      <section className="grid grid-cols-1 gap-3.5">
         <Panel
-          title="4월 원가 구성"
-          action="상세 >"
-          iconPath="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"
+          title="오늘 근태 현황"
+          action="전체보기 >"
+          iconPath="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
         >
-          <CostPanel />
+          <AttendStats summary={summary} />
+          <AttendTable readOnly={readOnly} cards={cards} />
         </Panel>
+      </section>
 
+      {/* Row 4: 최근 민원 + 차량 현황 (원가 구성 카드 제거, 2 카드로 재구성) */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <Panel
           title="최근 민원"
           action="전체 >"
@@ -187,30 +213,6 @@ export default async function DashboardPage() {
           />
         </Panel>
       </section>
-
-      {/* Row 4: 휴가 신청 대기 */}
-      {(session.role === 'SUPER_ADMIN' || session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN') && (
-        <section className="grid grid-cols-1 gap-3.5">
-          <Panel
-            title={`휴가 신청 대기 (${pendingLeaveCount}건)`}
-            action="사용자관리 >"
-            iconPath="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          >
-            <PendingLeavePanel
-              items={pendingLeaves.map((r) => ({
-                id: r.id.toString(),
-                workerName: r.worker.name,
-                employeeNo: r.worker.employeeNo,
-                requestType: r.requestType,
-                startDate: r.startDate.toISOString().slice(0, 10),
-                endDate: r.endDate.toISOString().slice(0, 10),
-                reason: r.reason,
-                createdAt: r.createdAt.toISOString(),
-              }))}
-            />
-          </Panel>
-        </section>
-      )}
     </div>
   );
 }

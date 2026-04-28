@@ -121,12 +121,13 @@ export default function VehiclesClient({
         </div>
       </header>
 
-      {/* 요약 카드 */}
+      {/* 요약 카드 — 사용자 요청 2026-04-28: 다른 페이지(특히 attendance KpiCard)와 톤 통일.
+          tone prop 을 semantic enum (default/success/warn/accent) 으로 변경 + 그라데이션 배경. */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="총 차량" value={`${vehicles.length}대`} />
-        <Stat label="운행중" value={`${running}대`} tone="text-success" />
-        <Stat label="정비중" value={`${maintenance}대`} tone="text-warn" />
-        <Stat label="금일 수집량" value={`${(totalWaste / 1000).toFixed(1)}톤`} tone="text-accent" />
+        <Stat label="총 차량" value={`${vehicles.length}대`} tone="default" />
+        <Stat label="운행중" value={`${running}대`} tone="success" />
+        <Stat label="정비중" value={`${maintenance}대`} tone="warn" />
+        <Stat label="금일 수집량" value={`${(totalWaste / 1000).toFixed(1)}톤`} tone="accent" />
       </section>
 
       {error && (
@@ -148,72 +149,75 @@ export default function VehiclesClient({
                 : v.logStatus
                 ? 'bg-success shadow-[0_0_0_3px_rgba(22,163,74,0.18)]'
                 : 'bg-ink-faint';
-            return (
-              <div
+            /* 사용자 요청 2026-04-29: 차량번호 → 우측으로 이동, 하단엔 운전자 + 수거원 이름.
+               1줄: [● 유형/톤] 좌, [차량번호] 우
+               2줄: 🚛 운전자 · 👥 수거원1, 수거원2
+               전체 카드 클릭 → 조회 모달 (별도 hover 아이콘 제거, 클릭 영역 명확화). */
+            const statusLabel = v.status === 'RETIRED'
+              ? '폐차'
+              : v.status === 'MAINTENANCE'
+              ? '정비중'
+              : v.logStatus === 'APPROVED'
+              ? '승인 완료'
+              : v.logStatus === 'SUBMITTED'
+              ? '제출(결재대기)'
+              : v.logStatus === 'DRAFT'
+              ? '작성중'
+              : '대기';
+            const typeStr = `${TYPE_LABEL[v.vehicleType] ?? v.vehicleType} ${v.vehicleTon ?? ''}`.trim();
+            const passengers = [v.passenger1Name, v.passenger2Name].filter(Boolean).join(', ');
+            const peopleParts: string[] = [];
+            if (v.driverName) peopleParts.push(`🚛 ${v.driverName}`);
+            if (passengers) peopleParts.push(`👥 ${passengers}`);
+            const peopleStr = peopleParts.join(' · ');
+            const isClickable = isManager && v.status !== 'RETIRED';
+
+            const cardInner = (
+              <>
+                {/* 1줄: 좌측 [상태 dot + 유형/톤] / 우측 [차량번호] */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotClass}`} aria-label={statusLabel} />
+                    <span className="text-sm font-bold text-ink-muted truncate">{typeStr}</span>
+                  </div>
+                  {/* 사용자 피드백 2026-04-29: Pretendard black 으로 굵어진 만큼 사이즈 한 단계 다운 (text-lg 18px → text-base 16px). */}
+                  <span className="font-sans text-base font-black text-ink tracking-tight truncate flex-shrink-0">
+                    {v.vehicleNo}
+                  </span>
+                </div>
+                {/* 2줄: 운전자 + 수거원 */}
+                <div className="text-sm font-bold text-ink mt-1.5 truncate">
+                  {peopleStr || <span className="text-ink-faint">— 인원 미배정</span>}
+                </div>
+              </>
+            );
+
+            const baseCls = `bg-surface-alt border border-line rounded-lg px-3 py-2.5 ${v.status === 'RETIRED' ? 'opacity-50' : ''}`;
+
+            return isClickable ? (
+              <button
                 key={v.id}
-                className={`relative bg-surface-alt border border-line rounded-lg px-3 py-3 text-center group ${v.status === 'RETIRED' ? 'opacity-50' : ''}`}
+                type="button"
+                onClick={() => setEditing(v)}
+                title={`${v.vehicleNo} 조회 · ${statusLabel}`}
+                aria-label={`${v.vehicleNo} 조회`}
+                className={`${baseCls} text-left hover:border-accent hover:shadow-card transition-colors`}
               >
-                {isManager && v.status !== 'RETIRED' && (
-                  <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => setEditing(v)}
-                      title="수정"
-                      className="w-6 h-6 rounded-md bg-surface border border-line hover:bg-accent hover:text-white text-ink text-xs font-extrabold flex items-center justify-center"
-                    >✎</button>
-                    <button
-                      onClick={() => setRetireFor(v)}
-                      title="폐차"
-                      className="w-6 h-6 rounded-md bg-surface border border-line hover:bg-danger hover:text-white text-ink text-xs font-extrabold flex items-center justify-center"
-                    >×</button>
-                  </div>
-                )}
-                <div className="font-mono text-[15px] font-extrabold text-ink tracking-tight">{v.vehicleNo}</div>
-                <div className="text-[11px] font-bold text-ink-muted mt-1">
-                  {TYPE_LABEL[v.vehicleType] ?? v.vehicleType} {v.vehicleTon}
-                </div>
-                {v.driverName && (
-                  <div className="text-[10px] font-bold text-ink mt-1" title="운전자">
-                    🚛 {v.driverName}
-                  </div>
-                )}
-                {(v.passenger1Name || v.passenger2Name) && (
-                  <div className="text-[10px] font-bold text-ink-muted mt-0.5" title="동승자">
-                    👥 {[v.passenger1Name, v.passenger2Name].filter(Boolean).join(', ')}
-                  </div>
-                )}
-                {v.totalMileage != null && (
-                  <div className="text-[10px] font-mono font-extrabold text-accent mt-1">
-                    {v.totalMileage.toLocaleString()} km
-                  </div>
-                )}
-                <div className={`w-2.5 h-2.5 rounded-full mx-auto mt-2 ${dotClass}`} />
-                <div className="text-[10px] font-mono font-extrabold text-ink-muted mt-1.5">
-                  {v.status === 'RETIRED'
-                    ? '폐차'
-                    : v.status === 'MAINTENANCE'
-                    ? '정비중'
-                    : v.logStatus === 'APPROVED'
-                    ? '승인 완료'
-                    : v.logStatus === 'SUBMITTED'
-                    ? '제출 (결재 대기)'
-                    : v.logStatus === 'DRAFT'
-                    ? '작성중'
-                    : '대기'}
-                </div>
+                {cardInner}
+              </button>
+            ) : (
+              <div key={v.id} className={baseCls} title={statusLabel}>
+                {cardInner}
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* 오늘 운행일지 */}
+      {/* 오늘 운행일지 — 일괄 출력 버튼 제거 (사용자 요청 2026-04-28). */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-5 py-3.5 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2">
           <h3 className="text-sm font-extrabold text-ink">오늘 운행일지 ({logs.length}건)</h3>
-          <a href={`/vehicles/print?date=${new Date().toISOString().slice(0, 10)}`}
-            className="px-3 py-1.5 rounded text-xs font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
-            🖨 일괄 출력
-          </a>
           <span className="text-[11px] font-mono font-bold text-ink-muted">{todayLabel}</span>
         </header>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="운행일지 표">
@@ -349,18 +353,31 @@ export default function VehiclesClient({
         />
       )}
 
-      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold leading-relaxed">
-        <strong className="font-extrabold">원가산정 연계</strong> · 승인된 운행일지의 fuel/waste/mileage 합계가 월별 원가 산정(Phase 1A-3) 입력값으로 사용됩니다.
-      </div>
+      {/* 원가산정 연계 안내 박스 제거 (사용자 요청 2026-04-28). */}
     </div>
   );
 }
 
-function Stat({ label, value, tone = 'text-ink' }: { label: string; value: string; tone?: string }) {
+function Stat({
+  label, value, tone = 'default',
+}: {
+  label: string; value: string;
+  tone?: 'default' | 'accent' | 'success' | 'warn';
+}) {
+  /* 사용자 요청 2026-04-28: 다른 페이지(attendance KpiCard) 와 동일 그라데이션 톤. */
+  const colors: Record<string, { card: string; value: string }> = {
+    default: { card: 'bg-gradient-to-br from-slate-100 to-white border-slate-300', value: 'text-ink' },
+    accent:  { card: 'bg-gradient-to-br from-cyan-50 to-white border-cyan-300',    value: 'text-cyan-900' },
+    success: { card: 'bg-gradient-to-br from-emerald-50 to-white border-emerald-300', value: 'text-emerald-900' },
+    warn:    { card: 'bg-gradient-to-br from-amber-50 to-white border-amber-300',  value: 'text-amber-900' },
+  };
+  const c = colors[tone];
   return (
-    <div className="bg-surface border border-line rounded-xl px-4 py-3 shadow-card">
-      <div className="text-[10px] font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
-      <div className={`mt-1 text-xl font-black font-mono tracking-tight ${tone}`}>{value}</div>
+    /* 사용자 요청 2026-04-29: 값 폰트 2단계 다운 (text-3xl 30px → text-xl 20px).
+       라벨(text-sm 14px) 은 가독성 위해 유지. */
+    <div className={`${c.card} border rounded-xl px-4 py-3 shadow-card`}>
+      <div className="text-sm font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
+      <div className={`mt-1.5 text-xl font-black font-mono tracking-tight ${c.value}`}>{value}</div>
     </div>
   );
 }

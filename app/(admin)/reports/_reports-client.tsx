@@ -53,7 +53,7 @@ export default function ReportsClient({ session }: { session: { role: string; na
     <div className="space-y-4">
       <nav className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card overflow-x-auto print:hidden">
         <TabBtn active={reportTab === 'master'} onClick={() => setReportTab('master')}>📊 통합 운영 보고서</TabBtn>
-        <TabBtn active={reportTab === 'f02'} onClick={() => setReportTab('f02')}>📄 일일 처리실적 일보 (F-02)</TabBtn>
+        <TabBtn active={reportTab === 'f02'} onClick={() => setReportTab('f02')}>📄 일일 처리실적 일보</TabBtn>
       </nav>
       {reportTab === 'master' && <MasterStatsView session={session} />}
       {reportTab === 'f02' && <DailyTreatmentTab role={session.role} />}
@@ -145,43 +145,40 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             출력자: {session.name} ({ROLE_LABEL[session.role]}) · 출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
 
-          {/* 1. 인사 */}
+          {/* 1. 인사 — 5 카드 (사용자 요청 2026-04-29 v2 — positions 7종 재정의 반영).
+              운전원   = DRIVER
+              수거원   = COLLECTOR + CLEANER (미화원 포함 — 사용자 요청)
+              현장지원 = INDIRECT (간접인력)
+              관리직   = OFFICE 카테고리 전체 (EXECUTIVE / MANAGER / ADMIN_STAFF) */}
           <Section no={1} title="인사 현황" color="text-blue-700">
-            <div className="grid grid-cols-4 gap-3 mb-3">
-              <KCard label="전체 인원" value={`${data.hr.total}명`} tone="accent" />
-              <KCard label="권한 종류" value={`${data.hr.byRole.length}종`} />
-              <KCard label="직책 등록" value={`${data.hr.byPosition.length}종`} />
-              <KCard label="부서" value={`${data.hr.byDepartment.length}개`} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Card title="권한별">
-                {data.hr.byRole.length === 0 ? <Empty /> : data.hr.byRole.map((r) => (
-                  <BarRow key={r.role} label={ROLE_LABEL[r.role] ?? r.role} value={r.count} max={max(data.hr.byRole.map((x) => x.count))} suffix="명" color="bg-blue-400" />
-                ))}
-              </Card>
-              <Card title="부서별">
-                {data.hr.byDepartment.length === 0 ? <Empty /> : data.hr.byDepartment.map((d) => (
-                  <BarRow key={d.name} label={d.name} value={d.count} max={max(data.hr.byDepartment.map((x) => x.count))} suffix="명" color="bg-emerald-400" />
-                ))}
-              </Card>
-            </div>
-            <Card title="직책별 (사무 / 현장 / 기타)" cls="mt-3">
-              <div className="grid grid-cols-3 gap-2">
-                {['OFFICE', 'FIELD', 'OTHER'].map((cat) => (
-                  <div key={cat}>
-                    <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">{cat === 'OFFICE' ? '사무' : cat === 'FIELD' ? '현장' : '기타'}</div>
-                    {data.hr.byPosition.filter((p) => p.category === cat).length === 0
-                      ? <Empty />
-                      : data.hr.byPosition.filter((p) => p.category === cat).map((p) => (
-                        <div key={p.code} className="flex justify-between text-xs border-b border-line py-0.5">
-                          <span>{p.label}</span>
-                          <span className="font-mono font-extrabold">{p.count}</span>
-                        </div>
-                      ))}
-                  </div>
-                ))}
-              </div>
-            </Card>
+            {(() => {
+              const drivers = data.hr.byPosition.find((p) => p.code === 'DRIVER')?.count ?? 0;
+              /* 수거원 = COLLECTOR + CLEANER (미화원) */
+              const collectors = data.hr.byPosition
+                .filter((p) => p.code === 'COLLECTOR' || p.code === 'CLEANER')
+                .reduce((s, p) => s + p.count, 0);
+              /* 현장지원 = INDIRECT (간접인력) — legacy(RAPID/STREET_CLEAN/ALLEY_CLEAN) 도 호환 합산 */
+              const fieldSupport = data.hr.byPosition
+                .filter((p) =>
+                  p.code === 'INDIRECT' ||
+                  /* legacy 호환 */
+                  p.code === 'RAPID' || p.code === 'STREET_CLEAN' || p.code === 'ALLEY_CLEAN'
+                )
+                .reduce((s, p) => s + p.count, 0);
+              /* 관리직 = OFFICE 카테고리 전체 (EXECUTIVE/MANAGER/ADMIN_STAFF + legacy CEO/EXEC/...) */
+              const management = data.hr.byPosition
+                .filter((p) => p.category === 'OFFICE')
+                .reduce((s, p) => s + p.count, 0);
+              return (
+                <div className="grid grid-cols-5 gap-3 mb-3">
+                  <KCard label="전체 인원" value={`${data.hr.total}명`} tone="accent" />
+                  <KCard label="운전원" value={`${drivers}명`} />
+                  <KCard label="수거원" value={`${collectors}명`} />
+                  <KCard label="현장지원" value={`${fieldSupport}명`} />
+                  <KCard label="관리직" value={`${management}명`} />
+                </div>
+              );
+            })()}
           </Section>
 
           {/* 2. 근태 */}
@@ -195,7 +192,7 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             </div>
           </Section>
 
-          {/* 3. 휴가 */}
+          {/* 3. 휴가 — 사용자 요청 2026-04-29: 유형별 카드 숨김. KCard 5건만 유지. */}
           <Section no={3} title="휴가 현황" color="text-emerald-700">
             <div className="grid grid-cols-5 gap-3 mb-3">
               <KCard label="신청" value={`${data.leave.requests}건`} />
@@ -204,11 +201,6 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
               <KCard label="대기" value={`${data.leave.pending}건`} />
               <KCard label="승인 일수" value={`${data.leave.approvedDays}일`} tone="accent" />
             </div>
-            <Card title="유형별">
-              {data.leave.byType.length === 0 ? <Empty /> : data.leave.byType.map((t) => (
-                <BarRow key={t.type} label={LEAVE_TYPE_LABEL[t.type] ?? t.type} value={t.count} max={max(data.leave.byType.map((x) => x.count))} suffix="건" color="bg-emerald-400" />
-              ))}
-            </Card>
           </Section>
 
           {/* 4. 민원 */}
@@ -331,9 +323,10 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
 }
 
 function Section({ no, title, color, children }: { no: number; title: string; color: string; children: React.ReactNode }) {
+  /* 사용자 요청 2026-04-29: 카드 타이틀 1단계 업 (text-xl 20px → text-2xl 24px) */
   return (
     <section className={`mb-6 ${no > 1 ? 'page-break' : ''}`}>
-      <h2 className={`font-black text-xl mb-3 border-l-[6px] border-current pl-3 ${color}`}>
+      <h2 className={`font-black text-2xl mb-3 border-l-[6px] border-current pl-3 ${color}`}>
         {no}. {title}
       </h2>
       {children}
@@ -342,19 +335,23 @@ function Section({ no, title, color, children }: { no: number; title: string; co
 }
 
 function Card({ title, children, cls = '' }: { title: string; children: React.ReactNode; cls?: string }) {
+  /* 내용 1단계 다운 — sub title text-xs 12px → text-[11px] */
   return (
     <div className={`bg-surface border border-line rounded p-3 ${cls}`}>
-      <div className="text-xs font-extrabold text-ink mb-2">{title}</div>
+      <div className="text-[11px] font-extrabold text-ink mb-2">{title}</div>
       <div className="space-y-1">{children}</div>
     </div>
   );
 }
 
 function Empty() {
-  return <div className="text-xs text-slate-700 text-center py-3">데이터 없음</div>;
+  /* 내용 1단계 다운 — text-xs 12px → text-[11px] */
+  return <div className="text-[11px] text-slate-700 text-center py-3">데이터 없음</div>;
 }
 
 function KCard({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
+  /* 사용자 요청 2026-04-29: 카드 안 텍스트 중앙정렬 (text-center).
+     인사/근태/휴가/민원/차량운행/실적/반입/안전 모든 KCard 일괄 적용 (단일 컴포넌트 한 곳 수정). */
   const c: Record<string, string> = {
     default: 'bg-white border-line text-ink',
     accent: 'bg-cyan-100 border-cyan-500 text-cyan-900',
@@ -362,18 +359,19 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
     warning: 'bg-amber-100 border-amber-500 text-amber-900',
   };
   return (
-    <div className={`px-3 py-2 rounded border-2 ${c[tone]}`}>
-      <div className="text-[10px] font-mono font-extrabold uppercase">{label}</div>
-      <div className="text-xl font-black mt-0.5">{value}</div>
+    <div className={`px-3 py-2 rounded border-2 text-center ${c[tone]}`}>
+      <div className="text-xs font-mono font-extrabold uppercase">{label}</div>
+      <div className="text-base font-black mt-0.5">{value}</div>
     </div>
   );
 }
 
 function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: string; value: number; max: number; suffix: string; color?: string }) {
+  /* 내용 1단계 다운 — BarRow label text-[11px] → text-[10px] */
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-[120px] text-[11px] font-bold text-ink truncate">{label}</div>
+      <div className="w-[120px] text-[10px] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-4 overflow-hidden">
         <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[9px] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
           {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(2) : value}{suffix}

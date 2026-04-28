@@ -45,19 +45,20 @@ export function TabLink({ href, label, icon, isMore = false, onClick, forceActiv
           className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-accent rounded-full"
         />
       )}
+      {/* P1: 비활성 탭도 충분한 대비 — text-slate-400/500 → text-ink-faint (#475569 = 7:1 on white = AAA) */}
       <svg
-        width="24"
-        height="24"
+        width="26"
+        height="26"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        strokeWidth={active ? 2.25 : 1.75}
-        className={active ? 'text-accent' : 'text-slate-400'}
+        strokeWidth={active ? 2.5 : 2}
+        className={active ? 'text-accent' : 'text-ink-faint'}
       >
         <path strokeLinecap="round" strokeLinejoin="round" d={ICON_PATHS[icon]} />
       </svg>
       <span
-        className={`text-xs leading-none ${active ? 'text-accent font-extrabold' : 'text-slate-500 font-bold'}`}
+        className={`text-[13px] leading-none ${active ? 'text-accent font-extrabold' : 'text-ink-muted font-bold'}`}
       >
         {label}
       </span>

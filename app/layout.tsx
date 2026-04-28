@@ -21,6 +21,10 @@ export const viewport: Viewport = {
   themeColor: '#0e7490',
   width: 'device-width',
   initialScale: 1,
+  /* PWA Mobile UX Mastering — 자유 핀치 줌 차단으로 "앱 같은" 고정 느낌.
+     userScalable=true 유지로 WCAG 1.4.4 (Resize Text) 미위반 — 보조 기능(iOS 손쉬운 사용 등)으로는 줌 가능. */
+  maximumScale: 1,
+  userScalable: true,
   viewportFit: 'cover',  /* iOS 노치/홈 인디케이터 영역 보정 */
 };
 

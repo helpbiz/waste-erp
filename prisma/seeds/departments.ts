@@ -1,5 +1,6 @@
 /**
- * Department 시드 — 표준 8개 부서 (idempotent)
+ * Department 시드 — 사용자 요청 2026-04-29 4부서 재정의 (idempotent).
+ * 관리부 / 수집운반부 / 민원고객지원부 / 행정지원부.
  *
  * 실행: npx tsx prisma/seeds/departments.ts
  *
@@ -10,14 +11,16 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const DEPARTMENTS = [
-  { name: '임원',          sortOrder: 10 },
-  { name: '안전환경관리팀', sortOrder: 20 },
-  { name: '수집운반팀',     sortOrder: 30 },
-  { name: '장비관리팀',     sortOrder: 40 },
-  { name: '환경미화팀',     sortOrder: 50 },
-  { name: '재활용 선별팀',  sortOrder: 60 },
-  { name: '민원고객지원팀', sortOrder: 70 },
-  { name: '행정회계팀',     sortOrder: 80 },
+  { name: '관리부',         sortOrder: 10 },
+  { name: '수집운반부',     sortOrder: 20 },
+  { name: '민원고객지원부', sortOrder: 30 },
+  { name: '행정지원부',     sortOrder: 40 },
+];
+
+/* 기존 8부서 — 시드된 적이 있는 contractor 에 대해 deactivate (active=false). */
+const LEGACY_DEPT_NAMES = [
+  '임원', '안전환경관리팀', '수집운반팀', '장비관리팀',
+  '환경미화팀', '재활용 선별팀', '민원고객지원팀', '행정회계팀',
 ];
 
 async function main() {
@@ -33,9 +36,9 @@ async function main() {
   }
 
   for (const c of contractors) {
-    let upserted = 0;
+    let upserted = 0, deactivated = 0;
+    /* 1) 신규 4부서 upsert */
     for (const d of DEPARTMENTS) {
-      /* parentId NULL 컴파운드 unique 회피 — findFirst + create/update */
       const existing = await prisma.department.findFirst({
         where: { contractorId: c.id, parentId: null, name: d.name },
       });
@@ -51,7 +54,17 @@ async function main() {
       }
       upserted++;
     }
-    console.log(`✓ ${c.companyName} (id=${c.id}) — ${upserted}개 부서 시드`);
+    /* 2) Legacy 8부서 deactivate (없으면 skip) */
+    for (const name of LEGACY_DEPT_NAMES) {
+      const existing = await prisma.department.findFirst({
+        where: { contractorId: c.id, parentId: null, name },
+      });
+      if (existing && existing.active) {
+        await prisma.department.update({ where: { id: existing.id }, data: { active: false } });
+        deactivated++;
+      }
+    }
+    console.log(`✓ ${c.companyName} (id=${c.id}) — ${upserted}개 활성 / ${deactivated}개 legacy 비활성`);
   }
 
   const total = await prisma.department.count({ where: { active: true } });

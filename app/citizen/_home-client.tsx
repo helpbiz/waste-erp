@@ -133,44 +133,52 @@ export default function CitizenHomeClient() {
       {/* 사용자 표시 */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-base font-extrabold text-ink">{name ? `${name}님` : '안녕하세요'}</div>
-          <div className="text-[11px] font-mono font-bold text-ink-muted">{phone}</div>
+          <div className="text-lg font-extrabold text-ink">{name ? `${name}님` : '안녕하세요'}</div>
+          {/* P1: 11px → 14px (text-sm) */}
+          <div className="text-sm font-mono font-bold text-ink-mid mt-0.5">{phone}</div>
         </div>
-        <button onClick={logout} className="text-[11px] font-bold text-ink-faint hover:text-danger">
+        {/* 시민 "전환" — 서버 로그아웃이 아닌 localStorage 클리어. AAA 시인성 보장 (P0-5).
+            16px / 44px / 명확한 outlined 버튼으로 hover-only 의존 제거. */}
+        <button
+          type="button"
+          onClick={logout}
+          aria-label="다른 사람으로 전환"
+          className="min-h-11 px-4 py-2 rounded-lg bg-white border-2 border-line-strong text-base font-bold text-ink-mid hover:bg-surface-soft hover:border-danger hover:text-danger transition-colors"
+        >
           전환
         </button>
       </div>
 
-      {/* + 새 민원 신고 (큰 CTA) */}
+      {/* + 새 민원 신고 (큰 CTA) — text-cyan-100 (#cffafe) on cyan-700 = 6:1 → text-cyan-50 (#ecfeff) = 7:1 AAA */}
       <Link
         href="/citizen/new"
         className="block w-full py-5 rounded-2xl bg-gradient-to-br from-accent to-cyan-700 text-white text-center shadow-card active:scale-[0.98]"
       >
-        <div className="text-2xl font-black">📷 새 민원 신고</div>
-        <div className="text-xs font-bold text-cyan-100 mt-1">사진 + 위치만 있으면 30초 안에</div>
+        <div className="text-3xl font-black">📷 새 민원 신고</div>
+        <div className="text-base font-semibold text-cyan-50 mt-2">사진 + 위치만 있으면 30초 안에</div>
       </Link>
 
-      {/* 탭 */}
+      {/* 탭 — P1: 11px → 13px(tab count) / text-base 본문 */}
       <nav className="flex bg-surface-soft rounded-lg p-1 border border-line">
         <button
           onClick={() => setTab('WAITING')}
-          className={`flex-1 py-2 rounded-md text-sm font-extrabold transition ${tab === 'WAITING' ? 'bg-surface text-accent shadow-sm' : 'text-ink-muted'}`}
+          className={`flex-1 min-h-11 py-2 rounded-md text-base font-extrabold transition-colors ${tab === 'WAITING' ? 'bg-surface text-accent shadow-sm' : 'text-ink-mid'}`}
         >
-          처리 대기 <span className="ml-1 text-[11px] font-mono">({waiting.length})</span>
+          처리 대기 <span className="ml-1 text-[13px] font-mono">({waiting.length})</span>
         </button>
         <button
           onClick={() => setTab('COMPLETED')}
-          className={`flex-1 py-2 rounded-md text-sm font-extrabold transition ${tab === 'COMPLETED' ? 'bg-surface text-accent shadow-sm' : 'text-ink-muted'}`}
+          className={`flex-1 min-h-11 py-2 rounded-md text-base font-extrabold transition-colors ${tab === 'COMPLETED' ? 'bg-surface text-accent shadow-sm' : 'text-ink-mid'}`}
         >
-          처리 완료 <span className="ml-1 text-[11px] font-mono">({completed.length}{unrated > 0 && <span className="text-warn"> · {unrated} 평가 대기</span>})</span>
+          처리 완료 <span className="ml-1 text-[13px] font-mono">({completed.length}{unrated > 0 && <span className="text-warn"> · {unrated} 평가 대기</span>})</span>
         </button>
       </nav>
 
-      {/* 리스트 */}
+      {/* 리스트 — P1: 메타 10-11px → 13px, 본문 12px → 14px (text-sm) */}
       <div className="space-y-2.5">
-        {busy && items.length === 0 && <div className="text-center text-xs text-ink-muted py-4">불러오는 중…</div>}
+        {busy && items.length === 0 && <div className="text-center text-sm text-ink-mid py-4">불러오는 중…</div>}
         {!busy && items.length === 0 && (
-          <div className="bg-surface border border-line rounded-xl py-10 text-center text-sm text-ink-muted font-bold">
+          <div className="bg-surface border border-line rounded-xl py-10 text-center text-base text-ink-mid font-bold">
             아직 신고하신 민원이 없습니다.
           </div>
         )}
@@ -181,14 +189,14 @@ export default function CitizenHomeClient() {
             className="block bg-surface border border-line rounded-xl p-4 shadow-card active:scale-[0.99] transition"
           >
             <div className="flex items-start gap-2 flex-wrap mb-1">
-              <span className="text-sm font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
-              {c.isUrgent && <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-100 text-danger border border-red-200">긴급</span>}
-              {c.urgentTag && <span className="text-[11px] font-extrabold text-warn">{URGENT_LABEL[c.urgentTag] ?? c.urgentTag}</span>}
+              <span className="text-base font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
+              {c.isUrgent && <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-red-100 text-red-800 border border-red-300">긴급</span>}
+              {c.urgentTag && <span className="text-[13px] font-extrabold text-warn">{URGENT_LABEL[c.urgentTag] ?? c.urgentTag}</span>}
               <StatusChip status={c.status} />
-              <code className="text-[10px] font-mono text-ink-faint ml-auto">#{c.id}</code>
+              <code className="text-[11px] font-mono text-ink-mid ml-auto">#{c.id}</code>
             </div>
-            {c.locationAddress && <div className="text-xs text-ink font-semibold">📍 {c.locationAddress}</div>}
-            <div className="flex justify-between items-center mt-1.5 text-[10px] font-mono font-bold text-ink-faint">
+            {c.locationAddress && <div className="text-sm text-ink font-semibold mt-1">📍 {c.locationAddress}</div>}
+            <div className="flex justify-between items-center mt-2 text-[13px] font-mono font-bold text-ink-mid">
               <span>{fmt(c.reportedAt)}</span>
               {c.status === 'COMPLETED' && c.satisfactionScore == null && (
                 <span className="text-warn font-extrabold">평가 대기 →</span>
@@ -208,17 +216,18 @@ export default function CitizenHomeClient() {
 }
 
 function StatusChip({ status }: { status: string }) {
+  /* P1: 칩 색상 대비 강화 + 폰트 10px → 11px */
   const map: Record<string, { label: string; cls: string }> = {
-    RECEIVED:    { label: '접수',     cls: 'bg-amber-100 text-warn border-amber-200' },
-    ASSIGNED:    { label: '배정',     cls: 'bg-blue-100 text-info border-blue-200' },
-    IN_PROGRESS: { label: '처리중',   cls: 'bg-amber-100 text-warn border-amber-200' },
-    COMPLETED:   { label: '완료',     cls: 'bg-green-100 text-success border-green-200' },
-    REJECTED:    { label: '반려',     cls: 'bg-slate-100 text-ink-muted border-slate-200' },
+    RECEIVED:    { label: '접수',     cls: 'bg-amber-100 text-amber-900 border-amber-300' },
+    ASSIGNED:    { label: '배정',     cls: 'bg-blue-100 text-blue-900 border-blue-300' },
+    IN_PROGRESS: { label: '처리중',   cls: 'bg-amber-100 text-amber-900 border-amber-300' },
+    COMPLETED:   { label: '완료',     cls: 'bg-green-100 text-green-900 border-green-300' },
+    REJECTED:    { label: '반려',     cls: 'bg-slate-100 text-slate-800 border-slate-300' },
   };
   const m = map[status];
   if (!m) return null;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold border ${m.cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold border ${m.cls}`}>
       {m.label}
     </span>
   );

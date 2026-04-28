@@ -69,11 +69,13 @@ export type LeaveRow = {
   approverSignatureRef: string | null;
 };
 
+/* 사용자 요청 2026-04-29: 권한 라벨 재정의 (DB enum 값은 유지, 표시 라벨만 변경).
+   근로자=WORKER / 프로그램관리자=INTERNAL_ADMIN / 대표=CONTRACTOR_ADMIN / 지자체관리자=MUNI_ADMIN. */
 const ROLE_LABEL: Record<string, string> = {
   SUPER_ADMIN: '슈퍼관리자',
   MUNI_ADMIN: '지자체관리자',
-  CONTRACTOR_ADMIN: '업체관리자',
-  INTERNAL_ADMIN: '내부관리자',
+  CONTRACTOR_ADMIN: '대표',
+  INTERNAL_ADMIN: '프로그램관리자',
   WORKER: '근로자',
 };
 const STATUS_LABEL: Record<string, string> = { ACTIVE: '활성', INACTIVE: '비활성', PENDING: '대기' };
@@ -190,7 +192,7 @@ export default function UsersClient({
 
       {tab === 'report' && <ReportTab />}
 
-      {tab === 'org' && <OrgChartTab canManage={canManage} allUsers={rows} />}
+      {tab === 'org' && <OrgChartTab canManage={canManage} allUsers={rows} positions={positions} />}
 
       {showCreate && canManage && (
         <CreateUserModal
@@ -337,50 +339,34 @@ function RegisterTab({
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
+        {/* 사용자 요청 2026-04-29: 리스트 컬럼 5종(이름/아이디/권한/입사일/상태)만 노출.
+            숨김: avatar / 직책 / 사번 / 지자체·업체 / 부서 / 전화 / 서명. 액션(수정/상세/비활성화)은 유지. */}
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
             <tr>
-              <th className="px-3 py-2 text-left w-[50px]"></th>
-              <th className="px-3 py-2 text-left">이름·직책</th>
-              <th className="px-3 py-2 text-left">아이디·사번</th>
-              <th className="px-3 py-2 text-left">권한</th>
-              {isSuperAdmin && <th className="px-3 py-2 text-left">지자체·업체</th>}
-              <th className="px-3 py-2 text-left">부서</th>
-              <th className="px-3 py-2 text-left">전화</th>
-              <th className="px-3 py-2 text-left">입사일</th>
-              <th className="px-3 py-2 text-left">서명</th>
-              <th className="px-3 py-2 text-left">상태</th>
-              <th className="px-3 py-2"></th>
+              {/* 사용자 요청 2026-04-29: 컬럼명 중앙정렬, 우측 액션 컬럼명 "상태변경" 부여. */}
+              <th className="px-3 py-2 text-center">이름</th>
+              <th className="px-3 py-2 text-center">아이디</th>
+              <th className="px-3 py-2 text-center">권한</th>
+              <th className="px-3 py-2 text-center">직책</th>
+              <th className="px-3 py-2 text-center">상태</th>
+              <th className="px-3 py-2 text-center">상태변경</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {filtered.length === 0 && (
-              <tr><td colSpan={isSuperAdmin ? 11 : 10} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-2 py-2"><Avatar url={u.profilePhotoUrl} name={u.name} size={36} /></td>
-                <td className="px-3 py-2">
-                  <div className="font-bold text-ink text-sm">{u.name}</div>
-                  <div className="mt-0.5">{u.position ? <PositionBadge p={u.position} /> : <span className="text-[10px] font-mono text-slate-500">직책 미지정</span>}</div>
-                </td>
-                <td className="px-3 py-2">
-                  <div className="font-mono text-xs">{u.username}</div>
-                  <div className="font-mono text-[10px] text-slate-600">{u.employeeNo ?? '—'}</div>
-                </td>
+                <td className="px-3 py-2 font-bold text-ink text-sm">{u.name}</td>
+                <td className="px-3 py-2 font-mono text-xs">{u.username}</td>
                 <td className="px-3 py-2"><RoleBadge role={u.role} /></td>
-                {isSuperAdmin && (
-                  <td className="px-3 py-2 text-xs">
-                    <div className="font-bold text-ink">{u.contractorName ?? '—'}</div>
-                    <div className="text-[10px] font-mono text-ink-muted mt-0.5">
-                      {u.municipalityRegion ? `[${u.municipalityRegion}] ` : ''}{u.municipalityName ?? '—'}
-                    </div>
-                  </td>
-                )}
-                <td className="px-3 py-2 text-xs text-slate-700">{u.department?.name ?? '—'}</td>
-                <td className="px-3 py-2 font-mono text-xs">{formatPhone(u.phone)}</td>
-                <td className="px-3 py-2 font-mono text-xs">{u.hireDate ?? '—'}</td>
-                <td className="px-3 py-2">{u.activeSignatureRef ? <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded border bg-emerald-100 text-emerald-700 border-emerald-300">✓ {u.activeSignatureRef.slice(0, 8)}</span> : <span className="text-[10px] font-mono text-slate-500">미등록</span>}</td>
+                <td className="px-3 py-2">
+                  {u.position
+                    ? <PositionBadge p={u.position} />
+                    : <span className="text-[10px] font-mono text-slate-500">직책 미지정</span>}
+                </td>
                 <td className="px-3 py-2"><StatusBadge status={u.status} /></td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   {canManage && (
@@ -605,37 +591,19 @@ function ProfileTab({
   onSelect: (id: string) => void; canManage: boolean;
   positions: PositionRow[]; departments: DepartmentRow[];
 }) {
+  /* 사용자 요청 2026-04-29 v3: 좌측 사용자 목록 다시 숨김.
+     [사용자 등록] 탭의 [상세] 버튼 → onSelectProfile 핸들러가 setTab('profile') + setSelectedId(id) 처리
+     → 자동으로 이 탭으로 이동 + 해당 사용자 ProfileEditor 표출. rows/onSelect 는 호환 유지. */
+  void rows; void onSelect;
   return (
-    <div className="grid grid-cols-[280px,1fr] gap-4">
-      {/* 좌측 — 사용자 리스트 */}
-      <div className="bg-surface border border-line rounded-lg overflow-hidden max-h-[680px] overflow-y-auto">
-        <div className="px-3 py-2 bg-slate-100 text-[11px] font-mono font-extrabold text-slate-600 sticky top-0">사용자 목록</div>
-        {rows.map((u) => (
-          <button
-            key={u.id} onClick={() => onSelect(u.id)}
-            className={`w-full text-left px-3 py-2 border-b border-line hover:bg-slate-50 ${selected?.id === u.id ? 'bg-accent-soft border-l-[3px] border-l-accent' : ''}`}
-          >
-            <div className="flex items-center gap-2">
-              <Avatar url={u.profilePhotoUrl} name={u.name} size={28} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-ink text-sm truncate">{u.name}</span>
-                  <RoleBadge role={u.role} />
-                </div>
-                <div className="text-[10px] font-mono text-slate-600 mt-0.5 truncate">{u.username} · {u.position?.label ?? '—'}</div>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-      {/* 우측 — 상세 */}
-      <div>
-        {selected ? (
-          <ProfileEditor user={selected} canManage={canManage} positions={positions} departments={departments} />
-        ) : (
-          <div className="bg-surface border border-line rounded-lg p-10 text-center text-slate-500">사용자를 선택하세요.</div>
-        )}
-      </div>
+    <div>
+      {selected ? (
+        <ProfileEditor user={selected} canManage={canManage} positions={positions} departments={departments} />
+      ) : (
+        <div className="bg-surface border border-line rounded-lg p-10 text-center text-slate-500">
+          [사용자 등록] 탭에서 [상세] 버튼을 눌러 인적사항을 조회하세요.
+        </div>
+      )}
     </div>
   );
 }
@@ -1011,45 +979,9 @@ function LeaveTab({
         </div>
       )}
 
-      <div className="grid grid-cols-[360px,1fr] gap-4">
-        {/* 좌측 — 워커별 잔여 */}
-        <div className="bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 bg-slate-100 border-b border-line flex items-center gap-1">
-            <span className="text-xs font-extrabold text-ink">{year}년 직원별 연차</span>
-            {canManage && (
-              <>
-                <button onClick={onBulkGrant}
-                  className="ml-auto px-2.5 py-1 rounded text-[10px] font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
-                  일괄 부여
-                </button>
-                <button onClick={onGrant} disabled={!selected}
-                  className="px-2.5 py-1 rounded text-[10px] font-extrabold bg-accent text-white disabled:opacity-40">
-                  개인 부여
-                </button>
-              </>
-            )}
-          </div>
-          <div className="max-h-[560px] overflow-y-auto">
-            {workers.map((w) => (
-              <button key={w.id} onClick={() => onSelect(w.id)}
-                className={`w-full text-left px-3 py-2 border-b border-line hover:bg-slate-50 ${selected?.id === w.id ? 'bg-accent-soft border-l-[3px] border-l-accent' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-ink text-sm">{w.name}</span>
-                  <span className="text-[10px] font-mono font-extrabold text-slate-600">{w.employeeNo ?? '—'}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-1 mt-1 text-[10px] font-mono">
-                  <Stat label="부여" value={w.thisYearGranted.toFixed(1)} />
-                  <Stat label="사용" value={w.thisYearUsed.toFixed(1)} tone="accent" />
-                  <Stat label="잔여" value={w.thisYearRemaining.toFixed(1)} tone={w.thisYearRemaining > 0 ? 'success' : 'warning'} />
-                </div>
-                <div className="text-[9px] font-mono text-slate-500 mt-1">권장 {w.recommendDays}일 · 근속 {w.tenureYears}년</div>
-              </button>
-            ))}
-            {workers.length === 0 && <div className="px-3 py-10 text-center text-slate-500 text-sm">근로자가 없습니다.</div>}
-          </div>
-        </div>
-
-        {/* 우측 — 휴가 신청 목록 */}
+      {/* 사용자 요청 2026-04-29: 좌우 grid → 상하 스택. 휴가 신청 내역 상단, 직원별 연차 하단. */}
+      <div className="space-y-4">
+        {/* 상단 — 휴가 신청 목록 */}
         <div className="bg-surface border border-line rounded-lg overflow-hidden">
           <div className="px-4 py-2.5 bg-slate-100 border-b border-line flex items-center gap-2">
             <span className="text-xs font-extrabold text-ink">휴가 신청 내역</span>
@@ -1112,6 +1044,45 @@ function LeaveTab({
               ))}
             </tbody>
           </table>
+          </div>
+        </div>
+
+        {/* 하단 — 직원별 연차 (사용자 요청 2026-04-29: 위에서 아래로 이동, full width) */}
+        <div className="bg-surface border border-line rounded-lg overflow-hidden">
+          <div className="px-4 py-2.5 bg-slate-100 border-b border-line flex items-center gap-1">
+            <span className="text-xs font-extrabold text-ink">{year}년 직원별 연차</span>
+            {canManage && (
+              <>
+                <button onClick={onBulkGrant}
+                  className="ml-auto px-2.5 py-1 rounded text-[10px] font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+                  일괄 부여
+                </button>
+                <button onClick={onGrant} disabled={!selected}
+                  className="px-2.5 py-1 rounded text-[10px] font-extrabold bg-accent text-white disabled:opacity-40">
+                  개인 부여
+                </button>
+              </>
+            )}
+          </div>
+          {/* 사용자 요청 2026-04-29: 이름 1단계 다운 (text-sm → text-xs),
+              Stat 내용 글자 2단계 업 (text-[10px] → text-sm), 식별성 향상. */}
+          <div className="max-h-[560px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0">
+            {workers.map((w) => (
+              <button key={w.id} onClick={() => onSelect(w.id)}
+                className={`w-full text-left px-3 py-2 border-b border-r border-line hover:bg-slate-50 ${selected?.id === w.id ? 'bg-accent-soft border-l-[3px] border-l-accent' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-ink text-xs">{w.name}</span>
+                  <span className="text-[10px] font-mono font-extrabold text-slate-600">{w.employeeNo ?? '—'}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 mt-1.5 text-sm font-mono">
+                  <Stat label="부여" value={w.thisYearGranted.toFixed(1)} />
+                  <Stat label="사용" value={w.thisYearUsed.toFixed(1)} tone="accent" />
+                  <Stat label="잔여" value={w.thisYearRemaining.toFixed(1)} tone={w.thisYearRemaining > 0 ? 'success' : 'warning'} />
+                </div>
+                <div className="text-[9px] font-mono text-slate-500 mt-1">권장 {w.recommendDays}일 · 근속 {w.tenureYears}년</div>
+              </button>
+            ))}
+            {workers.length === 0 && <div className="col-span-full px-3 py-10 text-center text-slate-500 text-sm">근로자가 없습니다.</div>}
           </div>
         </div>
       </div>
@@ -1315,10 +1286,12 @@ type OrgNode = {
   children: OrgNode[];
 };
 
-function OrgChartTab({ canManage, allUsers }: { canManage: boolean; allUsers: UserRow[] }) {
+function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; allUsers: UserRow[]; positions: PositionRow[] }) {
   const [data, setData] = useState<{ contractorName: string | null; tree: OrgNode[]; unassigned: OrgMember[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDeptId, setEditDeptId] = useState<string | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
   const router = useRouter();
 
   function load() {
@@ -1341,6 +1314,42 @@ function OrgChartTab({ canManage, allUsers }: { canManage: boolean; allUsers: Us
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
   }
 
+  /* 사용자 요청 2026-04-29: 부서명 셋업 가능. PATCH /api/departments/[id] 의 name 필드 활용. */
+  async function renameDept(deptId: string, newName: string) {
+    if (!newName.trim()) { alert('부서명을 입력하세요'); return; }
+    const res = await fetch(`/api/departments/${deptId}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+    if (res.ok) { load(); router.refresh(); setEditDeptId(null); }
+    else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  /* 신규 부서 생성 — POST /api/departments */
+  async function createDept(name: string) {
+    if (!name.trim()) { alert('부서명을 입력하세요'); return; }
+    const res = await fetch('/api/departments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    if (res.ok) { load(); router.refresh(); setAddingNew(false); setNewDeptName(''); }
+    else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  /* 부서 삭제 (소속 사용자 0명일 때만 가능) — DELETE /api/departments/[id] */
+  async function deleteDept(deptId: string, name: string) {
+    if (!confirm(`'${name}' 부서를 삭제하시겠습니까? (소속 사용자가 있으면 거부됩니다)`)) return;
+    const res = await fetch(`/api/departments/${deptId}`, { method: 'DELETE' });
+    if (res.ok) { load(); router.refresh(); }
+    else {
+      const j = await res.json().catch(() => ({}));
+      if (j.error === 'has_dependents') alert(`삭제 불가: 소속 ${j.users}명 / 하위부서 ${j.children}개`);
+      else alert('실패: ' + (j.error ?? ''));
+    }
+  }
+
   if (loading) return <div className="text-center py-12 text-slate-500">조직도 로딩 중…</div>;
   if (!data) return <div className="text-center py-12 text-red-600">조직도 로딩 실패</div>;
 
@@ -1348,20 +1357,44 @@ function OrgChartTab({ canManage, allUsers }: { canManage: boolean; allUsers: Us
 
   return (
     <div className="space-y-4">
-      <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3">
+      <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <h3 className="text-lg font-extrabold text-ink">{data.contractorName ?? '조직도'}</h3>
         <span className="text-xs font-mono font-bold text-slate-600">총 {totalMembers}명 / {data.tree.length}개 본부</span>
+        {canManage && (
+          <button onClick={() => setAddingNew((v) => !v)}
+            className="ml-auto px-3 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-cyan-800">
+            {addingNew ? '취소' : '+ 부서 등록'}
+          </button>
+        )}
       </div>
+
+      {addingNew && canManage && (
+        <div className="bg-cyan-50 border-2 border-accent rounded-lg p-4 flex items-center gap-2">
+          <input type="text" autoFocus value={newDeptName}
+            onChange={(e) => setNewDeptName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') createDept(newDeptName); if (e.key === 'Escape') { setAddingNew(false); setNewDeptName(''); } }}
+            placeholder="새 부서명 (예: 안전환경팀)"
+            className="flex-1 px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none" />
+          <button onClick={() => createDept(newDeptName)}
+            className="px-4 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800">
+            저장
+          </button>
+        </div>
+      )}
+
+      {/* 사용자 요청 2026-04-29: 직책 관리 패널을 부서 등록 바로 밑으로 이동. 부서 트리 위에 위치. */}
+      <PositionPanel positions={positions} canManage={canManage} />
 
       {data.tree.length === 0 ? (
         <div className="bg-surface border border-line rounded-lg p-10 text-center text-slate-500">
-          부서가 없습니다. <br /> "사용자 등록" 시 부서 시드를 먼저 적용하세요.
+          부서가 없습니다. {canManage ? '상단의 [+ 부서 등록] 버튼으로 등록하세요.' : '관리자에게 문의하세요.'}
         </div>
       ) : (
         <div className="space-y-3">
           {data.tree.map((node) => (
             <OrgDeptCard key={node.id} node={node} depth={0} canManage={canManage} allUsers={allUsers}
-              editDeptId={editDeptId} setEditDeptId={setEditDeptId} setHead={setHead} />
+              editDeptId={editDeptId} setEditDeptId={setEditDeptId}
+              setHead={setHead} renameDept={renameDept} deleteDept={deleteDept} />
           ))}
         </div>
       )}
@@ -1380,28 +1413,201 @@ function OrgChartTab({ canManage, allUsers }: { canManage: boolean; allUsers: Us
   );
 }
 
+/* ─────────────── 직책 관리 패널 (조직도 탭 내) ─────────────── */
+function PositionPanel({ positions, canManage }: { positions: PositionRow[]; canManage: boolean }) {
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  /* 사용자 피드백 2026-04-29: 직책 등록 시 code 입력 요구 → 자동 생성으로 변경.
+     코드는 'POS_' + 타임스탬프 base36 6자 (대문자) — 사용자는 이름/카테고리만 입력. */
+  const [newPos, setNewPos] = useState({ label: '', category: 'OFFICE' as 'OFFICE' | 'FIELD' | 'OTHER' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [labelDraft, setLabelDraft] = useState('');
+
+  /* 사용자 피드백 2026-04-29 v2: 코드 충돌 회피 강화 — base36 ts 8자 + random 4자.
+     예: POS_LRPL5BG0_A3F7 (12자 suffix). 같은 ms 내 다중 등록도 충돌 거의 0. */
+  function generateCode(): string {
+    const ts = Date.now().toString(36).toUpperCase();
+    const rnd = Math.random().toString(36).toUpperCase().slice(2, 6);
+    return `POS_${ts}_${rnd}`;
+  }
+
+  /* 사용자 피드백 2026-04-29: 1건 등록 후 폼이 닫히는 문제 → 폼 유지하여 연속 등록 지원.
+     label 만 초기화, 카테고리는 유지 (같은 카테고리 연속 등록 편의). */
+  async function createPos() {
+    if (!newPos.label.trim()) { alert('직책명을 입력하세요'); return; }
+    const code = generateCode();
+    const res = await fetch('/api/positions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code, label: newPos.label.trim(), category: newPos.category }),
+    });
+    if (res.ok) {
+      /* 폼 유지 — label 만 초기화하여 다음 등록 즉시 가능 */
+      setNewPos((prev) => ({ ...prev, label: '' }));
+      router.refresh();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(`실패: ${j.error === 'duplicate_code' ? '동일 코드 충돌 (잠시 후 다시 시도)' : (j.error ?? '')}`);
+    }
+  }
+
+  async function renamePos(id: string, label: string) {
+    if (!label.trim()) { alert('직책명을 입력하세요'); return; }
+    const res = await fetch(`/api/positions/${id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ label: label.trim() }),
+    });
+    if (res.ok) { setEditingId(null); router.refresh(); }
+    else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  async function toggleActive(id: string, currentActive: boolean) {
+    if (currentActive && !confirm('이 직책을 비활성화하시겠습니까? (등록된 사용자는 유지)')) return;
+    const res = await fetch(`/api/positions/${id}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ active: !currentActive }),
+    });
+    if (res.ok) router.refresh();
+    else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  const byCat: Record<string, PositionRow[]> = { OFFICE: [], FIELD: [], OTHER: [] };
+  for (const p of positions) (byCat[p.category] ?? byCat.OTHER).push(p);
+
+  const CAT_LABEL: Record<string, string> = { OFFICE: '사무직 (관리직)', FIELD: '현장직 (운전원/수거원/미화원)', OTHER: '기타 (간접인력)' };
+
+  return (
+    <div className="bg-surface border border-line rounded-lg overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-line bg-slate-100 flex items-center gap-3 flex-wrap">
+        <h3 className="text-sm font-extrabold text-ink">🏷 직책 관리</h3>
+        <span className="text-[11px] font-mono text-slate-600">활성 {positions.length}건 · 사용자 등록 dropdown 에 자동 반영</span>
+        <span className="text-[10px] font-bold text-amber-700">⚠ Position 은 전역 — 변경 시 모든 회사 영향</span>
+        {canManage && (
+          <button onClick={() => setAdding((v) => !v)}
+            className="ml-auto px-3 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-cyan-800">
+            {adding ? '취소' : '+ 직책 등록'}
+          </button>
+        )}
+      </div>
+
+      {adding && canManage && (
+        <div className="px-4 py-3 border-b border-line bg-cyan-50 flex flex-wrap items-center gap-2">
+          {/* 사용자 피드백 2026-04-29: code 입력 제거, 자동 생성. 이름/카테고리만 입력. */}
+          <input type="text" autoFocus placeholder="직책명 (예: 팀장)" value={newPos.label}
+            onChange={(e) => setNewPos({ ...newPos, label: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') createPos(); if (e.key === 'Escape') { setAdding(false); setNewPos({ label: '', category: 'OFFICE' }); } }}
+            className="flex-1 min-w-[160px] px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none" />
+          <select value={newPos.category}
+            onChange={(e) => setNewPos({ ...newPos, category: e.target.value as 'OFFICE' | 'FIELD' | 'OTHER' })}
+            className="px-3 py-2 rounded-md border-2 border-accent text-sm font-bold bg-white focus:outline-none">
+            <option value="OFFICE">사무직</option>
+            <option value="FIELD">현장직</option>
+            <option value="OTHER">기타</option>
+          </select>
+          <button onClick={createPos}
+            className="px-4 py-2 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-cyan-800">저장</button>
+          <span className="text-[10px] font-mono text-slate-500">code 자동 생성</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 divide-x divide-line">
+        {(['OFFICE', 'FIELD', 'OTHER'] as const).map((cat) => (
+          <div key={cat} className="p-3">
+            <div className="text-[11px] font-mono font-extrabold text-ink-muted mb-2 tracking-widest uppercase">{CAT_LABEL[cat]}</div>
+            <div className="space-y-1">
+              {byCat[cat].length === 0 && <div className="text-[11px] text-slate-500 py-2">— 등록된 직책 없음</div>}
+              {byCat[cat].map((p) => (
+                <div key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded border border-line bg-white">
+                  <code className="text-[10px] font-mono text-slate-500 w-[80px] truncate" title={p.code}>{p.code}</code>
+                  {editingId === p.id ? (
+                    <>
+                      <input type="text" autoFocus value={labelDraft}
+                        onChange={(e) => setLabelDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') renamePos(p.id, labelDraft);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                        className="flex-1 px-2 py-0.5 rounded border-2 border-accent text-xs font-bold focus:outline-none" />
+                      <button onClick={() => renamePos(p.id, labelDraft)}
+                        className="text-[10px] font-extrabold text-accent hover:underline">저장</button>
+                      <button onClick={() => setEditingId(null)}
+                        className="text-[10px] font-bold text-slate-500 hover:underline">취소</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-xs font-bold text-ink truncate">{p.label}</span>
+                      {canManage && (
+                        <>
+                          <button onClick={() => { setLabelDraft(p.label); setEditingId(p.id); }}
+                            title="이름 수정" className="text-[10px] text-slate-500 hover:text-accent">✎</button>
+                          <button onClick={() => toggleActive(p.id, true)}
+                            title="비활성화" className="text-[10px] text-slate-500 hover:text-red-600">×</button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function countMembers(nodes: OrgNode[]): number {
   return nodes.reduce((s, n) => s + n.members.length + countMembers(n.children), 0);
 }
 
 function OrgDeptCard({
-  node, depth, canManage, allUsers, editDeptId, setEditDeptId, setHead,
+  node, depth, canManage, allUsers, editDeptId, setEditDeptId, setHead, renameDept, deleteDept,
 }: {
   node: OrgNode; depth: number; canManage: boolean; allUsers: UserRow[];
   editDeptId: string | null; setEditDeptId: (id: string | null) => void;
   setHead: (deptId: string, userId: string | null) => Promise<void>;
+  renameDept: (deptId: string, name: string) => Promise<void>;
+  deleteDept: (deptId: string, name: string) => Promise<void>;
 }) {
   const isEditing = editDeptId === node.id;
+  const isRenaming = editDeptId === `rename:${node.id}`;
+  const [nameDraft, setNameDraft] = useState(node.name);
   const candidateUsers = allUsers.filter((u) => u.department?.id === node.id || u.id === node.head?.id);
   /* 부서장 후보: 해당 부서 소속자 또는 OFFICE 라인 누구나 */
   const broaderCandidates = allUsers.filter((u) => u.position?.category === 'OFFICE' || u.department?.id === node.id);
+  const canDelete = node.members.length === 0 && node.children.length === 0;
 
   return (
     <div className="bg-surface border border-line rounded-lg shadow-sm" style={{ marginLeft: depth * 24 }}>
-      <div className="px-4 py-2.5 border-b border-line bg-slate-100 flex items-center gap-3">
-        <div className="text-sm font-extrabold text-ink">📁 {node.name}</div>
+      <div className="px-4 py-2.5 border-b border-line bg-slate-100 flex items-center gap-3 flex-wrap">
+        {/* 부서명 — 편집 모드 / 표시 모드 (사용자 요청 2026-04-29) */}
+        {isRenaming && canManage ? (
+          <>
+            <span className="text-sm font-extrabold text-ink">📁</span>
+            <input type="text" autoFocus value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') renameDept(node.id, nameDraft);
+                if (e.key === 'Escape') { setEditDeptId(null); setNameDraft(node.name); }
+              }}
+              className="px-2 py-1 rounded border-2 border-accent bg-white text-sm font-bold focus:outline-none w-[200px]" />
+            <button onClick={() => renameDept(node.id, nameDraft)}
+              className="text-[11px] font-extrabold text-accent hover:underline">저장</button>
+            <button onClick={() => { setEditDeptId(null); setNameDraft(node.name); }}
+              className="text-[11px] font-bold text-slate-600 hover:underline">취소</button>
+          </>
+        ) : (
+          <>
+            <div className="text-sm font-extrabold text-ink">📁 {node.name}</div>
+            {canManage && (
+              <button onClick={() => { setNameDraft(node.name); setEditDeptId(`rename:${node.id}`); }}
+                title="부서명 수정"
+                className="text-[10px] font-bold text-slate-500 hover:text-accent">✎</button>
+            )}
+          </>
+        )}
         <div className="text-[10px] font-mono text-slate-600">{node.members.length}명</div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
           {node.head ? (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-100 border border-purple-300">
               <span className="text-[10px] font-mono font-extrabold text-purple-700">부서장</span>
@@ -1415,6 +1621,12 @@ function OrgDeptCard({
             <button onClick={() => setEditDeptId(isEditing ? null : node.id)}
               className="text-[10px] font-bold text-accent hover:underline">
               {isEditing ? '닫기' : '부서장 변경'}
+            </button>
+          )}
+          {canManage && canDelete && (
+            <button onClick={() => deleteDept(node.id, node.name)}
+              className="text-[10px] font-bold text-red-600 hover:underline">
+              부서 삭제
             </button>
           )}
         </div>
@@ -1451,7 +1663,8 @@ function OrgDeptCard({
         <div className="p-2 space-y-2 border-t border-line">
           {node.children.map((c) => (
             <OrgDeptCard key={c.id} node={c} depth={depth + 1} canManage={canManage} allUsers={allUsers}
-              editDeptId={editDeptId} setEditDeptId={setEditDeptId} setHead={setHead} />
+              editDeptId={editDeptId} setEditDeptId={setEditDeptId}
+              setHead={setHead} renameDept={renameDept} deleteDept={deleteDept} />
           ))}
         </div>
       )}
@@ -1873,9 +2086,9 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
         <Field label="권한 *">
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
             <option value="WORKER">근로자</option>
-            <option value="INTERNAL_ADMIN">내부관리자</option>
-            <option value="CONTRACTOR_ADMIN">업체관리자</option>
-            <option value="MUNI_ADMIN">지자체 관리자</option>
+            <option value="INTERNAL_ADMIN">프로그램관리자</option>
+            <option value="CONTRACTOR_ADMIN">대표</option>
+            <option value="MUNI_ADMIN">지자체관리자</option>
             {isSuper && <option value="SUPER_ADMIN">슈퍼관리자</option>}
           </select>
         </Field>
@@ -2315,10 +2528,11 @@ function Section({ title, children, colSpan }: { title: string; children: React.
 }
 
 function Field({ label, children, colSpan }: { label?: string; children: React.ReactNode; colSpan?: number }) {
-  /* canvas/file input은 <label> 내부에서 click forwarding이 일어나 pointer events가 깨짐 → <div> 사용 */
+  /* 사용자 요청 2026-04-29: 필드명 폰트 1단계 업 (text-[10px] → text-xs 12px).
+     canvas/file input은 <label> 내부에서 click forwarding 깨짐 → <div> 유지. */
   return (
     <div className={`block ${colSpan === 2 ? 'col-span-2' : ''}`}>
-      {label && <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">{label}</div>}
+      {label && <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">{label}</div>}
       {children}
     </div>
   );
@@ -2335,21 +2549,31 @@ function Input({ value, onChange, type = 'text', placeholder, disabled }: {
 }
 
 function SummaryCard({ title, value, unit, tone = 'default' }: { title: string; value: string; unit: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
-  const colors: Record<string, string> = {
-    default: 'bg-white border-line text-ink',
-    accent: 'bg-accent-soft border-accent text-accent',
-    success: 'bg-emerald-50 border-emerald-300 text-emerald-700',
-    warning: 'bg-amber-50 border-amber-300 text-amber-700',
+  /* 사용자 요청 2026-04-29: 텍스트 인식률 향상 (휴가 보고서 카드).
+     - 카드 배경/테두리: 그라데이션 (attendance/vehicles 패턴 일치)
+     - 제목: 10px uppercase tracking-widest(좌우 자간 늘림) → 14px font-extrabold text-ink-mid (AAA 15:1)
+     - 값: 24px → 30px (text-3xl) font-black 으로 시인성 강화
+     - 한글에 uppercase + tracking-widest 는 가독성 저해 → 제거 */
+  const colors: Record<string, { card: string; value: string }> = {
+    default: { card: 'bg-gradient-to-br from-slate-100 to-white border-slate-300', value: 'text-ink' },
+    accent:  { card: 'bg-gradient-to-br from-cyan-50 to-white border-cyan-300',    value: 'text-cyan-900' },
+    success: { card: 'bg-gradient-to-br from-emerald-50 to-white border-emerald-300', value: 'text-emerald-900' },
+    warning: { card: 'bg-gradient-to-br from-amber-50 to-white border-amber-300',  value: 'text-amber-900' },
   };
+  const c = colors[tone];
   return (
-    <div className={`px-4 py-3 rounded-lg border ${colors[tone]}`}>
-      <div className="text-[10px] font-mono font-extrabold uppercase tracking-widest">{title}</div>
-      <div className="font-extrabold mt-1"><span className="text-2xl">{value}</span> <span className="text-xs">{unit}</span></div>
+    <div className={`${c.card} border rounded-lg px-4 py-3 shadow-card`}>
+      <div className="text-sm font-extrabold text-ink-mid">{title}</div>
+      <div className="font-black mt-1.5">
+        <span className={`text-3xl ${c.value}`}>{value}</span>
+        <span className="text-sm font-bold text-ink-muted ml-1">{unit}</span>
+      </div>
     </div>
   );
 }
 
 function Stat({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
+  /* 사용자 요청 2026-04-29: 라벨(부여/사용/잔여) 글자 진하게 — font-extrabold + text-ink-mid 추가. */
   const colors: Record<string, string> = {
     default: 'text-slate-600',
     accent: 'text-accent',
@@ -2358,7 +2582,7 @@ function Stat({ label, value, tone = 'default' }: { label: string; value: string
   };
   return (
     <div className="text-center">
-      <div className="text-[8px] font-mono">{label}</div>
+      <div className="text-[10px] font-mono font-extrabold text-ink-mid">{label}</div>
       <div className={`font-extrabold ${colors[tone]}`}>{value}</div>
     </div>
   );

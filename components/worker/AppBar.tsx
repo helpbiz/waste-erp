@@ -1,38 +1,45 @@
-// Design Ref: docs/02-design/mobile-nav-revisit.md (Option C — 탭 5 + 헤더 아바타)
-// pm-research: 햄버거 제거 + 프로필 진입은 헤더 아바타로 (가시화 패턴)
+// Design Ref: docs/02-design/mobile-nav-revisit.md (Option C 변형 — 탭 5 + 헤더 로그아웃)
+// PWA Mobile UX Mastering 2026-04-28: 우상단 default를 ProfileAvatar → LogoutButton(compact) 으로 변경.
+// 사용자 보고 결함 "로그아웃 어디 있는지 못 찾음" 의 직접 해결 — 모든 worker 화면 우상단 1탭.
+// 프로필 진입은 worker 홈 기타 메뉴 그리드의 "내 프로필" 카드로 유지 (app/worker/page.tsx).
 'use client';
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import LogoutButton from '@/app/(admin)/_logout-button';
 
 type AppBarProps = {
   title: string;
   subtitle?: string;
   /** 좌측 아이템 (뒤로가기 등 — 미사용 시 비움) */
   leading?: ReactNode;
-  /** 우측 액션 (기본: 프로필 아바타 link) */
+  /** 우측 액션 (기본: LogoutButton compact). ProfileAvatar 사용 원할 시 명시적으로 전달 */
   trailing?: ReactNode;
-  /** 사용자 이름 — 아바타 이니셜 추출용 (trailing 미지정 시 기본 아바타 표시) */
+  /** 사용자 이름 — 과거 ProfileAvatar 이니셜용. 기본 trailing 변경 후 사용처 없으나 backward-compat 유지 */
   userName?: string;
 };
 
-export function AppBar({ title, subtitle, leading, trailing, userName }: AppBarProps) {
+export function AppBar({ title, subtitle, leading, trailing, userName: _userName }: AppBarProps) {
   return (
     <header
       className="bg-sidebar text-white flex-shrink-0 z-10"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="px-4 h-14 flex items-center gap-3">
+      <div className="px-3 h-14 flex items-center gap-2">
         {leading}
         <div className="flex-1 min-w-0">
-          <div className="text-base font-extrabold leading-tight truncate">{title}</div>
+          {/* P1: 16px → 18px (text-lg) — 시니어 가독성 */}
+          <div className="text-lg font-extrabold leading-tight truncate">{title}</div>
           {subtitle && (
-            <div className="text-[11px] font-mono font-bold text-cyan-300 mt-0.5 truncate">
+            /* P1: 11px → 13px, cyan-300 (#67e8f9) on sidebar = 8.5:1 AAA OK */
+            <div className="text-[13px] font-mono font-bold text-cyan-300 mt-0.5 truncate">
               {subtitle}
             </div>
           )}
         </div>
-        {trailing ?? (userName ? <ProfileAvatar name={userName} /> : null)}
+        {/* default trailing: 로그아웃 compact (어두운 sidebar 배경에서 bg-danger 21:1 시인성).
+            customize 필요 시 trailing prop 으로 override */}
+        {trailing ?? <LogoutButton variant="compact" />}
       </div>
     </header>
   );

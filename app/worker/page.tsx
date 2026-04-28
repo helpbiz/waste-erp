@@ -35,8 +35,9 @@ export default async function WorkerHomePage() {
       <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-2xl px-5 py-4 text-white shadow-lg">
         <div className="flex items-center justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-cyan-200">{todayLabel()}</p>
-            <h1 className="text-xl font-black mt-0.5 truncate">{session.name}님, 안녕하세요</h1>
+            {/* P1: 12px → 14px (AAA 본문 18px 까진 못 갔지만 가시성 ↑) */}
+            <p className="text-sm font-semibold text-cyan-100">{todayLabel()}</p>
+            <h1 className="text-2xl font-black mt-1 truncate">{session.name}님, 안녕하세요</h1>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
             <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2}>
@@ -45,9 +46,9 @@ export default async function WorkerHomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${statusColor}`}>{statusLabel}</span>
+          <span className={`px-3 py-1.5 rounded-full text-base font-extrabold ${statusColor}`}>{statusLabel}</span>
           {checkedIn && me?.checkInTime && (
-            <span className="text-sm text-cyan-100 font-medium">
+            <span className="text-base text-cyan-50 font-semibold">
               출근 {formatHmKst(new Date(me.checkInTime))}
               {checkedOut && me.checkOutTime && (
                 <> · 퇴근 {formatHmKst(new Date(me.checkOutTime))}</>
@@ -60,7 +61,7 @@ export default async function WorkerHomePage() {
       {/* 기타 메뉴 그리드 — 햄버거 Drawer 대체. 가끔 사용 메뉴 1탭 진입.
           (자주 사용 메뉴는 탭바에 있음. 프로필은 헤더 아바타 클릭) */}
       <section>
-        <div className="px-1 mb-2 text-xs font-extrabold text-ink-muted tracking-widest">기타 메뉴</div>
+        <div className="px-1 mb-2 text-sm font-extrabold text-ink tracking-widest">기타 메뉴</div>
         <div className="grid grid-cols-2 gap-3">
           {isRapid && (
             <MenuCard
@@ -88,9 +89,9 @@ export default async function WorkerHomePage() {
         </div>
       </section>
 
-      {/* 안내 카드 */}
-      <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed flex items-start gap-2">
-        <span aria-hidden className="text-base flex-shrink-0">
+      {/* 안내 카드 — 14px (text-sm) 로 가독성 ↑, amber-900 on amber-50 = 9:1 AAA */}
+      <div className="bg-amber-50 border-2 border-amber-300 rounded-xl px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed flex items-start gap-2">
+        <span aria-hidden className="text-lg flex-shrink-0">
           🔒
         </span>
         <span>GPS 좌표는 PIPA 준수를 위해 ~10m 격자 라운딩 + 90일 후 자동 폐기됩니다.</span>
@@ -123,8 +124,9 @@ function MenuCard({
         </svg>
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-end">
-        <div className="text-[15px] font-extrabold text-ink leading-tight">{title}</div>
-        <div className="text-xs font-bold text-ink-muted mt-0.5 leading-tight">{desc}</div>
+        {/* P1: 15px → 17px (text-[17px]) 으로 카드 제목 AAA 근접, desc 12px → 14px */}
+        <div className="text-[17px] font-extrabold text-ink leading-tight">{title}</div>
+        <div className="text-sm font-semibold text-ink-faint mt-1 leading-tight">{desc}</div>
       </div>
     </Link>
   );

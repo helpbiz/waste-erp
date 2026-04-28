@@ -536,9 +536,11 @@ function StatsTab() {
         <h2 className="text-2xl font-black text-center mb-1">실적 통계</h2>
         <div className="text-center text-sm font-bold text-slate-600 mb-5">{from} ~ {to}</div>
 
+        {/* 사용자 요청 2026-04-29: H3 타이틀 1단계 업 (text-lg 18px → text-xl 20px),
+            실적내용(KCard 값/라벨, sub-section 헤더, BarRow 라벨) 1단계 다운. */}
         {waste && (
           <section className="mb-6">
-            <h3 className="font-extrabold text-ink text-lg mb-2 border-l-4 border-accent pl-2">📊 생활폐기물 처리실적</h3>
+            <h3 className="font-extrabold text-ink text-xl mb-2 border-l-4 border-accent pl-2">📊 생활폐기물 처리실적</h3>
             <div className="grid grid-cols-3 gap-3 mb-3">
               <KCard label="총 처리량" value={`${waste.total.toFixed(3)} ton`} tone="accent" />
               <KCard label="기록 일수" value={`${waste.daily.length}일`} />
@@ -546,22 +548,22 @@ function StatsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-xs font-extrabold text-ink mb-2">성상별 분포</div>
+                <div className="text-[11px] font-extrabold text-ink mb-2">성상별 분포</div>
                 <div className="space-y-1">
                   {waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={wasteMaxByMaterial} suffix="t" />
                   ))}
-                  {waste.byMaterial.length === 0 && <div className="text-xs text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.byMaterial.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-xs font-extrabold text-ink mb-2">월별 추이</div>
+                <div className="text-[11px] font-extrabold text-ink mb-2">월별 추이</div>
                 <div className="space-y-1">
                   {waste.monthly.sort((a, b) => a.ym.localeCompare(b.ym)).map((m) => (
                     <BarRow key={m.ym} label={m.ym} value={m.weight}
                       max={Math.max(1, ...waste.monthly.map((x) => x.weight))} suffix="t" color="bg-amber-400" />
                   ))}
-                  {waste.monthly.length === 0 && <div className="text-xs text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.monthly.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
@@ -570,7 +572,7 @@ function StatsTab() {
 
         {intake && (
           <section className="mb-6">
-            <h3 className="font-extrabold text-ink text-lg mb-2 border-l-4 border-emerald-500 pl-2">🚚 자원순환센터 반입실적</h3>
+            <h3 className="font-extrabold text-ink text-xl mb-2 border-l-4 border-emerald-500 pl-2">🚚 자원순환센터 반입실적</h3>
             <div className="grid grid-cols-3 gap-3 mb-3">
               <KCard label="총 반입량" value={`${intake.total.toFixed(3)} ton`} tone="success" />
               <KCard label="반입 차량" value={`${intake.byVehicle.length}대`} />
@@ -578,21 +580,21 @@ function StatsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-xs font-extrabold text-ink mb-2">성상별 (4종)</div>
+                <div className="text-[11px] font-extrabold text-ink mb-2">성상별 (4종)</div>
                 <div className="space-y-1">
                   {intake.byCategory.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight} max={intakeMaxByCategory} suffix="t" color="bg-emerald-500" />
                   ))}
-                  {intake.byCategory.length === 0 && <div className="text-xs text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byCategory.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-xs font-extrabold text-ink mb-2">차량별 Top</div>
+                <div className="text-[11px] font-extrabold text-ink mb-2">차량별 Top</div>
                 <div className="space-y-1">
                   {intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
                     <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={intakeMaxByVehicle} suffix="t" color="bg-blue-400" />
                   ))}
-                  {intake.byVehicle.length === 0 && <div className="text-xs text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byVehicle.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
@@ -614,6 +616,7 @@ function StatsTab() {
 }
 
 function KCard({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' }) {
+  /* 사용자 요청 2026-04-29: 실적내용 1단계 다운 — label 11→10px, value 2xl→xl */
   const c: Record<string, string> = {
     default: 'bg-white border-line text-ink',
     accent: 'bg-accent-soft border-accent text-accent',
@@ -621,17 +624,18 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
   };
   return (
     <div className={`px-4 py-3 rounded-lg border-2 ${c[tone]} shadow-sm`}>
-      <div className="text-[11px] font-mono font-extrabold uppercase">{label}</div>
-      <div className="text-2xl font-black mt-1">{value}</div>
+      <div className="text-[10px] font-mono font-extrabold uppercase">{label}</div>
+      <div className="text-xl font-black mt-1">{value}</div>
     </div>
   );
 }
 
 function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: string; value: number; max: number; suffix: string; color?: string }) {
+  /* 사용자 요청 2026-04-29: BarRow 라벨 1단계 다운 — text-xs(12px) → text-[11px] */
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-[90px] text-xs font-bold text-ink truncate">{label}</div>
+      <div className="w-[90px] text-[11px] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-5 overflow-hidden">
         <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[10px] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
           {value.toFixed(2)}{suffix}

@@ -326,6 +326,7 @@ docs/
 | **#3** | 2026-04-27 | **a11y-serious-fix (100%, 8 iter)** — page bg + slate token + opacity |
 | **#4** | 2026-04-27 | **field-label-refactor (94%)** — Field 통합 + 138 인스턴스 |
 | (단순) | 2026-04-27 | mobile-admin-landing — 모바일 admin → /dashboard redirect |
+| **#5** | 2026-04-28 | **pwa-mobile-ux-mastering (100%)** — viewport 잠금 + LogoutButton AAA + 4-role 통합 + AccessibleConfirmDialog ⭐ |
 
 ---
 

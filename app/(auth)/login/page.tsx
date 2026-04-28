@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { resolveRoleRoute } from '@/lib/auth/role-route';
 
 type BeforeInstallEvent = Event & {
   prompt: () => Promise<void>;
@@ -88,15 +89,16 @@ function LoginInner() {
         );
         return;
       }
-      // 모바일 + admin role 사용자는 모바일 검증된 /dashboard로 redirect (데스크톱은 기존 유지)
-      const ADMIN_ROLES = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'];
+      /* role → route 결정은 lib/auth/role-route.ts 단일 소스 (P0-7).
+         RAPID 분기는 worker 셸 내부 메뉴 데이터에서 처리 (P1). */
       const isMobile = typeof window !== 'undefined'
         && window.matchMedia('(max-width: 767px)').matches;
-      const role = data?.user?.role as string | undefined;
-      const mobileAdminTarget = isMobile && role && ADMIN_ROLES.includes(role)
-        ? '/dashboard'
-        : null;
-      const finalTarget = explicitNext ?? mobileAdminTarget ?? data?.redirectTo ?? '/complaints';
+      const finalTarget = resolveRoleRoute({
+        role: data?.user?.role,
+        redirectTo: data?.redirectTo,
+        explicitNext,
+        isMobile,
+      });
       if (data?.needsConsent) {
         router.replace(`/consent?next=${encodeURIComponent(finalTarget)}`);
       } else {
@@ -127,7 +129,9 @@ function LoginInner() {
     >
       <div className="absolute inset-0 flex items-center justify-center px-4">
        <div className="w-full max-w-[400px]">
-        {/* 로고 — 모바일에서 컴팩트 */}
+        {/* 🔒 LOGO LOCK — 사용자 명시 요청 2026-04-29.
+            이 로고는 변경 금지. src 경로 / alt 텍스트 / 사이즈 절대 수정 X.
+            동일 자산: app/(auth)/consent/_consent-client.tsx 도 동일하게 고정 유지. */}
         <div className="flex justify-center mb-4 sm:mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -185,32 +189,38 @@ function LoginInner() {
           </div>
 
           {error && (
-            <div className="mt-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-[13px] font-bold text-red-700">
+            /* 에러 메시지 — AAA: 16px (text-base), red-800 on red-50 = 8.6:1 (P0-7) */
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mt-3 px-4 py-3 rounded-lg bg-red-50 border-2 border-red-300 text-base font-bold text-red-800"
+            >
               {error}
             </div>
           )}
 
+          {/* 로그인 CTA — AAA: 18px (text-lg), min-h-14 (56px), white on accent(#0e7490) = 5.2:1 + bold = OK */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-5 py-3 rounded-lg bg-accent text-white font-extrabold text-[15px] tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-5 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-lg tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* PWA 앱 설치 (보조 액션) */}
+          {/* PWA 앱 설치 (보조 액션) — AAA: 16px (text-base), min-h-14, ink-mid on white = 15.3:1 */}
           <button
             type="button"
             onClick={installApp}
             disabled={installed}
-            className="w-full mt-2.5 py-3 rounded-lg bg-white border-2 border-slate-200 text-slate-700 font-bold text-[14px] hover:border-accent hover:text-accent transition disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full mt-3 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-base hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {installed ? '✓ 앱 설치됨' : '앱으로 설치하기'}
           </button>
         </form>
 
-        {/* 푸터 — 모바일에서 컴팩트 */}
-        <div className="text-center mt-3 sm:mt-6 text-[10px] sm:text-[11px] font-semibold text-white/50">
+        {/* 푸터 — AAA: 14px (text-sm), white/85 = ~9:1 on dark gradient. 이전 10-11px white/50 (~6:1) AAA fail */}
+        <div className="text-center mt-4 sm:mt-6 text-sm font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>
