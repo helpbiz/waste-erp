@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 import { FACILITY_TYPES, isFacilityType } from '@/lib/facility';
 
 export const runtime = 'nodejs';
@@ -138,15 +139,16 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'FACILITY_CREATE',
-      resourceType: 'waste_treatment_facility',
-      resourceId: created.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { type: b.type, name: b.name, municipalityId: municipalityId.toString() } as object,
+  await writeAudit(req, session, {
+    action: 'FACILITY_CREATE',
+    resourceType: 'waste_treatment_facility',
+    resourceId: created.id.toString(),
+    municipalityId,
+    metadata: {
+      type: b.type,
+      name: b.name,
+      municipalityId: municipalityId.toString(),
+      crossTenant: session.role === 'SUPER_ADMIN',
     },
   });
 

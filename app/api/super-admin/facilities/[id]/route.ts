@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 import { isFacilityType } from '@/lib/facility';
 
 export const runtime = 'nodejs';
@@ -74,16 +75,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await prisma.wasteTreatmentFacility.update({ where: { id }, data });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: b.active === false ? 'FACILITY_DEACTIVATE' : 'FACILITY_UPDATE',
-      resourceType: 'waste_treatment_facility',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: data as object,
-    },
+  /* SUPER cross-tenant 또는 MUNI 자기 muni 작업 — muni 명시 기록 */
+  await writeAudit(req, session, {
+    action: b.active === false ? 'FACILITY_DEACTIVATE' : 'FACILITY_UPDATE',
+    resourceType: 'waste_treatment_facility',
+    resourceId: id.toString(),
+    municipalityId: target.municipalityId,
+    metadata: { ...(data as object), crossTenant: session.role === 'SUPER_ADMIN' },
   });
 
   return NextResponse.json({ ok: true });
@@ -123,16 +121,12 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await prisma.wasteTreatmentFacility.delete({ where: { id } });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'FACILITY_DELETE',
-      resourceType: 'waste_treatment_facility',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { type: target.type, name: target.name } as object,
-    },
+  await writeAudit(req, session, {
+    action: 'FACILITY_DELETE',
+    resourceType: 'waste_treatment_facility',
+    resourceId: id.toString(),
+    municipalityId: target.municipalityId,
+    metadata: { type: target.type, name: target.name, crossTenant: session.role === 'SUPER_ADMIN' },
   });
 
   return NextResponse.json({ ok: true });

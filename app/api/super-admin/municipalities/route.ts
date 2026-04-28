@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 import type { Prisma, MunicipalityStatus } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -118,16 +119,12 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'MUNICIPALITY_CREATE',
-      resourceType: 'municipality',
-      resourceId: created.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { name: b.name, code: b.code, region: b.region } as object,
-    },
+  await writeAudit(req, session, {
+    action: 'MUNICIPALITY_CREATE',
+    resourceType: 'municipality',
+    resourceId: created.id.toString(),
+    municipalityId: created.id,
+    metadata: { name: b.name, code: b.code, region: b.region, crossTenant: true },
   });
 
   return NextResponse.json({
