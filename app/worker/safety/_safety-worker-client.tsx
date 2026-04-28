@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WeatherSnapshot } from '@/lib/weather';
 import SignaturePad from './_signature-pad';
+import { useToast } from '@/components/ui/Toast';
+import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 
 type ChecklistDef = { key: string; label: string };
 type ItemState = ChecklistDef & { ok: boolean };
@@ -32,10 +34,9 @@ export default function SafetyWorkerClient({
   guardian: { name: string | null; phone: string | null };
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [items, setItems] = useState<ItemState[]>(checklistDef.map((d) => ({ ...d, ok: false })));
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [reportType, setReportType] = useState<'NEAR_MISS' | 'INCIDENT' | null>(null);
   const [severity, setSeverity] = useState<'MINOR' | 'INJURY' | 'SEVERE' | 'FATAL'>('MINOR');
   const [description, setDescription] = useState('');
@@ -53,8 +54,8 @@ export default function SafetyWorkerClient({
 
   async function submitChecklist() {
     setBusy(true);
-    setError(null);
-    setSuccess(null);
+    
+    
     try {
       const res = await fetch('/api/safety/reports', {
         method: 'POST',
@@ -63,13 +64,14 @@ export default function SafetyWorkerClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(translate(data?.error) ?? '제출 실패');
+        toast.error(translate(data?.error) ?? '제출 실패');
         return;
       }
-      setSuccess(`✓ 일일 점검 제출 완료 (${checkedCount}/${items.length})`);
+      hapticSuccess();
+      toast.success(`일일 점검 제출 완료 (${checkedCount}/${items.length})`);
       router.refresh();
     } catch {
-      setError('네트워크 오류');
+      toast.error('네트워크 오류');
     } finally {
       setBusy(false);
     }
@@ -77,12 +79,12 @@ export default function SafetyWorkerClient({
 
   async function submitIncident() {
     if (description.trim().length < 5) {
-      setError('상세 내용을 5자 이상 입력해 주세요.');
+      toast.error('상세 내용을 5자 이상 입력해 주세요.');
       return;
     }
     setBusy(true);
-    setError(null);
-    setSuccess(null);
+    
+    
     try {
       const res = await fetch('/api/safety/reports', {
         method: 'POST',
@@ -97,21 +99,23 @@ export default function SafetyWorkerClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(translate(data?.error) ?? '제출 실패');
+        toast.error(translate(data?.error) ?? '제출 실패');
         return;
       }
       const deadline = data.report?.molDeadline;
-      setSuccess(
+      hapticSuccess();
+      toast.success(
         reportType === 'INCIDENT'
-          ? `✓ 재해 보고 접수 (#${data.report.id})${deadline ? ` · MOL 기한 ${new Date(deadline).toLocaleString('ko-KR')}` : ''}`
-          : `✓ 아차사고 보고 접수 (#${data.report.id})`
+          ? `재해 보고 접수 #${data.report.id}${deadline ? ` (MOL 기한 ${new Date(deadline).toLocaleString('ko-KR')})` : ''}`
+          : `아차사고 보고 접수 #${data.report.id}`,
+        5000
       );
       setDescription('');
       setAddress('');
       setReportType(null);
       router.refresh();
     } catch {
-      setError('네트워크 오류');
+      toast.error('네트워크 오류');
     } finally {
       setBusy(false);
     }
@@ -119,8 +123,8 @@ export default function SafetyWorkerClient({
 
   async function fireSos() {
     setBusy(true);
-    setError(null);
-    setSuccess(null);
+    
+    
     try {
       const body: Record<string, unknown> = { description: '워커앱 SOS 버튼 발신' };
       if ('geolocation' in navigator) {
@@ -139,18 +143,20 @@ export default function SafetyWorkerClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? 'SOS 발신 실패');
+        toast.error(data?.error ?? 'SOS 발신 실패');
         return;
       }
+      hapticHeavy();
       setSosResult({
         recipients: data.notification.recipientsNotified,
         reportId: data.reportId,
         provider: data.notification.provider,
       });
+      toast.success(`긴급 SOS 발신 완료 — ${data.notification.recipientsNotified}곳 알림`, 5000);
       setSosArmed(false);
       router.refresh();
     } catch {
-      setError('네트워크 오류');
+      toast.error('네트워크 오류');
     } finally {
       setBusy(false);
     }
@@ -158,12 +164,12 @@ export default function SafetyWorkerClient({
 
   async function signTbm() {
     if (!tbmSignaturePad) {
-      setError('서명을 먼저 그려주세요.');
+      toast.error('서명을 먼저 그려주세요.');
       return;
     }
     setBusy(true);
-    setError(null);
-    setSuccess(null);
+    
+    
     try {
       const res = await fetch('/api/tbm/sign', {
         method: 'POST',
@@ -172,15 +178,15 @@ export default function SafetyWorkerClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error === 'already_signed' ? '이미 서명했습니다.' : (data?.error === 'no_session_today' ? '오늘 TBM 세션이 등록되지 않았습니다.' : '서명 실패'));
+        toast.error(data?.error === 'already_signed' ? '이미 서명했습니다.' : (data?.error === 'no_session_today' ? '오늘 TBM 세션이 등록되지 않았습니다.' : '서명 실패'));
         return;
       }
-      setSuccess(`✓ TBM 서명 완료 — "${data.sessionTopic}"`);
+      toast.success(`✓ TBM 서명 완료 — "${data.sessionTopic}"`);
       setTbmSignaturePad(null);
       setTbmShowPad(false);
       router.refresh();
     } catch {
-      setError('네트워크 오류');
+      toast.error('네트워크 오류');
     } finally {
       setBusy(false);
     }
@@ -193,14 +199,7 @@ export default function SafetyWorkerClient({
         <p className="text-xs font-bold text-ink-muted mt-1">출근 직후 일일 체크리스트와 TBM 서명을 완료해 주세요.</p>
       </div>
 
-      {success && (
-        <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-md px-4 py-3 text-sm font-extrabold text-success">
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-xs font-bold text-red-700">{error}</div>
-      )}
+      {/* 인라인 에러/성공 배너 → Toast (Wave 3-C) */}
 
       {/* 기상 카드 — 위험도별 색상 */}
       <WeatherCard w={weather} />
@@ -306,14 +305,14 @@ export default function SafetyWorkerClient({
         </header>
         <div className="p-4 grid grid-cols-2 gap-2">
           <button
-            onClick={() => { setReportType('NEAR_MISS'); setError(null); setSuccess(null); }}
+            onClick={() => { setReportType('NEAR_MISS');   }}
             className="px-3 py-3 rounded-lg border-2 border-dashed border-warn text-warn text-sm font-extrabold active:scale-[0.98] hover:bg-amber-50 transition text-center leading-tight"
           >
             <div>⚠️ 아차사고</div>
             <div className="underline underline-offset-2 decoration-2 text-[12px] font-bold mt-1">(위험요소)</div>
           </button>
           <button
-            onClick={() => { setReportType('INCIDENT'); setError(null); setSuccess(null); }}
+            onClick={() => { setReportType('INCIDENT');   }}
             className="px-3 py-3 rounded-lg border-2 border-dashed border-danger text-danger text-sm font-extrabold active:scale-[0.98] hover:bg-red-50 transition text-center leading-tight"
           >
             <div>🚨 재해발생</div>
@@ -348,7 +347,7 @@ export default function SafetyWorkerClient({
               <button onClick={submitIncident} disabled={busy || description.trim().length < 5} className={`flex-1 py-3 rounded-lg text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50 ${reportType === 'INCIDENT' ? 'bg-danger' : 'bg-warn'}`}>
                 {busy ? '제출 중…' : '보고 제출'}
               </button>
-              <button onClick={() => { setReportType(null); setDescription(''); setAddress(''); setError(null); }} className="px-4 py-3 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95">
+              <button onClick={() => { setReportType(null); setDescription(''); setAddress('');  }} className="px-4 py-3 rounded-lg border-2 border-line text-ink text-sm font-bold active:scale-95">
                 취소
               </button>
             </div>

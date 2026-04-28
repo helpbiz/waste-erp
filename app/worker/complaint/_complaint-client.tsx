@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
+import { useToast } from '@/components/ui/Toast';
+import { hapticSuccess, hapticError } from '@/lib/haptics';
 
 /* leaflet SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -36,6 +38,7 @@ const TYPES: { id: Type; label: string; color: string }[] = [
 
 export default function ComplaintClient() {
   const router = useRouter();
+  const toast = useToast();
   const [type, setType] = useState<Type | null>(null);
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
@@ -43,8 +46,6 @@ export default function ComplaintClient() {
   const [gps, setGps] = useState<GpsState>({ kind: 'idle' });
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     requestGps();
@@ -88,12 +89,10 @@ export default function ComplaintClient() {
 
   async function submit() {
     if (!type) {
-      setError('민원 유형을 선택해 주세요.');
+      toast.warning('민원 유형을 선택해 주세요.');
       return;
     }
     setBusy(true);
-    setError(null);
-    setSuccess(null);
     try {
       const body: Record<string, unknown> = { type };
       if (description.trim()) body.description = description.trim();
@@ -111,10 +110,12 @@ export default function ComplaintClient() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(translate(data?.error) ?? '민원 등록에 실패했습니다.');
+        hapticError();
+        toast.error(translate(data?.error) ?? '민원 등록에 실패했습니다.');
         return;
       }
-      setSuccess(`민원이 접수되었습니다. (#${data.complaint.id})`);
+      hapticSuccess();
+      toast.success(`민원 접수 완료 #${data.complaint.id}`);
       setType(null);
       setAddress('');
       setDescription('');
@@ -122,7 +123,8 @@ export default function ComplaintClient() {
       setPhotos([]);
       router.refresh();
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      hapticError();
+      toast.error('네트워크 오류가 발생했습니다.');
     } finally {
       setBusy(false);
     }
@@ -135,11 +137,7 @@ export default function ComplaintClient() {
         <p className="text-xs font-bold text-ink-muted mt-1">현장에서 발견한 민원을 등록합니다.</p>
       </div>
 
-      {success && (
-        <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-md px-4 py-3 text-sm font-extrabold text-success">
-          ✓ {success}
-        </div>
-      )}
+      {/* 인라인 성공 배너 → Toast (Wave 3-D) */}
 
       <Section label="민원 유형">
         <div className="grid grid-cols-2 gap-2">
@@ -251,11 +249,7 @@ export default function ComplaintClient() {
         {busy ? '등록 중…' : '민원 등록'}
       </button>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-xs font-bold text-red-700">
-          {error}
-        </div>
-      )}
+      {/* 인라인 에러 배너 → Toast (Wave 3-D) */}
     </div>
   );
 }
