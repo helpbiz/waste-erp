@@ -71,7 +71,7 @@ export default function ApprovalSignatureModal({
       <div className="bg-white rounded-lg shadow-xl w-[520px] max-w-[95vw] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-line flex items-center">
           <h3 className="font-extrabold text-ink">{title}</h3>
-          {subtitle && <span className="ml-2 text-[11px] font-mono text-slate-600">{subtitle}</span>}
+          {subtitle && <span className="ml-2 text-[0.6875rem] font-mono text-slate-600">{subtitle}</span>}
           <button onClick={onClose} className="ml-auto text-slate-600 hover:text-ink text-xl">×</button>
         </div>
         <div className="p-5 space-y-4">
@@ -82,7 +82,7 @@ export default function ApprovalSignatureModal({
               <label className="flex items-center gap-2 mb-2">
                 <input type="radio" checked={mode === 'stored'} onChange={() => setMode('stored')} />
                 <span className="text-xs font-extrabold text-ink">저장된 서명 사용</span>
-                {storedSignatureRef && <span className="text-[10px] font-mono text-slate-600">ref: {storedSignatureRef}</span>}
+                {storedSignatureRef && <span className="text-[0.625rem] font-mono text-slate-600">ref: {storedSignatureRef}</span>}
               </label>
               {mode === 'stored' && (
                 <div className="bg-white border-2 border-accent rounded-md p-2 flex items-center justify-center" style={{ height: 120 }}>
@@ -102,7 +102,7 @@ export default function ApprovalSignatureModal({
           </div>
 
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">의견 (선택)</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">의견 (선택)</div>
             <input
               value={comment}
               onChange={(e) => setComment(e.target.value)}

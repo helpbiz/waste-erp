@@ -97,7 +97,7 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
 
       {/* 안내 (초기) */}
       {!data && !busy && !error && (
-        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-3 text-center text-[12px] font-bold text-purple-800 leading-snug">
+        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-3 text-center text-[0.75rem] font-bold text-purple-800 leading-snug">
           위 버튼을 누르면 미처리 민원을 모아 최단 순회 경로를 계산합니다.
         </div>
       )}

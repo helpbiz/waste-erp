@@ -92,19 +92,19 @@ export default function DetailClient({ detail }: { detail: Detail }) {
       <div className="bg-surface border border-line rounded-xl p-4 shadow-card">
         <div className="flex items-center gap-2 flex-wrap mb-2">
           <span className="text-base font-extrabold text-ink">{TYPE_LABEL[detail.type] ?? detail.type}</span>
-          {detail.isUrgent && <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-100 text-danger border border-red-200">긴급</span>}
+          {detail.isUrgent && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-100 text-danger border border-red-200">긴급</span>}
           {detail.urgentTag && <span className="text-xs font-extrabold text-warn">{URGENT_LABEL[detail.urgentTag] ?? detail.urgentTag}</span>}
-          <code className="text-[10px] font-mono text-ink-faint ml-auto">#{detail.id}</code>
+          <code className="text-[0.625rem] font-mono text-ink-faint ml-auto">#{detail.id}</code>
         </div>
         <div className="text-xs font-bold text-ink-muted">접수: {fmt(detail.reportedAt)}</div>
         {detail.locationAddress && <div className="text-sm font-semibold text-ink mt-1.5">📍 {detail.locationAddress}</div>}
         {detail.locationLat && detail.locationLng && (
-          <div className="text-[10px] font-mono text-ink-faint mt-0.5">{detail.locationLat.toFixed(5)}°N, {detail.locationLng.toFixed(5)}°E</div>
+          <div className="text-[0.625rem] font-mono text-ink-faint mt-0.5">{detail.locationLat.toFixed(5)}°N, {detail.locationLng.toFixed(5)}°E</div>
         )}
         {detail.description && <div className="text-sm font-semibold text-ink mt-2 whitespace-pre-wrap">{detail.description}</div>}
         {detail.requestImage && (
           <div className="mt-3">
-            <div className="text-[11px] font-extrabold text-ink mb-1">제출 사진</div>
+            <div className="text-[0.6875rem] font-extrabold text-ink mb-1">제출 사진</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={detail.requestImage} alt="민원 사진" className="w-full rounded-lg border border-line" />
           </div>
@@ -126,7 +126,7 @@ export default function DetailClient({ detail }: { detail: Detail }) {
           <div className="text-base font-mono font-black text-info mt-1">
             {new Date(detail.arrivalEta).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </div>
-          <div className="text-[10px] font-mono text-ink-faint mt-0.5">담당 차량 위치 + 평균 주행속도 기반 추정</div>
+          <div className="text-[0.625rem] font-mono text-ink-faint mt-0.5">담당 차량 위치 + 평균 주행속도 기반 추정</div>
         </div>
       )}
 
@@ -137,7 +137,7 @@ export default function DetailClient({ detail }: { detail: Detail }) {
           {detail.resolvedAt && <div className="text-xs font-mono font-bold text-ink-muted">{fmt(detail.resolvedAt)}</div>}
           {detail.completionImage && (
             <div>
-              <div className="text-[11px] font-extrabold text-ink mt-2 mb-1">처리 완료 사진 (청구항 4)</div>
+              <div className="text-[0.6875rem] font-extrabold text-ink mt-2 mb-1">처리 완료 사진 (청구항 4)</div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={detail.completionImage} alt="처리 완료" className="w-full rounded-lg border border-success" />
             </div>
@@ -199,7 +199,7 @@ export default function DetailClient({ detail }: { detail: Detail }) {
             <div className="text-sm font-semibold text-ink mt-2 whitespace-pre-wrap">{detail.satisfactionComment}</div>
           )}
           {detail.satisfactionAt && (
-            <div className="text-[10px] font-mono text-ink-faint mt-1.5">{fmt(detail.satisfactionAt)}</div>
+            <div className="text-[0.625rem] font-mono text-ink-faint mt-1.5">{fmt(detail.satisfactionAt)}</div>
           )}
         </div>
       ) : null}
@@ -218,14 +218,14 @@ function ProgressFlow({ detail }: { detail: Detail }) {
   ];
   return (
     <div className="bg-surface-soft border border-line rounded-xl p-3">
-      <div className="text-[11px] font-extrabold text-ink mb-2.5">처리 진행 상황 (특허 도6 흐름)</div>
+      <div className="text-[0.6875rem] font-extrabold text-ink mb-2.5">처리 진행 상황 (특허 도6 흐름)</div>
       <div className="flex items-center justify-between">
         {steps.map((s, i) => (
           <div key={s.key} className="flex flex-col items-center flex-1">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-mono font-extrabold border-2 ${s.done ? 'bg-success border-success text-white' : 'bg-surface border-line text-ink-muted'}`}>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[0.6875rem] font-mono font-extrabold border-2 ${s.done ? 'bg-success border-success text-white' : 'bg-surface border-line text-ink-muted'}`}>
               {s.done ? '✓' : i + 1}
             </div>
-            <div className={`text-[10px] font-extrabold mt-1 ${s.done ? 'text-success' : 'text-ink-muted'}`}>{s.label}</div>
+            <div className={`text-[0.625rem] font-extrabold mt-1 ${s.done ? 'text-success' : 'text-ink-muted'}`}>{s.label}</div>
           </div>
         ))}
       </div>

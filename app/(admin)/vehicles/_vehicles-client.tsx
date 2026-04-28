@@ -218,10 +218,10 @@ export default function VehiclesClient({
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-5 py-3.5 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2">
           <h3 className="text-sm font-extrabold text-ink">오늘 운행일지 ({logs.length}건)</h3>
-          <span className="text-[11px] font-mono font-bold text-ink-muted">{todayLabel}</span>
+          <span className="text-[0.6875rem] font-mono font-bold text-ink-muted">{todayLabel}</span>
         </header>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="운행일지 표">
-        <table className="w-full min-w-[640px] text-[13px]">
+        <table className="w-full min-w-[640px] text-[0.8125rem]">
           <thead>
             <tr>
               {['차량', '기사', '주행거리', '연료', '수거량', '회', '상태', '액션'].map((h) => (
@@ -245,7 +245,7 @@ export default function VehiclesClient({
                 <tr key={l.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                   <td className="px-3 py-2.5 border-b border-line">
                     <div className="font-mono font-extrabold text-ink">{l.vehicleNo}</div>
-                    <div className="text-[10px] font-bold text-ink-muted">{TYPE_LABEL[l.vehicleType] ?? l.vehicleType} {l.vehicleTon}</div>
+                    <div className="text-[0.625rem] font-bold text-ink-muted">{TYPE_LABEL[l.vehicleType] ?? l.vehicleType} {l.vehicleTon}</div>
                   </td>
                   <td className="px-3 py-2.5 border-b border-line text-ink font-bold">{l.driverName}</td>
                   <td className="px-3 py-2.5 border-b border-line font-mono font-bold text-ink">
@@ -283,10 +283,10 @@ export default function VehiclesClient({
                       </div>
                     )}
                     {l.status === 'APPROVED' && (
-                      <span className="text-[11px] font-mono font-bold text-success">✓ 정산 반영</span>
+                      <span className="text-[0.6875rem] font-mono font-bold text-success">✓ 정산 반영</span>
                     )}
                     {l.status === 'DRAFT' && (
-                      <span className="text-[11px] font-mono font-bold text-ink-faint">작성자 제출 대기</span>
+                      <span className="text-[0.6875rem] font-mono font-bold text-ink-faint">작성자 제출 대기</span>
                     )}
                   </td>
                 </tr>
@@ -390,7 +390,7 @@ function LogStatusChip({ status }: { status: string }) {
   };
   const lbl: Record<string, string> = { DRAFT: '작성중', SUBMITTED: '결재대기', APPROVED: '승인' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${map[status] ?? ''}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${map[status] ?? ''}`}>
       {lbl[status] ?? status}
     </span>
   );
@@ -486,7 +486,7 @@ function VehicleFormModal({
           </svg>
           <div className="flex-1">
             <h3 className="text-base font-extrabold text-ink">{isEdit ? '차량 수정' : '차량 등록'}</h3>
-            {isEdit && <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">#{initial.id} · {initial.vehicleNo}</div>}
+            {isEdit && <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">#{initial.id} · {initial.vehicleNo}</div>}
           </div>
           <button onClick={onCancel} className="text-ink-muted hover:text-ink text-2xl font-bold leading-none px-2">&times;</button>
         </header>
@@ -629,7 +629,7 @@ function VehicleFormModal({
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-extrabold text-ink mb-1.5 tracking-wide'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide'} />;
 }
 
 function RetireModal({
@@ -647,7 +647,7 @@ function RetireModal({
       <div className="w-full max-w-[440px] bg-surface rounded-xl shadow-modal" onClick={(e) => e.stopPropagation()}>
         <header className="px-5 py-4 bg-red-50 border-b-2 border-danger">
           <h3 className="text-base font-extrabold text-danger">⚠ 차량 폐차</h3>
-          <div className="text-[11px] font-mono font-bold text-danger mt-0.5">{vehicle.vehicleNo} · {vehicle.vehicleType}</div>
+          <div className="text-[0.6875rem] font-mono font-bold text-danger mt-0.5">{vehicle.vehicleNo} · {vehicle.vehicleType}</div>
         </header>
         <div className="p-5">
           <p className="text-xs font-semibold text-ink mb-3 leading-relaxed">

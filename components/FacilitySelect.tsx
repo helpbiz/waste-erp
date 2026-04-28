@@ -58,7 +58,7 @@ export function FacilitySelect({
   // 안내 메시지 — 슈퍼관리자 콘솔 링크는 비-SUPER_ADMIN 에게 노출하지 않음
   if (!loading && !error && items.length === 0) {
     return (
-      <div className={`text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 ${className}`}>
+      <div className={`text-[0.6875rem] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 ${className}`}>
         ⚠ 처리시설이 등록되어 있지 않습니다. 슈퍼관리자에 등록을 요청하세요.
       </div>
     );

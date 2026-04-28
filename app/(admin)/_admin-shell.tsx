@@ -163,7 +163,7 @@ function SidebarBody({
       <nav className="flex-1 py-3 text-sm overflow-y-auto">
         {groups.map((g) => (
           <div key={g.group}>
-            <div className="px-5 pt-4 pb-1.5 text-[11px] font-mono font-semibold text-slate-400 tracking-widest first:pt-2">
+            <div className="px-5 pt-4 pb-1.5 text-[0.6875rem] font-mono font-semibold text-slate-400 tracking-widest first:pt-2">
               {g.group}
             </div>
             {g.items.map((it) => {
@@ -180,7 +180,7 @@ function SidebarBody({
                 >
                   <span className="flex-1">{it.label}</span>
                   {it.badge && (
-                    <span className="text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-red-600 text-white">
+                    <span className="text-[0.6875rem] font-mono font-extrabold px-2 py-0.5 rounded-full bg-red-600 text-white">
                       {it.badge}
                     </span>
                   )}

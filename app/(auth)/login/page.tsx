@@ -251,8 +251,8 @@ function LoginInner() {
           </button>
         </form>
 
-        {/* 푸터 — v3: 32px (text-[32px]) */}
-        <div className="text-center mt-7 sm:mt-10 text-[32px] font-semibold text-white/85">
+        {/* 푸터 — v3: 32px (text-[2rem]) */}
+        <div className="text-center mt-7 sm:mt-10 text-[2rem] font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>

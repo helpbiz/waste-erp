@@ -36,7 +36,7 @@ export function FilterToggle({
         <span>
           {label}
           {typeof activeCount === 'number' && activeCount > 0 && (
-            <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-accent text-white text-[10px] font-mono">
+            <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-accent text-white text-[0.625rem] font-mono">
               {activeCount}
             </span>
           )}

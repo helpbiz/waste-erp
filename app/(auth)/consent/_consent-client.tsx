@@ -83,7 +83,7 @@ export default function ConsentClient({
             />
           </div>
           <h1 className="text-base font-extrabold text-white">개인정보 수집·이용 동의</h1>
-          <p className="text-[12px] font-bold text-white/70 mt-1">
+          <p className="text-[0.75rem] font-bold text-white/70 mt-1">
             {userName} 님 ({role}) · 시스템 이용을 위해 아래 사항에 동의해 주세요
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function ConsentClient({
             <div className="text-xs font-extrabold text-ink tracking-wide">📋 안내사항 (개인정보보호법 §15·22 / 근로기준법 §42 / 산업안전보건법 §165)</div>
           </div>
 
-          <div tabIndex={0} role="region" aria-label="개인정보 처리방침 본문" className="px-5 py-4 max-h-[55vh] overflow-y-auto text-[12.5px] leading-relaxed text-ink space-y-4 focus:outline-none focus:ring-2 focus:ring-accent">
+          <div tabIndex={0} role="region" aria-label="개인정보 처리방침 본문" className="px-5 py-4 max-h-[55vh] overflow-y-auto text-[0.78125rem] leading-relaxed text-ink space-y-4 focus:outline-none focus:ring-2 focus:ring-accent">
             <Section title="1. 수집하는 개인정보 항목">
               <ul className="list-disc pl-5 space-y-0.5">
                 <li><b>필수</b>: 성명, 생년월일, 성별, 휴대전화번호, 주소, 사번, 직책, 부서, 입·퇴사일</li>
@@ -230,7 +230,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <div className="text-xs font-extrabold text-accent mb-1 tracking-wide">{title}</div>
-      <div className="text-[12.5px] text-ink">{children}</div>
+      <div className="text-[0.78125rem] text-ink">{children}</div>
     </div>
   );
 }

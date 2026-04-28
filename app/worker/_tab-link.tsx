@@ -58,7 +58,7 @@ export function TabLink({ href, label, icon, isMore = false, onClick, forceActiv
         <path strokeLinecap="round" strokeLinejoin="round" d={ICON_PATHS[icon]} />
       </svg>
       <span
-        className={`text-[13px] leading-none ${active ? 'text-accent font-extrabold' : 'text-ink-muted font-bold'}`}
+        className={`text-[0.8125rem] leading-none ${active ? 'text-accent font-extrabold' : 'text-ink-muted font-bold'}`}
       >
         {label}
       </span>

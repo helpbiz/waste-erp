@@ -230,7 +230,7 @@ export default function SafetyClient({
             }`}
           >
             {t.label}
-            <span className={`ml-1.5 text-[11px] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
+            <span className={`ml-1.5 text-[0.6875rem] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
               {t.count}
             </span>
           </button>
@@ -283,16 +283,16 @@ export default function SafetyClient({
                   <div key={r.id} className="mb-3 border border-line rounded p-2">
                     <div className="flex items-center mb-1.5">
                       <span className="font-bold text-sm">{r.reporter}</span>
-                      <span className={`ml-2 text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded ${r.allChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                      <span className={`ml-2 text-[0.625rem] font-mono font-extrabold px-1.5 py-0.5 rounded ${r.allChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
                         {r.allChecked ? '✓ 전체 완료' : `${r.checklistItems?.filter((i) => i.ok).length ?? 0}/${r.checklistItems?.length ?? 0} 미완료`}
                       </span>
                     </div>
                     {r.checklistItems && (
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[0.6875rem]">
                         {r.checklistItems.map((item, i) => (
                           <div key={i} className="flex items-center gap-1.5">
                             <span className={`inline-block w-3 h-3 rounded border ${item.ok ? 'bg-emerald-500 border-emerald-600' : 'bg-white border-slate-400'}`}>
-                              {item.ok && <span className="text-white text-[8px] font-bold leading-none flex items-center justify-center h-full">✓</span>}
+                              {item.ok && <span className="text-white text-[0.5rem] font-bold leading-none flex items-center justify-center h-full">✓</span>}
                             </span>
                             <span className={item.ok ? 'text-ink' : 'text-slate-600 line-through'}>{item.label}</span>
                           </div>
@@ -340,7 +340,7 @@ export default function SafetyClient({
                   {meSignatureUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={meSignatureUrl} alt="signature" className="max-h-full" />
-                  ) : <span className="text-[10px] font-mono text-slate-500">서명 미등록</span>}
+                  ) : <span className="text-[0.625rem] font-mono text-slate-500">서명 미등록</span>}
                 </div>
               </div>
               <div>
@@ -349,7 +349,7 @@ export default function SafetyClient({
                   {isManager && meSignatureUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={meSignatureUrl} alt="signature" className="max-h-full" />
-                  ) : <span className="text-[10px] font-mono text-slate-500">관리자 서명란</span>}
+                  ) : <span className="text-[0.625rem] font-mono text-slate-500">관리자 서명란</span>}
                 </div>
               </div>
             </div>
@@ -372,11 +372,11 @@ export default function SafetyClient({
                 <ReportIcon type={r.reportType} severity={r.severity} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-[15px] font-extrabold text-ink">{TYPE_LABEL[r.reportType]}</span>
+                    <span className="text-[0.9375rem] font-extrabold text-ink">{TYPE_LABEL[r.reportType]}</span>
                     {r.reportType === 'INCIDENT' && <SeverityChip s={r.severity} />}
                     <StatusChip s={r.status} />
-                    {overdue && <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-100 text-danger border border-danger">⚠ MOL 초과</span>}
-                    <code className="text-[10px] font-mono text-ink-faint">#{r.id}</code>
+                    {overdue && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-100 text-danger border border-danger">⚠ MOL 초과</span>}
+                    <code className="text-[0.625rem] font-mono text-ink-faint">#{r.id}</code>
                   </div>
                   {r.reportType === 'DAILY_CHECKLIST' && r.checklistItems && (
                     <div className="text-xs text-ink font-semibold mt-1">
@@ -390,7 +390,7 @@ export default function SafetyClient({
                   {r.locationAddress && (
                     <div className="text-xs text-ink-muted mt-1.5">📍 {r.locationAddress}</div>
                   )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[11px] font-mono font-bold text-ink-faint">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[0.6875rem] font-mono font-bold text-ink-faint">
                     <span>접수: {fmt(r.reportedAt)}</span>
                     <span>보고자: <span className="text-ink">{r.reporter}</span></span>
                     {r.occurredAt && <span>발생: {fmt(r.occurredAt)}</span>}
@@ -429,7 +429,7 @@ export default function SafetyClient({
           <div className="w-full max-w-[520px] bg-surface rounded-xl shadow-modal" onClick={(e) => e.stopPropagation()}>
             <header className="px-5 py-4 bg-surface-soft border-b-2 border-line">
               <h3 className="text-base font-extrabold text-ink">안전 보고서 검토</h3>
-              <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">#{reviewing.id} · {TYPE_LABEL[reviewing.reportType]}</div>
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">#{reviewing.id} · {TYPE_LABEL[reviewing.reportType]}</div>
             </header>
             <div className="p-5 space-y-3">
               <label className="block text-xs font-extrabold text-ink mb-2">처리 결과</label>
@@ -495,7 +495,7 @@ function SeverityChip({ s }: { s: string }) {
     NONE: 'bg-slate-100 text-ink-muted border-slate-200',
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${map[s] ?? map.NONE}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${map[s] ?? map.NONE}`}>
       {SEV_LABEL[s] ?? s}
     </span>
   );
@@ -509,7 +509,7 @@ function StatusChip({ s }: { s: string }) {
     RESOLVED: 'bg-slate-100 text-ink-muted border-slate-200',
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${map[s] ?? ''}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${map[s] ?? ''}`}>
       {STATUS_LABEL[s] ?? s}
     </span>
   );
@@ -518,7 +518,7 @@ function StatusChip({ s }: { s: string }) {
 function Stat({ label, value, tone = 'text-ink' }: { label: string; value: string; tone?: string }) {
   return (
     <div className="bg-surface border border-line rounded-xl px-4 py-3 shadow-card">
-      <div className="text-[10px] font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
+      <div className="text-[0.625rem] font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
       <div className={`mt-1 text-lg font-black font-mono tracking-tight ${tone}`}>{value}</div>
     </div>
   );
@@ -542,14 +542,14 @@ function WeatherWidget({ w }: { w: WeatherSnapshot }) {
       <div className="px-4 py-3 flex items-center gap-3">
         <div className="text-3xl">{w.condition === 'CLEAR' ? '☀️' : w.condition === 'CLOUDY' ? '⛅' : w.condition === 'RAIN' ? '🌧' : w.condition === 'SNOW' ? '❄️' : '🌪'}</div>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-extrabold tracking-widest">기상 · {w.region.replace('서울특별시 ', '')}</div>
-          <div className="font-mono text-xl font-black tracking-tight">{w.temp}°C <span className="text-[12px] font-bold ml-1">체감 {w.feelsLike}°C</span></div>
-          <div className="text-[11px] font-bold mt-0.5 font-mono">습도 {w.humidity}% · 풍속 {w.windSpeed}m/s · PM10 {w.pm10}㎍ ({w.pm10Label})</div>
+          <div className="text-[0.6875rem] font-extrabold tracking-widest">기상 · {w.region.replace('서울특별시 ', '')}</div>
+          <div className="font-mono text-xl font-black tracking-tight">{w.temp}°C <span className="text-[0.75rem] font-bold ml-1">체감 {w.feelsLike}°C</span></div>
+          <div className="text-[0.6875rem] font-bold mt-0.5 font-mono">습도 {w.humidity}% · 풍속 {w.windSpeed}m/s · PM10 {w.pm10}㎍ ({w.pm10Label})</div>
         </div>
-        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold border bg-white/70">{w.hazardLabel}</span>
+        <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold border bg-white/70">{w.hazardLabel}</span>
       </div>
       {w.hazardLevel !== 'NONE' && (
-        <div className="px-4 py-2 border-t border-current/20 text-[11px] font-extrabold">
+        <div className="px-4 py-2 border-t border-current/20 text-[0.6875rem] font-extrabold">
           ⚠ {w.hazardReason} — {w.workAdvice}
         </div>
       )}
@@ -576,7 +576,7 @@ function TbmWidget({
     <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
       <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between">
         <div className="text-sm font-extrabold text-ink">📋 오늘 TBM 안전교육</div>
-        {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
+        {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
       </header>
       <div className="p-4">
         {editing ? (
@@ -595,39 +595,39 @@ function TbmWidget({
             <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
             {tbm.content && <p className="text-xs font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
             <div className="flex items-center justify-between mt-2.5">
-              <div className="text-[11px] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
               {isManager && <button onClick={onEdit} className="text-xs font-extrabold text-accent hover:underline">수정</button>}
             </div>
 
             {/* 서명자 / 미서명자 리스트 */}
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="bg-emerald-50 border border-emerald-300 rounded p-2">
-                <div className="text-[10px] font-mono font-extrabold text-emerald-800 mb-1">
+                <div className="text-[0.625rem] font-mono font-extrabold text-emerald-800 mb-1">
                   ✓ 서명 완료 ({tbm.signedWorkers.length}명)
                 </div>
                 <div className="max-h-[80px] overflow-y-auto">
                   {tbm.signedWorkers.length === 0
-                    ? <span className="text-[10px] text-slate-600">없음</span>
+                    ? <span className="text-[0.625rem] text-slate-600">없음</span>
                     : (
                       <div className="flex flex-wrap gap-1">
                         {tbm.signedWorkers.map((w) => (
-                          <span key={w.id} className="text-[10px] font-bold px-1.5 py-0.5 bg-white rounded border border-emerald-300">{w.name}</span>
+                          <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-emerald-300">{w.name}</span>
                         ))}
                       </div>
                     )}
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-300 rounded p-2">
-                <div className="text-[10px] font-mono font-extrabold text-amber-800 mb-1">
+                <div className="text-[0.625rem] font-mono font-extrabold text-amber-800 mb-1">
                   ⚠ 미서명 ({tbm.unsignedWorkers.length}명)
                 </div>
                 <div className="max-h-[80px] overflow-y-auto">
                   {tbm.unsignedWorkers.length === 0
-                    ? <span className="text-[10px] text-emerald-700 font-bold">전원 서명 완료</span>
+                    ? <span className="text-[0.625rem] text-emerald-700 font-bold">전원 서명 완료</span>
                     : (
                       <div className="flex flex-wrap gap-1">
                         {tbm.unsignedWorkers.map((w) => (
-                          <span key={w.id} className="text-[10px] font-bold px-1.5 py-0.5 bg-white rounded border border-amber-300">{w.name}</span>
+                          <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-amber-300">{w.name}</span>
                         ))}
                       </div>
                     )}

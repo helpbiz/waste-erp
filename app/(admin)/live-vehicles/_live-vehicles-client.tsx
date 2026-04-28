@@ -153,7 +153,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">실시간 차량조회</h2>
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-600 text-white animate-pulse">● LIVE</span>
+        <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-600 text-white animate-pulse">● LIVE</span>
         <span className="text-xs font-mono text-slate-600">
           {data?.provider === 'simulation' ? '시안 모드 (시뮬 GPS)' : `GIS: ${data?.provider ?? '-'}`}
           {data && ` · ${data.refreshSec}초 폴링`}
@@ -203,14 +203,14 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-bold text-ink text-sm">{v.vehicleNo}</span>
                   <StatusDot status={v.operationalStatus} />
-                  <span className="text-[10px] font-mono font-extrabold text-slate-600 ml-auto">
+                  <span className="text-[0.625rem] font-mono font-extrabold text-slate-600 ml-auto">
                     {v.speed} km/h
                   </span>
                 </div>
-                <div className="text-[10px] font-mono text-slate-600">
+                <div className="text-[0.625rem] font-mono text-slate-600">
                   {VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType} · {v.driverName ?? '운전자 미배정'}
                 </div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">
+                <div className="text-[0.5625rem] font-mono text-slate-500 mt-0.5">
                   {v.lat.toFixed(5)}, {v.lng.toFixed(5)}
                 </div>
               </button>
@@ -222,7 +222,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
 
           {/* 지도 그리드 (시안) */}
           <div className="bg-emerald-50/40 border-2 border-line rounded-lg p-3 relative" style={{ minHeight: 600 }}>
-            <div className="text-[10px] font-mono font-bold text-slate-600 mb-2">
+            <div className="text-[0.625rem] font-mono font-bold text-slate-600 mb-2">
               📍 강남구 중심 ({data?.center?.lat?.toFixed(4) ?? '—'}, {data?.center?.lng?.toFixed(4) ?? '—'}) · 시안: 30초 단위 시뮬 위치
             </div>
             {/* 격자 */}
@@ -259,9 +259,9 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
                           style={{ transform: v.operationalStatus === 'MOVING' ? `rotate(${v.heading}deg)` : 'none' }} />
                         {(isSel || v.operationalStatus === 'MOVING') && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-1.5 py-0.5 bg-white rounded shadow border border-line whitespace-nowrap">
-                            <div className="text-[10px] font-extrabold text-ink">{v.vehicleNo}</div>
+                            <div className="text-[0.625rem] font-extrabold text-ink">{v.vehicleNo}</div>
                             {isSel && (
-                              <div className="text-[9px] font-mono text-slate-600">{v.speed}km/h</div>
+                              <div className="text-[0.5625rem] font-mono text-slate-600">{v.speed}km/h</div>
                             )}
                           </div>
                         )}
@@ -273,7 +273,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
             )}
 
             {/* 범례 */}
-            <div className="absolute bottom-3 right-3 bg-white border border-line rounded p-2 shadow text-[10px] font-bold space-y-0.5">
+            <div className="absolute bottom-3 right-3 bg-white border border-line rounded p-2 shadow text-[0.625rem] font-bold space-y-0.5">
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white" />운행중</div>
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-white" />정차</div>
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-400 border border-white" />대기</div>
@@ -291,7 +291,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
               className="px-3 py-1 rounded border-2 border-line text-xs font-bold bg-white">
               {Object.entries(TILE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <span className="text-[10px] font-mono text-slate-600 ml-auto">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
+            <span className="text-[0.625rem] font-mono text-slate-600 ml-auto">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
           </div>
           <div className="bg-surface border border-line rounded-lg overflow-hidden" style={{ height: 600 }}>
             <LeafletMap
@@ -325,7 +325,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
               조회
             </button>
             {heatStats && (
-              <span className="ml-auto text-[10px] font-mono text-slate-600">
+              <span className="ml-auto text-[0.625rem] font-mono text-slate-600">
                 민원 {heatStats.totalPoints}건 · 활성 셀 {heatStats.cellsActive}개 · {heatStats.range.from}~{heatStats.range.to}
               </span>
             )}
@@ -340,7 +340,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
               </div>
             )}
           </div>
-          <div className="text-[10px] font-mono text-slate-600 px-2 bg-slate-50 rounded p-2">
+          <div className="text-[0.625rem] font-mono text-slate-600 px-2 bg-slate-50 rounded p-2">
             💡 알고리즘 (gis-cost 동등): 50m 그리드 density + BULKY_WASTE/ILLEGAL_DUMP 2배 가중치 + Folium HeatMap 동등 그라디언트 (blue→cyan→orange→red→maroon)
           </div>
         </div>
@@ -359,7 +359,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
               {routeBusy ? '계산 중…' : '🚀 미처리 민원으로 경로 최적화'}
             </button>
             {routeStats && (
-              <div className="ml-auto text-[11px] font-mono">
+              <div className="ml-auto text-[0.6875rem] font-mono">
                 <span className="font-extrabold text-emerald-700">{routeStats.distanceKm} km</span> · {routeStats.durationMin}분 ·
                 절감 <span className="font-extrabold text-accent">{routeStats.savedKm} km ({routeStats.savedPct}%)</span>
               </div>
@@ -395,7 +395,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
                 {routePolylineSource && (
                   <div className="col-span-2">
                     polyline source:{' '}
-                    <span className={`font-extrabold px-1.5 py-0.5 rounded text-[10px] ${
+                    <span className={`font-extrabold px-1.5 py-0.5 rounded text-[0.625rem] ${
                       routePolylineSource === 'osrm' ? 'bg-emerald-200 text-emerald-900' :
                       routePolylineSource === 'ors' ? 'bg-cyan-200 text-cyan-900' :
                       'bg-amber-200 text-amber-900'
@@ -407,7 +407,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
                   </div>
                 )}
               </div>
-              <div className="text-[10px] text-slate-600 mt-2">
+              <div className="text-[0.625rem] text-slate-600 mt-2">
                 💡 알고리즘 (gis-cost 동등): Nearest Neighbor 초기해 + 2-opt 개선. polyline은 OSRM 공개 데모(키 불필요)로 도로 따라 그려짐.
               </div>
             </div>
@@ -509,7 +509,7 @@ function SettingsModal({ config, onClose, onSaved }: {
             <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
             연동 활성화
           </label>
-          <div className="text-[10px] font-mono text-slate-600 bg-slate-50 rounded p-2">
+          <div className="text-[0.625rem] font-mono text-slate-600 bg-slate-50 rounded p-2">
             💡 Provider=simulation: 강남구 그리드에서 시뮬 GPS<br />
             💡 Provider=helpbiz: API key + Base URL로 외부 호출 (Phase 2 구현 예정)<br />
             💡 Embed URL: iframe으로 외부 화면 직접 표시 (Provider 무관)
@@ -531,7 +531,7 @@ function SettingsModal({ config, onClose, onSaved }: {
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-slate-600 mb-1'} />;
 }
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -554,7 +554,7 @@ function StatusDot({ status }: { status: string }) {
   return (
     <span className="flex items-center gap-1">
       <span className={`w-2 h-2 rounded-full ${m.color} ${status === 'MOVING' ? 'animate-pulse' : ''}`} />
-      <span className="text-[9px] font-mono font-extrabold text-slate-600">{m.label}</span>
+      <span className="text-[0.5625rem] font-mono font-extrabold text-slate-600">{m.label}</span>
     </span>
   );
 }
@@ -568,7 +568,7 @@ function KCard({ label, value, unit, tone = 'default' }: { label: string; value:
   };
   return (
     <div className={`px-4 py-3 rounded-lg border-2 ${c[tone]} shadow-sm`}>
-      <div className="text-[12px] font-extrabold tracking-tight">{label}</div>
+      <div className="text-[0.75rem] font-extrabold tracking-tight">{label}</div>
       <div className="font-black mt-0.5"><span className="text-2xl">{value}</span> <span className="text-xs font-bold">{unit}</span></div>
     </div>
   );

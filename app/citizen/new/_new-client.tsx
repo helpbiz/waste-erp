@@ -160,7 +160,7 @@ export default function NewComplaintClient() {
               <div className="text-lg font-mono font-extrabold text-info">
                 {new Date(success.eta).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               </div>
-              <div className="text-[10px] font-mono text-ink-faint mt-0.5">담당 차량 위치 + 평균 주행속도 기반 추정</div>
+              <div className="text-[0.625rem] font-mono text-ink-faint mt-0.5">담당 차량 위치 + 평균 주행속도 기반 추정</div>
             </>
           )}
         </div>
@@ -213,7 +213,7 @@ export default function NewComplaintClient() {
         </label>
         {isUrgent && (
           <div className="space-y-2 pl-7">
-            <div className="text-[11px] font-bold text-ink-muted">긴급 사유 선택 (특이사항)</div>
+            <div className="text-[0.6875rem] font-bold text-ink-muted">긴급 사유 선택 (특이사항)</div>
             <div className="grid grid-cols-2 gap-2">
               {URGENT_TAGS.map((u) => (
                 <button
@@ -240,7 +240,7 @@ export default function NewComplaintClient() {
       {/* 발생 위치 — 지도 자동 표시 + 핀 드래그 보정 */}
       <section>
         <h3 className="text-sm font-extrabold text-ink mb-2">
-          📍 발생 위치 <span className="text-[10px] font-bold text-ink-muted">(지도 핀을 끌어 정확한 위치로 보정)</span>
+          📍 발생 위치 <span className="text-[0.625rem] font-bold text-ink-muted">(지도 핀을 끌어 정확한 위치로 보정)</span>
         </h3>
 
         {/* 지도는 항상 표시 — GPS 미확인 시 기본 좌표 */}
@@ -252,7 +252,7 @@ export default function NewComplaintClient() {
             height={220}
           />
           {!gps && (
-            <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[11px] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+            <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[0.6875rem] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
               📍 위치 확인 중… 핀을 드래그해도 됩니다
             </div>
           )}
@@ -263,7 +263,7 @@ export default function NewComplaintClient() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <div className="flex-1 text-[11px]">
+          <div className="flex-1 text-[0.6875rem]">
             {gps ? (
               <span className="font-mono font-bold text-ink">{gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E</span>
             ) : gpsErr ? (
@@ -272,7 +272,7 @@ export default function NewComplaintClient() {
               <span className="text-ink-muted">위치 확인 중…</span>
             )}
           </div>
-          <button onClick={pickGps} className="text-[10px] font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95">
+          <button onClick={pickGps} className="text-[0.625rem] font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95">
             🎯 내 위치
           </button>
         </div>
@@ -309,7 +309,7 @@ export default function NewComplaintClient() {
         {busy ? '제출 중…' : '✈ 민원 신고 제출'}
       </button>
 
-      <div className="text-[10px] font-bold text-ink-faint leading-relaxed">
+      <div className="text-[0.625rem] font-bold text-ink-faint leading-relaxed">
         ※ 본 신고는 즉시 담당 위탁업체로 전달되며, 처리 완료 시 알림을 드립니다 (특허 10-2024-0084638 청구항 4 흐름 S610~S650).
       </div>
     </div>

@@ -98,7 +98,7 @@ export default function MultiPhotoUploader({
             >
               ×
             </button>
-            <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-mono font-bold">
+            <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-white text-[0.5625rem] font-mono font-bold">
               #{i + 1}
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function MultiPhotoUploader({
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
               <circle cx="12" cy="13" r="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-[10px] font-extrabold">사진 추가</span>
+            <span className="text-[0.625rem] font-extrabold">사진 추가</span>
           </button>
         )}
       </div>
@@ -165,13 +165,13 @@ export default function MultiPhotoUploader({
       />
 
       {/* 상태/에러 */}
-      <div className="flex items-center justify-between text-[10px] font-mono">
+      <div className="flex items-center justify-between text-[0.625rem] font-mono">
         <span className="text-slate-600">
           {photos.length}/{max}장 · 자동 1024px 리사이즈
         </span>
         {loading && <span className="text-accent font-bold animate-pulse">처리 중…</span>}
       </div>
-      {error && <div className="text-[11px] font-bold text-red-600">{error}</div>}
+      {error && <div className="text-[0.6875rem] font-bold text-red-600">{error}</div>}
 
       {/* 확대 보기 모달 */}
       {zoomed && (

@@ -193,7 +193,7 @@ export default function PayrollClient({
       {/* 표 */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-[13px]">
+        <table className="w-full min-w-[640px] text-[0.8125rem]">
           <thead>
             <tr>
               {['근로자', '근무일', '총시간', '연장', '야간', '휴일', '결근', '잠금', '액션'].map((h) => (
@@ -222,11 +222,11 @@ export default function PayrollClient({
                 <td className="px-3 py-2.5 border-b border-line font-mono font-extrabold text-danger">{r.absenceDays}일</td>
                 <td className="px-3 py-2.5 border-b border-line">
                   {r.isFinalized ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-green-100 text-success border border-green-200" title={`${r.finalizedAt} by ${r.finalizedByName}`}>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold bg-green-100 text-success border border-green-200" title={`${r.finalizedAt} by ${r.finalizedByName}`}>
                       🔒 마감
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-amber-100 text-warn border border-amber-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold bg-amber-100 text-warn border border-amber-200">
                       미마감
                     </span>
                   )}
@@ -242,7 +242,7 @@ export default function PayrollClient({
                     </button>
                   )}
                   {r.isFinalized && r.finalizedByName && (
-                    <span className="text-[11px] font-mono font-bold text-ink-faint">
+                    <span className="text-[0.6875rem] font-mono font-bold text-ink-faint">
                       by {r.finalizedByName}
                     </span>
                   )}
@@ -270,7 +270,7 @@ export default function PayrollClient({
 function Stat({ label, value, tone = 'text-ink' }: { label: string; value: string; tone?: string }) {
   return (
     <div className="bg-surface-alt border border-line rounded-lg px-3 py-2.5">
-      <div className="text-[10px] font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
+      <div className="text-[0.625rem] font-extrabold text-ink-muted tracking-widest uppercase">{label}</div>
       <div className={`mt-1 text-lg font-black font-mono tracking-tight ${tone}`}>{value}</div>
     </div>
   );

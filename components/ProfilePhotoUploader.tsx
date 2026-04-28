@@ -81,15 +81,15 @@ export default function ProfilePhotoUploader({
           className="block w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-accent file:text-white file:text-xs file:font-extrabold hover:file:bg-accent-strong file:cursor-pointer cursor-pointer"
         />
         <div className="flex items-center gap-2 mt-1.5">
-          {loading && <span className="text-[10px] font-mono text-slate-600">처리 중…</span>}
+          {loading && <span className="text-[0.625rem] font-mono text-slate-600">처리 중…</span>}
           {preview && (
-            <button type="button" onClick={clear} className="text-[10px] font-bold text-red-600 hover:underline">
+            <button type="button" onClick={clear} className="text-[0.625rem] font-bold text-red-600 hover:underline">
               제거
             </button>
           )}
-          <span className="text-[10px] font-mono text-slate-600 ml-auto">최대 480px · 500KB</span>
+          <span className="text-[0.625rem] font-mono text-slate-600 ml-auto">최대 480px · 500KB</span>
         </div>
-        {error && <div className="text-[11px] font-bold text-red-600 mt-1">{error}</div>}
+        {error && <div className="text-[0.6875rem] font-bold text-red-600 mt-1">{error}</div>}
       </div>
     </div>
   );

@@ -420,7 +420,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-line bg-surface-soft text-[12px] font-extrabold text-ink tracking-tight">
+      <div className="px-4 py-2.5 border-b border-line bg-surface-soft text-[0.75rem] font-extrabold text-ink tracking-tight">
         {label}
       </div>
       <div className="p-3">{children}</div>

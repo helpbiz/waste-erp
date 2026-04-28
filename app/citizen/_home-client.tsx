@@ -164,13 +164,13 @@ export default function CitizenHomeClient() {
           onClick={() => setTab('WAITING')}
           className={`flex-1 min-h-11 py-2 rounded-md text-base font-extrabold transition-colors ${tab === 'WAITING' ? 'bg-surface text-accent shadow-sm' : 'text-ink-mid'}`}
         >
-          처리 대기 <span className="ml-1 text-[13px] font-mono">({waiting.length})</span>
+          처리 대기 <span className="ml-1 text-[0.8125rem] font-mono">({waiting.length})</span>
         </button>
         <button
           onClick={() => setTab('COMPLETED')}
           className={`flex-1 min-h-11 py-2 rounded-md text-base font-extrabold transition-colors ${tab === 'COMPLETED' ? 'bg-surface text-accent shadow-sm' : 'text-ink-mid'}`}
         >
-          처리 완료 <span className="ml-1 text-[13px] font-mono">({completed.length}{unrated > 0 && <span className="text-warn"> · {unrated} 평가 대기</span>})</span>
+          처리 완료 <span className="ml-1 text-[0.8125rem] font-mono">({completed.length}{unrated > 0 && <span className="text-warn"> · {unrated} 평가 대기</span>})</span>
         </button>
       </nav>
 
@@ -190,13 +190,13 @@ export default function CitizenHomeClient() {
           >
             <div className="flex items-start gap-2 flex-wrap mb-1">
               <span className="text-base font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
-              {c.isUrgent && <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-red-100 text-red-800 border border-red-300">긴급</span>}
-              {c.urgentTag && <span className="text-[13px] font-extrabold text-warn">{URGENT_LABEL[c.urgentTag] ?? c.urgentTag}</span>}
+              {c.isUrgent && <span className="px-2 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold bg-red-100 text-red-800 border border-red-300">긴급</span>}
+              {c.urgentTag && <span className="text-[0.8125rem] font-extrabold text-warn">{URGENT_LABEL[c.urgentTag] ?? c.urgentTag}</span>}
               <StatusChip status={c.status} />
-              <code className="text-[11px] font-mono text-ink-mid ml-auto">#{c.id}</code>
+              <code className="text-[0.6875rem] font-mono text-ink-mid ml-auto">#{c.id}</code>
             </div>
             {c.locationAddress && <div className="text-sm text-ink font-semibold mt-1">📍 {c.locationAddress}</div>}
-            <div className="flex justify-between items-center mt-2 text-[13px] font-mono font-bold text-ink-mid">
+            <div className="flex justify-between items-center mt-2 text-[0.8125rem] font-mono font-bold text-ink-mid">
               <span>{fmt(c.reportedAt)}</span>
               {c.status === 'COMPLETED' && c.satisfactionScore == null && (
                 <span className="text-warn font-extrabold">평가 대기 →</span>
@@ -227,7 +227,7 @@ function StatusChip({ status }: { status: string }) {
   const m = map[status];
   if (!m) return null;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold border ${m.cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border ${m.cls}`}>
       {m.label}
     </span>
   );

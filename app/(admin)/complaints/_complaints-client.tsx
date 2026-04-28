@@ -138,7 +138,7 @@ export default function ComplaintsClient({
         </div>
         <div className="flex items-center gap-2">
           {isMuni && (
-            <span className="px-3 py-1 rounded-full text-[10px] font-mono font-extrabold bg-amber-100 text-warn border border-amber-300">
+            <span className="px-3 py-1 rounded-full text-[0.625rem] font-mono font-extrabold bg-amber-100 text-warn border border-amber-300">
               MUNI_ADMIN — 입력만 허용 (처리는 위탁업체)
             </span>
           )}
@@ -170,7 +170,7 @@ export default function ComplaintsClient({
               }`}
             >
               {t.label}
-              <span className={`ml-1.5 text-[11px] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
+              <span className={`ml-1.5 text-[0.6875rem] font-mono ${tab === t.key ? 'text-cyan-100' : 'text-ink-muted'}`}>
                 {counts[t.key]}
               </span>
             </button>
@@ -229,9 +229,9 @@ export default function ComplaintsClient({
               <ComplaintIcon type={c.type} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-[15px] font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
+                  <span className="text-[0.9375rem] font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
                   <StatusChip status={c.status} overdue={c.overdue} />
-                  <code className="text-[10px] font-mono text-ink-faint">#{c.id}</code>
+                  <code className="text-[0.625rem] font-mono text-ink-faint">#{c.id}</code>
                 </div>
                 <div className="text-sm text-ink font-semibold">
                   {c.locationAddress ?? '주소 없음'}
@@ -241,7 +241,7 @@ export default function ComplaintsClient({
                     {c.description}
                   </div>
                 )}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[11px] font-mono font-bold text-ink-faint">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[0.6875rem] font-mono font-bold text-ink-faint">
                   <span>접수: {fmt(c.reportedAt)}</span>
                   <span>보고자: <span className="text-ink">{c.reporter.name}</span></span>
                   <span>담당: {c.assignee ? <span className="text-accent">{c.assignee.name}</span> : <span className="text-warn">미배정</span>}</span>
@@ -424,7 +424,7 @@ function EditComplaintModal({ row, onClose, onSaved }: { row: Row; onClose: () =
           <label className="block text-xs font-extrabold text-ink mb-1">현장 사진 교체 (선택)</label>
           <ProfilePhotoUploader onChange={(d) => { setPhoto(d); setPhotoChanged(true); }} size={64} />
           {row.id && (
-            <div className="text-[10px] font-mono text-slate-600 mt-1">기존 사진은 변경 시에만 교체됩니다.</div>
+            <div className="text-[0.625rem] font-mono text-slate-600 mt-1">기존 사진은 변경 시에만 교체됩니다.</div>
           )}
         </div>
         {error && <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
@@ -475,7 +475,7 @@ function StatusChip({ status, overdue }: { status: string; overdue: boolean }) {
 
 function Chip({ children, className }: { children: React.ReactNode; className: string }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${className}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${className}`}>
       {children}
     </span>
   );
@@ -497,7 +497,7 @@ function AssignForm({
       <div className="text-xs font-extrabold text-ink mb-1">담당자 배정</div>
       <div className="flex flex-wrap gap-2 items-end">
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-[10px] font-bold text-ink-muted mb-1">담당자</label>
+          <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">담당자</label>
           <select value={w} onChange={(e) => setW(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
             {workers.length === 0 && <option value="">근로자 없음</option>}
             {workers.map((wk) => (
@@ -506,7 +506,7 @@ function AssignForm({
           </select>
         </div>
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-[10px] font-bold text-ink-muted mb-1">처리 기한 (선택)</label>
+          <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">처리 기한 (선택)</label>
           <input
             type="date"
             value={due}
@@ -721,7 +721,7 @@ function CreateComplaintModal({
           <div>
             <label className="block text-xs font-extrabold text-ink mb-2">
               발생 위치
-              <span className="ml-1.5 text-[10px] font-mono font-bold text-ink-muted">(지도에서 핀 클릭·드래그로 보정)</span>
+              <span className="ml-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">(지도에서 핀 클릭·드래그로 보정)</span>
             </label>
 
             {/* 지도 — 항상 표시 (GPS 미확인 시 기본 좌표) */}
@@ -733,7 +733,7 @@ function CreateComplaintModal({
                 height={220}
               />
               {!gps && (
-                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[11px] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[0.6875rem] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
                   📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)
                 </div>
               )}
@@ -745,7 +745,7 @@ function CreateComplaintModal({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                 <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <div className="flex-1 text-[11px]">
+              <div className="flex-1 text-[0.6875rem]">
                 {gps ? (
                   <span className="font-mono font-bold text-ink">
                     {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
@@ -754,13 +754,13 @@ function CreateComplaintModal({
                 ) : (
                   <span className="text-ink-muted">위치 자동 확인 중…</span>
                 )}
-                {gpsErr && <div className="text-[10px] font-bold text-amber-700 mt-0.5">{gpsErr}</div>}
+                {gpsErr && <div className="text-[0.625rem] font-bold text-amber-700 mt-0.5">{gpsErr}</div>}
               </div>
               <button
                 type="button"
                 onClick={pickGps}
                 disabled={acquiring}
-                className="text-[10px] font-extrabold px-2.5 py-1 rounded-md border border-line hover:bg-surface text-ink"
+                className="text-[0.625rem] font-extrabold px-2.5 py-1 rounded-md border border-line hover:bg-surface text-ink"
               >
                 {acquiring ? '확인 중…' : '🎯 내 위치'}
               </button>
@@ -804,7 +804,7 @@ function CreateComplaintModal({
           <div>
             <label className="block text-xs font-extrabold text-ink mb-2">
               현장 사진
-              <span className="ml-1.5 text-[10px] font-mono font-bold text-ink-muted">(최대 3장 · 카메라 직촬 가능)</span>
+              <span className="ml-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">(최대 3장 · 카메라 직촬 가능)</span>
             </label>
             <MultiPhotoUploader onChange={setPhotos} max={3} />
           </div>

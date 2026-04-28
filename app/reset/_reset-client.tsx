@@ -85,12 +85,12 @@ export default function ResetClient() {
         <div className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-6">
         <div className="text-center mb-4">
           <h1 className="text-base font-extrabold text-ink">캐시 초기화</h1>
-          <p className="text-[12px] font-bold text-ink-muted mt-1">
+          <p className="text-[0.75rem] font-bold text-ink-muted mt-1">
             오래된 화면이 표시되거나 새 기능이 안 보일 때 사용합니다
           </p>
         </div>
 
-        <div className="bg-surface-soft rounded-lg p-3 font-mono text-[11px] leading-relaxed min-h-[140px]">
+        <div className="bg-surface-soft rounded-lg p-3 font-mono text-[0.6875rem] leading-relaxed min-h-[140px]">
           {log.length === 0 && step !== 'error' && (
             <div className="text-ink-muted">초기화 시작 중…</div>
           )}
@@ -103,7 +103,7 @@ export default function ResetClient() {
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-[10px] font-mono text-ink-faint">
+          <span className="text-[0.625rem] font-mono text-ink-faint">
             {step === 'sw' && '단계 1/3 — SW unregister…'}
             {step === 'cache' && '단계 2/3 — Cache 삭제…'}
             {step === 'done' && '단계 3/3 — 완료'}
@@ -111,13 +111,13 @@ export default function ResetClient() {
           </span>
           <a
             href="/login"
-            className="text-[11px] font-extrabold text-accent hover:underline"
+            className="text-[0.6875rem] font-extrabold text-accent hover:underline"
           >
             로그인 바로가기 →
           </a>
         </div>
 
-        <div className="mt-4 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-[10.5px] text-amber-900 font-bold leading-relaxed">
+        <div className="mt-4 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-[0.65625rem] text-amber-900 font-bold leading-relaxed">
           💡 <strong>참고</strong>: 이 페이지가 여전히 동작하지 않으면 브라우저 설정에서{' '}
           <strong>사이트 데이터를 직접 삭제</strong>하거나 PWA 앱을{' '}
           <strong>완전히 제거 후 재설치</strong>해 주세요.

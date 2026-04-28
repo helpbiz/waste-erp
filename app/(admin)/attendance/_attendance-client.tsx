@@ -78,7 +78,7 @@ export default function AttendanceClient({
         </div>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="근태 일별 현황 표">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-slate-50 text-[11px] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
+          <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2 text-left">직원</th>
               <th className="px-3 py-2 text-left">부서</th>
@@ -113,13 +113,13 @@ export default function AttendanceClient({
                 <td className="px-3 py-2 text-xs">{r.zoneName ?? '—'}</td>
                 <td className="px-3 py-2">
                   {r.status ? (
-                    <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded border-2 ${
+                    <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border-2 ${
                       r.status === 'APPROVED' ? 'bg-emerald-200 text-emerald-900 border-emerald-600' :
                       r.status === 'REJECTED' ? 'bg-red-200 text-red-900 border-red-500' :
                       r.status === 'ADJUSTED' ? 'bg-blue-200 text-blue-900 border-blue-500' :
                       'bg-amber-200 text-amber-900 border-amber-500'
                     }`}>{STATUS_LABEL[r.status]}</span>
-                  ) : <span className="text-[10px] font-mono text-slate-500">미기록</span>}
+                  ) : <span className="text-[0.625rem] font-mono text-slate-500">미기록</span>}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2">
@@ -131,7 +131,7 @@ export default function AttendanceClient({
                         조정/반려
                       </button>
                     ) : (
-                      <span className="text-[10px] font-mono text-slate-400">출근 전</span>
+                      <span className="text-[0.625rem] font-mono text-slate-400">출근 전</span>
                     )}
                   </td>
                 )}
@@ -258,7 +258,7 @@ function AdjustModal({
         <div className="w-full max-w-[520px] bg-surface rounded-xl shadow-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <header className="px-5 py-4 bg-surface-soft border-b-2 border-line">
             <h3 className="text-base font-extrabold text-ink">근태 조정/반려 — {row.workerName}</h3>
-            <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">
+            <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">
               기준일 {dateStr} · 사유 + 출퇴근 시각 변경 시 attendance_adjustments(SHA-256) + audit_log 기록
             </div>
           </header>
@@ -266,18 +266,18 @@ function AdjustModal({
           <div className="p-5 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="block text-[11px] font-extrabold text-ink mb-1.5">출근 시각</span>
+                <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">출근 시각</span>
                 <input type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)}
                   className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
               </label>
               <label className="block">
-                <span className="block text-[11px] font-extrabold text-ink mb-1.5">퇴근 시각</span>
+                <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">퇴근 시각</span>
                 <input type="time" value={checkOut} onChange={(e) => setCheckOut(e.target.value)}
                   className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
               </label>
             </div>
             <label className="block">
-              <span className="block text-[11px] font-extrabold text-ink mb-1.5">근무 유형</span>
+              <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">근무 유형</span>
               <select value={workType} onChange={(e) => setWorkType(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
                 {WORK_TYPE_OPTIONS.map((wt) => (
@@ -286,7 +286,7 @@ function AdjustModal({
               </select>
             </label>
             <label className="block">
-              <span className="block text-[11px] font-extrabold text-ink mb-1.5">
+              <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">
                 사유 <span className="text-danger">*</span> (조정/반려 모두 필수, 2자 이상)
               </span>
               <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
@@ -353,7 +353,7 @@ function KpiCard({
   const baseCls = `px-4 py-3 rounded-lg border ${colors[tone]} shadow-card text-left`;
   const inner = (
     <>
-      <div className="text-[13px] font-extrabold tracking-tight flex items-center gap-1">
+      <div className="text-[0.8125rem] font-extrabold tracking-tight flex items-center gap-1">
         {label}
         {onClick && <span aria-hidden className="text-xs">›</span>}
       </div>
@@ -456,7 +456,7 @@ function PendingApprovalModal({
           <header className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center justify-between">
             <div>
               <h3 className="text-base font-extrabold text-ink">결재 대기 — {dateStr}</h3>
-              <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">
                 COMPANY/MANAGER: 승인 / 반려 / 조정 가능. 모든 결재는 audit_log 영구 기록.
               </div>
             </div>
@@ -479,7 +479,7 @@ function PendingApprovalModal({
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-[11px] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
+                <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
                   <tr>
                     <th className="px-3 py-2 text-left">직원</th>
                     <th className="px-3 py-2 text-left">출근</th>

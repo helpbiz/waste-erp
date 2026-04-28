@@ -81,7 +81,7 @@ export function FacilitiesTab() {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <span className="font-extrabold text-ink">처리시설 마스터</span>
-        <span className="text-[11px] font-mono text-slate-700 font-bold">지자체 단위 — 산하 위탁업체 자동 반영</span>
+        <span className="text-[0.6875rem] font-mono text-slate-700 font-bold">지자체 단위 — 산하 위탁업체 자동 반영</span>
 
         <div className="ml-auto flex items-center gap-2">
           <label htmlFor="facility-muni-picker" className="text-xs font-extrabold text-slate-700">지자체</label>
@@ -117,7 +117,7 @@ export function FacilitiesTab() {
         {!loading && items.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase">
+              <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
                 <tr>
                   <th className="px-3 py-2 text-left">분류</th>
                   <th className="px-3 py-2 text-left">시설명</th>
@@ -130,14 +130,14 @@ export function FacilitiesTab() {
                 {items.map((f) => (
                   <tr key={f.id} className={`hover:bg-slate-50 ${f.active ? '' : 'opacity-50'}`}>
                     <td className="px-3 py-2">
-                      <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
+                      <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
                         {FACILITY_TYPE_LABELS[f.type] ?? f.type}
                       </span>
                     </td>
                     <td className="px-3 py-2 font-bold">{f.name}</td>
                     <td className="px-3 py-2 text-xs text-slate-700 max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
                     <td className="px-3 py-2 text-center">
-                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${
+                      <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                         f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-slate-700 border-slate-400'
                       }`}>
                         {f.active ? '활성' : '비활성'}
@@ -228,11 +228,11 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
       <div className="bg-white rounded-lg shadow-xl w-[480px] max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-line bg-purple-50">
           <h3 className="font-extrabold text-ink">{initial ? '처리시설 수정' : '처리시설 신규 등록'}</h3>
-          <div className="text-[11px] font-mono font-bold text-slate-700 mt-0.5">{municipalityName}</div>
+          <div className="text-[0.6875rem] font-mono font-bold text-slate-700 mt-0.5">{municipalityName}</div>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label htmlFor="fac-type" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">분류</label>
+            <label htmlFor="fac-type" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">분류</label>
             <select
               id="fac-type"
               value={form.type}
@@ -242,7 +242,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
             </select>
           </div>
           <div>
-            <label htmlFor="fac-name" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">시설명 *</label>
+            <label htmlFor="fac-name" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">시설명 *</label>
             <input
               id="fac-name"
               value={form.name}
@@ -251,7 +251,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold" />
           </div>
           <div>
-            <label htmlFor="fac-address" className="block text-[11px] font-mono font-extrabold text-slate-700 mb-1">주소</label>
+            <label htmlFor="fac-address" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">주소</label>
             <input
               id="fac-address"
               value={form.address}

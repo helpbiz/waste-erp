@@ -120,7 +120,7 @@ export default function LeaveClient({
 
       {/* 본인 신청 내역 */}
       <div className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-line bg-surface-soft text-[13px] font-extrabold text-ink">
+        <div className="px-4 py-3 border-b border-line bg-surface-soft text-[0.8125rem] font-extrabold text-ink">
           내 신청 내역 ({requests.length})
         </div>
         <div className="divide-y divide-line max-h-[400px] overflow-y-auto">
@@ -297,5 +297,5 @@ function StatusBadge({ status }: { status: string }) {
     APPROVED: 'bg-emerald-100 text-emerald-700 border-emerald-300',
     REJECTED: 'bg-red-100 text-red-700 border-red-300',
   };
-  return <span className={`text-[9px] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[status] ?? colors.PENDING}`}>{LEAVE_STATUS_LABEL[status] ?? status}</span>;
+  return <span className={`text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[status] ?? colors.PENDING}`}>{LEAVE_STATUS_LABEL[status] ?? status}</span>;
 }

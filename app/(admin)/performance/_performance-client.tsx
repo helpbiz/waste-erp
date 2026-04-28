@@ -80,7 +80,7 @@ export default function PerformanceClient({
         <TabButton active={tab === 'intake'} onClick={() => setTab('intake')}>반입실적 입력</TabButton>
         <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>실적 통계 / 출력</TabButton>
         <a href="/reports"
-          className="ml-auto px-4 py-3 text-[13px] font-extrabold text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 transition flex items-center gap-1">
+          className="ml-auto px-4 py-3 text-[0.8125rem] font-extrabold text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 transition flex items-center gap-1">
           📊 전체 통계/보고서 →
         </a>
       </div>
@@ -95,7 +95,7 @@ export default function PerformanceClient({
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`px-5 py-3 text-[15px] font-black tracking-tight border-b-[3px] -mb-0.5 transition ${
+      className={`px-5 py-3 text-[0.9375rem] font-black tracking-tight border-b-[3px] -mb-0.5 transition ${
         active ? 'border-accent text-accent bg-accent-soft' : 'border-transparent text-slate-700 hover:text-ink hover:bg-slate-100'
       }`}>
       {children}
@@ -146,13 +146,13 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">기준일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">기준일</div>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             aria-label="기준일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">조회</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">조회</div>
           <div className="flex gap-1">
             <button onClick={() => setView('daily')}
               className={`px-3 py-1.5 rounded text-xs font-extrabold border-2 ${view === 'daily' ? 'bg-accent text-white border-accent' : 'bg-white border-line text-slate-600'}`}>
@@ -176,7 +176,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
-          <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase">
+          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
             <tr>
               <th className="px-3 py-2 text-left w-[50px]">No</th>
               <th className="px-3 py-2 text-left">성상</th>
@@ -210,7 +210,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                       placeholder="비고 (선택)"
                       className="w-full px-2 py-1 rounded border border-line text-xs disabled:bg-slate-50" />
                   </td>
-                  <td className="px-3 py-2 text-[10px] text-slate-600">
+                  <td className="px-3 py-2 text-[0.625rem] text-slate-600">
                     {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -236,7 +236,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
           </div>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
-            <thead className="bg-slate-50 text-[10px] font-mono font-extrabold text-slate-600">
+            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600">
               <tr>
                 <th className="px-3 py-1.5 text-left">일자</th>
                 <th className="px-3 py-1.5 text-left">성상</th>
@@ -291,13 +291,13 @@ function IntakeTab({ canEdit, vehicles }: {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             aria-label="조회 시작일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             aria-label="조회 종료일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
@@ -328,7 +328,7 @@ function IntakeTab({ canEdit, vehicles }: {
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
-          <thead className="bg-slate-100 text-[11px] font-mono font-extrabold text-slate-700 uppercase">
+          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
             <tr>
               <th className="px-3 py-2 text-left">일자</th>
               <th className="px-3 py-2 text-left">반입시간</th>
@@ -354,13 +354,13 @@ function IntakeTab({ canEdit, vehicles }: {
                   {i.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}
                 </td>
                 <td className="px-3 py-1.5">
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent">
+                  <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent">
                     {CATEGORY_LABEL[i.materialCategory] ?? i.materialCategory}
                   </span>
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono font-extrabold">{i.weightTon.toFixed(3)}</td>
                 <td className="px-3 py-1.5 text-xs max-w-[150px] truncate" title={i.note ?? ''}>{i.note ?? '—'}</td>
-                <td className="px-3 py-1.5 text-[10px]">{i.recorderName}</td>
+                <td className="px-3 py-1.5 text-[0.625rem]">{i.recorderName}</td>
                 <td className="px-3 py-1.5 text-right whitespace-nowrap">
                   {canEdit && (
                     <>
@@ -431,17 +431,17 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
         </div>
         <div className="p-5 grid grid-cols-2 gap-3">
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">반입 일자</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입 일자</div>
             <input type="date" value={form.intakeDate} onChange={(e) => setForm({ ...form, intakeDate: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">반입 시간</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입 시간</div>
             <input type="time" value={form.intakeTime} onChange={(e) => setForm({ ...form, intakeTime: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">차량</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">차량</div>
             <select value={form.vehicleId} onChange={(e) => setForm({ ...form, vehicleId: e.target.value })} disabled={!!initial}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold disabled:bg-slate-50">
               <option value="">— 차량 선택 —</option>
@@ -449,19 +449,19 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             </select>
           </div>
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">성상</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">성상</div>
             <select value={form.materialCategory} onChange={(e) => setForm({ ...form, materialCategory: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
               {INTAKE_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
             </select>
           </div>
           <div>
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">반입량 (ton)</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입량 (ton)</div>
             <input type="number" step="0.001" value={form.weightTon} onChange={(e) => setForm({ ...form, weightTon: e.target.value })}
               placeholder="0.000" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div className="col-span-2">
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">처리시설 (Design §3.1.2)</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">처리시설 (Design §3.1.2)</div>
             <FacilitySelect
               value={form.facilityId}
               onChange={(id) => setForm({ ...form, facilityId: id })}
@@ -469,7 +469,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             />
           </div>
           <div className="col-span-2">
-            <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">비고</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">비고</div>
             <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm" />
           </div>
@@ -515,12 +515,12 @@ function StatsTab() {
     <div className="space-y-5">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
@@ -548,22 +548,22 @@ function StatsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-[11px] font-extrabold text-ink mb-2">성상별 분포</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별 분포</div>
                 <div className="space-y-1">
                   {waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={wasteMaxByMaterial} suffix="t" />
                   ))}
-                  {waste.byMaterial.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.byMaterial.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-[11px] font-extrabold text-ink mb-2">월별 추이</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">월별 추이</div>
                 <div className="space-y-1">
                   {waste.monthly.sort((a, b) => a.ym.localeCompare(b.ym)).map((m) => (
                     <BarRow key={m.ym} label={m.ym} value={m.weight}
                       max={Math.max(1, ...waste.monthly.map((x) => x.weight))} suffix="t" color="bg-amber-400" />
                   ))}
-                  {waste.monthly.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.monthly.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
@@ -580,28 +580,28 @@ function StatsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-[11px] font-extrabold text-ink mb-2">성상별 (4종)</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별 (4종)</div>
                 <div className="space-y-1">
                   {intake.byCategory.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight} max={intakeMaxByCategory} suffix="t" color="bg-emerald-500" />
                   ))}
-                  {intake.byCategory.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byCategory.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-[11px] font-extrabold text-ink mb-2">차량별 Top</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">차량별 Top</div>
                 <div className="space-y-1">
                   {intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
                     <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={intakeMaxByVehicle} suffix="t" color="bg-blue-400" />
                   ))}
-                  {intake.byVehicle.length === 0 && <div className="text-[11px] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byVehicle.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
           </section>
         )}
 
-        <div className="text-[10px] font-mono text-slate-600 text-right mt-4">
+        <div className="text-[0.625rem] font-mono text-slate-600 text-right mt-4">
           출력일시: {new Date().toLocaleString('ko-KR')}
         </div>
       </div>
@@ -624,20 +624,20 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
   };
   return (
     <div className={`px-4 py-3 rounded-lg border-2 ${c[tone]} shadow-sm`}>
-      <div className="text-[10px] font-mono font-extrabold uppercase">{label}</div>
+      <div className="text-[0.625rem] font-mono font-extrabold uppercase">{label}</div>
       <div className="text-xl font-black mt-1">{value}</div>
     </div>
   );
 }
 
 function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: string; value: number; max: number; suffix: string; color?: string }) {
-  /* 사용자 요청 2026-04-29: BarRow 라벨 1단계 다운 — text-xs(12px) → text-[11px] */
+  /* 사용자 요청 2026-04-29: BarRow 라벨 1단계 다운 — text-xs(12px) → text-[0.6875rem] */
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-[90px] text-[11px] font-bold text-ink truncate">{label}</div>
+      <div className="w-[90px] text-[0.6875rem] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-5 overflow-hidden">
-        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[10px] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
+        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
           {value.toFixed(2)}{suffix}
         </div>
       </div>

@@ -124,8 +124,8 @@ function MenuCard({
         </svg>
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-end">
-        {/* P1: 15px → 17px (text-[17px]) 으로 카드 제목 AAA 근접, desc 12px → 14px */}
-        <div className="text-[17px] font-extrabold text-ink leading-tight">{title}</div>
+        {/* P1: 15px → 17px (text-[1.0625rem]) 으로 카드 제목 AAA 근접, desc 12px → 14px */}
+        <div className="text-[1.0625rem] font-extrabold text-ink leading-tight">{title}</div>
         <div className="text-sm font-semibold text-ink-faint mt-1 leading-tight">{desc}</div>
       </div>
     </Link>

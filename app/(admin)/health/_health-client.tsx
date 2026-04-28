@@ -190,7 +190,7 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
           개인 이름 클릭 시 직원정보 모달(HealthFormModal)에 표시. 리스트는 의료 핵심 지표만. */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-[13px]">
+        <table className="w-full min-w-[560px] text-[0.8125rem]">
           <thead>
             <tr>
               {['근로자', '혈압', '심박', '혈당', '시력', '혈액형', '알레르기', '액션'].map((h) => (
@@ -223,14 +223,14 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
                   </button>
                   {rowLv === 'danger' && (
                     <div className="mt-1">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-danger border border-red-300" title="표준치 위험 항목 있음">
+                      <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-danger border border-red-300" title="표준치 위험 항목 있음">
                         위험
                       </span>
                     </div>
                   )}
                   {rowLv === 'warn' && (
                     <div className="mt-1">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-warn border border-amber-300" title="표준치 주의 항목 있음">
+                      <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-warn border border-amber-300" title="표준치 주의 항목 있음">
                         주의
                       </span>
                     </div>
@@ -368,7 +368,7 @@ function HealthFormModal({
       <div className="w-full max-w-[600px] bg-surface rounded-xl shadow-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <header className="px-5 py-4 bg-surface-soft border-b-2 border-line">
           <h3 className="text-base font-extrabold text-ink">건강기록 — {row.workerName}</h3>
-          <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">사번 {row.employeeNo ?? '—'} · 의료 정보 (audit 기록됨)</div>
+          <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">사번 {row.employeeNo ?? '—'} · 의료 정보 (audit 기록됨)</div>
         </header>
         <div className="p-5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -472,5 +472,5 @@ function HealthFormModal({
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-extrabold text-ink mb-1.5 tracking-wide'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide'} />;
 }

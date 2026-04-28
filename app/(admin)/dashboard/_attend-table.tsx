@@ -36,7 +36,7 @@ export default function AttendTable({ readOnly, cards }: { readOnly: boolean; ca
   return (
     <>
       <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="근태 목록 표">
-      <table className="w-full min-w-[640px] text-[13px]">
+      <table className="w-full min-w-[640px] text-[0.8125rem]">
         <thead>
           <tr>
             {['사원명', '구역', '출근시각', '근무유형', '상태', '조치'].map((h) => (
@@ -142,7 +142,7 @@ function StatusChip({ kind, children }: { kind: 'active' | 'pending' | 'alert' |
     info:    'bg-blue-100 text-blue-700 border-blue-200',
   } as const;
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${map[kind]}`}>
+    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${map[kind]}`}>
       {children}
     </span>
   );
@@ -209,7 +209,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
           </svg>
           <div className="flex-1">
             <h3 className="text-base font-extrabold text-ink">근태 조정 — {row.workerName}</h3>
-            <div className="text-[11px] font-mono font-bold text-ink-muted mt-0.5">레코드 #{row.id} · 변경 이력은 영구 보존됩니다 (SHA-256 체인)</div>
+            <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">레코드 #{row.id} · 변경 이력은 영구 보존됩니다 (SHA-256 체인)</div>
           </div>
           <button onClick={onClose} className="text-ink-muted hover:text-ink text-2xl font-bold leading-none px-2">&times;</button>
         </header>
@@ -272,7 +272,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
 
           {error && <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
 
-          <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-3 py-2.5 text-[11px] text-amber-900 font-semibold leading-relaxed">
+          <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-3 py-2.5 text-[0.6875rem] text-amber-900 font-semibold leading-relaxed">
             <strong className="font-extrabold">감사 추적 안내</strong> · 본 조정은 attendance_adjustments 테이블에 SHA-256 prev_hash 체인으로 영구 보존되며 삭제할 수 없습니다 (Plan §3-2-D, 노동청 감사 대비).
           </div>
         </div>
@@ -292,7 +292,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[10px] font-extrabold text-ink-muted tracking-wider mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.625rem] font-extrabold text-ink-muted tracking-wider mb-1'} />;
 }
 
 function hm(iso: string) {

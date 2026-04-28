@@ -237,7 +237,7 @@ function Panel({
       className={`bg-surface rounded-xl shadow-card border border-line overflow-hidden ${className ?? ''}`}
     >
       <div className="px-[18px] py-3.5 border-b-2 border-line bg-surface-soft flex items-center justify-between">
-        <div className="flex items-center gap-2 text-[14px] font-extrabold text-ink tracking-tight">
+        <div className="flex items-center gap-2 text-[0.875rem] font-extrabold text-ink tracking-tight">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} className="text-accent">
             <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
           </svg>
@@ -305,7 +305,7 @@ function KpiCard({
         <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
       </svg>
       <div className="text-xs font-extrabold text-ink-muted tracking-wide mb-2.5">{label}</div>
-      <div className="text-[30px] font-black text-ink leading-none font-mono tracking-tight">
+      <div className="text-[1.875rem] font-black text-ink leading-none font-mono tracking-tight">
         {value}
         {unit && <span className="text-sm font-semibold text-ink-muted ml-1.5">{unit}</span>}
       </div>
@@ -356,7 +356,7 @@ function StatusChip({
   } as const;
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold border tracking-wide ${map[kind]}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[0.6875rem] font-mono font-extrabold border tracking-wide ${map[kind]}`}
     >
       {children}
     </span>
@@ -389,8 +389,8 @@ function AlertList() {
         <div key={i} className={`flex items-start gap-2.5 px-3 py-2.5 rounded-lg border ${tone[a.kind]}`}>
           <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dot[a.kind]}`} />
           <div className="flex-1">
-            <div className="text-[13px] text-ink font-semibold leading-relaxed">{a.text}</div>
-            <div className="text-[11px] text-ink-muted font-mono font-extrabold mt-1">{a.time}</div>
+            <div className="text-[0.8125rem] text-ink font-semibold leading-relaxed">{a.text}</div>
+            <div className="text-[0.6875rem] text-ink-muted font-mono font-extrabold mt-1">{a.time}</div>
           </div>
         </div>
       ))}
@@ -417,7 +417,7 @@ function CostPanel() {
     <>
       <div className="text-center mb-3.5">
         <div className="text-xs font-extrabold text-ink mb-1.5">이번달 총 원가 (예상)</div>
-        <div className="font-mono text-[28px] font-black text-accent tracking-tight">
+        <div className="font-mono text-[1.75rem] font-black text-accent tracking-tight">
           148,320<span className="text-sm font-bold text-ink ml-1">천원</span>
         </div>
         <div className="text-xs font-extrabold text-ink font-mono mt-1.5">톤당 원가 3,474원</div>
@@ -444,7 +444,7 @@ function CostPanel() {
                 className={`w-full rounded-t ${b.tone} opacity-90 hover:opacity-100 transition`}
                 style={{ height: `${b.height}%` }}
               />
-              <div className="text-[11px] font-mono font-extrabold text-ink">{b.month}</div>
+              <div className="text-[0.6875rem] font-mono font-extrabold text-ink">{b.month}</div>
             </div>
           ))}
         </div>
@@ -516,8 +516,8 @@ function ComplaintList({ items }: { items: ComplaintRow[] }) {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] text-ink font-bold truncate">{title}</div>
-              <div className="text-[11px] text-ink-muted font-mono font-bold mt-1">{metaFor(c)}</div>
+              <div className="text-[0.8125rem] text-ink font-bold truncate">{title}</div>
+              <div className="text-[0.6875rem] text-ink-muted font-mono font-bold mt-1">{metaFor(c)}</div>
             </div>
             <StatusChip kind={chip.kind}>{chip.label}</StatusChip>
           </div>
@@ -559,16 +559,16 @@ function VehiclePanel({
     <>
       <div className="flex gap-4 mb-3.5 px-3 py-2.5 bg-surface-alt rounded-lg border border-line">
         <div className="text-center flex-1">
-          <div className="font-mono text-[22px] font-black text-success tracking-tight">{running}</div>
-          <div className="text-[11px] font-extrabold text-ink mt-0.5">운행중</div>
+          <div className="font-mono text-[1.375rem] font-black text-success tracking-tight">{running}</div>
+          <div className="text-[0.6875rem] font-extrabold text-ink mt-0.5">운행중</div>
         </div>
         <div className="text-center flex-1 border-x border-line">
-          <div className="font-mono text-[22px] font-black text-warn tracking-tight">{maint}</div>
-          <div className="text-[11px] font-extrabold text-ink mt-0.5">정비중</div>
+          <div className="font-mono text-[1.375rem] font-black text-warn tracking-tight">{maint}</div>
+          <div className="text-[0.6875rem] font-extrabold text-ink mt-0.5">정비중</div>
         </div>
         <div className="text-center flex-1">
-          <div className="font-mono text-[22px] font-black text-ink-muted tracking-tight">{idle}</div>
-          <div className="text-[11px] font-extrabold text-ink mt-0.5">대기</div>
+          <div className="font-mono text-[1.375rem] font-black text-ink-muted tracking-tight">{idle}</div>
+          <div className="text-[0.6875rem] font-extrabold text-ink mt-0.5">대기</div>
         </div>
       </div>
 
@@ -580,8 +580,8 @@ function VehiclePanel({
         )}
         {vehicles.map((v) => (
           <div key={v.no} className="bg-surface-alt border border-line rounded-lg p-2.5 text-center">
-            <div className="font-mono text-[13px] font-extrabold text-ink tracking-tight">{v.no}</div>
-            <div className="text-[11px] font-bold text-ink-muted mt-0.5">{v.type}</div>
+            <div className="font-mono text-[0.8125rem] font-extrabold text-ink tracking-tight">{v.no}</div>
+            <div className="text-[0.6875rem] font-bold text-ink-muted mt-0.5">{v.type}</div>
             <div className={`w-2 h-2 rounded-full mx-auto mt-1.5 ${dotClass[v.dot as keyof typeof dotClass] ?? dotClass.off}`} />
           </div>
         ))}
@@ -630,14 +630,14 @@ function PendingLeavePanel({
         return (
           <div key={r.id} className="border border-line rounded-lg p-3 bg-surface-soft hover:bg-white transition">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[15px] font-extrabold text-ink">{r.workerName}</span>
-              <span className="text-[10px] font-mono font-bold text-ink-muted">{r.employeeNo ?? '—'}</span>
-              <span className="ml-auto text-[10px] font-mono font-extrabold px-2 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-300">
+              <span className="text-[0.9375rem] font-extrabold text-ink">{r.workerName}</span>
+              <span className="text-[0.625rem] font-mono font-bold text-ink-muted">{r.employeeNo ?? '—'}</span>
+              <span className="ml-auto text-[0.625rem] font-mono font-extrabold px-2 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-300">
                 대기
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[10px]">
+              <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[0.625rem]">
                 {LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}
               </span>
               <span className="font-mono text-ink-muted">
@@ -646,7 +646,7 @@ function PendingLeavePanel({
               <span className="font-mono font-extrabold text-ink">{days}일</span>
             </div>
             {r.reason && (
-              <div className="text-[11px] text-ink-muted mt-1.5 line-clamp-1" title={r.reason}>
+              <div className="text-[0.6875rem] text-ink-muted mt-1.5 line-clamp-1" title={r.reason}>
                 {r.reason}
               </div>
             )}

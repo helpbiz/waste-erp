@@ -123,7 +123,7 @@ export default function WeatherAlertCard({
           <p className="text-xs font-bold text-ink-muted mt-0.5">기상 악화 시 카카오 알림톡으로 공지 발송</p>
         </div>
         {hazardLevel === 'DANGER' && !open && (
-          <span className="px-3 py-1 rounded-full text-[10px] font-mono font-extrabold bg-red-100 text-danger border border-danger animate-pulse">
+          <span className="px-3 py-1 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-100 text-danger border border-danger animate-pulse">
             ⚠ 위험기상 — 발송 권장
           </span>
         )}
@@ -154,11 +154,11 @@ export default function WeatherAlertCard({
             {showWorkerPicker && (
               <div className="mt-2 bg-surface rounded-lg border border-line p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-[11px] font-extrabold text-ink">직원 선택 ({selectedIds.size}/{workers.length})</div>
+                  <div className="text-[0.6875rem] font-extrabold text-ink">직원 선택 ({selectedIds.size}/{workers.length})</div>
                   <div className="flex gap-1.5">
-                    <button onClick={selectAll} className="text-[11px] font-extrabold text-accent hover:underline">전체</button>
+                    <button onClick={selectAll} className="text-[0.6875rem] font-extrabold text-accent hover:underline">전체</button>
                     <span className="text-ink-faint">·</span>
-                    <button onClick={selectNone} className="text-[11px] font-extrabold text-danger hover:underline">해제</button>
+                    <button onClick={selectNone} className="text-[0.6875rem] font-extrabold text-danger hover:underline">해제</button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-44 overflow-y-auto">
@@ -203,7 +203,7 @@ export default function WeatherAlertCard({
                       <span>{t.label}</span>
                     </span>
                     <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selected ? 'bg-current text-white border-current' : 'border-line'}`}>
-                      {selected && <span className="text-[10px] font-extrabold">✓</span>}
+                      {selected && <span className="text-[0.625rem] font-extrabold">✓</span>}
                     </span>
                   </button>
                 );
@@ -225,7 +225,7 @@ export default function WeatherAlertCard({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <div className="text-[11px] font-extrabold text-ink mb-1.5">📢 [기상 안전 알림 내용]</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">📢 [기상 안전 알림 내용]</div>
                 <textarea
                   rows={9}
                   value={message}
@@ -233,25 +233,25 @@ export default function WeatherAlertCard({
                   placeholder={type === 'ETC' ? '발송할 메시지를 직접 입력해 주세요.' : ''}
                   className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none whitespace-pre-wrap"
                 />
-                <div className="flex justify-between mt-1.5 text-[10px] font-mono font-bold text-ink-muted">
+                <div className="flex justify-between mt-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">
                   <span>{message.length} 자</span>
                   <span>{message.length > 1000 ? '⚠ 1000자 초과 — 알림톡 권장 길이 초과' : ''}</span>
                 </div>
               </div>
               <aside className="bg-surface-alt rounded-lg border border-line p-4">
                 <div className="text-xs font-extrabold text-ink mb-3 pb-2 border-b border-line">전송 요약</div>
-                <dl className="space-y-2.5 text-[13px]">
+                <dl className="space-y-2.5 text-[0.8125rem]">
                   <div className="flex justify-between"><dt className="font-bold text-ink-muted">유형</dt><dd className="font-extrabold text-ink">{WEATHER_ALERT_LABEL[type]}</dd></div>
                   <div className="flex justify-between"><dt className="font-bold text-ink-muted">대상</dt><dd className="font-extrabold text-info">{selectedIds.size}명</dd></div>
                   <div className="font-bold text-ink-muted">발송방식</div>
                   <div className="flex flex-col gap-1">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="radio" checked={schedule === 'IMMEDIATE'} onChange={() => setSchedule('IMMEDIATE')} className="accent-accent" />
-                      <span className="text-[13px] font-extrabold text-ink">⦿ 즉시발송</span>
+                      <span className="text-[0.8125rem] font-extrabold text-ink">⦿ 즉시발송</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer opacity-60">
                       <input type="radio" checked={schedule === 'RESERVED'} onChange={() => setSchedule('RESERVED')} disabled className="accent-accent" />
-                      <span className="text-[13px] font-bold text-ink-muted">○ 예약발송 (예정)</span>
+                      <span className="text-[0.8125rem] font-bold text-ink-muted">○ 예약발송 (예정)</span>
                     </label>
                   </div>
                 </dl>
@@ -265,7 +265,7 @@ export default function WeatherAlertCard({
           {result && (
             <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-md px-3 py-2.5 text-xs font-extrabold text-success">
               ✓ {result.sent}/{result.total}명에게 발송 완료
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono ${result.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-[0.625rem] font-mono ${result.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
                 provider={result.provider}
               </span>
             </div>

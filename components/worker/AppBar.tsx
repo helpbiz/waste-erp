@@ -32,7 +32,7 @@ export function AppBar({ title, subtitle, leading, trailing, userName: _userName
           <div className="text-lg font-extrabold leading-tight truncate">{title}</div>
           {subtitle && (
             /* P1: 11px → 13px, cyan-300 (#67e8f9) on sidebar = 8.5:1 AAA OK */
-            <div className="text-[13px] font-mono font-bold text-cyan-300 mt-0.5 truncate">
+            <div className="text-[0.8125rem] font-mono font-bold text-cyan-300 mt-0.5 truncate">
               {subtitle}
             </div>
           )}

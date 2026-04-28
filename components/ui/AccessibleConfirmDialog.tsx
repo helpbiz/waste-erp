@@ -105,7 +105,7 @@ export default function AccessibleConfirmDialog({
 
       {/* Panel — 본문 18px, 제목 22px, 패딩 24px */}
       <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-modal p-6 sm:p-7">
-        <h2 id="acd-title" className="text-xl sm:text-[22px] font-extrabold text-ink-mid leading-snug">
+        <h2 id="acd-title" className="text-xl sm:text-[1.375rem] font-extrabold text-ink-mid leading-snug">
           {title}
         </h2>
 

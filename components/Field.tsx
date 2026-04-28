@@ -12,7 +12,7 @@ type FieldProps = {
   labelClassName?: string;
 };
 
-const DEFAULT_LABEL_CN = 'block text-[11px] font-extrabold text-ink mb-1.5 tracking-wide';
+const DEFAULT_LABEL_CN = 'block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide';
 
 /** 다중 children 중 첫 form element(input/select/textarea)에 id 주입 — 라벨 association */
 function injectIdIntoFirstFormElement(children: ReactNode, id: string): ReactNode {
@@ -45,7 +45,7 @@ export function Field({
         {required && <span className="text-danger ml-1">*</span>}
       </label>
       {injectIdIntoFirstFormElement(children, fallbackId)}
-      {hint && <span className="text-[10px] font-mono text-ink-muted mt-1 block">{hint}</span>}
+      {hint && <span className="text-[0.625rem] font-mono text-ink-muted mt-1 block">{hint}</span>}
     </div>
   );
 }

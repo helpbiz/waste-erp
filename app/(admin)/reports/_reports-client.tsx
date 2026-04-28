@@ -110,20 +110,20 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
       {/* 컨트롤 (인쇄 시 숨김) */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="시작일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="종료일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div className="flex items-end gap-1">
-          <button onClick={() => quick('thisMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[11px] font-bold hover:bg-slate-50">이번 달</button>
-          <button onClick={() => quick('lastMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[11px] font-bold hover:bg-slate-50">전월</button>
-          <button onClick={() => quick('thisYear')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[11px] font-bold hover:bg-slate-50">올해</button>
-          <button onClick={() => quick('lastYear')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[11px] font-bold hover:bg-slate-50">전년</button>
+          <button onClick={() => quick('thisMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-slate-50">이번 달</button>
+          <button onClick={() => quick('lastMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-slate-50">전월</button>
+          <button onClick={() => quick('thisYear')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-slate-50">올해</button>
+          <button onClick={() => quick('lastYear')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-slate-50">전년</button>
         </div>
         <button onClick={load} disabled={loading}
           className="px-4 py-1.5 rounded text-sm font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-50">
@@ -141,7 +141,7 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
         <div className="bg-white border-t-4 border-double border-slate-700 pt-4 px-4 print:px-2 print:pt-0">
           <h1 className="text-3xl font-black text-center mb-1">통합 운영 보고서</h1>
           <div className="text-center text-sm font-bold text-slate-600 mb-1">{data.range.from} ~ {data.range.to}</div>
-          <div className="text-center text-[11px] font-mono text-slate-600 mb-6">
+          <div className="text-center text-[0.6875rem] font-mono text-slate-600 mb-6">
             출력자: {session.name} ({ROLE_LABEL[session.role]}) · 출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
 
@@ -335,18 +335,18 @@ function Section({ no, title, color, children }: { no: number; title: string; co
 }
 
 function Card({ title, children, cls = '' }: { title: string; children: React.ReactNode; cls?: string }) {
-  /* 내용 1단계 다운 — sub title text-xs 12px → text-[11px] */
+  /* 내용 1단계 다운 — sub title text-xs 12px → text-[0.6875rem] */
   return (
     <div className={`bg-surface border border-line rounded p-3 ${cls}`}>
-      <div className="text-[11px] font-extrabold text-ink mb-2">{title}</div>
+      <div className="text-[0.6875rem] font-extrabold text-ink mb-2">{title}</div>
       <div className="space-y-1">{children}</div>
     </div>
   );
 }
 
 function Empty() {
-  /* 내용 1단계 다운 — text-xs 12px → text-[11px] */
-  return <div className="text-[11px] text-slate-700 text-center py-3">데이터 없음</div>;
+  /* 내용 1단계 다운 — text-xs 12px → text-[0.6875rem] */
+  return <div className="text-[0.6875rem] text-slate-700 text-center py-3">데이터 없음</div>;
 }
 
 function KCard({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
@@ -367,13 +367,13 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
 }
 
 function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: string; value: number; max: number; suffix: string; color?: string }) {
-  /* 내용 1단계 다운 — BarRow label text-[11px] → text-[10px] */
+  /* 내용 1단계 다운 — BarRow label text-[0.6875rem] → text-[0.625rem] */
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-[120px] text-[10px] font-bold text-ink truncate">{label}</div>
+      <div className="w-[120px] text-[0.625rem] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-4 overflow-hidden">
-        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[9px] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
+        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.5625rem] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
           {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(2) : value}{suffix}
         </div>
       </div>
