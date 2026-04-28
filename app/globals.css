@@ -14,6 +14,12 @@
 
 :root { color-scheme: light; }
 
+/* 사용자 요청 2026-04-29: 앱 전체 폰트 12.5% 일괄 확대 (시니어/외부 가독성).
+   기본 16px → 18px. 모든 rem 기반 Tailwind 사이즈 (text-xs~text-9xl, p-*, m-*, gap-* 등)
+   가 자동으로 비율 유지하며 커짐. 고정 px(text-[10px] 등)는 영향 없음.
+   admin/worker/citizen/login 모든 페이지 일괄 적용. */
+html { font-size: 18px; }
+
 html, body { height: 100%; }
 body {
   /* Pretendard 우선, fallback chain. 한글 본문 가독성 ↑ */
