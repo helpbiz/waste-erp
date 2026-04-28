@@ -160,7 +160,9 @@ function LoginInner() {
       }}
     >
       <div className="absolute inset-0 flex items-center justify-center px-4">
-       <div className="w-full max-w-[400px]">
+       {/* 사용자 요청 2026-04-29: 줌 잠금 후 작아 보이는 문제 — 카드 폭 + 내부 요소 한 단계 업.
+           로고는 LOCK 정책으로 변경 X. */}
+       <div className="w-full max-w-[460px]">
         {/* 🔒 LOGO LOCK — 사용자 명시 요청 2026-04-29.
             이 로고는 변경 금지. src 경로 / alt 텍스트 / 사이즈 절대 수정 X.
             동일 자산: app/(auth)/consent/_consent-client.tsx 도 동일하게 고정 유지. */}
@@ -173,10 +175,10 @@ function LoginInner() {
           />
         </div>
 
-        {/* 카드 */}
+        {/* 카드 — padding/요소 한 단계 키움 */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-5 sm:p-8"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-6 sm:p-10"
         >
           <input
             type="text"
@@ -186,8 +188,8 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            /* font-size 16px 이상 — iOS Safari focus 시 zoom 방지 */
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
+            /* font-size 18px (text-lg) — iOS Safari focus 시 zoom 방지 + 가독성 ↑. py-4 로 높이 64px */
+            className="w-full px-5 py-4 rounded-lg border-2 border-slate-200 text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-4"
           />
 
           <div className="relative mb-2">
@@ -197,8 +199,8 @@ function LoginInner() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="비밀번호"
-              /* font-size 16px 이상 — iOS Safari focus 시 zoom 방지 */
-              className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              /* font-size 18px (text-lg) */
+              className="w-full px-5 py-4 pr-14 rounded-lg border-2 border-slate-200 text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"
@@ -221,38 +223,38 @@ function LoginInner() {
           </div>
 
           {error && (
-            /* 에러 메시지 — AAA: 16px (text-base), red-800 on red-50 = 8.6:1 (P0-7) */
+            /* 에러 메시지 — 18px (text-lg) 한 단계 업, red-800 on red-50 = 8.6:1 AAA */
             <div
               role="alert"
               aria-live="polite"
-              className="mt-3 px-4 py-3 rounded-lg bg-red-50 border-2 border-red-300 text-base font-bold text-red-800"
+              className="mt-4 px-5 py-4 rounded-lg bg-red-50 border-2 border-red-300 text-lg font-bold text-red-800"
             >
               {error}
             </div>
           )}
 
-          {/* 로그인 CTA — AAA: 18px (text-lg), min-h-14 (56px), white on accent(#0e7490) = 5.2:1 + bold = OK */}
+          {/* 로그인 CTA — 20px (text-xl), min-h-16 (64px) */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-5 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-lg tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-6 min-h-16 py-4 rounded-lg bg-accent text-white font-extrabold text-xl tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* PWA 앱 설치 (보조 액션) — AAA: 16px (text-base), min-h-14, ink-mid on white = 15.3:1 */}
+          {/* PWA 앱 설치 (보조 액션) — 18px (text-lg), min-h-16 */}
           <button
             type="button"
             onClick={installApp}
             disabled={installed}
-            className="w-full mt-3 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-base hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full mt-3 min-h-16 py-4 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-lg hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {installed ? '✓ 앱 설치됨' : '앱으로 설치하기'}
           </button>
         </form>
 
-        {/* 푸터 — AAA: 14px (text-sm), white/85 = ~9:1 on dark gradient. 이전 10-11px white/50 (~6:1) AAA fail */}
-        <div className="text-center mt-4 sm:mt-6 text-sm font-semibold text-white/85">
+        {/* 푸터 — 16px (text-base) 한 단계 업 */}
+        <div className="text-center mt-5 sm:mt-7 text-base font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>
