@@ -1,7 +1,8 @@
-// Design Ref: docs/02-design/mobile-ux-overhaul.md §9.3 + pm-research §8 홈 메뉴 적용
-// Wave 3-A: Bento 대시보드 + 16px+ 타이포 + 56dp+ 메뉴 카드 + 명확한 근무 상태 pill
+// Design Ref: docs/02-design/mobile-nav-revisit.md (Option C — Tab 5 + 헤더 아바타)
+// Wave 4: 햄버거 제거. 자주 사용 메뉴는 탭바, 가끔 사용은 홈 그리드. 프로필은 헤더 아바타.
 import Link from 'next/link';
 import { readSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 import { getTodayAttendance } from '@/lib/attendance';
 import { formatHmKst } from '@/lib/dates';
 
@@ -12,10 +13,21 @@ export default async function WorkerHomePage() {
   const att = await getTodayAttendance(session);
   const me = att.isWorker ? att.me : null;
 
+  /* RAPID 직책만 추천경로 카드 노출 */
+  const userInfo = await prisma.user.findUnique({
+    where: { id: BigInt(session.userId) },
+    select: { position: { select: { code: true } } },
+  });
+  const isRapid = userInfo?.position?.code === 'RAPID';
+
   const checkedIn = !!me?.checkInTime;
   const checkedOut = !!me?.checkOutTime;
   const statusLabel = !checkedIn ? '출근 전' : checkedOut ? '근무 완료' : '근무 중';
-  const statusColor = !checkedIn ? 'bg-white/20 text-white' : checkedOut ? 'bg-green-400/30 text-green-100' : 'bg-yellow-400/30 text-yellow-100';
+  const statusColor = !checkedIn
+    ? 'bg-white/20 text-white'
+    : checkedOut
+    ? 'bg-green-400/30 text-green-100'
+    : 'bg-yellow-400/30 text-yellow-100';
 
   return (
     <div className="px-4 pt-4 pb-6 space-y-4">
@@ -33,9 +45,7 @@ export default async function WorkerHomePage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${statusColor}`}>
-            {statusLabel}
-          </span>
+          <span className={`px-3 py-1.5 rounded-full text-sm font-bold ${statusColor}`}>{statusLabel}</span>
           {checkedIn && me?.checkInTime && (
             <span className="text-sm text-cyan-100 font-medium">
               출근 {formatHmKst(new Date(me.checkInTime))}
@@ -47,41 +57,42 @@ export default async function WorkerHomePage() {
         </div>
       </div>
 
-      {/* 메뉴 카드 grid 2열 — Bento 패턴, min-h-[100px] 큰 터치 타겟 */}
-      <div className="grid grid-cols-2 gap-3">
-        <MenuCard
-          href="/worker/punch"
-          color="bg-accent"
-          title="출퇴근"
-          desc="GPS 출퇴근 등록"
-          iconPath="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-        <MenuCard
-          href="/worker/complaint"
-          color="bg-warn"
-          title="민원 등록"
-          desc="현장 사진 첨부"
-          iconPath="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-        <MenuCard
-          href="/worker/safety"
-          color="bg-success"
-          title="안전점검"
-          desc="일일 체크리스트"
-          iconPath="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-        />
-        <MenuCard
-          href="/worker/leave"
-          color="bg-info"
-          title="휴가 신청"
-          desc="잔여 연차 · 신청"
-          iconPath="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </div>
+      {/* 기타 메뉴 그리드 — 햄버거 Drawer 대체. 가끔 사용 메뉴 1탭 진입.
+          (자주 사용 메뉴는 탭바에 있음. 프로필은 헤더 아바타 클릭) */}
+      <section>
+        <div className="px-1 mb-2 text-xs font-extrabold text-ink-muted tracking-widest">기타 메뉴</div>
+        <div className="grid grid-cols-2 gap-3">
+          {isRapid && (
+            <MenuCard
+              href="/worker/route"
+              color="bg-cyan-600"
+              title="추천경로"
+              desc="기동반 전용 경로"
+              iconPath="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+            />
+          )}
+          <MenuCard
+            href="/worker/leave"
+            color="bg-info"
+            title="휴가 신청"
+            desc="잔여 연차 · 신청"
+            iconPath="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+          <MenuCard
+            href="/worker/profile"
+            color="bg-slate-700"
+            title="내 프로필"
+            desc="사진 · 서명 · 로그아웃"
+            iconPath="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </div>
+      </section>
 
-      {/* 안내 카드 — 12px 이상 가독성 보장 */}
+      {/* 안내 카드 */}
       <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed flex items-start gap-2">
-        <span aria-hidden className="text-base flex-shrink-0">🔒</span>
+        <span aria-hidden className="text-base flex-shrink-0">
+          🔒
+        </span>
         <span>GPS 좌표는 PIPA 준수를 위해 ~10m 격자 라운딩 + 90일 후 자동 폐기됩니다.</span>
       </div>
     </div>
