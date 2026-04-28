@@ -11,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -115,15 +116,17 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'CONTRACTOR_CREATE',
-      resourceType: 'contractor',
-      resourceId: created.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { companyName: b.companyName, municipality: muni.name } as object,
+  /* SUPER cross-tenant — 신규 contractor의 muni 명시 기록 */
+  await writeAudit(req, session, {
+    action: 'CONTRACTOR_CREATE',
+    resourceType: 'contractor',
+    resourceId: created.id.toString(),
+    contractorId: created.id,
+    municipalityId: muni.id,
+    metadata: {
+      companyName: b.companyName,
+      municipality: muni.name,
+      crossTenant: true,
     },
   });
 

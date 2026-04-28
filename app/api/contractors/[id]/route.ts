@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -28,7 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const id = BigInt(params.id);
   const target = await prisma.contractor.findUnique({
     where: { id },
-    select: { id: true, companyName: true },
+    select: { id: true, companyName: true, municipalityId: true },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
@@ -52,15 +53,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await prisma.contractor.update({ where: { id }, data });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'CONTRACTOR_UPDATE',
-      resourceType: 'contractor',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { fields: Object.keys(b) } as object,
+  /* SUPER cross-tenant 작업 — 작업 대상 contractor/muni를 audit_log에 명시 기록 */
+  await writeAudit(req, session, {
+    action: 'CONTRACTOR_UPDATE',
+    resourceType: 'contractor',
+    resourceId: id.toString(),
+    contractorId: id,
+    municipalityId: target.municipalityId,
+    metadata: {
+      fields: Object.keys(b),
+      crossTenant: true,
+      targetCompany: target.companyName,
     },
   });
 
@@ -106,15 +109,16 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
   await prisma.contractor.delete({ where: { id } });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'CONTRACTOR_DELETE',
-      resourceType: 'contractor',
-      resourceId: id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: { companyName: target.companyName } as object,
+  /* SUPER cross-tenant DELETE — 어느 muni 산하 contractor가 사라졌는지 추적 */
+  await writeAudit(req, session, {
+    action: 'CONTRACTOR_DELETE',
+    resourceType: 'contractor',
+    resourceId: id.toString(),
+    contractorId: id,
+    municipalityId: target.municipalityId,
+    metadata: {
+      companyName: target.companyName,
+      crossTenant: true,
     },
   });
 
