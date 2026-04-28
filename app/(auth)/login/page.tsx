@@ -52,6 +52,37 @@ function LoginInner() {
     };
   }, []);
 
+  /* 사용자 요청 2026-04-29: 핀치 줌 / 더블탭 줌 / iOS gesture 모두 JS 레벨에서 차단.
+     (최신 Android Chrome 은 viewport user-scalable=no 를 접근성 우선으로 무시하므로
+      추가 layer 필요.) 마운트 시에만 등록, 언마운트 시 정확히 제거. */
+  useEffect(() => {
+    const blockMultiTouch = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    const blockGesture = (e: Event) => e.preventDefault();
+    const blockDblTapZoom = (() => {
+      let last = 0;
+      return (e: TouchEvent) => {
+        const now = Date.now();
+        if (now - last < 300) e.preventDefault();
+        last = now;
+      };
+    })();
+    /* passive: false 필수 — iOS 에서 preventDefault 를 작동시키려면 명시 필요 */
+    document.addEventListener('touchmove', blockMultiTouch, { passive: false });
+    document.addEventListener('touchend', blockDblTapZoom, { passive: false });
+    document.addEventListener('gesturestart', blockGesture);
+    document.addEventListener('gesturechange', blockGesture);
+    document.addEventListener('gestureend', blockGesture);
+    return () => {
+      document.removeEventListener('touchmove', blockMultiTouch);
+      document.removeEventListener('touchend', blockDblTapZoom);
+      document.removeEventListener('gesturestart', blockGesture);
+      document.removeEventListener('gesturechange', blockGesture);
+      document.removeEventListener('gestureend', blockGesture);
+    };
+  }, []);
+
   async function installApp() {
     if (!installEvt) {
       alert(
@@ -122,7 +153,8 @@ function LoginInner() {
         inset: 0,
         background:
           'radial-gradient(circle at 20% 0%, #0e7490 0%, #164e63 45%, #0f172a 100%)',
-        touchAction: 'manipulation',
+        /* touch-action: pan-y → 핀치 줌 + 더블탭 줌 모두 차단, 세로 스크롤만 허용 (input focus 시 키패드 등장) */
+        touchAction: 'pan-y',
         overflow: 'hidden',
         overscrollBehavior: 'none',
       }}
