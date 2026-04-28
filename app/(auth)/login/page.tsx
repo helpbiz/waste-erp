@@ -25,6 +25,7 @@ function LoginInner() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberId, setRememberId] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallEvent | null>(null);
@@ -38,6 +39,17 @@ function LoginInner() {
       setInstalled(true);
     }
     return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  /* 사용자 요청 2026-04-29: 아이디 기억하기 — localStorage 보존.
+     비밀번호는 절대 저장 안 함 (보안). */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('cleanerp:rememberedUsername');
+    if (saved) {
+      setUsername(saved);
+      setRememberId(true);
+    }
   }, []);
 
   /* 로그인 화면 마운트 시 body scroll 잠금 — 외부 컨텐츠 스크롤 차단으로 화면 고정 */
@@ -105,6 +117,11 @@ function LoginInner() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    /* 아이디 기억하기 — 체크 시 localStorage 저장 / 해제 시 삭제 */
+    if (typeof window !== 'undefined') {
+      if (rememberId) localStorage.setItem('cleanerp:rememberedUsername', username.trim());
+      else localStorage.removeItem('cleanerp:rememberedUsername');
+    }
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -159,25 +176,23 @@ function LoginInner() {
         overscrollBehavior: 'none',
       }}
     >
-      <div className="absolute inset-0 flex items-center justify-center px-4 overflow-y-auto py-6">
-       {/* 사용자 요청 2026-04-29 v4: 너무 컸음 — 원래 사이즈로 회귀. root 30px 가 자동으로 충분 확대. */}
-       <div className="w-full max-w-[460px]">
-        {/* 🔒 LOGO LOCK — 사용자 명시 요청 2026-04-29.
-            이 로고는 변경 금지. src 경로 / alt 텍스트 / 사이즈 절대 수정 X.
-            동일 자산: app/(auth)/consent/_consent-client.tsx 도 동일하게 고정 유지. */}
-        <div className="flex justify-center mb-4 sm:mb-8">
+      <div className="absolute inset-0 flex items-center justify-center px-4 overflow-y-auto py-4">
+       {/* 사용자 요청 2026-04-29 v5: 가로 ↑ / 세로 ↓ — 가로로 더 넓고 위아래 짧게. */}
+       <div className="w-full max-w-[600px]">
+        {/* 🔒 LOGO LOCK */}
+        <div className="flex justify-center mb-3 sm:mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/logo-horizontal-dark.svg"
             alt="공비랩 Clean ERP"
-            className="block w-[200px] sm:w-[300px] h-auto drop-shadow-lg"
+            className="block w-[200px] sm:w-[280px] h-auto drop-shadow-lg"
           />
         </div>
 
-        {/* 카드 — v4: 원래 컴팩트 사이즈 회귀. root 30px scale 이 자동 확대 처리 */}
+        {/* 카드 — v5: 세로 패딩 컴팩트(p-4 sm:p-6) + 가로는 600px 카드폭으로 더 넓게 */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-5 sm:p-8"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-4 sm:p-6"
         >
           <input
             type="text"
@@ -187,10 +202,10 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-2.5"
           />
 
-          <div className="relative mb-2">
+          <div className="relative mb-2.5">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -219,22 +234,32 @@ function LoginInner() {
             </button>
           </div>
 
+          {/* 사용자 요청 2026-04-29: 아이디 기억하기 체크박스 (비밀번호와 로그인 버튼 사이) */}
+          <label className="flex items-center gap-2 mt-1 mb-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={rememberId}
+              onChange={(e) => setRememberId(e.target.checked)}
+              className="w-5 h-5 accent-accent cursor-pointer"
+            />
+            <span className="text-sm font-semibold text-slate-700">아이디 기억하기</span>
+          </label>
+
           {error && (
-            /* 에러 메시지 — 원래 컴팩트, root 30px 자동 스케일 */
             <div
               role="alert"
               aria-live="polite"
-              className="mt-3 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-sm font-bold text-red-700"
+              className="mt-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm font-bold text-red-700"
             >
               {error}
             </div>
           )}
 
-          {/* 로그인 CTA — 원래 사이즈 (text-base + min-h-14) */}
+          {/* 로그인 CTA */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-5 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-base tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-3 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-base tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
@@ -244,14 +269,14 @@ function LoginInner() {
             type="button"
             onClick={installApp}
             disabled={installed}
-            className="w-full mt-2.5 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full mt-2 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {installed ? '✓ 앱 설치됨' : '앱으로 설치하기'}
           </button>
         </form>
 
         {/* 푸터 */}
-        <div className="text-center mt-3 sm:mt-6 text-xs font-semibold text-white/85">
+        <div className="text-center mt-2 sm:mt-3 text-xs font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>
