@@ -344,29 +344,21 @@ function RegisterTab({
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
             <tr>
-              {/* 사용자 요청 2026-04-29: 컬럼명 중앙정렬, 우측 액션 컬럼명 "상태변경" 부여. */}
+              {/* 사용자 요청 2026-04-29 v2: 권한/직책 컬럼 제거 — 이름/아이디/상태 + 상태변경만 */}
               <th className="px-3 py-2 text-center">이름</th>
               <th className="px-3 py-2 text-center">아이디</th>
-              <th className="px-3 py-2 text-center">권한</th>
-              <th className="px-3 py-2 text-center">직책</th>
               <th className="px-3 py-2 text-center">상태</th>
               <th className="px-3 py-2 text-center">상태변경</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
+              <tr><td colSpan={4} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
                 <td className="px-3 py-2 font-bold text-ink text-sm">{u.name}</td>
                 <td className="px-3 py-2 font-mono text-xs">{u.username}</td>
-                <td className="px-3 py-2"><RoleBadge role={u.role} /></td>
-                <td className="px-3 py-2">
-                  {u.position
-                    ? <PositionBadge p={u.position} />
-                    : <span className="text-[0.625rem] font-mono text-slate-500">직책 미지정</span>}
-                </td>
                 <td className="px-3 py-2"><StatusBadge status={u.status} /></td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   {canManage && (

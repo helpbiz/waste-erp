@@ -478,8 +478,9 @@ function VehicleFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onCancel}>
-      <div className="w-full max-w-[540px] bg-surface rounded-xl shadow-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-2 sm:px-4" onClick={onCancel}>
+      {/* 사용자 요청 2026-04-29: 모달 폭 화면 가득 (이전 540px 고정 → max-w-2xl, mobile full width) */}
+      <div className="w-full max-w-2xl bg-surface rounded-xl shadow-modal max-h-[95vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <header className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} className="text-accent">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />

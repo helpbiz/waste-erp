@@ -78,39 +78,31 @@ export default function AttendanceClient({
         </div>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="근태 일별 현황 표">
         <table className="w-full min-w-[640px] text-sm">
+          {/* 사용자 요청 2026-04-29: 직원/출근/퇴근/상태만 표시 (부서/직책/유형/구역 컬럼 제거) */}
           <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2 text-left">직원</th>
-              <th className="px-3 py-2 text-left">부서</th>
-              <th className="px-3 py-2 text-left">직책</th>
               <th className="px-3 py-2 text-left">출근</th>
               <th className="px-3 py-2 text-left">퇴근</th>
-              <th className="px-3 py-2 text-left">유형</th>
-              <th className="px-3 py-2 text-left">구역</th>
               <th className="px-3 py-2 text-left">상태</th>
               {canManage && <th className="px-3 py-2 text-left">액션</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {rows.length === 0 && (
-              <tr><td colSpan={canManage ? 9 : 8} className="px-3 py-10 text-center text-slate-500">근로자가 없습니다.</td></tr>
+              <tr><td colSpan={canManage ? 5 : 4} className="px-3 py-10 text-center text-slate-500">근로자가 없습니다.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.workerId} className={`hover:bg-slate-50 ${!r.checkInTime ? 'bg-amber-50/30' : ''}`}>
                 <td className="px-3 py-2">
-                  {/* 사번은 리스트에서 숨김 (사용자 피드백 2026-04-28, health 페이지와 동일 패턴). */}
                   <div className="font-extrabold text-ink">{r.workerName}</div>
                 </td>
-                <td className="px-3 py-2 text-xs">{r.departmentName ?? '—'}</td>
-                <td className="px-3 py-2 text-xs">{r.positionLabel ?? '—'}</td>
                 <td className="px-3 py-2 font-mono font-extrabold text-base">
                   {r.checkInTime ? <span className="text-emerald-700">{fmtTime(r.checkInTime)}</span> : <span className="text-amber-600">—</span>}
                 </td>
                 <td className="px-3 py-2 font-mono font-extrabold text-base">
                   {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-slate-500">—</span>}
                 </td>
-                <td className="px-3 py-2 text-xs font-bold">{r.workType ? WORK_TYPE_LABEL[r.workType] ?? r.workType : '—'}</td>
-                <td className="px-3 py-2 text-xs">{r.zoneName ?? '—'}</td>
                 <td className="px-3 py-2">
                   {r.status ? (
                     <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border-2 ${

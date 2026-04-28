@@ -75,13 +75,14 @@ export default function PerformanceClient({
         <span className="text-xs font-mono font-bold text-slate-600">생활폐기물 처리실적 + 자원순환센터 반입실적</span>
       </div>
 
-      <div className="flex gap-1 border-b-2 border-line">
-        <TabButton active={tab === 'waste'} onClick={() => setTab('waste')}>처리실적 입력</TabButton>
-        <TabButton active={tab === 'intake'} onClick={() => setTab('intake')}>반입실적 입력</TabButton>
-        <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>실적 통계 / 출력</TabButton>
+      {/* 사용자 요청 2026-04-29: 탭 라벨 짧게 + 한 줄 (whitespace-nowrap) */}
+      <div className="flex gap-1 border-b-2 border-line whitespace-nowrap overflow-x-auto">
+        <TabButton active={tab === 'waste'} onClick={() => setTab('waste')}>처리입력</TabButton>
+        <TabButton active={tab === 'intake'} onClick={() => setTab('intake')}>반입입력</TabButton>
+        <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>실적통계</TabButton>
         <a href="/reports"
-          className="ml-auto px-4 py-3 text-[0.8125rem] font-extrabold text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 transition flex items-center gap-1">
-          📊 전체 통계/보고서 →
+          className="ml-auto px-4 py-3 text-[0.8125rem] font-extrabold text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 transition flex items-center gap-1 whitespace-nowrap">
+          보고서 →
         </a>
       </div>
 
@@ -172,19 +173,17 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         </div>
       </div>
 
-      {/* 입력 그리드 */}
+      {/* 입력 그리드 — 사용자 요청 2026-04-29: No/성상/입력(ton) 컬럼 축소, 비고/현재등록 제거, 기록자만 유지 */}
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full text-sm">
           <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
             <tr>
-              <th className="px-3 py-2 text-left w-[50px]">No</th>
-              <th className="px-3 py-2 text-left">성상</th>
-              <th className="px-3 py-2 text-right">현재 등록 (ton)</th>
-              <th className="px-3 py-2 text-left">입력 (ton)</th>
-              <th className="px-3 py-2 text-left">비고</th>
-              <th className="px-3 py-2 text-left">기록자</th>
-              <th className="px-3 py-2"></th>
+              <th className="px-2 py-2 text-center w-[36px]">No</th>
+              <th className="px-2 py-2 text-left w-[80px]">성상</th>
+              <th className="px-2 py-2 text-left w-[100px]">입력 (ton)</th>
+              <th className="px-2 py-2 text-left">기록자</th>
+              <th className="px-2 py-2 w-[64px]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -193,27 +192,19 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
               const draft = drafts[m.code] ?? { weight: '', note: '' };
               return (
                 <tr key={m.code} className={cur ? 'bg-emerald-50/30' : ''}>
-                  <td className="px-3 py-2 text-center font-mono font-extrabold text-slate-600">{idx + 1}</td>
-                  <td className="px-3 py-2 font-extrabold text-ink">{m.label}</td>
-                  <td className="px-3 py-2 text-right font-mono font-extrabold text-base">
-                    {cur ? <span className="text-emerald-700">{cur.weightTon.toFixed(3)}</span> : <span className="text-slate-300">—</span>}
-                  </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2 text-center font-mono font-extrabold text-slate-600">{idx + 1}</td>
+                  <td className="px-2 py-2 font-extrabold text-ink whitespace-nowrap">{m.label}</td>
+                  <td className="px-2 py-2">
+                    {/* 입력 박스 — 000.000 (7 chars) 폭에 맞춰 w-24 */}
                     <input type="number" step="0.001" value={draft.weight} disabled={!canEdit}
                       onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, weight: e.target.value } })}
-                      placeholder={cur ? `덮어쓰기 (현재 ${cur.weightTon})` : '0.000'}
-                      className="w-32 px-2 py-1 rounded border border-line text-sm font-mono font-bold disabled:bg-slate-50" />
+                      placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
+                      className="w-24 px-2 py-1 rounded border border-line text-sm font-mono font-bold text-right disabled:bg-slate-50" />
                   </td>
-                  <td className="px-3 py-2">
-                    <input value={draft.note} disabled={!canEdit}
-                      onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, note: e.target.value } })}
-                      placeholder="비고 (선택)"
-                      className="w-full px-2 py-1 rounded border border-line text-xs disabled:bg-slate-50" />
-                  </td>
-                  <td className="px-3 py-2 text-[0.625rem] text-slate-600">
+                  <td className="px-2 py-2 text-[0.625rem] text-slate-600 whitespace-nowrap">
                     {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     {canEdit && (
                       <button onClick={() => saveOne(m.code)} disabled={saving === m.code || !draft.weight}
                         className="px-3 py-1 rounded text-xs font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40">

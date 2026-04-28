@@ -211,31 +211,27 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
               return (
               <tr key={r.workerId} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                 <td className="px-3 py-2.5 border-b border-line">
-                  {/* 근로자 이름 클릭 → 직원정보(HealthFormModal) 진입.
-                      배지는 이름 밑에 (사용자 피드백 2026-04-28). 사번은 그 아래 유지. */}
-                  <button
-                    type="button"
-                    onClick={() => { setEditing(r); setError(null); }}
-                    className="text-left font-extrabold text-ink hover:text-accent hover:underline underline-offset-2 active:text-cyan-800 transition-colors"
-                    aria-label={`${r.workerName} 직원정보 보기`}
-                  >
-                    {r.workerName}
-                  </button>
-                  {rowLv === 'danger' && (
-                    <div className="mt-1">
+                  {/* 사용자 요청 2026-04-29: 이름과 배지 한 줄 표시 */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(r); setError(null); }}
+                      className="text-left font-extrabold text-ink hover:text-accent hover:underline underline-offset-2 active:text-cyan-800 transition-colors"
+                      aria-label={`${r.workerName} 직원정보 보기`}
+                    >
+                      {r.workerName}
+                    </button>
+                    {rowLv === 'danger' && (
                       <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-danger border border-red-300" title="표준치 위험 항목 있음">
                         위험
                       </span>
-                    </div>
-                  )}
-                  {rowLv === 'warn' && (
-                    <div className="mt-1">
+                    )}
+                    {rowLv === 'warn' && (
                       <span className="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-warn border border-amber-300" title="표준치 주의 항목 있음">
                         주의
                       </span>
-                    </div>
-                  )}
-                  {/* 사번은 리스트에서 제거 (사용자 피드백 2026-04-28). 모달(직원정보) 헤더에서는 계속 표시. */}
+                    )}
+                  </div>
                 </td>
                 <td className={`px-3 py-2.5 border-b border-line font-mono ${levelClass(bpLv)}`} title="정상 < 120/80 · 주의 120-139/80-89 · 위험 ≥ 140/90 (대한고혈압학회)">
                   {r.record?.bloodPressureSys && r.record?.bloodPressureDia

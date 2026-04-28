@@ -52,7 +52,8 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
   const [data, setData] = useState<PositionsResponse | null>(null);
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'map' | 'realmap' | 'heatmap' | 'route' | 'embed'>('map');
+  /* 사용자 요청 2026-04-29: 시안 그리드 + 외부 GIS embed 탭 숨김 → 기본 'realmap' 으로 변경 */
+  const [tab, setTab] = useState<'map' | 'realmap' | 'heatmap' | 'route' | 'embed'>('realmap');
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* 히트맵 */
@@ -159,9 +160,10 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
           {data && ` · ${data.refreshSec}초 폴링`}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          {/* 사용자 요청 2026-04-29: 즉시 갱신 버튼 앞 🔄 아이콘 제거 */}
           <button onClick={load}
             className="px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50">
-            🔄 즉시 갱신
+            즉시 갱신
           </button>
           {isSuperAdmin && (
             <a href="/super-admin"
@@ -181,13 +183,11 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
         <KCard label="정비중" value={maintCount} unit="대" tone="alert" />
       </div>
 
-      {/* 탭 */}
+      {/* 탭 — 사용자 요청 2026-04-29: 시안 그리드 + 외부 GIS embed 탭 숨김 */}
       <div className="flex gap-1 border-b-2 border-line">
-        <TabBtn active={tab === 'map'} onClick={() => setTab('map')}>🗺 시안 그리드</TabBtn>
         <TabBtn active={tab === 'realmap'} onClick={() => setTab('realmap')}>🌍 지도표시 (OSM)</TabBtn>
         <TabBtn active={tab === 'heatmap'} onClick={() => { setTab('heatmap'); if (!heatPoints) loadHeatmap(); }}>🔥 수거 히트맵</TabBtn>
         <TabBtn active={tab === 'route'} onClick={() => setTab('route')}>🛣 추천경로 계산</TabBtn>
-        <TabBtn active={tab === 'embed'} onClick={() => setTab('embed')}>🔗 외부 GIS embed</TabBtn>
       </div>
 
       {tab === 'map' && (

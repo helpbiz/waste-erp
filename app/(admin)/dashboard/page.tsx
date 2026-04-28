@@ -102,7 +102,7 @@ export default async function DashboardPage() {
       {/* Row 1: KPI 4 — mobile 2x2 / desktop 1x4 */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-3.5">
         <KpiCard
-          label="오늘 출근 현황"
+          label="출근현황"
           value={String(summary.checkedIn)}
           unit={`/ ${summary.totalWorkers}명`}
           change={`${presentRate >= 90 ? '+' : '-'} 출근율 ${presentRate}%`}
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
           iconPath="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
         />
         <KpiCard
-          label="금일 운행 차량"
+          label="운행차량"
           value={String(vehiclesRunning)}
           unit={`/ ${vehiclesTotal}대`}
           change={`정비중 ${vehiclesMaint} / 대기 ${vehiclesIdle}`}
@@ -139,8 +139,8 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* Row 2: 휴가신청대기 + 시스템 알림 (휴가는 권한 조건부, 미노출 시 알림이 full width) */}
-      <section className={`grid gap-3.5 ${showLeavePanel ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+      {/* 사용자 요청 2026-04-29: 휴가/알림/민원/차량 각각 한 줄 (1 col stack). md grid 제거. */}
+      <section className="grid grid-cols-1 gap-3.5">
         {showLeavePanel && (
           <Panel
             title={`휴가 신청 대기 (${pendingLeaveCount}건)`}
@@ -182,8 +182,8 @@ export default async function DashboardPage() {
         </Panel>
       </section>
 
-      {/* Row 4: 최근 민원 + 차량 현황 (원가 구성 카드 제거, 2 카드로 재구성) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      {/* Row 4: 최근 민원 + 차량 현황 — 각각 한 줄 (md grid 제거) */}
+      <section className="grid grid-cols-1 gap-3.5">
         <Panel
           title="최근 민원"
           action="전체 >"
