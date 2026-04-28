@@ -179,13 +179,14 @@ function LoginInner() {
       <div className="absolute inset-0 flex items-center justify-center px-4 overflow-y-auto py-4">
        {/* 사용자 요청 2026-04-29 v6: 가로 더 넓힘 + 입력칸 키움 + 글자 한 단계 업. */}
        <div className="w-full max-w-[720px]">
-        {/* 🔒 LOGO LOCK */}
+        {/* 🔒 LOGO LOCK — src/alt 보존, 사이즈는 사용자 명시 직접 요청 시만 변경.
+            2026-04-29 사용자 요청: 3단계 업 (200/280 → 320/440) */}
         <div className="flex justify-center mb-3 sm:mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/logo-horizontal-dark.svg"
             alt="공비랩 Clean ERP"
-            className="block w-[200px] sm:w-[280px] h-auto drop-shadow-lg"
+            className="block w-[320px] sm:w-[440px] h-auto drop-shadow-lg"
           />
         </div>
 
@@ -264,7 +265,7 @@ function LoginInner() {
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* 앱 설치 (보조) — 설치됨 상태에선 박스 제거 */}
+          {/* 앱 설치 (보조) — 박스 테두리 제거, 단순 텍스트 버튼 (사용자 요청 2026-04-29) */}
           {installed ? (
             <div className="text-center mt-2 text-base font-bold text-emerald-700">
               ✓ 앱 설치됨
@@ -273,7 +274,7 @@ function LoginInner() {
             <button
               type="button"
               onClick={installApp}
-              className="w-full mt-2 min-h-16 py-4 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-base hover:border-accent hover:text-accent active:bg-surface-soft transition-colors"
+              className="w-full mt-2 min-h-14 py-3 text-ink-mid font-bold text-base hover:text-accent active:text-cyan-800 transition-colors"
             >
               앱으로 설치하기
             </button>
