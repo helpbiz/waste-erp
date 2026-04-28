@@ -172,7 +172,7 @@ export default function ComplaintClient() {
             height={200}
           />
           {gps.kind !== 'ready' && (
-            <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[11px] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+            <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-xs font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
               {gps.kind === 'acquiring' && '📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)'}
               {gps.kind === 'error' && `⚠️ ${gps.message} — 지도에서 핀을 드래그해 위치 지정`}
               {gps.kind === 'idle' && '핀을 드래그해 발생 위치를 지정하세요'}
@@ -189,7 +189,7 @@ export default function ComplaintClient() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <div className="flex-1 text-[11px]">
+          <div className="flex-1 text-xs">
             {gps.kind === 'ready' && (
               <span className="font-mono font-bold text-ink">
                 {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
@@ -202,7 +202,7 @@ export default function ComplaintClient() {
           <button
             type="button"
             onClick={requestGps}
-            className="text-[10px] font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
+            className="text-xs font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
           >
             🎯 내 위치
           </button>

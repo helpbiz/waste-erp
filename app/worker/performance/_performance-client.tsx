@@ -177,11 +177,11 @@ function WasteTab() {
                   <span className="text-xl flex-shrink-0">{m.emoji}</span>
                   <span className="flex-1 text-sm font-extrabold text-ink">{m.label}</span>
                   {existing ? (
-                    <span className="text-[11px] font-mono font-bold text-emerald-700">
+                    <span className="text-xs font-mono font-bold text-emerald-700">
                       ✓ {Number(existing.weightTon).toFixed(2)}t
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono text-ink-muted">미입력</span>
+                    <span className="text-xs font-mono text-ink-muted">미입력</span>
                   )}
                 </div>
                 <div className="px-3 pb-2.5 flex gap-2">
@@ -404,7 +404,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
               <div key={it.id} className="bg-surface-soft border border-line rounded-md px-3 py-2 flex items-center gap-2 text-xs">
                 <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
                 <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
-                <span className="text-[11px] font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
+                <span className="text-xs font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
                 <span className="font-mono font-black text-accent flex-shrink-0">{Number(it.weightTon).toFixed(2)}t</span>
               </div>
             ))}
@@ -432,5 +432,5 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[11px] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-slate-600 mb-1'} />;
 }

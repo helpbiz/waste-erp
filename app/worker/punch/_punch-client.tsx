@@ -1,7 +1,10 @@
+// Wave 3-B: 출퇴근 — sticky CTA + 햅틱 + Toast + 44px+ GPS 재시도 버튼
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/Toast';
+import { hapticSuccess, hapticError, hapticLight } from '@/lib/haptics';
 
 type Initial = {
   checkInTime: string | null;
@@ -17,10 +20,10 @@ type GpsState =
 
 export default function PunchClient({ initial, workerName }: { initial: Initial; workerName: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [now, setNow] = useState(new Date());
   const [gps, setGps] = useState<GpsState>({ kind: 'idle' });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState(initial);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
       setGps({ kind: 'error', message: '이 브라우저는 위치 정보를 지원하지 않습니다.' });
       return;
     }
+    hapticLight();
     setGps({ kind: 'acquiring' });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -50,17 +54,15 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
         });
       },
       (err) => {
-        setGps({
-          kind: 'error',
-          message:
-            err.code === 1
-              ? '위치 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.'
-              : err.code === 2
-              ? '위치를 확인할 수 없습니다 (GPS 신호 약함).'
-              : err.code === 3
-              ? '위치 확인 시간이 초과되었습니다.'
-              : '위치 확인 중 오류가 발생했습니다.',
-        });
+        const message =
+          err.code === 1
+            ? '위치 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.'
+            : err.code === 2
+            ? '위치를 확인할 수 없습니다 (GPS 신호 약함).'
+            : err.code === 3
+            ? '위치 확인 시간이 초과되었습니다.'
+            : '위치 확인 중 오류가 발생했습니다.';
+        setGps({ kind: 'error', message });
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
     );
@@ -72,147 +74,152 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
 
   async function punch() {
     if (gps.kind !== 'ready') {
-      setError('GPS 위치를 먼저 확인해 주세요.');
+      toast.warning('GPS 위치를 먼저 확인해 주세요.');
       return;
     }
     setBusy(true);
-    setError(null);
     try {
       const url = phase === 'before-in' ? '/api/attendance/check-in' : '/api/attendance/check-out';
-      const body: Record<string, number> = { lat: gps.lat, lng: gps.lng };
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ lat: gps.lat, lng: gps.lng }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(translate(data?.error) ?? '서버 오류가 발생했습니다.');
+        hapticError();
+        toast.error(translate(data?.error) ?? '서버 오류가 발생했습니다.');
         return;
       }
+      hapticSuccess();
+      toast.success(phase === 'before-in' ? '출근 등록 완료' : '퇴근 등록 완료');
       setState((s) => ({
         ...s,
         checkInTime: data.record?.checkInTime ?? s.checkInTime,
         checkOutTime: data.record?.checkOutTime ?? s.checkOutTime,
       }));
-      router.refresh(); // 서버 컴포넌트(홈) 동기화
+      router.refresh();
     } catch {
-      setError('네트워크 오류가 발생했습니다.');
+      hapticError();
+      toast.error('네트워크 오류가 발생했습니다.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="px-4 py-5 space-y-4">
+    <div className="px-4 py-4 pb-24 space-y-4">
       <div className="px-1">
-        <h1 className="text-xl font-black text-ink">출퇴근 등록</h1>
-        <div className="font-mono text-sm font-bold text-ink-muted mt-1">{fmtClock(now)}</div>
+        <h1 className="text-2xl font-black text-ink">출퇴근 등록</h1>
+        <div className="font-mono text-base font-bold text-ink-muted mt-1">{fmtClock(now)}</div>
       </div>
 
       {/* 상태 카드 */}
-      <div className="bg-surface rounded-xl border border-line shadow-card p-5">
+      <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
         <div className="grid grid-cols-2 gap-3">
           <Box label="출근">
             {state.checkInTime ? (
-              <span className="font-mono text-2xl font-black text-success">{hm(state.checkInTime)}</span>
+              <span className="font-mono text-3xl font-black text-success">{hm(state.checkInTime)}</span>
             ) : (
-              <span className="font-mono text-xl font-extrabold text-ink-muted">—</span>
+              <span className="font-mono text-2xl font-extrabold text-ink-muted">—</span>
             )}
           </Box>
           <Box label="퇴근">
             {state.checkOutTime ? (
-              <span className="font-mono text-2xl font-black text-info">{hm(state.checkOutTime)}</span>
+              <span className="font-mono text-3xl font-black text-info">{hm(state.checkOutTime)}</span>
             ) : (
-              <span className="font-mono text-xl font-extrabold text-ink-muted">—</span>
+              <span className="font-mono text-2xl font-extrabold text-ink-muted">—</span>
             )}
           </Box>
         </div>
         {state.zoneName && (
-          <div className="mt-4 pt-3 border-t border-line text-xs font-bold text-ink-muted">
+          <div className="mt-4 pt-3 border-t border-line text-sm font-bold text-ink-muted">
             담당 구역 · <span className="text-ink font-extrabold">{state.zoneName}</span>
           </div>
         )}
       </div>
 
       {/* GPS 상태 */}
-      <div className="bg-surface rounded-xl border border-line shadow-card p-4">
+      <div className="bg-surface rounded-2xl border border-line shadow-card p-4">
         <div className="flex items-start gap-3">
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
               gps.kind === 'ready' ? 'bg-green-100' : gps.kind === 'error' ? 'bg-red-100' : 'bg-amber-100'
             }`}
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
               className={gps.kind === 'ready' ? 'text-success' : gps.kind === 'error' ? 'text-danger' : 'text-warn'}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
               <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-extrabold text-ink">
+            <div className="text-base font-extrabold text-ink">
               {gps.kind === 'idle' && 'GPS 위치 확인 대기'}
               {gps.kind === 'acquiring' && 'GPS 위치 확인 중…'}
               {gps.kind === 'ready' && '위치 확인 완료'}
               {gps.kind === 'error' && '위치 확인 실패'}
             </div>
             {gps.kind === 'ready' && (
-              <div className="font-mono text-xs text-ink-muted font-bold mt-1">
+              <div className="font-mono text-sm text-ink-muted font-bold mt-1">
                 {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E · 정확도 ±{Math.round(gps.accuracy)}m
               </div>
             )}
-            {gps.kind === 'error' && <div className="text-xs text-danger font-bold mt-1">{gps.message}</div>}
+            {gps.kind === 'error' && <div className="text-sm text-danger font-bold mt-1 leading-snug">{gps.message}</div>}
           </div>
-          <button
-            onClick={requestGps}
-            disabled={gps.kind === 'acquiring'}
-            className="px-3 py-1.5 rounded-md border border-line text-xs font-extrabold text-ink hover:bg-surface-soft active:scale-95 transition disabled:opacity-50"
-          >
-            ↻ 재시도
-          </button>
         </div>
+        {/* 재시도 버튼 — 44px+ 풀-너비 */}
+        <button
+          type="button"
+          onClick={requestGps}
+          disabled={gps.kind === 'acquiring'}
+          className="mt-3 w-full min-h-11 rounded-xl border border-line text-sm font-extrabold text-ink active:bg-surface-soft transition-colors disabled:opacity-50"
+        >
+          ↻ GPS 위치 다시 확인
+        </button>
       </div>
 
-      {/* 큰 액션 버튼 */}
-      {phase !== 'done' ? (
-        <button
-          onClick={punch}
-          disabled={busy || gps.kind !== 'ready'}
-          className={`w-full py-6 rounded-2xl text-white text-xl font-black shadow-card transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 ${
-            phase === 'before-in' ? 'bg-success hover:bg-green-700' : 'bg-info hover:bg-blue-700'
-          }`}
-        >
-          {busy
-            ? '처리 중…'
-            : phase === 'before-in'
-            ? `${workerName}님, 출근 등록`
-            : `${workerName}님, 퇴근 등록`}
-        </button>
-      ) : (
-        <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-xl px-5 py-4 text-center">
-          <div className="text-base font-extrabold text-success">오늘 근무 완료 ✓</div>
-          <div className="text-xs font-bold text-ink-muted mt-1">총 {workedDuration(state)} 근무하셨습니다.</div>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-xs font-bold text-red-700">
-          {error}
+      {phase === 'done' && (
+        <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-2xl px-5 py-4 text-center">
+          <div className="text-lg font-extrabold text-success">오늘 근무 완료 ✓</div>
+          <div className="text-sm font-bold text-ink-muted mt-1">총 {workedDuration(state)} 근무하셨습니다.</div>
         </div>
       )}
 
       {/* 안내 */}
-      <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
+      <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-xl px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed">
         <strong className="font-extrabold">출퇴근 등록 안내</strong> · 출근 시각은 자동으로 KST 기준 저장됩니다. 06:00 이후 출근은 지각으로 분류되며, 관리자 조정 후 임금이 반영됩니다.
       </div>
+
+      {/* Sticky CTA — 풀-너비 56dp+ + 햅틱 */}
+      {phase !== 'done' && (
+        <div
+          className="fixed left-0 right-0 bottom-16 bg-surface border-t border-line shadow-[0_-4px_12px_rgba(0,0,0,0.08)] px-4 py-3"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)', bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+        >
+          <button
+            onClick={punch}
+            disabled={busy || gps.kind !== 'ready'}
+            className={`w-full min-h-14 px-5 rounded-2xl text-white text-lg font-black shadow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 ${
+              phase === 'before-in' ? 'bg-success active:bg-green-700' : 'bg-info active:bg-blue-700'
+            }`}
+          >
+            {busy
+              ? '처리 중…'
+              : phase === 'before-in'
+              ? `${workerName}님, 출근 등록`
+              : `${workerName}님, 퇴근 등록`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 function Box({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface-alt rounded-lg border border-line p-3 text-center">
-      <div className="text-[11px] font-extrabold text-ink-muted tracking-widest mb-1">{label}</div>
+    <div className="bg-surface-alt rounded-xl border border-line p-3 text-center">
+      <div className="text-xs font-extrabold text-ink-muted tracking-widest mb-1">{label}</div>
       {children}
     </div>
   );
