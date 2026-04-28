@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
+import { roundCoord } from '@/lib/geo';
 import { complaintWhere, isOverdue } from '@/lib/complaints';
+import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -93,8 +95,8 @@ export async function POST(req: Request) {
       type: b.type,
       description: b.description ?? null,
       complainantPhone: b.complainantPhone || null,
-      locationLat: b.locationLat ?? null,
-      locationLng: b.locationLng ?? null,
+      locationLat: roundCoord(b.locationLat),
+      locationLng: roundCoord(b.locationLng),
       locationAddress: b.locationAddress ?? null,
       zoneId: b.zoneId !== undefined ? BigInt(b.zoneId) : null,
       requestImage: imageBlob,
@@ -103,20 +105,16 @@ export async function POST(req: Request) {
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId),
-      actorRole: session.role,
-      action: 'COMPLAINT_CREATE',
-      resourceType: 'complaint',
-      resourceId: created.id.toString(),
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      metadata: {
-        type: b.type,
-        lat: b.locationLat,
-        lng: b.locationLng,
-        photoCount: b.requestImages?.length ?? (b.requestImage ? 1 : 0),
-      } as object,
+  await writeAudit(req, session, {
+    action: 'COMPLAINT_CREATE',
+    resourceType: 'complaint',
+    resourceId: created.id.toString(),
+    contractorId,
+    metadata: {
+      type: b.type,
+      lat: roundCoord(b.locationLat),
+      lng: roundCoord(b.locationLng),
+      photoCount: b.requestImages?.length ?? (b.requestImage ? 1 : 0),
     },
   });
 

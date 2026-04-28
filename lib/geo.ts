@@ -47,3 +47,15 @@ export function bbox(points: LatLng[]): { sw: LatLng; ne: LatLng; center: LatLng
     center: { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 },
   };
 }
+
+/* P0-residual: PIPA 위치정보 보호 — 작성 시점에 4자리 라운딩 (~10m 격자)
+   - 작업자 거주지·이동패턴 추론 차단
+   - 추천경로 알고리즘은 ~10m 정확도면 충분 (도시 도로 단위)
+   - 운영 코드는 항상 roundCoord() 통과 후 DB 저장 권장 */
+export const COORD_PRECISION = 4 as const;
+
+export function roundCoord(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const f = Math.pow(10, COORD_PRECISION);
+  return Math.round(value * f) / f;
+}
