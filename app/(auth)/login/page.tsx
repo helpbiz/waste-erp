@@ -264,15 +264,20 @@ function LoginInner() {
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* 앱 설치 (보조) */}
-          <button
-            type="button"
-            onClick={installApp}
-            disabled={installed}
-            className="w-full mt-2 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {installed ? '✓ 앱 설치됨' : '앱으로 설치하기'}
-          </button>
+          {/* 앱 설치 (보조) — 설치됨 상태에선 박스 제거, 단순 텍스트만 (사용자 요청 2026-04-29) */}
+          {installed ? (
+            <div className="text-center mt-2 text-sm font-bold text-emerald-700">
+              ✓ 앱 설치됨
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={installApp}
+              className="w-full mt-2 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors"
+            >
+              앱으로 설치하기
+            </button>
+          )}
         </form>
 
         {/* 푸터 */}
