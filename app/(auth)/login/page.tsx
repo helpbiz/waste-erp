@@ -177,8 +177,8 @@ function LoginInner() {
       }}
     >
       <div className="absolute inset-0 flex items-center justify-center px-4 overflow-y-auto py-4">
-       {/* 사용자 요청 2026-04-29 v5: 가로 ↑ / 세로 ↓ — 가로로 더 넓고 위아래 짧게. */}
-       <div className="w-full max-w-[600px]">
+       {/* 사용자 요청 2026-04-29 v6: 가로 더 넓힘 + 입력칸 키움 + 글자 한 단계 업. */}
+       <div className="w-full max-w-[720px]">
         {/* 🔒 LOGO LOCK */}
         <div className="flex justify-center mb-3 sm:mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,10 +189,10 @@ function LoginInner() {
           />
         </div>
 
-        {/* 카드 — v5: 세로 패딩 컴팩트(p-4 sm:p-6) + 가로는 600px 카드폭으로 더 넓게 */}
+        {/* 카드 — v6: 가로 720px + 입력칸/CTA 폰트 한 단계 업 (text-base→text-lg) + py-3→py-4 (높이 ↑) */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-4 sm:p-6"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-5 sm:p-7"
         >
           <input
             type="text"
@@ -202,17 +202,17 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-2.5"
+            className="w-full px-5 py-4 rounded-lg border-2 border-slate-200 text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
           />
 
-          <div className="relative mb-2.5">
+          <div className="relative mb-3">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="비밀번호"
-              className="w-full px-4 py-3 pr-12 rounded-lg border border-slate-200 text-base font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full px-5 py-4 pr-14 rounded-lg border-2 border-slate-200 text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"
@@ -234,7 +234,7 @@ function LoginInner() {
             </button>
           </div>
 
-          {/* 사용자 요청 2026-04-29: 아이디 기억하기 체크박스 (비밀번호와 로그인 버튼 사이) */}
+          {/* 아이디 기억하기 체크박스 — 글자 한 단계 업 (text-sm → text-base) */}
           <label className="flex items-center gap-2 mt-1 mb-1 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -242,46 +242,46 @@ function LoginInner() {
               onChange={(e) => setRememberId(e.target.checked)}
               className="w-5 h-5 accent-accent cursor-pointer"
             />
-            <span className="text-sm font-semibold text-slate-700">아이디 기억하기</span>
+            <span className="text-base font-semibold text-slate-700">아이디 기억하기</span>
           </label>
 
           {error && (
             <div
               role="alert"
               aria-live="polite"
-              className="mt-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm font-bold text-red-700"
+              className="mt-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-base font-bold text-red-700"
             >
               {error}
             </div>
           )}
 
-          {/* 로그인 CTA */}
+          {/* 로그인 CTA — 폰트 + 높이 한 단계 업 */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-3 min-h-14 py-3 rounded-lg bg-accent text-white font-extrabold text-base tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-3 min-h-16 py-4 rounded-lg bg-accent text-white font-extrabold text-lg tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* 앱 설치 (보조) — 설치됨 상태에선 박스 제거, 단순 텍스트만 (사용자 요청 2026-04-29) */}
+          {/* 앱 설치 (보조) — 설치됨 상태에선 박스 제거 */}
           {installed ? (
-            <div className="text-center mt-2 text-sm font-bold text-emerald-700">
+            <div className="text-center mt-2 text-base font-bold text-emerald-700">
               ✓ 앱 설치됨
             </div>
           ) : (
             <button
               type="button"
               onClick={installApp}
-              className="w-full mt-2 min-h-14 py-3 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-sm hover:border-accent hover:text-accent active:bg-surface-soft transition-colors"
+              className="w-full mt-2 min-h-16 py-4 rounded-lg bg-white border-2 border-line-strong text-ink-mid font-bold text-base hover:border-accent hover:text-accent active:bg-surface-soft transition-colors"
             >
               앱으로 설치하기
             </button>
           )}
         </form>
 
-        {/* 푸터 */}
-        <div className="text-center mt-2 sm:mt-3 text-xs font-semibold text-white/85">
+        {/* 푸터 — text-xs → text-sm */}
+        <div className="text-center mt-2 sm:mt-3 text-sm font-semibold text-white/85">
           © 공비랩 GONGBI LAB
         </div>
        </div>
