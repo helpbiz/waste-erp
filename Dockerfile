@@ -12,6 +12,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# 빌드 단계 stub envvars — Next.js의 'Collecting page data' 단계에서
+# lib/auth.ts 등 module-level env 검증 통과용. Runtime엔 .env.prod 값 사용.
+ARG JWT_SECRET=build-time-stub-secret-32chars-padding-x
+ARG KMS_LOCAL_KEY=build-time-stub-kms-key-32chars-padding-x
+ARG DATABASE_URL=postgresql://stub:stub@localhost:5432/stub
+ENV JWT_SECRET=$JWT_SECRET
+ENV KMS_LOCAL_KEY=$KMS_LOCAL_KEY
+ENV DATABASE_URL=$DATABASE_URL
 RUN npx prisma generate
 RUN npm run build
 
