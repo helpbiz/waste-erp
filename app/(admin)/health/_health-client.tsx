@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatKoreanPhone } from '@/lib/phone';
 
 /* ─── 의료 표준치 평가 (사용자 요청 2026-04-28) ───
    출처:
@@ -435,10 +436,12 @@ function HealthFormModal({
               />
               <input
                 type="tel"
+                inputMode="numeric"
                 value={emPhone}
-                onChange={(e) => setEmPhone(e.target.value)}
+                onChange={(e) => setEmPhone(formatKoreanPhone(e.target.value))}
                 placeholder="010-0000-0000"
                 aria-label="전화번호"
+                maxLength={13}
                 className="px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
               />
             </div>

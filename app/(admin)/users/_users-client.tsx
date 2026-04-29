@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import SignaturePad from '@/components/SignaturePad';
 import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
 import ApprovalSignatureModal from '@/components/ApprovalSignatureModal';
+import { formatKoreanPhone } from '@/lib/phone';
 
 const POSITION_CATEGORY_COLOR: Record<string, string> = {
   OFFICE: 'bg-blue-100 text-blue-700 border-blue-300',
@@ -533,14 +534,14 @@ function EditUserModal({ user, positions, departments, onClose }: {
           </Field>
 
           <Field label="사번"><Input value={form.employeeNo} onChange={(v) => setForm({ ...form, employeeNo: v })} /></Field>
-          <Field label="전화"><Input value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" /></Field>
+          <Field label="전화"><Input type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" /></Field>
           <Field label="생년월일"><Input type="date" value={form.birthDate} onChange={(v) => setForm({ ...form, birthDate: v })} /></Field>
           <Field label="입사일"><Input type="date" value={form.hireDate} onChange={(v) => setForm({ ...form, hireDate: v })} /></Field>
           <Field label="주소" colSpan={2}><Input value={form.address} onChange={(v) => setForm({ ...form, address: v })} /></Field>
 
           <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">비상연락 / 계좌</div>
           <Field label="비상연락 이름"><Input value={form.emergencyContact} onChange={(v) => setForm({ ...form, emergencyContact: v })} /></Field>
-          <Field label="비상연락 전화"><Input value={form.emergencyPhone} onChange={(v) => setForm({ ...form, emergencyPhone: v })} placeholder="010-1234-5678" /></Field>
+          <Field label="비상연락 전화"><Input type="tel" value={form.emergencyPhone} onChange={(v) => setForm({ ...form, emergencyPhone: v })} placeholder="010-1234-5678" /></Field>
           <Field label="은행"><Input value={form.bankName} onChange={(v) => setForm({ ...form, bankName: v })} /></Field>
           <Field label="계좌번호"><Input value={form.bankAccount} onChange={(v) => setForm({ ...form, bankAccount: v })} /></Field>
 
@@ -668,7 +669,7 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
         <Section title="기본 정보">
           <Field label="이름"><Input value={form.name} onChange={(v) => setForm({ ...form, name: v })} disabled={!canManage} /></Field>
           <Field label="사번"><Input value={form.employeeNo} onChange={(v) => setForm({ ...form, employeeNo: v })} disabled={!canManage} /></Field>
-          <Field label="전화번호"><Input value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" disabled={!canManage} /></Field>
+          <Field label="전화번호"><Input type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" disabled={!canManage} /></Field>
           <Field label="비밀번호 변경"><Input type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="6자 이상 (변경 시 입력)" disabled={!canManage} /></Field>
         </Section>
 
@@ -693,7 +694,7 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
 
         <Section title="비상연락처">
           <Field label="이름"><Input value={form.emergencyContact} onChange={(v) => setForm({ ...form, emergencyContact: v })} disabled={!canManage} /></Field>
-          <Field label="전화"><Input value={form.emergencyPhone} onChange={(v) => setForm({ ...form, emergencyPhone: v })} placeholder="010-1234-5678" disabled={!canManage} /></Field>
+          <Field label="전화"><Input type="tel" value={form.emergencyPhone} onChange={(v) => setForm({ ...form, emergencyPhone: v })} placeholder="010-1234-5678" disabled={!canManage} /></Field>
         </Section>
 
         <Section title="급여 계좌">
@@ -2104,7 +2105,7 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
         </Field>
 
         <Field label="사번"><Input value={form.employeeNo} onChange={(v) => setForm({ ...form, employeeNo: v })} /></Field>
-        <Field label="전화"><Input value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" /></Field>
+        <Field label="전화"><Input type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="010-1234-5678" /></Field>
         <Field label="생년월일"><Input type="date" value={form.birthDate} onChange={(v) => setForm({ ...form, birthDate: v })} /></Field>
         <Field label="입사일"><Input type="date" value={form.hireDate} onChange={(v) => setForm({ ...form, hireDate: v })} /></Field>
         <Field label="주소" colSpan={2}><Input value={form.address} onChange={(v) => setForm({ ...form, address: v })} /></Field>
@@ -2533,10 +2534,19 @@ function Field({ label, children, colSpan }: { label?: string; children: React.R
 function Input({ value, onChange, type = 'text', placeholder, disabled }: {
   value: string; onChange: (v: string) => void; type?: string; placeholder?: string; disabled?: boolean;
 }) {
+  /* type=tel — 한국 전화번호 자동 하이픈 + 숫자 키패드 + 13자리 cap */
+  const isTel = type === 'tel';
   return (
-    <input type={type} value={value} placeholder={placeholder} disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50 disabled:text-slate-600" />
+    <input
+      type={type}
+      value={value}
+      placeholder={placeholder}
+      disabled={disabled}
+      inputMode={isTel ? 'numeric' : undefined}
+      maxLength={isTel ? 13 : undefined}
+      onChange={(e) => onChange(isTel ? formatKoreanPhone(e.target.value) : e.target.value)}
+      className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50 disabled:text-slate-600"
+    />
   );
 }
 

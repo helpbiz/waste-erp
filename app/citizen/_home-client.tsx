@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatKoreanPhone } from '@/lib/phone';
 
 /**
  * 시민 민원앱 홈 — 도7 720 (민원 요청 관리 시점)
@@ -103,9 +104,11 @@ export default function CitizenHomeClient() {
           <label className="block text-xs font-extrabold text-ink">휴대폰 번호</label>
           <input
             type="tel"
+            inputMode="numeric"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatKoreanPhone(e.target.value))}
             placeholder="010-1234-5678"
+            maxLength={13}
             className="w-full px-4 py-3 rounded-lg border-2 border-line text-base font-mono font-bold focus:outline-none focus:border-accent"
           />
           <label className="block text-xs font-extrabold text-ink">성함 (선택)</label>
