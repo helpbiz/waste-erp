@@ -173,17 +173,21 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         </div>
       </div>
 
-      {/* 입력 그리드 — 사용자 요청 2026-04-29: No/성상/입력(ton) 컬럼 축소, 비고/현재등록 제거, 기록자만 유지 */}
+      {/* 입력 그리드 — 사용자 요청 2026-04-29 v2: 좁은 폰에서 저장 버튼이 viewport 밖으로 밀리는 문제 해결.
+          - 입력 박스 w-24 → w-[68px] 축소 (000.000 7 chars 여전히 들어감)
+          - 기록자 컬럼은 sm 이상에서만 노출 (모바일 숨김)
+          - No 36px → 28px / 성상 80px → 56px / 입력 100px → 76px 컴팩트화
+          - overflow-x-auto 유지 (혹시 더 좁은 폰 대비 안전망) */}
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
             <tr>
-              <th className="px-2 py-2 text-center w-[36px]">No</th>
-              <th className="px-2 py-2 text-left w-[80px]">성상</th>
-              <th className="px-2 py-2 text-left w-[100px]">입력 (ton)</th>
-              <th className="px-2 py-2 text-left">기록자</th>
-              <th className="px-2 py-2 w-[64px]"></th>
+              <th className="px-1.5 py-2 text-center w-[28px]">No</th>
+              <th className="px-1.5 py-2 text-left w-[56px]">성상</th>
+              <th className="px-1.5 py-2 text-left w-[76px]">입력(t)</th>
+              <th className="px-1.5 py-2 text-left hidden sm:table-cell">기록자</th>
+              <th className="px-1.5 py-2 w-[56px]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -192,22 +196,21 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
               const draft = drafts[m.code] ?? { weight: '', note: '' };
               return (
                 <tr key={m.code} className={cur ? 'bg-emerald-50/30' : ''}>
-                  <td className="px-2 py-2 text-center font-mono font-extrabold text-slate-600">{idx + 1}</td>
-                  <td className="px-2 py-2 font-extrabold text-ink whitespace-nowrap">{m.label}</td>
-                  <td className="px-2 py-2">
-                    {/* 입력 박스 — 000.000 (7 chars) 폭에 맞춰 w-24 */}
+                  <td className="px-1.5 py-2 text-center font-mono font-extrabold text-slate-600">{idx + 1}</td>
+                  <td className="px-1.5 py-2 font-extrabold text-ink whitespace-nowrap text-xs">{m.label}</td>
+                  <td className="px-1.5 py-2">
                     <input type="number" step="0.001" value={draft.weight} disabled={!canEdit}
                       onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, weight: e.target.value } })}
                       placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
-                      className="w-24 px-2 py-1 rounded border border-line text-sm font-mono font-bold text-right disabled:bg-slate-50" />
+                      className="w-[68px] px-1.5 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50" />
                   </td>
-                  <td className="px-2 py-2 text-[0.625rem] text-slate-600 whitespace-nowrap">
+                  <td className="px-1.5 py-2 text-[0.625rem] text-slate-600 whitespace-nowrap hidden sm:table-cell">
                     {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-1.5 py-2">
                     {canEdit && (
                       <button onClick={() => saveOne(m.code)} disabled={saving === m.code || !draft.weight}
-                        className="px-3 py-1 rounded text-xs font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40">
+                        className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40">
                         {saving === m.code ? '저장…' : cur ? '갱신' : '등록'}
                       </button>
                     )}
