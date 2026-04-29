@@ -30,6 +30,18 @@ body {
   -webkit-font-smoothing: antialiased;
   /* iOS 모바일 텍스트 자동 확대 차단 (사용자가 의도적 zoom 시에는 영향 없음) */
   -webkit-text-size-adjust: 100%;
+  /* 사용자 요청 2026-04-29: 한글 어절 단위 줄바꿈 (단어 중간 끊김 방지).
+     - keep-all: 한글 단어를 분리하지 않음 (영문은 정상 동작)
+     - overflow-wrap: break-word — 컨테이너보다 긴 단일 단어/URL은 안전하게 wrap
+     button/탭/카드 제목/본문 모두 자동 적용. truncate 사용처는 영향 없음. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 모노/코드/숫자열은 keep-all 무시 — 차량번호·시간 등 mono 텍스트 wrap 정상화 */
+.font-mono, code, pre, kbd, samp {
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 /* hover 효과는 마우스 환경에서만 적용 — 터치 기기 sticky hover 방지 */
