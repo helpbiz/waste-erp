@@ -18,6 +18,31 @@ function contractorScope<T extends { contractorId?: bigint | { equals?: bigint }
   return { id: BigInt(-1) };
 }
 
+/* 한국 행정구역 토큰 추출 — 광역단체 + 시·군·구 + 동·읍·면·리 까지만.
+   사용자 요청 2026-04-29: 지역 Top 10은 행정동명까지 표시.
+   예) '서울특별시 강남구 테헤란로 152' → '서울특별시 강남구'
+       '서울특별시 강남구 역삼동 737-32' → '서울특별시 강남구 역삼동'
+       '경기도 성남시 분당구 정자동 ...' → '경기도 분당구 정자동' (last 시·군·구 우선) */
+function extractKoreanArea(address: string | null | undefined): string {
+  const trimmed = (address ?? '').trim().replace(/,/g, ' ').replace(/\s+/g, ' ');
+  if (!trimmed) return '';
+  const tokens = trimmed.split(' ');
+  let level1 = '';  // 광역단체
+  let level2 = '';  // 시·군·구 (last match wins → 분당구 > 성남시)
+  let level3 = '';  // 동·읍·면·리
+  for (const t of tokens) {
+    if (/(특별시|광역시|특별자치시|특별자치도|도)$/.test(t)) {
+      level1 = t;
+    } else if (/[가-힣]+(시|군|구)$/.test(t)) {
+      level2 = t;
+    } else if (/[가-힣]+(동|읍|면|리)$/.test(t) && !level3) {
+      level3 = t;  // first match wins for dong (legal address comes earlier)
+    }
+  }
+  const parts = [level1, level2, level3].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : tokens.slice(0, 2).join(' ');
+}
+
 export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
@@ -140,9 +165,9 @@ export async function GET(req: Request) {
     const ym = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, '0')}`;
     cByMonth.set(ym, (cByMonth.get(ym) ?? 0) + 1);
     if (c.locationAddress) {
-      /* 첫 2단어 합산 (예: "서울특별시 강남구 역삼동..." → "서울특별시 강남구") */
-      const parts = c.locationAddress.trim().split(/\s+/).slice(0, 2).join(' ');
-      if (parts) cByArea.set(parts, (cByArea.get(parts) ?? 0) + 1);
+      /* 행정동명까지 추출 (광역단체 + 시·군·구 + 동·읍·면·리) */
+      const area = extractKoreanArea(c.locationAddress);
+      if (area) cByArea.set(area, (cByArea.get(area) ?? 0) + 1);
     }
     if (c.contractor) {
       const k = c.contractorId.toString();
