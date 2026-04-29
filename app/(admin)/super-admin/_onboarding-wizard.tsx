@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { formatKoreanPhone } from '@/lib/phone';
 import { formatBusinessNo, validateBusinessNo } from '@/lib/business-no';
+import { useUsernameCheck } from '@/lib/use-username-check';
 
 type Muni = { id: string; name: string; code: string; region: string | null; status: string };
 
@@ -260,6 +261,9 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
       if (!/^[a-zA-Z0-9_-]{3,30}$/.test(data.adminUsername.trim())) return '아이디 3~30자 영문/숫자/_-';
       if (data.adminPassword.length < 6) return '비밀번호 6자 이상';
       if (data.adminPhone && !/^01[0-9]-?\d{3,4}-?\d{4}$/.test(data.adminPhone)) return '전화번호 형식 (010-0000-0000)';
+      /* P-extra: username 중복은 제출 시 서버에서도 검증되지만 UX 위해 사전 차단.
+         UsernameStatus 가 'taken' 표시 중이면 제출 막음. */
+      // (검증 결과는 UI 컴포넌트가 표시 — 여기서 별도 fetch 안 함, 서버가 최종 ground truth)
     }
     return null;
   }
@@ -514,6 +518,10 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
               </Field>
               <Field label="아이디 *">
                 <Input value={data.adminUsername} onChange={(v) => setField('adminUsername', v)} placeholder="kngm-admin" />
+                <UsernameStatus
+                  username={data.adminUsername}
+                  onPick={(s) => setField('adminUsername', s)}
+                />
               </Field>
               <Field label="임시 비밀번호 (자동 생성)">
                 <div className="flex gap-1.5">
@@ -753,6 +761,46 @@ function ManualCopyArea({ data }: { data: WizardData }) {
         className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-xs font-mono text-slate-800 select-all"
         onClick={(e) => (e.currentTarget as HTMLTextAreaElement).select()}
       />
+    </div>
+  );
+}
+
+/* 아이디 실시간 unique 검사 + 사용 가능 추천 — debounce 350ms. */
+function UsernameStatus({ username, onPick }: { username: string; onPick: (s: string) => void }) {
+  const { status, suggestions } = useUsernameCheck(username);
+  if (status === 'idle') {
+    return <div className="text-[0.625rem] text-slate-500 mt-1">3~30자 영문/숫자/_-, 시스템 전체에서 unique</div>;
+  }
+  if (status === 'invalid') {
+    return <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ 형식 오류 — 영문/숫자/_- 만, 3~30자</div>;
+  }
+  if (status === 'checking') {
+    return <div className="text-[0.6875rem] text-slate-500 mt-1">중복 검사 중…</div>;
+  }
+  if (status === 'available') {
+    return <div className="text-[0.6875rem] font-bold text-emerald-700 mt-1">✓ 사용 가능</div>;
+  }
+  /* taken */
+  return (
+    <div className="mt-1 space-y-1">
+      <div className="text-[0.6875rem] font-bold text-rose-700">⚠ 이미 사용 중</div>
+      {suggestions.length > 0 && (
+        <div className="text-[0.625rem] text-slate-700">
+          <span className="font-bold">추천 대안:</span>
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onPick(s)}
+                className="px-1.5 py-0.5 rounded border border-emerald-400 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-mono font-bold"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

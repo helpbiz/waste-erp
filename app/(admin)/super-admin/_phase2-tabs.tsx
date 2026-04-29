@@ -10,6 +10,7 @@
  * - OrgTreeTab (P2-4): 헬프비즈 → 지자체 → 위탁업체 트리
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useUsernameCheck } from '@/lib/use-username-check';
 
 const ROLE_LABEL: Record<string, string> = {
   SUPER_ADMIN: '시스템관리자',
@@ -118,20 +119,7 @@ export function UsersGlobalTab() {
       )}
 
       {createdInfo && (
-        <div className="bg-emerald-50 border-2 border-emerald-400 rounded-lg p-3">
-          <div className="text-sm font-extrabold text-emerald-900 mb-1">
-            ✓ {ROLE_LABEL[createdInfo.role] ?? createdInfo.role} 신규 등록 완료 — 1회 표시
-          </div>
-          <div className="font-mono text-sm space-y-1">
-            <div><b>이름:</b> {createdInfo.name}</div>
-            <div><b>아이디:</b> <code className="px-1 rounded bg-white border">{createdInfo.username}</code></div>
-            <div><b>임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">{createdInfo.tempPassword}</code></div>
-          </div>
-          <div className="mt-2 flex gap-1.5">
-            <button onClick={() => navigator.clipboard.writeText(`아이디: ${createdInfo.username}\n임시 PW: ${createdInfo.tempPassword}`).catch(() => null)} className="px-2 py-1 rounded bg-emerald-600 text-white text-xs font-bold">📋 복사</button>
-            <button onClick={() => setCreatedInfo(null)} className="px-2 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">닫기</button>
-          </div>
-        </div>
+        <CreatedInfoBox info={createdInfo} onClose={() => setCreatedInfo(null)} />
       )}
 
       {resetResult && (
@@ -562,6 +550,124 @@ export function OrgTreeTab() {
   );
 }
 
+/* ─────────── 신규 등록 결과 박스 (복사 버튼 다단 fallback) ─────────── */
+
+function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassword: string; role: string; name: string }; onClose: () => void }) {
+  const [copyOk, setCopyOk] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+  const text = `CleanERP 신규 ${ROLE_LABEL[info.role] ?? info.role} 계정\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n이름: ${info.name}\n아이디: ${info.username}\n임시 PW: ${info.tempPassword}\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+
+  async function copy() {
+    /* Strategy 1: 모던 Clipboard API (HTTPS / localhost) */
+    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopyOk(true);
+        setTimeout(() => setCopyOk(false), 2000);
+        return;
+      } catch { /* fallback */ }
+    }
+    /* Strategy 2: 레거시 execCommand (HTTP 환경) */
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        setCopyOk(true);
+        setTimeout(() => setCopyOk(false), 2000);
+        return;
+      }
+    } catch { /* fallback */ }
+    /* Strategy 3: 수동 복사 영역 펼침 */
+    setShowManual(true);
+  }
+
+  return (
+    <div className="bg-emerald-50 border-2 border-emerald-400 rounded-lg p-3">
+      <div className="text-sm font-extrabold text-emerald-900 mb-1">
+        ✓ {ROLE_LABEL[info.role] ?? info.role} 신규 등록 완료 — 1회 표시
+      </div>
+      <div className="font-mono text-sm space-y-1">
+        <div><b>이름:</b> {info.name}</div>
+        <div><b>아이디:</b> <code className="px-1 rounded bg-white border">{info.username}</code></div>
+        <div><b>임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">{info.tempPassword}</code></div>
+      </div>
+      <div className="mt-2 flex gap-1.5">
+        <button
+          onClick={copy}
+          className={`px-2.5 py-1 rounded text-xs font-extrabold transition ${
+            copyOk ? 'bg-emerald-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+          }`}
+        >
+          {copyOk ? '✓ 복사됨!' : '📋 클립보드 복사 (메일/메신저용)'}
+        </button>
+        <button onClick={onClose} className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">닫기</button>
+      </div>
+      {showManual && (
+        <div className="mt-2 bg-amber-50 border border-amber-400 rounded-md px-3 py-2">
+          <div className="text-[0.6875rem] font-extrabold text-amber-900 mb-1.5">
+            ⚠ 자동 복사 차단 (HTTP 접속). 아래 박스 클릭 후 <b>Ctrl+C</b> (Mac: <b>Cmd+C</b>):
+          </div>
+          <textarea
+            readOnly
+            value={text}
+            rows={6}
+            ref={(ta) => { if (ta) { ta.focus(); ta.select(); } }}
+            onClick={(e) => (e.currentTarget as HTMLTextAreaElement).select()}
+            className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-xs font-mono"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────── username 자동 unique 검사 (모달용) ─────────── */
+function UsernameLivenStatus({ username, onPick }: { username: string; onPick: (s: string) => void }) {
+  const { status, suggestions } = useUsernameCheck(username);
+  if (status === 'idle') {
+    return <div className="text-[0.625rem] text-slate-500 mt-1">3~30자 영문/숫자/_-, 시스템 전체 unique</div>;
+  }
+  if (status === 'invalid') {
+    return <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ 형식 오류 — 영문/숫자/_- 만 (3~30자)</div>;
+  }
+  if (status === 'checking') {
+    return <div className="text-[0.6875rem] text-slate-500 mt-1">중복 검사 중…</div>;
+  }
+  if (status === 'available') {
+    return <div className="text-[0.6875rem] font-bold text-emerald-700 mt-1">✓ 사용 가능</div>;
+  }
+  return (
+    <div className="mt-1 space-y-1">
+      <div className="text-[0.6875rem] font-bold text-rose-700">⚠ 이미 사용 중</div>
+      {suggestions.length > 0 && (
+        <div className="text-[0.625rem] text-slate-700">
+          <span className="font-bold">추천 대안:</span>
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onPick(s)}
+                className="px-1.5 py-0.5 rounded border border-emerald-400 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-mono font-bold"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────── 신규 사용자 등록 모달 (모든 role 지원) ───────────
    MUNI_ADMIN / CONTRACTOR_ADMIN / INTERNAL_ADMIN / WORKER 모두 등록.
    role 별 필수 컨텍스트:
@@ -764,6 +870,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <div>
             <div className="text-xs font-extrabold text-ink mb-1">아이디 *</div>
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="muni-yongsan-01" className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
+            <UsernameLivenStatus username={username} onPick={setUsername} />
           </div>
           <div>
             <div className="text-xs font-extrabold text-ink mb-1">임시 비밀번호 (자동 생성)</div>
