@@ -9,6 +9,36 @@ type BeforeInstallEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
 
+type Platform =
+  | 'ios-safari'
+  | 'ios-other'        // iOS Chrome/Edge — WebKit 기반이라 설치 자체 불가
+  | 'android-chrome'
+  | 'android-samsung'
+  | 'android-firefox'
+  | 'desktop-chrome'   // Edge 포함 (Chromium)
+  | 'desktop-firefox'
+  | 'unknown';
+
+function detectPlatform(): Platform {
+  if (typeof navigator === 'undefined') return 'unknown';
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+  const isSamsung = /SamsungBrowser/.test(ua);
+  const isFirefox = /Firefox|FxiOS/.test(ua);
+  const isCriOS = /CriOS/.test(ua);  // iOS Chrome
+  const isChrome = /Chrome/.test(ua) && !isSamsung;
+  const isSafariIOS = isIOS && !isCriOS && !isFirefox && /Safari/.test(ua);
+  if (isIOS && isSafariIOS) return 'ios-safari';
+  if (isIOS) return 'ios-other';
+  if (isAndroid && isSamsung) return 'android-samsung';
+  if (isAndroid && isFirefox) return 'android-firefox';
+  if (isAndroid && isChrome) return 'android-chrome';
+  if (isFirefox) return 'desktop-firefox';
+  if (isChrome) return 'desktop-chrome';
+  return 'unknown';
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white/70">로딩 중…</div>}>
@@ -30,6 +60,8 @@ function LoginInner() {
   const [error, setError] = useState<string | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallEvent | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [platform, setPlatform] = useState<Platform>('unknown');
 
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setInstallEvt(e as BeforeInstallEvent); };
@@ -38,6 +70,7 @@ function LoginInner() {
     if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
       setInstalled(true);
     }
+    setPlatform(detectPlatform());
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
@@ -96,21 +129,19 @@ function LoginInner() {
   }, []);
 
   async function installApp() {
-    if (!installEvt) {
-      alert(
-        '브라우저에서 직접 설치하세요:\n' +
-        '• 안드로이드 Chrome: 메뉴 → "앱 설치"\n' +
-        '• iOS Safari: 공유 → "홈 화면에 추가"\n' +
-        '• 데스크톱 Chrome/Edge: 주소창 우측 ⊕ 아이콘'
-      );
+    /* Chrome/Edge/Samsung — beforeinstallprompt 잡힌 경우: 네이티브 설치 팝업 즉시 호출 */
+    if (installEvt) {
+      await installEvt.prompt();
+      const choice = await installEvt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstalled(true);
+        setInstallEvt(null);
+      }
       return;
     }
-    await installEvt.prompt();
-    const choice = await installEvt.userChoice;
-    if (choice.outcome === 'accepted') {
-      setInstalled(true);
-      setInstallEvt(null);
-    }
+    /* prompt 없는 경우 (iOS / engagement 부족 / 거부 후 90일 내 등):
+       인라인 가이드 패널 토글 — 브라우저별 정확한 단계 시각화 */
+    setShowGuide((v) => !v);
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -266,19 +297,22 @@ function LoginInner() {
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
-          {/* 앱 설치 (보조) — 박스 테두리 없음 */}
+          {/* 앱 설치 (보조) */}
           {installed ? (
             <div className="text-center mt-2 text-xs font-bold text-emerald-700">
               ✓ 앱 설치됨
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={installApp}
-              className="w-full mt-1.5 py-1.5 text-ink-mid font-bold text-xs hover:text-accent active:text-cyan-800 transition-colors"
-            >
-              앱으로 설치하기
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={installApp}
+                className="w-full mt-1.5 py-1.5 text-ink-mid font-bold text-xs hover:text-accent active:text-cyan-800 transition-colors"
+              >
+                {installEvt ? '앱으로 설치하기' : showGuide ? '설치 가이드 닫기 ▴' : '앱으로 설치하기 ⓘ'}
+              </button>
+              {showGuide && <InstallGuide platform={platform} />}
+            </>
           )}
         </form>
 
@@ -289,5 +323,104 @@ function LoginInner() {
        </div>
       </div>
     </main>
+  );
+}
+
+/* 브라우저별 설치 가이드 — 인라인 노란 패널.
+   beforeinstallprompt 미발화 시 사용자가 정확한 단계를 따라할 수 있도록 시각화. */
+function InstallGuide({ platform }: { platform: Platform }) {
+  return (
+    <div className="mt-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-900">
+      {platform === 'ios-safari' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">📱 iOS Safari 설치 방법</div>
+          <ol className="space-y-1 text-[0.6875rem] font-semibold leading-snug list-decimal list-inside">
+            <li>화면 하단(또는 상단) <b>공유 버튼 ⬆️</b> 탭</li>
+            <li>스크롤 → <b>&quot;홈 화면에 추가&quot;</b> 선택</li>
+            <li>우측 상단 <b>&quot;추가&quot;</b> 탭</li>
+          </ol>
+        </>
+      )}
+      {platform === 'ios-other' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">⚠️ iOS 안내</div>
+          <p className="text-[0.6875rem] font-semibold leading-snug">
+            iOS에서는 <b>Safari</b>에서만 PWA 설치가 가능합니다 (Apple 정책).
+            <br />
+            Safari로 이 페이지를 다시 열어 [공유 → 홈 화면에 추가]를 사용해 주세요.
+          </p>
+        </>
+      )}
+      {platform === 'android-chrome' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">🤖 Android Chrome 설치 방법</div>
+          <ol className="space-y-1 text-[0.6875rem] font-semibold leading-snug list-decimal list-inside">
+            <li>주소창 우측 <b>점 3개 메뉴 ⋮</b> 탭</li>
+            <li>
+              <b>&quot;앱 설치&quot;</b> 또는 <b>&quot;홈 화면에 추가&quot;</b> 선택
+            </li>
+            <li>팝업에서 <b>&quot;설치&quot;</b> 탭</li>
+          </ol>
+          <p className="mt-1.5 text-[0.625rem] font-bold text-amber-800 leading-snug">
+            💡 메뉴에 <b>&quot;앱 설치&quot;</b>가 안 보이면: 이 페이지에서 1-2분 사용 후
+            새로고침 → 다시 시도 (Chrome 사용자 engagement 정책).
+          </p>
+        </>
+      )}
+      {platform === 'android-samsung' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">🤖 Samsung Internet 설치 방법</div>
+          <ol className="space-y-1 text-[0.6875rem] font-semibold leading-snug list-decimal list-inside">
+            <li>하단 <b>≡ 메뉴</b> 탭</li>
+            <li><b>&quot;페이지 추가&quot;</b> → <b>&quot;홈 화면&quot;</b> 선택</li>
+          </ol>
+        </>
+      )}
+      {platform === 'android-firefox' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">🦊 Firefox Android 안내</div>
+          <p className="text-[0.6875rem] font-semibold leading-snug">
+            Firefox는 PWA 자동 설치를 지원하지 않습니다.
+            <br />
+            <b>Chrome</b> 또는 <b>Samsung Internet</b>으로 다시 열어 설치해 주세요.
+          </p>
+        </>
+      )}
+      {platform === 'desktop-chrome' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">💻 Chrome/Edge 설치 방법</div>
+          <ol className="space-y-1 text-[0.6875rem] font-semibold leading-snug list-decimal list-inside">
+            <li>
+              주소창 우측 끝 <b>⊕ 설치 아이콘</b> (또는 모니터 아이콘) 클릭
+            </li>
+            <li>팝업 <b>&quot;설치&quot;</b> 클릭</li>
+          </ol>
+          <p className="mt-1.5 text-[0.625rem] font-bold text-amber-800 leading-snug">
+            💡 아이콘이 안 보이면 메뉴(⋮) → <b>&quot;앱 설치&quot;</b> 메뉴 사용.
+            그래도 없으면 1-2분 후 새로고침.
+          </p>
+        </>
+      )}
+      {platform === 'desktop-firefox' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">🦊 Firefox 안내</div>
+          <p className="text-[0.6875rem] font-semibold leading-snug">
+            Firefox 데스크톱은 PWA 설치를 지원하지 않습니다.
+            <br />
+            <b>Chrome</b> 또는 <b>Edge</b>로 다시 열어 주세요.
+          </p>
+        </>
+      )}
+      {platform === 'unknown' && (
+        <>
+          <div className="font-extrabold text-xs mb-1.5">📋 설치 안내</div>
+          <ul className="space-y-1 text-[0.6875rem] font-semibold leading-snug list-disc list-inside">
+            <li>Android Chrome: 메뉴(⋮) → 앱 설치</li>
+            <li>iOS Safari: 공유 → 홈 화면에 추가</li>
+            <li>PC Chrome/Edge: 주소창 우측 ⊕</li>
+          </ul>
+        </>
+      )}
+    </div>
   );
 }
