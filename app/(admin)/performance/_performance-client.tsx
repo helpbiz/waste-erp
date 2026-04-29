@@ -173,53 +173,67 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         </div>
       </div>
 
-      {/* 입력 그리드 — 사용자 요청 2026-04-29 v2: 좁은 폰에서 저장 버튼이 viewport 밖으로 밀리는 문제 해결.
-          - 입력 박스 w-24 → w-[68px] 축소 (000.000 7 chars 여전히 들어감)
-          - 기록자 컬럼은 sm 이상에서만 노출 (모바일 숨김)
-          - No 36px → 28px / 성상 80px → 56px / 입력 100px → 76px 컴팩트화
-          - overflow-x-auto 유지 (혹시 더 좁은 폰 대비 안전망) */}
+      {/* 입력 그리드 — 사용자 요청 2026-04-29 v3: table 자동 레이아웃이 input 컬럼을 늘려
+          저장 버튼이 viewport 밖으로 밀리는 문제 → flex 기반 행으로 재구성.
+          - flex 행: 모든 사이즈가 화면 폭에 보장되게 비례 축소
+          - 입력 박스: clamp(40px, 13vw, 64px) → 좁은 폰 40px / 표준폰 47px / 와이드 56-64px
+          - 액션 버튼: 폭 자동, 항상 마지막 위치 보장 (ml-auto)
+          - 기록자: 모바일 숨김 (sm+ 노출)
+          - number 스피너 제거: type=text + inputMode=decimal */}
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
-            <tr>
-              <th className="px-1.5 py-2 text-center w-[28px]">No</th>
-              <th className="px-1.5 py-2 text-left w-[56px]">성상</th>
-              <th className="px-1.5 py-2 text-left w-[60px]">입력(t)</th>
-              <th className="px-1.5 py-2 text-left hidden sm:table-cell">기록자</th>
-              <th className="px-1.5 py-2 w-[56px]"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {WASTE_MATERIALS.map((m, idx) => {
-              const cur = byMaterial.get(m.code);
-              const draft = drafts[m.code] ?? { weight: '', note: '' };
-              return (
-                <tr key={m.code} className={cur ? 'bg-emerald-50/30' : ''}>
-                  <td className="px-1.5 py-2 text-center font-mono font-extrabold text-slate-600">{idx + 1}</td>
-                  <td className="px-1.5 py-2 font-extrabold text-ink whitespace-nowrap text-xs">{m.label}</td>
-                  <td className="px-1.5 py-2">
-                    <input type="number" step="0.001" value={draft.weight} disabled={!canEdit}
-                      onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, weight: e.target.value } })}
-                      placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
-                      className="w-[52px] px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50" />
-                  </td>
-                  <td className="px-1.5 py-2 text-[0.625rem] text-slate-600 whitespace-nowrap hidden sm:table-cell">
-                    {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
-                  </td>
-                  <td className="px-1.5 py-2">
-                    {canEdit && (
-                      <button onClick={() => saveOne(m.code)} disabled={saving === m.code || !draft.weight}
-                        className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40">
-                        {saving === m.code ? '저장…' : cur ? '갱신' : '등록'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {/* 헤더 */}
+        <div className="flex items-center gap-1.5 px-2 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+          <span className="w-6 text-center flex-shrink-0">No</span>
+          <span className="flex-1 min-w-0">성상</span>
+          <span className="text-right flex-shrink-0" style={{ width: 'clamp(40px, 13vw, 64px)' }}>입력(t)</span>
+          <span className="hidden sm:block flex-shrink-0 w-32 text-left">기록자</span>
+          <span className="flex-shrink-0" style={{ minWidth: '44px' }}></span>
+        </div>
+        <div className="divide-y divide-line">
+          {WASTE_MATERIALS.map((m, idx) => {
+            const cur = byMaterial.get(m.code);
+            const draft = drafts[m.code] ?? { weight: '', note: '' };
+            return (
+              <div
+                key={m.code}
+                className={`flex items-center gap-1.5 px-2 py-1.5 ${cur ? 'bg-emerald-50/30' : ''}`}
+              >
+                <span className="w-6 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
+                  {idx + 1}
+                </span>
+                <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-xs">
+                  {m.label}
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
+                  value={draft.weight}
+                  disabled={!canEdit}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9.]/g, '');
+                    setDrafts({ ...drafts, [m.code]: { ...draft, weight: v } });
+                  }}
+                  placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
+                  className="px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
+                  style={{ width: 'clamp(40px, 13vw, 64px)' }}
+                />
+                <span className="hidden sm:block flex-shrink-0 w-32 text-[0.625rem] text-slate-600 truncate">
+                  {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
+                </span>
+                {canEdit && (
+                  <button
+                    onClick={() => saveOne(m.code)}
+                    disabled={saving === m.code || !draft.weight}
+                    className="px-1.5 py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40 flex-shrink-0"
+                    style={{ minWidth: '44px' }}
+                  >
+                    {saving === m.code ? '저장…' : cur ? '갱신' : '등록'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
