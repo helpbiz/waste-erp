@@ -173,21 +173,17 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         </div>
       </div>
 
-      {/* 입력 그리드 — 사용자 요청 2026-04-29 v3: table 자동 레이아웃이 input 컬럼을 늘려
-          저장 버튼이 viewport 밖으로 밀리는 문제 → flex 기반 행으로 재구성.
-          - flex 행: 모든 사이즈가 화면 폭에 보장되게 비례 축소
-          - 입력 박스: clamp(40px, 13vw, 64px) → 좁은 폰 40px / 표준폰 47px / 와이드 56-64px
-          - 액션 버튼: 폭 자동, 항상 마지막 위치 보장 (ml-auto)
-          - 기록자: 모바일 숨김 (sm+ 노출)
-          - number 스피너 제거: type=text + inputMode=decimal */}
+      {/* 입력 그리드 v4 — 좁은 폰(320px)에서도 버튼 잘림 없도록 모든 컬럼 vw 비례.
+          입력+버튼 둘 다 clamp() 기반 → 화면 좁아지면 같이 축소.
+          gap/padding 더 타이트, No 컬럼 w-5 (21px @ 17px root). */}
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         {/* 헤더 */}
-        <div className="flex items-center gap-1.5 px-2 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
-          <span className="w-6 text-center flex-shrink-0">No</span>
+        <div className="flex items-center gap-1 px-1.5 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+          <span className="w-5 text-center flex-shrink-0">No</span>
           <span className="flex-1 min-w-0">성상</span>
-          <span className="text-right flex-shrink-0" style={{ width: 'clamp(40px, 13vw, 64px)' }}>입력(t)</span>
-          <span className="hidden sm:block flex-shrink-0 w-32 text-left">기록자</span>
-          <span className="flex-shrink-0" style={{ minWidth: '44px' }}></span>
+          <span className="text-right flex-shrink-0" style={{ width: 'clamp(36px, 11vw, 56px)' }}>입력(t)</span>
+          <span className="hidden sm:block flex-shrink-0 w-28 text-left">기록자</span>
+          <span className="flex-shrink-0 text-center" style={{ width: 'clamp(40px, 13vw, 56px)' }}>저장</span>
         </div>
         <div className="divide-y divide-line">
           {WASTE_MATERIALS.map((m, idx) => {
@@ -196,9 +192,9 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
             return (
               <div
                 key={m.code}
-                className={`flex items-center gap-1.5 px-2 py-1.5 ${cur ? 'bg-emerald-50/30' : ''}`}
+                className={`flex items-center gap-1 px-1.5 py-1.5 ${cur ? 'bg-emerald-50/30' : ''}`}
               >
-                <span className="w-6 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
+                <span className="w-5 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
                   {idx + 1}
                 </span>
                 <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-xs">
@@ -216,19 +212,19 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                   }}
                   placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
                   className="px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
-                  style={{ width: 'clamp(40px, 13vw, 64px)' }}
+                  style={{ width: 'clamp(36px, 11vw, 56px)' }}
                 />
-                <span className="hidden sm:block flex-shrink-0 w-32 text-[0.625rem] text-slate-600 truncate">
+                <span className="hidden sm:block flex-shrink-0 w-28 text-[0.625rem] text-slate-600 truncate">
                   {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
                 </span>
                 {canEdit && (
                   <button
                     onClick={() => saveOne(m.code)}
                     disabled={saving === m.code || !draft.weight}
-                    className="px-1.5 py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40 flex-shrink-0"
-                    style={{ minWidth: '44px' }}
+                    className="py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40 flex-shrink-0"
+                    style={{ width: 'clamp(40px, 13vw, 56px)' }}
                   >
-                    {saving === m.code ? '저장…' : cur ? '갱신' : '등록'}
+                    {saving === m.code ? '…' : cur ? '갱신' : '등록'}
                   </button>
                 )}
               </div>
