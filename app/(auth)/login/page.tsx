@@ -176,26 +176,27 @@ function LoginInner() {
         overscrollBehavior: 'none',
       }}
     >
-      <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 overflow-y-auto overflow-x-hidden py-3 sm:py-4">
-       {/* 사용자 요청 2026-04-29 v7: 작은 핸드폰(320~380px)에서도 잘리지 않도록 fluid sizing.
-           — 모든 고정폭(w-[320px], p-5, text-lg, px-5, py-4)을 vw/clamp 기반으로 교체. */}
-       <div className="w-full max-w-[720px]">
-        {/* 🔒 LOGO LOCK — src/alt 보존. 폭은 vw 기반 fluid (작은 폰에서 잘림 방지).
-            min(78vw, 440px): 작은 폰에선 78vw, 큰 화면에선 440px 상한. */}
-        <div className="flex justify-center mb-3 sm:mb-4">
+      <div className="absolute inset-0 flex items-center justify-center px-[12px] overflow-y-auto overflow-x-hidden py-[12px]">
+       {/* 사용자 요청 2026-04-29 v8: 로그인 화면 한정 절대 px 스코프.
+           — 앱 전역 root font-size: 36px 의 영향을 받지 않도록 모든 사이즈를 px 단위로 고정.
+           — 로고 + 카드 합산 높이가 작은 폰(360x740) 뷰포트에 완전히 들어오도록 컴팩트화. */}
+       <div className="w-full" style={{ maxWidth: 'min(92vw, 440px)' }}>
+        {/* 🔒 LOGO LOCK — src/alt 보존. 폭 컴팩트화 (m(60vw, 280px)) — 작은 폰에서 한 화면에 다 보이도록. */}
+        <div className="flex justify-center" style={{ marginBottom: '14px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/logo-horizontal-dark.svg"
             alt="공비랩 Clean ERP"
             className="block h-auto drop-shadow-lg"
-            style={{ width: 'min(78vw, 440px)' }}
+            style={{ width: 'min(60vw, 280px)' }}
           />
         </div>
 
-        {/* 카드 — fluid: 작은 폰 p-4 / 데스크톱 p-7. 입력 폰트도 모바일 text-base, sm+ text-lg. */}
+        {/* 카드 — 절대 px 사이즈, root font 36px 영향 차단 */}
         <form
           onSubmit={onSubmit}
-          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-4 sm:p-7"
+          className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+          style={{ padding: '16px', fontSize: '15px' }}
         >
           <input
             type="text"
@@ -205,24 +206,27 @@ function LoginInner() {
             autoComplete="username"
             spellCheck={false}
             placeholder="아이디"
-            className="w-full px-3 py-3 sm:px-5 sm:py-4 rounded-lg border-2 border-slate-200 text-base sm:text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition mb-3"
+            className="w-full rounded-lg border-2 border-slate-200 font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+            style={{ padding: '11px 13px', fontSize: '15px', marginBottom: '10px' }}
           />
 
-          <div className="relative mb-3">
+          <div className="relative" style={{ marginBottom: '10px' }}>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="비밀번호"
-              className="w-full px-3 py-3 pr-12 sm:px-5 sm:py-4 sm:pr-14 rounded-lg border-2 border-slate-200 text-base sm:text-lg font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full rounded-lg border-2 border-slate-200 font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              style={{ padding: '11px 40px 11px 13px', fontSize: '15px' }}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               tabIndex={-1}
               aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
-              className="absolute inset-y-0 right-0 px-3.5 flex items-center text-slate-500 hover:text-accent"
+              className="absolute inset-y-0 right-0 flex items-center text-slate-500 hover:text-accent"
+              style={{ padding: '0 12px' }}
             >
               {showPassword ? (
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -238,45 +242,57 @@ function LoginInner() {
           </div>
 
           {/* 아이디 기억하기 체크박스 */}
-          <label className="flex items-center gap-2 mt-1 mb-1 cursor-pointer select-none">
+          <label
+            className="flex items-center cursor-pointer select-none"
+            style={{ gap: '8px', marginTop: '2px', marginBottom: '2px' }}
+          >
             <input
               type="checkbox"
               checked={rememberId}
               onChange={(e) => setRememberId(e.target.checked)}
-              className="w-5 h-5 accent-accent cursor-pointer"
+              className="accent-accent cursor-pointer"
+              style={{ width: '16px', height: '16px' }}
             />
-            <span className="text-sm sm:text-base font-semibold text-slate-700">아이디 기억하기</span>
+            <span className="font-semibold text-slate-700" style={{ fontSize: '13px' }}>
+              아이디 기억하기
+            </span>
           </label>
 
           {error && (
             <div
               role="alert"
               aria-live="polite"
-              className="mt-2 px-3 py-2 sm:px-4 sm:py-3 rounded-lg bg-red-50 border border-red-200 text-sm sm:text-base font-bold text-red-700"
+              className="rounded-lg bg-red-50 border border-red-200 font-bold text-red-700"
+              style={{ marginTop: '8px', padding: '8px 12px', fontSize: '13px' }}
             >
               {error}
             </div>
           )}
 
-          {/* 로그인 CTA — 모바일 컴팩트 / sm+ 풀사이즈 */}
+          {/* 로그인 CTA — 절대 px 사이즈 */}
           <button
             type="submit"
             disabled={loading || !username || !password}
-            className="w-full mt-3 min-h-12 sm:min-h-16 py-3 sm:py-4 rounded-lg bg-accent text-white font-extrabold text-base sm:text-lg tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-lg bg-accent text-white font-extrabold tracking-wide hover:bg-cyan-800 active:bg-cyan-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ marginTop: '12px', minHeight: '46px', padding: '11px 16px', fontSize: '16px' }}
           >
             {loading ? '로그인 중…' : '로그인'}
           </button>
 
           {/* 앱 설치 (보조) — 박스 테두리 없음 */}
           {installed ? (
-            <div className="text-center mt-2 text-sm sm:text-base font-bold text-emerald-700">
+            <div
+              className="text-center font-bold text-emerald-700"
+              style={{ marginTop: '8px', fontSize: '13px' }}
+            >
               ✓ 앱 설치됨
             </div>
           ) : (
             <button
               type="button"
               onClick={installApp}
-              className="w-full mt-2 min-h-11 sm:min-h-14 py-2 sm:py-3 text-ink-mid font-bold text-sm sm:text-base hover:text-accent active:text-cyan-800 transition-colors"
+              className="w-full text-ink-mid font-bold hover:text-accent active:text-cyan-800 transition-colors"
+              style={{ marginTop: '6px', minHeight: '34px', padding: '6px', fontSize: '13px' }}
             >
               앱으로 설치하기
             </button>
@@ -284,7 +300,10 @@ function LoginInner() {
         </form>
 
         {/* 푸터 */}
-        <div className="text-center mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-white/85">
+        <div
+          className="text-center font-semibold text-white/85"
+          style={{ marginTop: '10px', fontSize: '11px' }}
+        >
           © 공비랩 GONGBI LAB
         </div>
        </div>
