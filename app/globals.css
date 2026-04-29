@@ -50,10 +50,22 @@ body {
 }
 
 /* 시안 HTML과 동일한 스크롤바 톤 */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+/* 사용자 요청 2026-04-29: 스크롤바 폭 확대 — 마우스 드래그 적중률 향상.
+   8px → 14px 세로 / 14px 가로. 모바일 OS 스크롤은 자체 표시되므로 영향 적음. */
+::-webkit-scrollbar { width: 14px; height: 14px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 7px; }
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 7px;
+  /* 트랙과 thumb 사이 시각적 간격 — border 가 트랙 색과 동일해 padding 효과 */
+  border: 3px solid #f1f5f9;
+  background-clip: padding-box;
+}
 ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+::-webkit-scrollbar-thumb:active { background: #475569; }
+::-webkit-scrollbar-corner { background: #f1f5f9; }
+/* Firefox 지원 (color 라벨 thin/auto 만 가능) */
+* { scrollbar-width: auto; scrollbar-color: #94a3b8 #f1f5f9; }
 
 /* WCAG AAA P0 — 접근성 글로벌 룰 (PWA Mobile UX Mastering 이니셔티브) */
 
