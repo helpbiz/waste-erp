@@ -6,6 +6,7 @@ import { FacilitiesTab } from './facilities/_facilities-tab';
 import { BottomSheet } from '@/components/BottomSheet';
 import OnboardingWizardModal from './_onboarding-wizard';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
+import { UsersGlobalTab, SystemStatsTab, AuditLogTab, OrgTreeTab } from './_phase2-tabs';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -59,8 +60,10 @@ type Aggregate = {
   } | null;
 };
 
+type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'users-global' | 'system' | 'audit' | 'org-tree';
+
 export default function SuperAdminClient() {
-  const [tab, setTab] = useState<'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities'>(() => {
+  const [tab, setTab] = useState<SuperTab>(() => {
     if (typeof window !== 'undefined') {
       const t = new URLSearchParams(window.location.search).get('tab');
       if (t === 'facilities') return 'facilities';
@@ -108,6 +111,11 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'company'} onClick={() => setTab('company')}>회사정보·차고지</Tab>
         <Tab active={tab === 'gis'} onClick={() => setTab('gis')}>GIS API 설정</Tab>
         <Tab active={tab === 'facilities'} onClick={() => setTab('facilities')}>처리시설 마스터</Tab>
+        {/* Phase 2 신규 탭 4종 */}
+        <Tab active={tab === 'users-global'} onClick={() => setTab('users-global')}>👥 사용자 (전체)</Tab>
+        <Tab active={tab === 'system'} onClick={() => setTab('system')}>📊 시스템 모니터링</Tab>
+        <Tab active={tab === 'audit'} onClick={() => setTab('audit')}>📜 감사 로그</Tab>
+        <Tab active={tab === 'org-tree'} onClick={() => setTab('org-tree')}>🌲 조직 트리</Tab>
       </div>
 
       {tab === 'munis' && <MunicipalitiesTab />}
@@ -116,6 +124,10 @@ export default function SuperAdminClient() {
       {tab === 'company' && <CompanyInfoTab />}
       {tab === 'gis' && <GisConfigTab />}
       {tab === 'facilities' && <FacilitiesTab />}
+      {tab === 'users-global' && <UsersGlobalTab />}
+      {tab === 'system' && <SystemStatsTab />}
+      {tab === 'audit' && <AuditLogTab />}
+      {tab === 'org-tree' && <OrgTreeTab />}
     </div>
   );
 }
