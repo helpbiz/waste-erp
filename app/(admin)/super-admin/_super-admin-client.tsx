@@ -49,6 +49,9 @@ type Aggregate = {
   range: { from: string; to: string };
   contractors: Array<{
     id: string; companyName: string; businessNo: string; status: string;
+    /* 그룹 발송용 contact (사용자 요청 2026-04-29) */
+    ceoName: string | null; phoneMain: string | null; emailMain: string | null;
+    adminName: string | null; adminPhone: string | null;
     users: number; attendance: number; leaves: number; leavesApproved: number;
     complaints: number; vehicles: number; vehicleLogs: number; vehicleWasteKg: number;
     waste: number; intake: number; safety: number;
@@ -1241,6 +1244,21 @@ function AggregateTab() {
   const [to, setTo] = useState(ymEnd);
   const [data, setData] = useState<Aggregate | null>(null);
   const [loading, setLoading] = useState(false);
+  /* 사용자 요청 2026-04-29: 거래처별 체크박스 다중 선택 + 그룹 발송 (이메일/SMS) */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  function toggleSelect(id: string) {
+    setSelectedIds((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  function toggleSelectAll() {
+    if (!data) return;
+    if (selectedIds.size === data.contractors.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(data.contractors.map((c) => c.id)));
+  }
 
   useEffect(() => {
     fetch('/api/super-admin/muni-policies').then((r) => r.json()).then((d) => {
@@ -1288,7 +1306,23 @@ function AggregateTab() {
           className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
           🖨 일괄 출력
         </button>
+        <button
+          onClick={() => setBroadcastOpen(true)}
+          disabled={!data || selectedIds.size === 0}
+          className="px-4 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          title="선택한 거래처 관리자에게 이메일/SMS 그룹 발송"
+        >
+          📧 그룹 발송 ({selectedIds.size})
+        </button>
       </div>
+
+      {broadcastOpen && data && (
+        <BroadcastModal
+          contractors={data.contractors.filter((c) => selectedIds.has(c.id))}
+          municipalityName={data.municipality.name}
+          onClose={() => setBroadcastOpen(false)}
+        />
+      )}
 
       {!data && <div className="text-center py-12 text-slate-500">지자체 선택 후 조회</div>}
 
@@ -1314,6 +1348,14 @@ function AggregateTab() {
             <table className="w-full text-xs">
               <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
                 <tr>
+                  <th className="px-2 py-1.5 text-center print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={data.contractors.length > 0 && selectedIds.size === data.contractors.length}
+                      onChange={toggleSelectAll}
+                      aria-label="전체 선택"
+                    />
+                  </th>
                   <th className="px-2 py-1.5 text-left">거래처</th>
                   <th className="px-2 py-1.5 text-right">인원</th>
                   <th className="px-2 py-1.5 text-right">근태</th>
@@ -1328,10 +1370,18 @@ function AggregateTab() {
               </thead>
               <tbody className="divide-y divide-line">
                 {data.contractors.length === 0 && (
-                  <tr><td colSpan={10} className="px-3 py-8 text-center text-slate-500">거래처 없음</td></tr>
+                  <tr><td colSpan={11} className="px-3 py-8 text-center text-slate-500">거래처 없음</td></tr>
                 )}
                 {data.contractors.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50">
+                  <tr key={c.id} className={`hover:bg-slate-50 ${selectedIds.has(c.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-2 py-1.5 text-center print:hidden">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(c.id)}
+                        onChange={() => toggleSelect(c.id)}
+                        aria-label={`${c.companyName} 선택`}
+                      />
+                    </td>
                     <td className="px-2 py-1.5">
                       <div className="font-extrabold text-ink text-sm">{c.companyName}</div>
                       <div className="text-[0.625rem] font-mono text-slate-600">{c.businessNo}</div>
@@ -1351,6 +1401,7 @@ function AggregateTab() {
               {data.summary && (
                 <tfoot className="bg-purple-50 font-extrabold border-t-2 border-purple-300">
                   <tr>
+                    <td className="px-2 py-2 print:hidden"></td>
                     <td className="px-2 py-2 font-extrabold text-purple-900">합계</td>
                     <td className="px-2 py-2 text-right font-mono">{data.summary.totalUsers}</td>
                     <td className="px-2 py-2 text-right font-mono">{data.summary.totalAttendance}</td>
@@ -1367,17 +1418,7 @@ function AggregateTab() {
             </table>
           </div>
 
-          <div className="mt-6 pt-3 border-t-2 border-slate-700 grid grid-cols-3 gap-6 text-sm">
-            {['담당자', '관리자', '대표'].map((role) => (
-              <div key={role} className="text-center">
-                <div className="font-bold mb-1">{role}</div>
-                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden">
-                  <span className="absolute inset-0 flex items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">서명</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
+          {/* 결재란 — 사용자 요청 2026-04-29: 모든 보고서 결재 표시 숨김 */}
           <div className="text-[0.625rem] font-mono text-slate-600 text-right mt-3">
             출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
@@ -1385,6 +1426,151 @@ function AggregateTab() {
       )}
 
       <style>{`@media print { @page { size: A4 landscape; margin: 1cm; } }`}</style>
+    </div>
+  );
+}
+
+/* 그룹 발송 모달 — 사용자 요청 2026-04-29.
+   - mailto: BCC 자동 생성 (수신자 그룹) → OS 메일 클라이언트로 한 번에 전송
+   - SMS 일괄 발송: 외부 SMS API(Aligo/NHN/AWS SNS) 미연동 → 전화번호 + 메시지 클립보드 복사
+     사용자가 SMS 앱에서 단체 메시지로 붙여넣기. 추후 SMS API 도입 시 직접 발송 추가. */
+function BroadcastModal({
+  contractors,
+  municipalityName,
+  onClose,
+}: {
+  contractors: Aggregate['contractors'];
+  municipalityName: string;
+  onClose: () => void;
+}) {
+  const [channel, setChannel] = useState<'email' | 'sms'>('email');
+  const [subject, setSubject] = useState(`[CleanERP] ${municipalityName} 위탁업체 안내`);
+  const [body, setBody] = useState('안녕하세요. 시스템 안내를 위해 메시지를 보냅니다.\n\n— CleanERP');
+  const [copyOk, setCopyOk] = useState<string | null>(null);
+
+  const emails = contractors.map((c) => c.emailMain).filter((e): e is string => !!e);
+  const phones = contractors.map((c) => c.adminPhone || c.phoneMain).filter((p): p is string => !!p);
+
+  function copy(text: string, label: string) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopyOk(label);
+        setTimeout(() => setCopyOk(null), 2000);
+      }).catch(() => fallback());
+      return;
+    }
+    fallback();
+    function fallback() {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        setCopyOk(label);
+        setTimeout(() => setCopyOk(null), 2000);
+      } else {
+        alert('복사 실패 — 직접 선택해 주세요');
+      }
+    }
+  }
+
+  function openMailto() {
+    if (emails.length === 0) {
+      alert('이메일이 등록된 거래처가 없습니다.');
+      return;
+    }
+    /* mailto: BCC — 다른 수신자 노출 방지 */
+    const url = `mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-3 print:hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[640px] w-full max-h-[92vh] flex flex-col">
+        <div className="px-5 py-3 border-b border-line flex items-center justify-between">
+          <h2 className="text-base font-black text-ink">📧 그룹 발송 ({contractors.length}개 거래처)</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          <div className="bg-blue-50 border border-blue-300 rounded-md px-3 py-2 text-xs">
+            <b>📮 발송 방식:</b>
+            <div className="mt-1 flex gap-3">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" checked={channel === 'email'} onChange={() => setChannel('email')} />
+                <span className="font-bold">이메일 (mailto BCC, OS 메일앱 자동 열림)</span>
+                <span className="text-slate-500">— {emails.length}곳 등록</span>
+              </label>
+            </div>
+            <div className="mt-0.5">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input type="radio" checked={channel === 'sms'} onChange={() => setChannel('sms')} />
+                <span className="font-bold">SMS (전화번호+메시지 클립보드 복사)</span>
+                <span className="text-slate-500">— {phones.length}곳 등록</span>
+              </label>
+            </div>
+          </div>
+
+          {channel === 'email' && (
+            <>
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">제목</div>
+                <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">본문</div>
+                <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">수신자 ({emails.length}곳)</div>
+                <div className="bg-slate-50 border border-line rounded p-2 text-[0.6875rem] font-mono max-h-24 overflow-y-auto">
+                  {emails.length === 0 ? <span className="text-slate-500">이메일 미등록 거래처</span> : emails.join(', ')}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={openMailto} disabled={emails.length === 0} className="flex-1 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-extrabold disabled:opacity-50">
+                  📨 메일 작성 (BCC 자동) — OS 메일앱 열기
+                </button>
+                <button onClick={() => copy(emails.join(', '), 'emails')} disabled={emails.length === 0} className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold disabled:opacity-50">
+                  {copyOk === 'emails' ? '✓ 복사됨' : '📋 주소만 복사'}
+                </button>
+              </div>
+            </>
+          )}
+
+          {channel === 'sms' && (
+            <>
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">메시지 (90 byte 권장)</div>
+                <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
+                <div className="text-[0.625rem] text-slate-500 mt-0.5">현재 길이: {body.length}자</div>
+              </div>
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">수신 번호 ({phones.length}곳)</div>
+                <div className="bg-slate-50 border border-line rounded p-2 text-[0.6875rem] font-mono max-h-24 overflow-y-auto">
+                  {phones.length === 0 ? <span className="text-slate-500">전화번호 미등록 거래처</span> : phones.join(', ')}
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900">
+                ⚠ <b>SMS 직접 발송 미지원</b> — 외부 SMS API(Aligo / NHN Cloud / AWS SNS) 연동이 필요합니다.
+                지금은 번호와 메시지를 클립보드에 복사 → SMS 앱에서 단체 발송 화면에 붙여넣기 사용.
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => copy(phones.join(','), 'phones')} disabled={phones.length === 0} className="flex-1 px-3 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold disabled:opacity-50">
+                  {copyOk === 'phones' ? '✓ 복사됨' : '📋 전화번호 복사'}
+                </button>
+                <button onClick={() => copy(body, 'body')} className="flex-1 px-3 py-2 rounded bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold">
+                  {copyOk === 'body' ? '✓ 복사됨' : '📋 메시지 복사'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end">
+          <button onClick={onClose} className="px-4 py-1.5 rounded bg-slate-200 text-slate-700 text-sm font-bold">닫기</button>
+        </div>
+      </div>
     </div>
   );
 }

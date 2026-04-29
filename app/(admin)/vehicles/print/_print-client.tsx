@@ -108,15 +108,7 @@ export default function VehiclePrintClient({
                       <div className="text-sm whitespace-pre-wrap">{l.routeDetail}</div>
                     </div>
                   )}
-                  {/* 결재란 */}
-                  <div className="grid grid-cols-3 border-t border-slate-700">
-                    {['운전자', '관리자', '대표'].map((role) => (
-                      <div key={role} className="border-r last:border-r-0 border-slate-700 p-3 h-20 text-center">
-                        <div className="text-[10px] font-mono font-bold text-slate-600">{role}</div>
-                        <div className="h-12"></div>
-                      </div>
-                    ))}
-                  </div>
+                  {/* 결재란 — 사용자 요청 2026-04-29: 모든 보고서 결재란 숨김 */}
                   <div className="text-[10px] font-mono text-slate-600 px-3 py-1 text-right">#{idx + 1} / {logs.length}</div>
                 </article>
               ))}

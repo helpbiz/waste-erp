@@ -1,7 +1,7 @@
 /**
  * GET /api/super-admin/contractors-aggregate?municipalityId=&from=&to=
  *  - 관할 지자체의 모든 contractor 자료 통합 집계
- *  - 권한: SUPER_ADMIN
+ *  - 권한: SUPER_ADMIN (전체) / MUNI_ADMIN (본인 muni 만)
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
@@ -12,15 +12,23 @@ export const runtime = 'nodejs';
 export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (session.role !== 'SUPER_ADMIN' && session.role !== 'MUNI_ADMIN') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   const url = new URL(req.url);
-  const municipalityIdStr = url.searchParams.get('municipalityId');
+  let municipalityIdStr = url.searchParams.get('municipalityId');
   const from = url.searchParams.get('from') ?? new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
   const to = url.searchParams.get('to') ?? new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
   const fromDate = new Date(from);
   const toDate = new Date(to);
   toDate.setHours(23, 59, 59, 999);
+
+  /* MUNI_ADMIN 은 본인 muni 강제 — 쿼리 파라미터 무시하고 session 값 사용 */
+  if (session.role === 'MUNI_ADMIN') {
+    if (!session.municipalityId) return NextResponse.json({ error: 'no_muni_scope' }, { status: 403 });
+    municipalityIdStr = session.municipalityId;
+  }
 
   if (!municipalityIdStr) {
     return NextResponse.json({ error: 'municipalityId_required' }, { status: 400 });
@@ -97,17 +105,34 @@ export async function GET(req: Request) {
   const wasteByCid = byCid(waste, (r) => r.contractorId);
   const intakesByCid = byCid(intakes, (r) => r.contractorId);
 
+  /* CONTRACTOR_ADMIN 사용자의 전화/이메일 batch fetch — 그룹 발송용 */
+  const admins = await prisma.user.findMany({
+    where: { role: 'CONTRACTOR_ADMIN', status: 'ACTIVE', contractorId: { in: cIds } },
+    select: { contractorId: true, name: true, phone: true },
+  });
+  const adminMap = new Map<string, { name: string; phone: string | null }>();
+  for (const a of admins) {
+    if (a.contractorId) adminMap.set(a.contractorId.toString(), { name: a.name, phone: a.phone });
+  }
+
   const items = contractors.map((c) => {
     const cid = c.id.toString();
     const leaveItems = leavesByCid.get(cid) ?? [];
     const logItems = vehicleLogsByCid.get(cid) ?? [];
     const wasteItems = wasteByCid.get(cid) ?? [];
     const intakeItems = intakesByCid.get(cid) ?? [];
+    const admin = adminMap.get(cid);
     return {
       id: cid,
       companyName: c.companyName,
       businessNo: c.businessNo,
       status: c.status,
+      /* 그룹 발송용 contact 정보 */
+      ceoName: c.ceoName ?? null,
+      phoneMain: c.phoneMain ?? null,
+      emailMain: c.emailMain ?? null,
+      adminName: admin?.name ?? null,
+      adminPhone: admin?.phone ?? null,
       users: users.find((u) => u.contractorId?.toString() === cid)?._count ?? 0,
       attendance: attendances.find((u) => u.contractorId.toString() === cid)?._count ?? 0,
       leaves: leaveItems.length,
