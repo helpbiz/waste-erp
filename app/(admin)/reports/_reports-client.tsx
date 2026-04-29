@@ -39,7 +39,18 @@ type Stats = {
   hr: { total: number; byRole: Array<{ role: string; count: number }>; byPosition: Array<{ code: string; label: string; count: number; category: string }>; byDepartment: Array<{ name: string; count: number }> };
   attendance: { records: number; checkedIn: number; checkedOut: number; earlyLeaves: number; pendingApproval: number; daily: Array<{ date: string; count: number }> };
   leave: { requests: number; approved: number; pending: number; inReview: number; rejected: number; approvedDays: number; byType: Array<{ type: string; count: number }> };
-  complaints: { total: number; byType: Array<{ type: string; count: number }>; byStatus: Array<{ status: string; count: number }> };
+  complaints: {
+    total: number;
+    byType: Array<{ type: string; count: number }>;
+    byStatus: Array<{ status: string; count: number }>;
+    byHour: Array<{ hour: number; count: number }>;
+    byWeekday: Array<{ day: number; count: number }>;
+    byMonth: Array<{ ym: string; count: number }>;
+    byArea: Array<{ area: string; count: number }>;
+    byContractor: Array<{ contractorId: string; name: string; count: number }>;
+    performance: { avgResolveHours: number; resolvedCount: number; overdueCount: number; overdueRate: number; urgentCount: number; unassignedCount: number };
+    satisfaction: { count: number; avg: number; byScore: Array<{ score: number; count: number }> };
+  };
   vehicles: { total: number; active: number; maintenance: number; logsCount: number; wasteKg: number; wasteTon: number; fuelL: number; totalKm: number };
   waste: { total: number; records: number; byMaterial: Array<{ code: string; weight: number }> };
   intake: { total: number; records: number; byCategory: Array<{ code: string; weight: number }>; byVehicle: Array<{ vehicleId: string; vehicleNo: string; weight: number; count: number }> };
@@ -203,24 +214,88 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             </div>
           </Section>
 
-          {/* 4. 민원 */}
-          <Section no={4} title="민원 현황" color="text-amber-700">
-            <div className="grid grid-cols-3 gap-3 mb-3">
+          {/* 4. 민원 — 분포 시각화 보강 (사용자 요청 2026-04-29) */}
+          <Section no={4} title="민원 현황 · 분포 시각화" color="text-amber-700">
+            {/* KPI 1열: 처리 성과 핵심 지표 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
               <KCard label="전체 민원" value={`${data.complaints.total}건`} />
-              <KCard label="유형 종류" value={`${data.complaints.byType.length}종`} />
-              <KCard label="상태 종류" value={`${data.complaints.byStatus.length}종`} />
+              <KCard label="평균 처리시간" value={`${data.complaints.performance.avgResolveHours}h`} unit={`(완료 ${data.complaints.performance.resolvedCount}건)`} tone="accent" />
+              <KCard label="기한 초과" value={`${data.complaints.performance.overdueCount}건`} unit={`${data.complaints.performance.overdueRate}%`} tone={data.complaints.performance.overdueCount > 0 ? 'warning' : 'success'} />
+              <KCard label="미배정" value={`${data.complaints.performance.unassignedCount}건`} tone={data.complaints.performance.unassignedCount > 0 ? 'warning' : 'success'} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Card title="유형별">
+
+            {/* KPI 2열: 긴급/만족도 */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <KCard label="긴급 표시" value={`${data.complaints.performance.urgentCount}건`} tone={data.complaints.performance.urgentCount > 0 ? 'warning' : 'default'} />
+              <KCard label="만족도 평균" value={data.complaints.satisfaction.count > 0 ? `${data.complaints.satisfaction.avg}/5` : '—'} unit={`(${data.complaints.satisfaction.count}건)`} tone={data.complaints.satisfaction.avg >= 4 ? 'success' : data.complaints.satisfaction.avg >= 3 ? 'default' : 'warning'} />
+              <KCard label="유형 종류" value={`${data.complaints.byType.length}종`} />
+              <KCard label="발생 지역" value={`${data.complaints.byArea.length}곳`} />
+            </div>
+
+            {/* 유형별 + 상태별 (기존) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <Card title="유형별 분포">
                 {data.complaints.byType.length === 0 ? <Empty /> : data.complaints.byType.map((t) => (
                   <BarRow key={t.type} label={COMPLAINT_TYPE_LABEL[t.type] ?? t.type} value={t.count} max={max(data.complaints.byType.map((x) => x.count))} suffix="건" color="bg-amber-400" />
                 ))}
               </Card>
-              <Card title="상태별">
+              <Card title="처리 상태별">
                 {data.complaints.byStatus.length === 0 ? <Empty /> : data.complaints.byStatus.map((s) => (
                   <BarRow key={s.status} label={COMPLAINT_STATUS_LABEL[s.status] ?? s.status} value={s.count} max={max(data.complaints.byStatus.map((x) => x.count))} suffix="건" color="bg-orange-400" />
                 ))}
               </Card>
+            </div>
+
+            {/* 시간 분포: 시간대별(24h) + 요일별(7d) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <Card title="시간대별 분포 (KST 0~23시)">
+                <HourHistogram data={data.complaints.byHour} />
+              </Card>
+              <Card title="요일별 분포">
+                <WeekdayBars data={data.complaints.byWeekday} />
+              </Card>
+            </div>
+
+            {/* 월별 추이 */}
+            <Card title="월별 추이">
+              {data.complaints.byMonth.length === 0 ? <Empty /> : (
+                <div className="flex items-end gap-1 h-24 px-1 pt-2">
+                  {data.complaints.byMonth.map((m) => {
+                    const mx = max(data.complaints.byMonth.map((x) => x.count));
+                    const h = mx > 0 ? Math.max(4, (m.count / mx) * 100) : 4;
+                    return (
+                      <div key={m.ym} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                        <div className="w-full bg-amber-400 rounded-t hover:bg-amber-500 transition" style={{ height: `${h}%` }} title={`${m.ym}: ${m.count}건`} />
+                        <div className="text-[0.5625rem] font-mono font-bold text-slate-600 truncate w-full text-center">{m.ym.slice(5)}</div>
+                        <div className="text-[0.625rem] font-mono font-extrabold text-ink">{m.count}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* 지역 + 위탁업체 (지자체용) Top 10 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              <Card title="지역 Top 10 (주소 기반)">
+                {data.complaints.byArea.length === 0 ? <Empty /> : data.complaints.byArea.map((a) => (
+                  <BarRow key={a.area} label={a.area} value={a.count} max={max(data.complaints.byArea.map((x) => x.count))} suffix="건" color="bg-cyan-500" />
+                ))}
+              </Card>
+              {data.complaints.byContractor.length > 1 && (
+                <Card title="위탁업체별 분포">
+                  {data.complaints.byContractor.map((c) => (
+                    <BarRow key={c.contractorId} label={c.name} value={c.count} max={max(data.complaints.byContractor.map((x) => x.count))} suffix="건" color="bg-indigo-500" />
+                  ))}
+                </Card>
+              )}
+              {data.complaints.byContractor.length <= 1 && data.complaints.satisfaction.count > 0 && (
+                <Card title="만족도 점수 분포">
+                  {data.complaints.satisfaction.byScore.map((s) => (
+                    <BarRow key={s.score} label={`${'★'.repeat(s.score)}${'☆'.repeat(5 - s.score)}`} value={s.count} max={max(data.complaints.satisfaction.byScore.map((x) => x.count))} suffix="건" color={s.score >= 4 ? 'bg-emerald-500' : s.score === 3 ? 'bg-amber-400' : 'bg-rose-400'} />
+                  ))}
+                </Card>
+              )}
             </div>
           </Section>
 
@@ -349,9 +424,7 @@ function Empty() {
   return <div className="text-[0.6875rem] text-slate-700 text-center py-3">데이터 없음</div>;
 }
 
-function KCard({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
-  /* 사용자 요청 2026-04-29: 카드 안 텍스트 중앙정렬 (text-center).
-     인사/근태/휴가/민원/차량운행/실적/반입/안전 모든 KCard 일괄 적용 (단일 컴포넌트 한 곳 수정). */
+function KCard({ label, value, unit, tone = 'default' }: { label: string; value: string; unit?: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
   const c: Record<string, string> = {
     default: 'bg-white border-line text-ink',
     accent: 'bg-cyan-100 border-cyan-500 text-cyan-900',
@@ -362,6 +435,7 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
     <div className={`px-3 py-2 rounded border-2 text-center ${c[tone]}`}>
       <div className="text-xs font-mono font-extrabold uppercase">{label}</div>
       <div className="text-base font-black mt-0.5">{value}</div>
+      {unit && <div className="text-[0.5625rem] font-mono font-bold opacity-70 mt-0.5">{unit}</div>}
     </div>
   );
 }
@@ -377,6 +451,66 @@ function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: str
           {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(2) : value}{suffix}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* 시간대별 히스토그램 (24시간) */
+function HourHistogram({ data }: { data: Array<{ hour: number; count: number }> }) {
+  const mx = Math.max(1, ...data.map((d) => d.count));
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) {
+    return <div className="py-4 text-center text-xs text-slate-500">데이터 없음</div>;
+  }
+  return (
+    <div>
+      <div className="flex items-end gap-px h-20 px-1 pt-1">
+        {data.map((d) => {
+          const h = (d.count / mx) * 100;
+          /* 시간대 색상: 새벽(짙은 파랑) / 오전(시안) / 오후(앰버) / 야간(보라) */
+          const color =
+            d.hour < 6 ? 'bg-indigo-500' :
+            d.hour < 12 ? 'bg-cyan-500' :
+            d.hour < 18 ? 'bg-amber-500' : 'bg-purple-500';
+          return (
+            <div
+              key={d.hour}
+              className={`flex-1 rounded-t ${color} hover:opacity-80 transition`}
+              style={{ height: `${Math.max(2, h)}%` }}
+              title={`${d.hour}시: ${d.count}건`}
+            />
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-[0.5625rem] font-mono font-bold text-slate-500 mt-1 px-1">
+        <span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span>
+      </div>
+    </div>
+  );
+}
+
+/* 요일별 막대 */
+function WeekdayBars({ data }: { data: Array<{ day: number; count: number }> }) {
+  const labels = ['일', '월', '화', '수', '목', '금', '토'];
+  const mx = Math.max(1, ...data.map((d) => d.count));
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) {
+    return <div className="py-4 text-center text-xs text-slate-500">데이터 없음</div>;
+  }
+  return (
+    <div className="flex items-end gap-1.5 h-24 px-1 pt-1">
+      {data.map((d) => {
+        const h = (d.count / mx) * 100;
+        const isWeekend = d.day === 0 || d.day === 6;
+        const color = isWeekend ? 'bg-rose-400' : 'bg-amber-400';
+        return (
+          <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink">{d.count}</div>
+            <div className={`w-full rounded-t ${color} hover:opacity-80 transition`} style={{ height: `${Math.max(4, h)}%` }} />
+            <div className={`text-[0.6875rem] font-bold ${isWeekend ? 'text-rose-600' : 'text-slate-700'}`}>{labels[d.day]}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }

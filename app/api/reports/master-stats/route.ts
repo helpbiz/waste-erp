@@ -109,13 +109,68 @@ export async function GET(req: Request) {
     reportedAt: { gte: fromDate, lte: toDate },
     ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}),
   };
-  const complaints = await prisma.complaint.findMany({ where: cWhere2 });
+  const complaints = await prisma.complaint.findMany({
+    where: cWhere2,
+    include: { contractor: { select: { companyName: true } } },
+  });
   const cByType = new Map<string, number>();
   const cByStatus = new Map<string, number>();
+  /* 사용자 요청 2026-04-29: 민원 분포 시각화 보강 — 시간/요일/월/지역/처리성과/만족도/위탁업체별 */
+  const cByHour = new Array(24).fill(0) as number[]; // 0-23시
+  const cByWeekday = new Array(7).fill(0) as number[]; // 0(일)~6(토)
+  const cByMonth = new Map<string, number>(); // YYYY-MM
+  const cByArea = new Map<string, number>(); // 주소 첫 토큰 (시·도/구·군 단위 추정)
+  const cByContractor = new Map<string, { name: string; count: number }>();
+  const cSatByScore = new Array(5).fill(0) as number[]; // 1-5점
+  let cSatTotal = 0;
+  let cSatCount = 0;
+  let cResolveSumMs = 0;
+  let cResolvedCount = 0;
+  let cOverdue = 0;
+  let cUrgent = 0;
+  let cUnassigned = 0;
+  /* KST 기준으로 시간/요일 카운트 (UTC offset +9h) */
+  const KST_MS = 9 * 3600 * 1000;
   for (const c of complaints) {
     cByType.set(c.type, (cByType.get(c.type) ?? 0) + 1);
     cByStatus.set(c.status, (cByStatus.get(c.status) ?? 0) + 1);
+    const kst = new Date(c.reportedAt.getTime() + KST_MS);
+    cByHour[kst.getUTCHours()]++;
+    cByWeekday[kst.getUTCDay()]++;
+    const ym = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, '0')}`;
+    cByMonth.set(ym, (cByMonth.get(ym) ?? 0) + 1);
+    if (c.locationAddress) {
+      /* 첫 2단어 합산 (예: "서울특별시 강남구 역삼동..." → "서울특별시 강남구") */
+      const parts = c.locationAddress.trim().split(/\s+/).slice(0, 2).join(' ');
+      if (parts) cByArea.set(parts, (cByArea.get(parts) ?? 0) + 1);
+    }
+    if (c.contractor) {
+      const k = c.contractorId.toString();
+      const cur = cByContractor.get(k) ?? { name: c.contractor.companyName, count: 0 };
+      cur.count++;
+      cByContractor.set(k, cur);
+    }
+    if (c.satisfactionScore != null && c.satisfactionScore >= 1 && c.satisfactionScore <= 5) {
+      cSatByScore[c.satisfactionScore - 1]++;
+      cSatTotal += c.satisfactionScore;
+      cSatCount++;
+    }
+    if (c.resolvedAt) {
+      cResolveSumMs += c.resolvedAt.getTime() - c.reportedAt.getTime();
+      cResolvedCount++;
+    }
+    if (c.dueDate && c.dueDate < new Date() && c.status !== 'COMPLETED' && c.status !== 'REJECTED') {
+      cOverdue++;
+    }
+    if (c.isUrgent) cUrgent++;
+    if (!c.assignedTo && c.status !== 'COMPLETED' && c.status !== 'REJECTED') cUnassigned++;
   }
+  const cAvgResolveHours = cResolvedCount > 0
+    ? Math.round((cResolveSumMs / cResolvedCount) / 3600_000 * 10) / 10
+    : 0;
+  const cActiveCount = complaints.filter(c => c.status !== 'COMPLETED' && c.status !== 'REJECTED').length;
+  const cOverdueRate = cActiveCount > 0 ? Math.round((cOverdue / cActiveCount) * 1000) / 10 : 0;
+  const cSatAvg = cSatCount > 0 ? Math.round((cSatTotal / cSatCount) * 10) / 10 : 0;
 
   /* ──────── 차량/운행 ──────── */
   const vehicleWhere: Prisma.VehicleWhereInput = cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {};
@@ -213,6 +268,32 @@ export async function GET(req: Request) {
       total: complaints.length,
       byType: Array.from(cByType.entries()).map(([type, count]) => ({ type, count })),
       byStatus: Array.from(cByStatus.entries()).map(([status, count]) => ({ status, count })),
+      /* 분포 시각화 보강 (2026-04-29) */
+      byHour: cByHour.map((count, hour) => ({ hour, count })),
+      byWeekday: cByWeekday.map((count, day) => ({ day, count })),
+      byMonth: Array.from(cByMonth.entries())
+        .map(([ym, count]) => ({ ym, count }))
+        .sort((a, b) => a.ym.localeCompare(b.ym)),
+      byArea: Array.from(cByArea.entries())
+        .map(([area, count]) => ({ area, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+      byContractor: Array.from(cByContractor.entries())
+        .map(([id, v]) => ({ contractorId: id, name: v.name, count: v.count }))
+        .sort((a, b) => b.count - a.count),
+      performance: {
+        avgResolveHours: cAvgResolveHours,
+        resolvedCount: cResolvedCount,
+        overdueCount: cOverdue,
+        overdueRate: cOverdueRate,
+        urgentCount: cUrgent,
+        unassignedCount: cUnassigned,
+      },
+      satisfaction: {
+        count: cSatCount,
+        avg: cSatAvg,
+        byScore: cSatByScore.map((count, i) => ({ score: i + 1, count })),
+      },
     },
 
     vehicles: {
