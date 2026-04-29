@@ -82,10 +82,19 @@ export default function SuperAdminClient() {
         <h2 className="text-xl font-extrabold text-ink">슈퍼관리자 콘솔</h2>
         <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-purple-600 text-white">SUPER_ADMIN ONLY</span>
         <a
+          href="/noc"
+          target="_blank"
+          rel="noopener"
+          className="ml-auto px-3 py-2 rounded-lg border-2 border-cyan-400 bg-cyan-900 hover:bg-cyan-800 text-white text-xs font-extrabold transition"
+          title="NOC 운영센터 — 56인치 풀스크린 관제 화면 (별도 창 / Chromium kiosk 권장)"
+        >
+          📡 NOC 운영센터
+        </a>
+        <a
           href="/super-admin/permission-print"
           target="_blank"
           rel="noopener"
-          className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-extrabold transition"
+          className="px-3 py-2 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-extrabold transition"
           title="권한 매트릭스 인쇄용 페이지 (Ctrl+P → PDF)"
         >
           🖨 권한 매트릭스 인쇄

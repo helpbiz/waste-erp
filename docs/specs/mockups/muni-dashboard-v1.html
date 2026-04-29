@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>지자체 모니터링 대시보드 — Mockup v1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --surface-soft: #f1f4f9;
+    --line: #e2e8f0;
+    --ink: #0f172a;
+    --ink-faint: #64748b;
+    --accent: #0891b2;
+    --accent-soft: #cffafe;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #2563eb;
+    --purple: #7c3aed;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1440px; margin: 0 auto; }
+
+  /* ─── Header ─────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), #06b6d4);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 900; font-size: 14px;
+  }
+  .brand-text { line-height: 1.2; }
+  .brand-text .title { font-weight: 800; font-size: 14px; }
+  .brand-text .sub { font-size: 11px; color: var(--ink-faint); }
+  .header-controls { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; font-weight: 700;
+    border: 1px solid var(--line); background: var(--surface);
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 800;
+  }
+  .badge-live {
+    background: #dcfce7; color: var(--success);
+  }
+  .badge-live::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ─── Sub-nav (지자체·기간) ──────────────────────────── */
+  .subnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 24px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .subnav .label { color: var(--ink-faint); font-weight: 600; }
+  .chip {
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-soft); color: var(--ink);
+    font-weight: 700; font-size: 12px;
+    border: 1px solid var(--line);
+  }
+  .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .breadcrumb { color: var(--ink-faint); font-size: 12px; }
+  .breadcrumb b { color: var(--ink); }
+
+  /* ─── Layout ─────────────────────────────────────────── */
+  main { padding: 20px 24px 48px; display: grid; gap: 16px; }
+
+  .section-title {
+    font-size: 11px; font-weight: 800; color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  /* ─── Tier 1: KPI Strip ──────────────────────────────── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+  }
+  .kpi .head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .kpi .label {
+    font-size: 11px; font-weight: 700; color: var(--ink-faint);
+  }
+  .kpi .icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .kpi .value {
+    font-size: 22px; font-weight: 900; color: var(--ink);
+    font-feature-settings: 'tnum';
+  }
+  .kpi .delta {
+    margin-top: 4px;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .delta.up { color: var(--success); }
+  .delta.down { color: var(--danger); }
+  .delta.flat { color: var(--ink-faint); }
+
+  /* ─── Tier 2: Distribution ───────────────────────────── */
+  .tier2 {
+    display: grid;
+    grid-template-columns: 1.1fr 1.4fr;
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-title { font-size: 13px; font-weight: 800; }
+  .card-meta { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-row { display: flex; flex-direction: column; gap: 4px; }
+  .funnel-row .top {
+    display: flex; justify-content: space-between; font-size: 11px;
+  }
+  .funnel-row .top .stage { font-weight: 700; }
+  .funnel-row .top .meta { color: var(--ink-faint); font-weight: 600; }
+  .funnel-bar {
+    height: 28px; background: var(--surface-soft);
+    border-radius: 6px; position: relative; overflow: hidden;
+  }
+  .funnel-fill {
+    height: 100%;
+    display: flex; align-items: center; padding-left: 10px;
+    font-size: 11px; font-weight: 800; color: white;
+    background: linear-gradient(90deg, var(--info), var(--accent));
+    transition: width 0.3s ease;
+  }
+  .funnel-fill.warn { background: linear-gradient(90deg, var(--warning), #f59e0b); }
+  .funnel-fill.ok { background: linear-gradient(90deg, var(--success), #10b981); }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 26px repeat(24, 1fr);
+    gap: 2px;
+    font-size: 9px;
+  }
+  .heatmap-grid .head {
+    text-align: center; color: var(--ink-faint); font-weight: 700;
+    padding-top: 4px;
+  }
+  .heatmap-grid .day {
+    color: var(--ink-faint); font-weight: 700; text-align: right;
+    padding-right: 4px; font-size: 10px;
+    display: flex; align-items: center; justify-content: flex-end;
+  }
+  .heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--surface-soft);
+  }
+  .h0 { background: #f1f5f9; }
+  .h1 { background: #cffafe; }
+  .h2 { background: #67e8f9; }
+  .h3 { background: #06b6d4; }
+  .h4 { background: #0e7490; }
+  .h5 { background: #164e63; }
+  .legend {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--ink-faint); font-weight: 600;
+    margin-top: 8px;
+  }
+  .legend-grad { display: flex; gap: 2px; }
+  .legend-grad span { width: 14px; height: 10px; border-radius: 2px; }
+
+  /* 업체 비교 막대 */
+  .compare-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .compare-row { display: grid; grid-template-columns: 100px 1fr 60px 80px; gap: 8px; align-items: center; font-size: 12px; }
+  .compare-row .name { font-weight: 700; }
+  .compare-row .bar-wrap { background: var(--surface-soft); height: 18px; border-radius: 4px; overflow: hidden; }
+  .compare-row .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #06b6d4);
+    display: flex; align-items: center; padding-left: 6px;
+    font-size: 10px; font-weight: 800; color: white;
+  }
+  .compare-row .pct { font-family: ui-monospace, monospace; font-weight: 800; text-align: right; font-size: 11px; }
+  .anomaly {
+    padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800;
+    background: #fee2e2; color: var(--danger);
+  }
+  .anomaly.ok { background: #dcfce7; color: var(--success); }
+  .anomaly.warn { background: #fef3c7; color: var(--warning); }
+
+  /* ─── Tier 3 ─────────────────────────────────────────── */
+  .tier3 {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+  }
+
+  .contractor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .contractor {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .contractor .top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .contractor .name { font-size: 13px; font-weight: 800; }
+  .contractor .region { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+  .contractor-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    font-size: 11px;
+  }
+  .stat {
+    background: var(--surface-soft);
+    padding: 6px 8px; border-radius: 6px;
+    text-align: center;
+  }
+  .stat .v {
+    font-size: 14px; font-weight: 900;
+    font-family: ui-monospace, monospace;
+  }
+  .stat .l {
+    color: var(--ink-faint); font-size: 10px; font-weight: 700;
+  }
+
+  /* Alert Feed */
+  .alert-feed {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 460px; overflow-y: auto;
+  }
+  .alert {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    background: var(--surface-soft);
+    border-left: 3px solid var(--info);
+  }
+  .alert.urgent { border-left-color: var(--danger); background: #fef2f2; }
+  .alert.warn { border-left-color: var(--warning); background: #fffbeb; }
+  .alert.over { border-left-color: var(--purple); background: #faf5ff; }
+  .alert .ico {
+    width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .alert.urgent .ico { background: #fee2e2; color: var(--danger); }
+  .alert.warn .ico { background: #fef3c7; color: var(--warning); }
+  .alert.over .ico { background: #ede9fe; color: var(--purple); }
+  .alert.info .ico { background: var(--accent-soft); color: var(--accent); }
+  .alert .body { flex: 1; min-width: 0; }
+  .alert .row1 {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; margin-bottom: 2px;
+  }
+  .alert .tag {
+    font-size: 9px; font-weight: 800; padding: 1px 5px;
+    border-radius: 3px; text-transform: uppercase;
+  }
+  .alert.urgent .tag { background: var(--danger); color: white; }
+  .alert.warn .tag { background: var(--warning); color: white; }
+  .alert.over .tag { background: var(--purple); color: white; }
+  .alert.info .tag { background: var(--info); color: white; }
+  .alert .row2 { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+
+  /* Watermark / 데모 표기 */
+  .demo-banner {
+    position: fixed; bottom: 12px; right: 12px;
+    background: rgba(15,23,42,0.85); color: white;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 11px; font-weight: 700;
+    pointer-events: none; z-index: 100;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+    .tier2 { grid-template-columns: 1fr; }
+    .tier3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .heatmap-grid { font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ HEADER ═══ -->
+  <header>
+    <div class="brand">
+      <div class="logo">CE</div>
+      <div class="brand-text">
+        <div class="title">CleanERP <span style="color: var(--ink-faint); font-weight: 600;">— 지자체 모니터링</span></div>
+        <div class="sub">생활폐기물 수집·운반 업무지원 시스템</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <span class="badge badge-live">LIVE · 30초마다 갱신</span>
+      <button class="btn">📥 PDF 보고서</button>
+      <button class="btn">📊 Excel 다운로드</button>
+      <button class="btn-primary btn">🖨 인쇄</button>
+    </div>
+  </header>
+
+  <!-- ═══ SUB-NAV ═══ -->
+  <div class="subnav">
+    <span class="breadcrumb">강남구청 환경과 / <b>김민원</b> 님 (MUNI_ADMIN)</span>
+    <span style="flex: 1;"></span>
+    <span class="label">기간:</span>
+    <span class="chip">오늘</span>
+    <span class="chip active">이번 주</span>
+    <span class="chip">이번 달</span>
+    <span class="chip">전분기</span>
+    <span class="chip">올해</span>
+    <span style="margin-left: 8px; color: var(--ink-faint); font-size: 11px;">2026-04-22 ~ 2026-04-28</span>
+  </div>
+
+  <main>
+
+    <!-- ═══ TIER 1 — KPI STRIP ═══ -->
+    <section>
+      <div class="section-title">▸ 한눈에 보기 (KPI)</div>
+      <div class="kpi-strip">
+        <div class="kpi">
+          <div class="head">
+            <span class="label">위탁업체</span>
+            <span class="icon" style="background: var(--accent-soft); color: var(--accent);">🏢</span>
+          </div>
+          <div class="value">12<span style="font-size:14px;color:var(--ink-faint);">개</span></div>
+          <div class="delta flat">— 변동 없음</div>
+        </div>
+        <div class="kpi">
+          <div class="head">
+            <span class="label">활성 워커</span>
+            <span class="icon" style="background: #dcfce7; color: var(--success);">👷</span>
+          </div>
+          <div class="value">187<span style="font-size:14px;color:var(--ink-faint);">명</span></div>
+          <div class="delta up">▲ 8명 (지난주 대비)</div>
+        </div>
+        <div class="kpi">
+          <div class="head">
+            <span class="label">오늘 민원</span>
+            <span class="icon" style="background: #fef3c7; color: var(--warning);">📞</span>
+          </div>
+          <div class="value">47<span style="font-size:14px;color:var(--ink-faint);">건</span></div>
+          <div class="delta up">▲ 12% (전일 대비)</div>
+        </div>
+        <div class="kpi">
+          <div class="head">
+            <span class="label">처리율</span>
+            <span class="icon" style="background: #dcfce7; color: var(--success);">✅</span>
+          </div>
+          <div class="value">89.4<span style="font-size:14px;color:var(--ink-faint);">%</span></div>
+          <div class="delta up">▲ 2.1%p</div>
+        </div>
+        <div class="kpi">
+          <div class="head">
+            <span class="label">평균 응답</span>
+            <span class="icon" style="background: #dbeafe; color: var(--info);">⏱️</span>
+          </div>
+          <div class="value">28<span style="font-size:14px;color:var(--ink-faint);">분</span></div>
+          <div class="delta up" style="color: var(--success);">▼ 4분 단축</div>
+        </div>
+        <div class="kpi">
+          <div class="head">
+            <span class="label">시민 만족도</span>
+            <span class="icon" style="background: #fef3c7; color: var(--warning);">⭐</span>
+          </div>
+          <div class="value">4.6<span style="font-size:14px;color:var(--ink-faint);"> / 5</span></div>
+          <div class="delta up">▲ 0.2 (이번 주)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TIER 2 — DISTRIBUTION ═══ -->
+    <section>
+      <div class="section-title">▸ 분포 분석 (Distribution)</div>
+      <div class="tier2">
+
+        <!-- Funnel -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">🔄 민원 처리 Funnel</div>
+            <div class="card-meta">이번 주 · 총 287건</div>
+          </div>
+          <div class="funnel">
+            <div class="funnel-row">
+              <div class="top"><span class="stage">① 신고 접수</span><span class="meta">287건 · 100%</span></div>
+              <div class="funnel-bar"><div class="funnel-fill" style="width: 100%;">287</div></div>
+            </div>
+            <div class="funnel-row">
+              <div class="top"><span class="stage">② 출동</span><span class="meta">263건 · 91.6% (평균 9분)</span></div>
+              <div class="funnel-bar"><div class="funnel-fill" style="width: 91.6%;">263</div></div>
+            </div>
+            <div class="funnel-row">
+              <div class="top"><span class="stage">③ 도착</span><span class="meta">241건 · 84.0% (평균 28분)</span></div>
+              <div class="funnel-bar"><div class="funnel-fill warn" style="width: 84%;">241</div></div>
+            </div>
+            <div class="funnel-row">
+              <div class="top"><span class="stage">④ 처리 완료</span><span class="meta">220건 · 76.7% (평균 1시간 12분)</span></div>
+              <div class="funnel-bar"><div class="funnel-fill ok" style="width: 76.7%;">220</div></div>
+            </div>
+          </div>
+          <div style="margin-top: 12px; padding: 10px; background: var(--surface-soft); border-radius: 6px; font-size: 11px; color: var(--ink-faint);">
+            ⚠️ <b>도착 단계 이탈률 7.6%p</b> — 차량 위치 GPS 미수신 의심 (하단 알림 참조)
+          </div>
+        </div>
+
+        <!-- Heatmap + Compare -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">📅 시간×요일 민원 발생 히트맵</div>
+            <div class="card-meta">최근 4주</div>
+          </div>
+          <div class="heatmap-grid" id="heatmap"></div>
+          <div class="legend">
+            <span>적음</span>
+            <div class="legend-grad">
+              <span class="h0"></span><span class="h1"></span><span class="h2"></span><span class="h3"></span><span class="h4"></span><span class="h5"></span>
+            </div>
+            <span>많음</span>
+            <span style="margin-left: auto;">피크: 화·금 09–11시</span>
+          </div>
+
+          <div class="card-head" style="margin-top: 16px;">
+            <div class="card-title">🏢 업체 비교 (처리율)</div>
+            <div class="card-meta">정렬: 처리율 ↓</div>
+          </div>
+          <div class="compare-list">
+            <div class="compare-row">
+              <span class="name">강남청소(주)</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width: 95%;">42건/44</div></div>
+              <span class="pct">95.5%</span>
+              <span class="anomaly ok">우수</span>
+            </div>
+            <div class="compare-row">
+              <span class="name">한국환경개발</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width: 91%;">31건/34</div></div>
+              <span class="pct">91.2%</span>
+              <span class="anomaly ok">우수</span>
+            </div>
+            <div class="compare-row">
+              <span class="name">서울클린서비스</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width: 88%;">28건/32</div></div>
+              <span class="pct">87.5%</span>
+              <span class="anomaly ok">정상</span>
+            </div>
+            <div class="compare-row">
+              <span class="name">광림산업(주)</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width: 75%;">18건/24</div></div>
+              <span class="pct">75.0%</span>
+              <span class="anomaly warn">주의</span>
+            </div>
+            <div class="compare-row">
+              <span class="name">대명환경</span>
+              <div class="bar-wrap"><div class="bar-fill" style="width: 62%;">13건/21</div></div>
+              <span class="pct">61.9%</span>
+              <span class="anomaly">이상감지</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ TIER 3 — OPERATIONAL ═══ -->
+    <section>
+      <div class="section-title">▸ 운영 현황 (Operational)</div>
+      <div class="tier3">
+
+        <!-- Contractor Cards -->
+        <div>
+          <div class="card-head">
+            <div class="card-title">📍 위탁업체 현황 (12개 중 상위 6개)</div>
+            <div class="card-meta">클릭 시 상세 진입</div>
+          </div>
+          <div class="contractor-grid">
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">강남청소(주)</div>
+                  <div class="region">강남구 일대 · 차량 12대</div>
+                </div>
+                <span class="anomaly ok">★</span>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">42</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v">22<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v">95<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">한국환경개발</div>
+                  <div class="region">강남구 동부 · 차량 9대</div>
+                </div>
+                <span class="anomaly ok">★</span>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">34</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v">25<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v">91<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">서울클린서비스</div>
+                  <div class="region">강남구 서부 · 차량 8대</div>
+                </div>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">32</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v">31<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v">88<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">광림산업(주)</div>
+                  <div class="region">강남구 남부 · 차량 6대</div>
+                </div>
+                <span class="anomaly warn">⚠</span>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">24</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v" style="color:var(--warning)">42<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v">75<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">대명환경</div>
+                  <div class="region">강남구 북부 · 차량 5대</div>
+                </div>
+                <span class="anomaly">⚠</span>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">21</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v" style="color:var(--danger)">58<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v" style="color:var(--danger)">62<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+            <div class="contractor">
+              <div class="top">
+                <div>
+                  <div class="name">에코그린컴퍼니</div>
+                  <div class="region">강남구 중앙 · 차량 4대</div>
+                </div>
+              </div>
+              <div class="contractor-stats">
+                <div class="stat"><div class="v">19</div><div class="l">민원</div></div>
+                <div class="stat"><div class="v">29<span style="font-size:10px;">분</span></div><div class="l">평균응답</div></div>
+                <div class="stat"><div class="v">84<span style="font-size:10px;">%</span></div><div class="l">처리율</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Feed -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">🚨 24h 이상 민원 피드</div>
+            <div class="card-meta">실시간 · 7건</div>
+          </div>
+          <div class="alert-feed">
+
+            <div class="alert urgent">
+              <div class="ico">⚠</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">긴급</span>
+                  <span>역삼동 폐기물 적치 신고 (4시간 미배정)</span>
+                </div>
+                <div class="row2">대명환경 · 24분 전 신고 · 미배정</div>
+              </div>
+            </div>
+
+            <div class="alert urgent">
+              <div class="ico">⏱</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">기한초과</span>
+                  <span>청담동 음식물 쓰레기 민원 (SLA 2배 초과)</span>
+                </div>
+                <div class="row2">광림산업(주) · 2시간 8분 전 · 출동 미확인</div>
+              </div>
+            </div>
+
+            <div class="alert warn">
+              <div class="ico">📍</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">GPS</span>
+                  <span>차량 5대 위치 미수신 (10분+)</span>
+                </div>
+                <div class="row2">대명환경 (3대), 광림산업 (2대)</div>
+              </div>
+            </div>
+
+            <div class="alert over">
+              <div class="ico">🔁</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">반복</span>
+                  <span>도곡동 OO아파트 — 같은 위치 5번째 신고</span>
+                </div>
+                <div class="row2">서울클린서비스 · 이번 주 · 패턴 분석 권장</div>
+              </div>
+            </div>
+
+            <div class="alert urgent">
+              <div class="ico">🔥</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">긴급</span>
+                  <span>대형폐기물 수거 미이행 (3일 누적)</span>
+                </div>
+                <div class="row2">대명환경 · 신청 12건 미처리</div>
+              </div>
+            </div>
+
+            <div class="alert info">
+              <div class="ico">ℹ</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">정보</span>
+                  <span>이번 주 우수 처리: 강남청소(주) 95.5%</span>
+                </div>
+                <div class="row2">42건 중 40건 SLA 내 처리 · 표창 검토</div>
+              </div>
+            </div>
+
+            <div class="alert warn">
+              <div class="ico">📊</div>
+              <div class="body">
+                <div class="row1">
+                  <span class="tag">패턴</span>
+                  <span>금요일 오전 민원 평균 +38%</span>
+                </div>
+                <div class="row2">최근 4주 추세 · 인력 추가 배치 검토</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+</div>
+
+<div class="demo-banner">📍 영업 시연용 Mockup v1 · 실데이터 아님</div>
+
+<script>
+  /* 시간×요일 히트맵 자동 생성 — 7일 × 24시간 */
+  (function() {
+    const days = ['월', '화', '수', '목', '금', '토', '일'];
+    const root = document.getElementById('heatmap');
+    if (!root) return;
+
+    /* 헤더 (시간) */
+    root.appendChild(Object.assign(document.createElement('div'), { className: 'head', textContent: '' }));
+    for (let h = 0; h < 24; h++) {
+      const el = document.createElement('div');
+      el.className = 'head';
+      el.textContent = h % 3 === 0 ? h : '';
+      root.appendChild(el);
+    }
+
+    /* 가짜 데이터 — 평일 출퇴근 시간대 + 화/금 오전 피크 패턴 */
+    const intensity = (d, h) => {
+      let v = 0;
+      if (d < 5 && h >= 8 && h <= 18) v = 2; // 평일 업무시간
+      if ((d === 1 || d === 4) && h >= 9 && h <= 11) v = 5; // 화/금 오전 피크
+      if ((d === 1 || d === 4) && h >= 14 && h <= 16) v = 4;
+      if (d < 5 && h >= 6 && h <= 7) v = 3; // 새벽 수거 시작
+      if (d === 5 && h >= 10 && h <= 14) v = 3; // 토요일 오전
+      if (d === 6 && h >= 11 && h <= 13) v = 2; // 일요일 점심
+      if (h < 6 || h > 22) v = Math.max(0, v - 2); // 야간 감소
+      return Math.min(5, Math.max(0, v + (Math.random() > 0.6 ? 1 : 0)));
+    };
+
+    days.forEach((day, d) => {
+      root.appendChild(Object.assign(document.createElement('div'), { className: 'day', textContent: day }));
+      for (let h = 0; h < 24; h++) {
+        const el = document.createElement('div');
+        const v = intensity(d, h);
+        el.className = `heatmap-cell h${v}`;
+        el.title = `${day} ${h}시 · 강도 ${v}/5`;
+        root.appendChild(el);
+      }
+    });
+  })();
+</script>
+</body>
+</html>
