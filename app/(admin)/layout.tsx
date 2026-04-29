@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { complaintWhere, PENDING_STATUSES } from '@/lib/complaints';
 import { safetyWhere } from '@/lib/safety';
 import AdminShell from './_admin-shell';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await readSession();
@@ -62,13 +63,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <AdminShell
-      session={{ role: session.role, name: session.name }}
-      groups={groups}
-      pageTitle="민원관리"
-      canMutate={canMutate(session.role)}
-    >
-      {children}
-    </AdminShell>
+    <ToastProvider>
+      <AdminShell
+        session={{ role: session.role, name: session.name }}
+        groups={groups}
+        pageTitle="민원관리"
+        canMutate={canMutate(session.role)}
+      >
+        {children}
+      </AdminShell>
+    </ToastProvider>
   );
 }

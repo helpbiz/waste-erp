@@ -7,6 +7,7 @@ import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
 import { BottomSheet } from '@/components/BottomSheet';
 import { FilterToggle } from '@/components/FilterToggle';
+import { useToast } from '@/components/ui/Toast';
 
 /* leaflet은 SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -61,6 +62,7 @@ export default function ComplaintsClient({
   contractorOpts: ContractorOpt[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [tab, setTab] = useState<Tab>('ALL');
   const [busy, setBusy] = useState(false);
   const [openAssignId, setOpenAssignId] = useState<string | null>(null);
@@ -197,16 +199,20 @@ export default function ComplaintsClient({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
               });
-              const data = await res.json();
+              const data = await res.json().catch(() => ({}));
               if (!res.ok) {
-                setError(data?.message ?? data?.error ?? '등록 실패');
+                const msg = data?.message ?? data?.error ?? '등록 실패';
+                setError(msg);
+                toast.error(`민원 등록 실패: ${msg}`);
                 return false;
               }
               setOpenCreate(false);
+              toast.success('민원이 등록되었습니다.');
               router.refresh();
               return true;
             } catch {
               setError('네트워크 오류');
+              toast.error('네트워크 오류 — 등록을 다시 시도해 주세요.');
               return false;
             } finally {
               setBusy(false);

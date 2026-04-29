@@ -185,7 +185,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
             <tr>
               <th className="px-1.5 py-2 text-center w-[28px]">No</th>
               <th className="px-1.5 py-2 text-left w-[56px]">성상</th>
-              <th className="px-1.5 py-2 text-left w-[76px]">입력(t)</th>
+              <th className="px-1.5 py-2 text-left w-[60px]">입력(t)</th>
               <th className="px-1.5 py-2 text-left hidden sm:table-cell">기록자</th>
               <th className="px-1.5 py-2 w-[56px]"></th>
             </tr>
@@ -202,7 +202,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                     <input type="number" step="0.001" value={draft.weight} disabled={!canEdit}
                       onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, weight: e.target.value } })}
                       placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
-                      className="w-[68px] px-1.5 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50" />
+                      className="w-[52px] px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50" />
                   </td>
                   <td className="px-1.5 py-2 text-[0.625rem] text-slate-600 whitespace-nowrap hidden sm:table-cell">
                     {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
