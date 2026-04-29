@@ -37,6 +37,8 @@ export function UsersGlobalTab() {
   const [lockedOnly, setLockedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [resetResult, setResetResult] = useState<{ username: string; tempPassword: string } | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createdInfo, setCreatedInfo] = useState<{ username: string; tempPassword: string; role: string; name: string } | null>(null);
 
   function load() {
     setLoading(true);
@@ -103,7 +105,34 @@ export function UsersGlobalTab() {
           잠금만
         </label>
         <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-xs font-extrabold">검색</button>
+        <button onClick={() => setCreateOpen(true)} className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm">
+          ＋ 신규 사용자 등록
+        </button>
       </div>
+
+      {createOpen && (
+        <CreateUserModal
+          onClose={() => setCreateOpen(false)}
+          onCreated={(info) => { setCreatedInfo(info); setCreateOpen(false); load(); }}
+        />
+      )}
+
+      {createdInfo && (
+        <div className="bg-emerald-50 border-2 border-emerald-400 rounded-lg p-3">
+          <div className="text-sm font-extrabold text-emerald-900 mb-1">
+            ✓ {ROLE_LABEL[createdInfo.role] ?? createdInfo.role} 신규 등록 완료 — 1회 표시
+          </div>
+          <div className="font-mono text-sm space-y-1">
+            <div><b>이름:</b> {createdInfo.name}</div>
+            <div><b>아이디:</b> <code className="px-1 rounded bg-white border">{createdInfo.username}</code></div>
+            <div><b>임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">{createdInfo.tempPassword}</code></div>
+          </div>
+          <div className="mt-2 flex gap-1.5">
+            <button onClick={() => navigator.clipboard.writeText(`아이디: ${createdInfo.username}\n임시 PW: ${createdInfo.tempPassword}`).catch(() => null)} className="px-2 py-1 rounded bg-emerald-600 text-white text-xs font-bold">📋 복사</button>
+            <button onClick={() => setCreatedInfo(null)} className="px-2 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">닫기</button>
+          </div>
+        </div>
+      )}
 
       {resetResult && (
         <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-3">
@@ -528,6 +557,243 @@ export function OrgTreeTab() {
           );
         })}
         {filtered.length === 0 && <div className="text-center py-10 text-slate-500">조건에 맞는 지자체 없음</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 신규 사용자 등록 모달 (모든 role 지원) ───────────
+   MUNI_ADMIN / CONTRACTOR_ADMIN / INTERNAL_ADMIN / WORKER 모두 등록.
+   role 별 필수 컨텍스트:
+     - MUNI_ADMIN: municipalityId
+     - 그 외: contractorId */
+
+type RoleKey = 'MUNI_ADMIN' | 'CONTRACTOR_ADMIN' | 'INTERNAL_ADMIN' | 'WORKER';
+
+const CREATE_ROLE_OPTIONS: Array<{ key: RoleKey; label: string; ctx: 'muni' | 'contractor' }> = [
+  { key: 'MUNI_ADMIN',       label: '지자체관리자 (MUNI_ADMIN)',     ctx: 'muni' },
+  { key: 'CONTRACTOR_ADMIN', label: '회사관리자 (CONTRACTOR_ADMIN)', ctx: 'contractor' },
+  { key: 'INTERNAL_ADMIN',   label: '일반관리자 (INTERNAL_ADMIN)',   ctx: 'contractor' },
+  { key: 'WORKER',           label: '일반근로자 (WORKER)',           ctx: 'contractor' },
+];
+
+function genTempPw(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let s = '';
+  for (let i = 0; i < 12; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: (info: { username: string; tempPassword: string; role: string; name: string }) => void }) {
+  const [role, setRole] = useState<RoleKey>('MUNI_ADMIN');
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState(() => genTempPw());
+  const [phone, setPhone] = useState('');
+  const [muniId, setMuniId] = useState('');
+  const [muniQuery, setMuniQuery] = useState('');
+  const [muniList, setMuniList] = useState<Array<{ id: string; name: string; code: string; region: string | null; status: string }>>([]);
+  const [contractorId, setContractorId] = useState('');
+  const [contractorQuery, setContractorQuery] = useState('');
+  const [contractorList, setContractorList] = useState<Array<{ id: string; companyName: string; municipalityName: string | null }>>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const ctx = CREATE_ROLE_OPTIONS.find((r) => r.key === role)!.ctx;
+
+  /* role 변경 시 컨텍스트 리셋 */
+  useEffect(() => {
+    if (ctx === 'muni') setContractorId('');
+    else setMuniId('');
+  }, [ctx]);
+
+  /* muni 목록 로드 (role=MUNI_ADMIN 시) */
+  useEffect(() => {
+    if (ctx !== 'muni' || muniList.length > 0) return;
+    fetch('/api/super-admin/municipalities?limit=500')
+      .then((r) => r.json())
+      .then((d) => setMuniList(d.items ?? []))
+      .catch(() => null);
+  }, [ctx, muniList.length]);
+
+  /* contractor 목록 로드 (그 외 role) */
+  useEffect(() => {
+    if (ctx !== 'contractor' || contractorList.length > 0) return;
+    fetch('/api/contractors')
+      .then((r) => r.json())
+      .then((d) => setContractorList(d.items ?? []))
+      .catch(() => null);
+  }, [ctx, contractorList.length]);
+
+  const filteredMunis = useMemo(() => {
+    const q = muniQuery.trim();
+    if (!q) return muniList.slice(0, 20);
+    return muniList.filter((m) => m.name.includes(q) || (m.region ?? '').includes(q) || m.code.includes(q)).slice(0, 50);
+  }, [muniList, muniQuery]);
+
+  const filteredContractors = useMemo(() => {
+    const q = contractorQuery.trim();
+    if (!q) return contractorList.slice(0, 20);
+    return contractorList.filter((c) => c.companyName.includes(q) || (c.municipalityName ?? '').includes(q)).slice(0, 50);
+  }, [contractorList, contractorQuery]);
+
+  async function submit() {
+    setError(null);
+    if (!name.trim()) return setError('이름 필수');
+    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username.trim())) return setError('아이디 3~30자 영문/숫자/_-');
+    if (password.length < 6) return setError('비밀번호 6자 이상');
+    if (phone && !/^01[0-9]-?\d{3,4}-?\d{4}$/.test(phone)) return setError('전화번호 010-XXXX-XXXX');
+    if (ctx === 'muni' && !muniId) return setError('관할 지자체 선택 필수');
+    if (ctx === 'contractor' && !contractorId) return setError('소속 회사 선택 필수');
+
+    setBusy(true);
+    const body: Record<string, unknown> = {
+      username: username.trim(),
+      password,
+      name: name.trim(),
+      role,
+      status: 'ACTIVE',
+    };
+    if (ctx === 'muni') body.municipalityId = muniId;
+    else body.contractorId = contractorId;
+    if (phone) body.phone = phone;
+
+    const r = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    setBusy(false);
+    if (r.ok) {
+      onCreated({ username: username.trim(), tempPassword: password, role, name: name.trim() });
+    } else {
+      const j = await r.json().catch(() => ({}));
+      setError(j?.detail ?? j?.error ?? '등록 실패');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-3">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[560px] w-full max-h-[92vh] flex flex-col">
+        <div className="px-5 py-3 border-b border-line flex items-center justify-between">
+          <h2 className="text-base font-black text-ink">신규 사용자 등록 (SUPER_ADMIN 전용)</h2>
+          <button onClick={onClose} disabled={busy} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">권한 (Role) *</div>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as RoleKey)}
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+            >
+              {CREATE_ROLE_OPTIONS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+            </select>
+            <div className="text-[0.625rem] text-slate-500 mt-1">
+              {role === 'MUNI_ADMIN' && '※ 지자체관리자는 회사 소속이 없는 외부 감독자. 데이터는 조회만 가능.'}
+              {role === 'CONTRACTOR_ADMIN' && '※ 위탁업체 대표 — 보통 위저드에서 자동 생성. 추가 발급 시 사용.'}
+              {role === 'INTERNAL_ADMIN' && '※ 회사 내부 팀장 — 결재·배차·민원 배정.'}
+              {role === 'WORKER' && '※ 모바일 앱 사용 근로자.'}
+            </div>
+          </div>
+
+          {ctx === 'muni' && (
+            <div>
+              <div className="text-xs font-extrabold text-ink mb-1">관할 지자체 *</div>
+              <input
+                value={muniQuery}
+                onChange={(e) => setMuniQuery(e.target.value)}
+                placeholder="🔍 지자체 검색 (예: 용산구)"
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
+              />
+              <div className="border border-line rounded max-h-44 overflow-y-auto">
+                {filteredMunis.length === 0 && <div className="px-3 py-3 text-center text-xs text-slate-500">{muniList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
+                {filteredMunis.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMuniId(m.id)}
+                    className={`w-full px-3 py-1.5 text-left text-sm border-b border-line last:border-b-0 transition ${
+                      muniId === m.id ? 'bg-accent text-white font-extrabold' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    {m.name}
+                    <span className={`ml-2 text-[0.625rem] font-mono ${muniId === m.id ? 'text-cyan-100' : 'text-slate-500'}`}>
+                      {m.region ?? ''} · {m.code}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ctx === 'contractor' && (
+            <div>
+              <div className="text-xs font-extrabold text-ink mb-1">소속 회사 *</div>
+              <input
+                value={contractorQuery}
+                onChange={(e) => setContractorQuery(e.target.value)}
+                placeholder="🔍 회사 검색 (회사명 또는 지자체)"
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
+              />
+              <div className="border border-line rounded max-h-44 overflow-y-auto">
+                {filteredContractors.length === 0 && <div className="px-3 py-3 text-center text-xs text-slate-500">{contractorList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
+                {filteredContractors.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setContractorId(c.id)}
+                    className={`w-full px-3 py-1.5 text-left text-sm border-b border-line last:border-b-0 transition ${
+                      contractorId === c.id ? 'bg-accent text-white font-extrabold' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    {c.companyName}
+                    <span className={`ml-2 text-[0.625rem] font-mono ${contractorId === c.id ? 'text-cyan-100' : 'text-slate-500'}`}>
+                      {c.municipalityName ?? ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">이름 *</div>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="홍길동" className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">아이디 *</div>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="muni-yongsan-01" className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">임시 비밀번호 (자동 생성)</div>
+            <div className="flex gap-1.5">
+              <input value={password} onChange={(e) => setPassword(e.target.value)} className="flex-1 px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
+              <button type="button" onClick={() => setPassword(genTempPw())} className="px-3 rounded border border-line text-xs font-bold bg-slate-50 hover:bg-slate-100">🎲 재생성</button>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">전화 (선택)</div>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="010-1234-5678"
+              inputMode="numeric"
+              maxLength={13}
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">⚠ {error}</div>
+          )}
+        </div>
+        <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
+          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold hover:bg-white disabled:opacity-50">취소</button>
+          <button onClick={submit} disabled={busy} className="px-4 py-1.5 rounded bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
+            {busy ? '등록 중…' : '✓ 등록'}
+          </button>
+        </div>
       </div>
     </div>
   );
