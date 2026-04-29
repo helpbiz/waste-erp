@@ -16,6 +16,10 @@ export const NAV_LABEL: Record<NavApp, string> = {
 
 const PREF_KEY = 'cleanerp:preferred-nav';
 
+/* 같은 탭 내 설정 변경을 NavButtons가 즉시 반영하도록 발행하는 이벤트.
+   storage 이벤트는 다른 탭에서만 발생하므로 별도 CustomEvent 사용. */
+export const NAV_PREF_CHANGE_EVENT = 'cleanerp:nav-pref-changed';
+
 export function launchNav(app: NavApp, lat: number, lng: number, name: string): void {
   if (typeof window === 'undefined') return;
   const dest = encodeURIComponent(name || '민원지');
@@ -52,6 +56,18 @@ export function setPreferredNav(app: NavApp): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(PREF_KEY, app);
+    window.dispatchEvent(new CustomEvent(NAV_PREF_CHANGE_EVENT, { detail: app }));
+  } catch {
+    /* 무시 */
+  }
+}
+
+/* "매번 묻기" — 저장된 선호 내비를 비워 NavButtons가 3개 버튼 모드로 돌아가게 함. */
+export function clearPreferredNav(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(PREF_KEY);
+    window.dispatchEvent(new CustomEvent(NAV_PREF_CHANGE_EVENT, { detail: null }));
   } catch {
     /* 무시 */
   }

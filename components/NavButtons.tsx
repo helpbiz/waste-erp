@@ -7,7 +7,7 @@
  * - 항상 변경 가능 ("변경" 토글로 재노출)
  */
 import { useEffect, useState } from 'react';
-import { type NavApp, NAV_LABEL, launchNav, getPreferredNav, setPreferredNav } from '@/lib/nav-launch';
+import { type NavApp, NAV_LABEL, launchNav, getPreferredNav, setPreferredNav, NAV_PREF_CHANGE_EVENT } from '@/lib/nav-launch';
 
 type Props = {
   lat: number;
@@ -35,6 +35,14 @@ export default function NavButtons({ lat, lng, name = '민원지', compact = fal
   useEffect(() => {
     setMounted(true);
     setPref(getPreferredNav());
+    /* 설정 카드에서 선호 내비 변경 시 즉시 반영 (같은 탭 내) */
+    function onPrefChange(e: Event) {
+      const next = (e as CustomEvent<NavApp | null>).detail ?? null;
+      setPref(next);
+      if (next) setShowAll(false);
+    }
+    window.addEventListener(NAV_PREF_CHANGE_EVENT, onPrefChange);
+    return () => window.removeEventListener(NAV_PREF_CHANGE_EVENT, onPrefChange);
   }, []);
 
   function fireDepart() {
