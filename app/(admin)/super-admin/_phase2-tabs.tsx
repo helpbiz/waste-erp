@@ -263,7 +263,10 @@ type AuditItem = {
   resourceType: string;
   resourceId: string | null;
   contractorId: string | null;
+  contractorName: string | null;
   municipalityId: string | null;
+  municipalityName: string | null;
+  municipalityCode: string | null;
   ipAddress: string | null;
   metadata: unknown;
   createdAt: string;
@@ -275,6 +278,8 @@ export function AuditLogTab() {
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState('');
   const [actorRole, setActorRole] = useState('');
+  const [contractorFilter, setContractorFilter] = useState(''); // contractorId 또는 회사명
+  const [municipalityFilter, setMunicipalityFilter] = useState(''); // muni id/name
   const [from, setFrom] = useState(() => new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [page, setPage] = useState(1);
@@ -285,6 +290,9 @@ export function AuditLogTab() {
     const p = new URLSearchParams();
     if (action) p.set('action', action);
     if (actorRole) p.set('actorRole', actorRole);
+    /* contractor/muni 는 숫자(id) 또는 이름 — 숫자면 서버 필터, 이름이면 클라이언트 필터 */
+    if (contractorFilter && /^\d+$/.test(contractorFilter)) p.set('contractorId', contractorFilter);
+    if (municipalityFilter && /^\d+$/.test(municipalityFilter)) p.set('municipalityId', municipalityFilter);
     if (from) p.set('from', from);
     if (to) p.set('to', to);
     p.set('page', String(page));
@@ -293,7 +301,19 @@ export function AuditLogTab() {
       .then((d) => { setItems(d.items ?? []); setTotal(d.total ?? 0); })
       .finally(() => setLoading(false));
   }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page, actorRole, from, to]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page, actorRole, contractorFilter, municipalityFilter, from, to]);
+
+  /* 이름 기반 클라이언트 필터 — 숫자 id 가 아닌 경우 적용 */
+  const filteredItems = useMemo(() => {
+    let r = items;
+    if (contractorFilter && !/^\d+$/.test(contractorFilter)) {
+      r = r.filter((i) => (i.contractorName ?? '').includes(contractorFilter));
+    }
+    if (municipalityFilter && !/^\d+$/.test(municipalityFilter)) {
+      r = r.filter((i) => (i.municipalityName ?? '').includes(municipalityFilter));
+    }
+    return r;
+  }, [items, contractorFilter, municipalityFilter]);
 
   return (
     <div className="space-y-3">
@@ -306,6 +326,24 @@ export function AuditLogTab() {
           <option value="">권한 전체</option>
           {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
+        <div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">회사 (id 또는 이름)</div>
+          <input
+            value={contractorFilter}
+            onChange={(e) => { setContractorFilter(e.target.value); setPage(1); }}
+            placeholder="강남청소 / 12"
+            className="w-40 px-2 py-1.5 rounded border border-line text-sm"
+          />
+        </div>
+        <div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">지자체 (id 또는 이름)</div>
+          <input
+            value={municipalityFilter}
+            onChange={(e) => { setMunicipalityFilter(e.target.value); setPage(1); }}
+            placeholder="용산구 / 21"
+            className="w-40 px-2 py-1.5 rounded border border-line text-sm"
+          />
+        </div>
         <div>
           <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} className="px-2 py-1.5 rounded border border-line text-sm" />
@@ -322,7 +360,7 @@ export function AuditLogTab() {
           {total.toLocaleString()}건 · 페이지 {page} / {Math.max(1, Math.ceil(total / 50))}
         </div>
         <div className="overflow-x-auto max-h-[600px]">
-          <table className="w-full text-xs min-w-[800px]">
+          <table className="w-full text-xs min-w-[1000px]">
             <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase sticky top-0">
               <tr>
                 <th className="px-2 py-1.5 text-left">시간</th>
@@ -330,14 +368,16 @@ export function AuditLogTab() {
                 <th className="px-2 py-1.5 text-left">권한</th>
                 <th className="px-2 py-1.5 text-left">액션</th>
                 <th className="px-2 py-1.5 text-left">대상</th>
+                <th className="px-2 py-1.5 text-left">소속 회사</th>
+                <th className="px-2 py-1.5 text-left">관할 지자체</th>
                 <th className="px-2 py-1.5 text-left">IP</th>
                 <th className="px-2 py-1.5 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {loading && <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-500">로딩 중…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-500">결과 없음</td></tr>}
-              {items.map((i) => (
+              {loading && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">로딩 중…</td></tr>}
+              {!loading && filteredItems.length === 0 && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">결과 없음</td></tr>}
+              {filteredItems.map((i) => (
                 <>
                   <tr key={i.id} className="hover:bg-slate-50">
                     <td className="px-2 py-1 font-mono text-[0.6875rem] text-slate-700 whitespace-nowrap">{i.createdAt.slice(0, 19).replace('T', ' ')}</td>
@@ -347,6 +387,26 @@ export function AuditLogTab() {
                       <code className="text-[0.6875rem] font-mono font-extrabold px-1 rounded bg-blue-100 text-blue-900">{i.action}</code>
                     </td>
                     <td className="px-2 py-1 font-mono text-[0.6875rem]">{i.resourceType}{i.resourceId ? ` #${i.resourceId}` : ''}</td>
+                    <td className="px-2 py-1 text-[0.6875rem]">
+                      {i.contractorName ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-bold text-emerald-800">{i.contractorName}</span>
+                          <span className="text-[0.5625rem] font-mono text-slate-400">#{i.contractorId}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-1 text-[0.6875rem]">
+                      {i.municipalityName ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="font-bold text-cyan-800">{i.municipalityName}</span>
+                          {i.municipalityCode && <span className="text-[0.5625rem] font-mono text-slate-400">{i.municipalityCode}</span>}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className="px-2 py-1 font-mono text-[0.625rem] text-slate-500">{i.ipAddress ?? '—'}</td>
                     <td className="px-2 py-1 text-right">
                       {i.metadata != null && (
@@ -358,7 +418,7 @@ export function AuditLogTab() {
                   </tr>
                   {expanded === i.id && (
                     <tr key={i.id + '-exp'} className="bg-slate-100">
-                      <td colSpan={7} className="px-3 py-2">
+                      <td colSpan={9} className="px-3 py-2">
                         <pre className="text-[0.625rem] font-mono whitespace-pre-wrap break-all text-slate-700">{JSON.stringify(i.metadata, null, 2)}</pre>
                       </td>
                     </tr>
