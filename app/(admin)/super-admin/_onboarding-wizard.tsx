@@ -8,9 +8,10 @@
  *
  * API 재사용: POST /api/contractors → POST /api/users → POST /api/super-admin/muni-policies
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { formatKoreanPhone } from '@/lib/phone';
+import { formatBusinessNo, validateBusinessNo } from '@/lib/business-no';
 
 type Muni = { id: string; name: string; code: string; region: string | null };
 
@@ -163,8 +164,45 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   const filteredMunis = useMemo(() => {
     const q = muniQuery.trim();
     if (!q) return munis.slice(0, 20);
-    return munis.filter((m) => m.name.includes(q) || m.code.includes(q) || (m.region ?? '').includes(q)).slice(0, 50);
+    /* 우선순위: name 시작 매칭 → name 포함 → region 포함 → code 포함 */
+    const startsWithName = munis.filter((m) => m.name.startsWith(q));
+    const includesName = munis.filter((m) => !m.name.startsWith(q) && m.name.includes(q));
+    const includesRegion = munis.filter((m) => !m.name.includes(q) && (m.region ?? '').includes(q));
+    const includesCode = munis.filter((m) => !m.name.includes(q) && !(m.region ?? '').includes(q) && m.code.includes(q));
+    return [...startsWithName, ...includesName, ...includesRegion, ...includesCode].slice(0, 50);
   }, [munis, muniQuery]);
+
+  /* 지자체 자동선택 — 검색 결과 1개로 좁혀지면 그 항목을 자동 선택.
+     검색어가 1자 이상이고, 후보가 1개 + 그 이름이 검색어로 시작하면 자동 매핑. */
+  useEffect(() => {
+    if (step !== 2) return;
+    const q = muniQuery.trim();
+    if (q.length < 1) return;
+    if (filteredMunis.length === 1 && filteredMunis[0].name.startsWith(q)) {
+      if (data.municipalityId !== filteredMunis[0].id) {
+        setData((d) => ({ ...d, municipalityId: filteredMunis[0].id }));
+      }
+    }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [filteredMunis, muniQuery, step]);
+
+  /* 키보드 네비게이션 — ↑/↓ 으로 candidate hover, Enter 로 선택 */
+  const [muniHover, setMuniHover] = useState(0);
+  useEffect(() => { setMuniHover(0); }, [muniQuery]);
+  function onMuniKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (filteredMunis.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMuniHover((i) => Math.min(filteredMunis.length - 1, i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMuniHover((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const target = filteredMunis[muniHover];
+      if (target) setField('municipalityId', target.id);
+    }
+  }
 
   function setField<K extends keyof WizardData>(k: K, v: WizardData[K]) {
     setData((d) => ({ ...d, [k]: v }));
@@ -174,7 +212,8 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   function validate(s: Step): string | null {
     if (s === 1) {
       if (!data.companyName.trim()) return '회사명 필수';
-      if (!/^\d{3}-?\d{2}-?\d{5}$/.test(data.businessNo.trim())) return '사업자번호 10자리 (000-00-00000)';
+      const v = validateBusinessNo(data.businessNo);
+      if (!v.valid) return `사업자번호: ${v.reason}`;
     } else if (s === 2) {
       if (!data.municipalityId) return '관할 지자체 선택 필수';
     } else if (s === 4) {
@@ -306,8 +345,15 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
               <Field label="회사명 *">
                 <Input value={data.companyName} onChange={(v) => setField('companyName', v)} placeholder="강남청소(주)" />
               </Field>
-              <Field label="사업자번호 *">
-                <Input value={data.businessNo} onChange={(v) => setField('businessNo', v)} placeholder="000-00-00000" />
+              <Field label="사업자번호 * (자동 하이픈 + 체크디지트 검증)">
+                <Input
+                  value={data.businessNo}
+                  onChange={(v) => setField('businessNo', formatBusinessNo(v))}
+                  placeholder="000-00-00000"
+                  inputMode="numeric"
+                  maxLength={12}
+                />
+                <BusinessNoStatus value={data.businessNo} />
               </Field>
               <Field label="대표자 (선택)">
                 <Input value={data.ceoName} onChange={(v) => setField('ceoName', v)} placeholder="홍길동" />
@@ -321,30 +367,57 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           {step === 2 && (
             <>
               <h3 className="text-sm font-extrabold text-ink">2단계: 관할 지자체 선택</h3>
-              <p className="text-xs text-slate-600">사전 등록된 226개 시군구 중 선택. 1개만 선택 가능.</p>
-              <Input value={muniQuery} onChange={setMuniQuery} placeholder="🔍 지자체명/코드 검색 (예: 강남구)" />
+              <p className="text-xs text-slate-600">
+                사전 등록된 226개 시군구 중 선택. 1글자 이상 입력 시 자동 추천,
+                결과가 1개로 좁혀지면 자동 선택됩니다. 키보드 ↑↓ Enter 도 가능.
+              </p>
+              <input
+                value={muniQuery}
+                onChange={(e) => setMuniQuery(e.target.value)}
+                onKeyDown={onMuniKey}
+                placeholder="🔍 지자체명/지역/코드 (예: '강' 입력 시 강남/강동/강서 후보)"
+                autoFocus
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              />
               <div className="border border-line rounded-md max-h-64 overflow-y-auto">
                 {filteredMunis.length === 0 && (
                   <div className="px-3 py-4 text-center text-xs text-slate-500">
-                    {munis.length === 0 ? '로딩 중…' : '검색 결과 없음'}
+                    {munis.length === 0 ? '로딩 중…' : muniQuery.trim() ? `'${muniQuery}' 검색 결과 없음` : '키워드 1자 이상 입력'}
                   </div>
                 )}
-                {filteredMunis.map((m) => (
-                  <button
-                    type="button"
-                    key={m.id}
-                    onClick={() => setField('municipalityId', m.id)}
-                    className={`w-full px-3 py-2 text-left text-sm border-b border-line last:border-b-0 transition ${
-                      data.municipalityId === m.id ? 'bg-accent text-white font-extrabold' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    {m.name}
-                    <span className={`ml-2 text-[0.625rem] font-mono ${data.municipalityId === m.id ? 'text-cyan-100' : 'text-slate-500'}`}>
-                      {m.region ?? ''} · {m.code}
-                    </span>
-                  </button>
-                ))}
+                {filteredMunis.map((m, i) => {
+                  const selected = data.municipalityId === m.id;
+                  const hovered = i === muniHover;
+                  return (
+                    <button
+                      type="button"
+                      key={m.id}
+                      onClick={() => setField('municipalityId', m.id)}
+                      onMouseEnter={() => setMuniHover(i)}
+                      className={`w-full px-3 py-2 text-left text-sm border-b border-line last:border-b-0 transition ${
+                        selected
+                          ? 'bg-accent text-white font-extrabold'
+                          : hovered
+                          ? 'bg-cyan-50 border-l-4 border-l-accent pl-2'
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        {selected && <span className="text-[0.6875rem]">✓</span>}
+                        {m.name}
+                      </span>
+                      <span className={`ml-2 text-[0.625rem] font-mono ${selected ? 'text-cyan-100' : 'text-slate-500'}`}>
+                        {m.region ?? ''} · {m.code}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+              {muniQuery.trim() && filteredMunis.length === 1 && data.municipalityId === filteredMunis[0].id && (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-2 text-xs font-bold text-emerald-900">
+                  ✓ 자동 선택됨: <b>{filteredMunis[0].name}</b> · 다음 단계로 이동하세요.
+                </div>
+              )}
             </>
           )}
 
@@ -598,6 +671,21 @@ function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual
       </span>
     </li>
   );
+}
+
+/* 사업자번호 실시간 검증 표시 — 입력 길이에 따라 안내 / 성공 / 오류 */
+function BusinessNoStatus({ value }: { value: string }) {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) {
+    return <div className="text-[0.625rem] text-slate-500 mt-1">숫자만 입력하면 자동으로 하이픈이 들어갑니다.</div>;
+  }
+  if (digits.length < 10) {
+    return <div className="text-[0.625rem] text-slate-500 mt-1">진행: {digits.length}/10자리</div>;
+  }
+  const v = validateBusinessNo(value);
+  return v.valid
+    ? <div className="text-[0.6875rem] font-bold text-emerald-700 mt-1">✓ 사업자번호 검증 통과 (체크디지트 일치)</div>
+    : <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ {v.reason}</div>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
