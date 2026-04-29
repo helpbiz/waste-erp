@@ -30,25 +30,28 @@ export default async function WorkerHomePage() {
     : 'bg-yellow-400/30 text-yellow-100';
 
   return (
-    <div className="px-4 pt-4 pb-6 space-y-4">
-      {/* 인사 카드 — 그라데이션 + 근무 상태 pill (Bento 메인) */}
-      <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-2xl px-5 py-4 text-white shadow-lg">
-        <div className="flex items-center justify-between mb-3">
+    <div className="px-3 pt-3 pb-5 space-y-3">
+      {/* 인사 카드 — 컴팩트화 (이름 잘림 + 카드 풀스크린화 해결).
+          이름이 길어도 wrap 되도록 truncate 제거 + h1 사이즈 다운 + 아이콘/패딩 축소. */}
+      <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-2xl px-3.5 py-3 text-white shadow-lg">
+        <div className="flex items-center justify-between mb-2 gap-2">
           <div className="flex-1 min-w-0">
-            {/* P1: 12px → 14px (AAA 본문 18px 까진 못 갔지만 가시성 ↑) */}
-            <p className="text-sm font-semibold text-cyan-100">{todayLabel()}</p>
-            <h1 className="text-2xl font-black mt-1 truncate">{session.name}님, 안녕하세요</h1>
+            <p className="text-xs font-semibold text-cyan-100">{todayLabel()}</p>
+            {/* text-2xl truncate → text-base 2줄 wrap (성+이름 모두 노출) */}
+            <h1 className="text-base font-black mt-0.5 leading-tight break-keep">
+              {session.name}님, 안녕하세요
+            </h1>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2}>
+          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
             </svg>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`px-3 py-1.5 rounded-full text-base font-extrabold ${statusColor}`}>{statusLabel}</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${statusColor}`}>{statusLabel}</span>
           {checkedIn && me?.checkInTime && (
-            <span className="text-base text-cyan-50 font-semibold">
+            <span className="text-xs text-cyan-50 font-semibold">
               출근 {formatHmKst(new Date(me.checkInTime))}
               {checkedOut && me.checkOutTime && (
                 <> · 퇴근 {formatHmKst(new Date(me.checkOutTime))}</>
@@ -61,8 +64,8 @@ export default async function WorkerHomePage() {
       {/* 기타 메뉴 그리드 — 햄버거 Drawer 대체. 가끔 사용 메뉴 1탭 진입.
           (자주 사용 메뉴는 탭바에 있음. 프로필은 헤더 아바타 클릭) */}
       <section>
-        <div className="px-1 mb-2 text-sm font-extrabold text-ink tracking-widest">기타 메뉴</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="px-1 mb-1.5 text-xs font-extrabold text-ink tracking-widest">기타 메뉴</div>
+        <div className="grid grid-cols-2 gap-2.5">
           {isRapid && (
             <MenuCard
               href="/worker/route"
@@ -89,11 +92,9 @@ export default async function WorkerHomePage() {
         </div>
       </section>
 
-      {/* 안내 카드 — 14px (text-sm) 로 가독성 ↑, amber-900 on amber-50 = 9:1 AAA */}
-      <div className="bg-amber-50 border-2 border-amber-300 rounded-xl px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed flex items-start gap-2">
-        <span aria-hidden className="text-lg flex-shrink-0">
-          🔒
-        </span>
+      {/* 안내 카드 — 컴팩트 (text-xs, padding 축소) */}
+      <div className="bg-amber-50 border-2 border-amber-300 rounded-xl px-3 py-2 text-xs text-amber-900 font-semibold leading-relaxed flex items-start gap-1.5">
+        <span aria-hidden className="text-sm flex-shrink-0">🔒</span>
         <span>GPS 좌표는 PIPA 준수를 위해 ~10m 격자 라운딩 + 90일 후 자동 폐기됩니다.</span>
       </div>
     </div>
@@ -116,17 +117,16 @@ function MenuCard({
   return (
     <Link
       href={href}
-      className="bg-surface border border-line rounded-2xl p-4 shadow-card flex flex-col gap-2 min-h-[100px] active:scale-[0.97] active:bg-surface-soft transition-transform"
+      className="bg-surface border border-line rounded-2xl p-3 shadow-card flex flex-col gap-1.5 min-h-[80px] active:scale-[0.97] active:bg-surface-soft transition-transform"
     >
-      <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0 shadow-md`}>
-        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.25}>
+      <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center flex-shrink-0 shadow-md`}>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.25}>
           <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
         </svg>
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-end">
-        {/* P1: 15px → 17px (text-[1.0625rem]) 으로 카드 제목 AAA 근접, desc 12px → 14px */}
-        <div className="text-[1.0625rem] font-extrabold text-ink leading-tight">{title}</div>
-        <div className="text-sm font-semibold text-ink-faint mt-1 leading-tight">{desc}</div>
+        <div className="text-sm font-extrabold text-ink leading-tight">{title}</div>
+        <div className="text-xs font-semibold text-ink-faint mt-0.5 leading-tight">{desc}</div>
       </div>
     </Link>
   );
