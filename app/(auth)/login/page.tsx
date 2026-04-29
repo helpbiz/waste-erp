@@ -25,7 +25,9 @@ function LoginInner() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberId, setRememberId] = useState(false);
+  /* 사용자 요청 2026-04-29: 최초 진입부터 체크 ON (B2B 편의성, 비밀번호는 절대 저장 안 함).
+     공용 PC 사용자만 직접 해제. localStorage 에 저장된 ID 있으면 useEffect 가 username 자동 채움. */
+  const [rememberId, setRememberId] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installEvt, setInstallEvt] = useState<BeforeInstallEvent | null>(null);
