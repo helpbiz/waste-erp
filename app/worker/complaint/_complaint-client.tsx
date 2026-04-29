@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
 import { useToast } from '@/components/ui/Toast';
 import { hapticSuccess, hapticError } from '@/lib/haptics';
+import { formatKoreanPhone } from '@/lib/phone';
 
 /* leaflet SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -229,9 +230,11 @@ export default function ComplaintClient() {
       <Section label="민원인 연락처 (선택)">
         <input
           type="tel"
+          inputMode="numeric"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => setPhone(formatKoreanPhone(e.target.value))}
           placeholder="010-0000-0000"
+          maxLength={13}
           className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-semibold focus:outline-none focus:border-accent"
         />
       </Section>
