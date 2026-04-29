@@ -99,8 +99,8 @@ export default async function DashboardPage() {
          Row 4: 최근 민원 + 차량 현황 (mobile 1열 → desktop 2열)
        원가 구성 카드 삭제. AdminShell <section> 이 이미 overflow-y-auto 이므로 PWA 스크롤 자동. */
     <div className="space-y-3.5 md:space-y-5">
-      {/* Row 1: KPI 4 — mobile 2x2 / desktop 1x4 */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-3.5">
+      {/* Row 1: KPI — auto-fit (140px min): 폰=2col / 태블릿=3~4col / 데스크톱=4col 자동 분배 */}
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3 md:gap-3.5">
         <KpiCard
           label="출근현황"
           value={String(summary.checkedIn)}
@@ -139,8 +139,8 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* 사용자 요청 2026-04-29: 휴가/알림/민원/차량 각각 한 줄 (1 col stack). md grid 제거. */}
-      <section className="grid grid-cols-1 gap-3.5">
+      {/* 휴가/알림 — auto-fit (300px min): 폰=1col / 태블릿+=2col 자동. */}
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5">
         {showLeavePanel && (
           <Panel
             title={`휴가 신청 대기 (${pendingLeaveCount}건)`}
@@ -182,8 +182,8 @@ export default async function DashboardPage() {
         </Panel>
       </section>
 
-      {/* Row 4: 최근 민원 + 차량 현황 — 각각 한 줄 (md grid 제거) */}
-      <section className="grid grid-cols-1 gap-3.5">
+      {/* Row 4: 최근 민원 + 차량 현황 — auto-fit (300px min) */}
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5">
         <Panel
           title="최근 민원"
           action="전체 >"
