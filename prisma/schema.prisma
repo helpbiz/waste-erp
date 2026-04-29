@@ -285,6 +285,10 @@ model User {
   lastLogin      DateTime?  @map("last_login")
   createdAt      DateTime   @default(now()) @map("created_at")
 
+  // 계정 잠금 (#9 — 5회 실패 시 10분 잠금, 브루트포스 방어)
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+
   // 인적사항 (사용자관리 §2)
   birthDate        DateTime? @map("birth_date") @db.Date
   gender           String?   @db.VarChar(10)

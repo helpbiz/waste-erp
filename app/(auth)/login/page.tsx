@@ -132,11 +132,25 @@ function LoginInner() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(
-          data?.error === 'invalid_credentials'
-            ? '아이디 또는 비밀번호가 올바르지 않습니다.'
-            : '로그인 중 오류가 발생했습니다.'
-        );
+        if (data?.error === 'account_locked') {
+          /* #9 계정 잠금 — 분/초 표시 */
+          const sec = Number(data?.remainingSec ?? 600);
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          setError(
+            `🔒 5회 연속 실패로 계정이 일시 잠겼습니다. ` +
+            `${m}분 ${s.toString().padStart(2, '0')}초 후 다시 시도해 주세요.`
+          );
+        } else if (data?.error === 'invalid_credentials') {
+          const remaining = Number(data?.remainingAttempts);
+          if (Number.isFinite(remaining) && remaining > 0) {
+            setError(`아이디 또는 비밀번호가 올바르지 않습니다. (남은 시도: ${remaining}회)`);
+          } else {
+            setError('아이디 또는 비밀번호가 올바르지 않습니다.');
+          }
+        } else {
+          setError('로그인 중 오류가 발생했습니다.');
+        }
         return;
       }
       /* role → route 결정은 lib/auth/role-route.ts 단일 소스 (P0-7).
