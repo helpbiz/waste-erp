@@ -34,9 +34,16 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const onlyActive = url.searchParams.get('active') === 'true';
   const queryMuniId = url.searchParams.get('municipalityId');
+  const includeDeleted = url.searchParams.get('includeDeleted') === 'true';
+  const onlyDeleted = url.searchParams.get('onlyDeleted') === 'true';
 
-  const where: { status?: 'ACTIVE'; municipalityId?: bigint; id?: bigint } = {};
+  /* §8 Q4=B soft-delete 기본 필터: deletedAt=null 만 노출.
+     ?onlyDeleted=true: 휴지통 전용
+     ?includeDeleted=true: 모두 노출 (정상 + 휴지통) */
+  const where: { status?: 'ACTIVE'; municipalityId?: bigint; id?: bigint; deletedAt?: null | { not: null } } = {};
   if (onlyActive) where.status = 'ACTIVE';
+  if (onlyDeleted) where.deletedAt = { not: null };
+  else if (!includeDeleted) where.deletedAt = null;
 
   if (session.role === 'SUPER_ADMIN') {
     /* SUPER_ADMIN — ?municipalityId 옵션으로 특정 지자체만 필터 */
@@ -62,6 +69,7 @@ export async function GET(req: Request) {
       businessNo: c.businessNo,
       status: c.status,
       active: c.status === 'ACTIVE',
+      deletedAt: c.deletedAt?.toISOString() ?? null,
       municipalityId: c.municipality?.id?.toString() ?? null,
       municipalityName: c.municipality?.name ?? null,
       municipalityRegion: c.municipality?.region ?? null,

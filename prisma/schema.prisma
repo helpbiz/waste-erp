@@ -197,6 +197,9 @@ model Contractor {
   contractStart  DateTime?        @map("contract_start") @db.Date
   contractEnd    DateTime?        @map("contract_end") @db.Date
   status         ContractorStatus @default(SETUP)
+  // §8 Q4=B 30일 soft-delete: deletedAt 설정 시 휴지통 → 30일 후 cron 정리.
+  // deletedAt = null → 정상, deletedAt 있음 → 휴지통 (목록에서 자동 숨김).
+  deletedAt      DateTime?        @map("deleted_at")
   dbSchemaName   String?          @map("db_schema_name") @db.VarChar(50)
   // 회사 정보
   ceoName        String?          @map("ceo_name") @db.VarChar(50)

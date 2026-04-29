@@ -70,10 +70,23 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * DELETE — §8 Q4=B 30일 soft-delete.
+ *  - deletedAt = now() 설정 (실제 row 보존)
+ *  - status='EXPIRED' 자동 설정
+ *  - 30일 후 별도 cron(추후) 또는 수동 hard delete
+ *  - FK 의존성 있어도 통과 (soft 이라 데이터 손실 없음)
+ *  - 30일 내 /restore 로 즉시 복구 가능
+ *
+ *  ?hard=true 쿼리: SUPER_ADMIN 의 명시적 영구삭제 (FK 의존성 0 일 때만).
+ */
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const url = new URL(req.url);
+  const isHard = url.searchParams.get('hard') === 'true';
 
   const id = BigInt(params.id);
   const target = await prisma.contractor.findUnique({
@@ -92,35 +105,63 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-
-  /* FK 의존성 검증 — 운영 데이터가 있으면 삭제 차단 */
   const c = target._count;
   const total = c.users + c.vehicles + c.recyclingIntakes + c.complaints + c.attendances + c.wasteRecords;
-  if (total > 0) {
-    return NextResponse.json(
-      {
-        error: 'has_dependencies',
-        detail: `이 업체에 연결된 데이터가 있어 삭제할 수 없습니다. (사용자 ${c.users} · 차량 ${c.vehicles} · 반입실적 ${c.recyclingIntakes} · 민원 ${c.complaints} · 근태 ${c.attendances} · 처리실적 ${c.wasteRecords})`,
-        dependencies: c,
-      },
-      { status: 409 },
-    );
+
+  if (isHard) {
+    /* 영구 삭제 — FK 의존성 0 필수 */
+    if (total > 0) {
+      return NextResponse.json(
+        {
+          error: 'has_dependencies',
+          detail: `영구 삭제 차단: 연결된 데이터가 있습니다. (사용자 ${c.users} · 차량 ${c.vehicles} · 반입실적 ${c.recyclingIntakes} · 민원 ${c.complaints} · 근태 ${c.attendances} · 처리실적 ${c.wasteRecords})`,
+          dependencies: c,
+        },
+        { status: 409 },
+      );
+    }
+    await prisma.contractor.delete({ where: { id } });
+    await writeAudit(req, session, {
+      action: 'CONTRACTOR_HARD_DELETE',
+      resourceType: 'contractor',
+      resourceId: id.toString(),
+      contractorId: id,
+      municipalityId: target.municipalityId,
+      metadata: { companyName: target.companyName, crossTenant: true },
+    });
+    return NextResponse.json({ ok: true, mode: 'hard' });
   }
 
-  await prisma.contractor.delete({ where: { id } });
-
-  /* SUPER cross-tenant DELETE — 어느 muni 산하 contractor가 사라졌는지 추적 */
+  /* Soft delete — 항상 가능 */
+  if (target) {
+    /* 이미 soft-deleted 인지 확인 */
+    const cur = await prisma.contractor.findUnique({ where: { id }, select: { deletedAt: true } });
+    if (cur?.deletedAt) {
+      return NextResponse.json({ error: 'already_deleted', deletedAt: cur.deletedAt.toISOString() }, { status: 409 });
+    }
+  }
+  const now = new Date();
+  await prisma.contractor.update({
+    where: { id },
+    data: { deletedAt: now, status: 'EXPIRED' },
+  });
   await writeAudit(req, session, {
-    action: 'CONTRACTOR_DELETE',
+    action: 'CONTRACTOR_SOFT_DELETE',
     resourceType: 'contractor',
     resourceId: id.toString(),
     contractorId: id,
     municipalityId: target.municipalityId,
     metadata: {
       companyName: target.companyName,
+      dependencies: c,
+      restoreDeadline: new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString(),
       crossTenant: true,
     },
   });
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    mode: 'soft',
+    deletedAt: now.toISOString(),
+    restoreDeadline: new Date(now.getTime() + 30 * 24 * 3600 * 1000).toISOString(),
+  });
 }

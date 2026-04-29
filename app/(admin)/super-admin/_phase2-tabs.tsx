@@ -533,6 +533,175 @@ export function OrgTreeTab() {
   );
 }
 
+/* ─────────── 위탁업체 관리 (삭제/복구) ─────────── */
+
+type ContractorRow = {
+  id: string;
+  companyName: string;
+  businessNo: string;
+  status: string;
+  deletedAt: string | null;
+  municipalityName: string | null;
+  municipalityRegion: string | null;
+};
+
+export function ContractorTrashTab() {
+  const [items, setItems] = useState<ContractorRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<'all' | 'active' | 'trash'>('all');
+  const [busy, setBusy] = useState<string | null>(null);
+
+  function load() {
+    setLoading(true);
+    const p = new URLSearchParams();
+    if (view === 'all') p.set('includeDeleted', 'true');
+    else if (view === 'trash') p.set('onlyDeleted', 'true');
+    fetch(`/api/contractors?${p}`)
+      .then((r) => r.json())
+      .then((d) => setItems(d.items ?? []))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [view]);
+
+  async function softDelete(c: ContractorRow) {
+    if (!confirm(`'${c.companyName}' 위탁업체를 휴지통으로 이동합니다.\n\n• 30일 내 복구 가능\n• 30일 후 자동 영구 삭제\n• 모든 사용자/차량/민원 데이터는 그대로 보존됩니다.\n\n진행하시겠습니까?`)) return;
+    setBusy(c.id);
+    const r = await fetch(`/api/contractors/${c.id}`, { method: 'DELETE' });
+    setBusy(null);
+    if (r.ok) load();
+    else alert('실패: ' + ((await r.json().catch(() => ({}))).detail ?? 'unknown'));
+  }
+
+  async function restore(c: ContractorRow) {
+    if (!confirm(`'${c.companyName}' 위탁업체를 복구합니다.\n현재 상태(${c.status})는 그대로 유지되며, 필요하면 [회사정보] 탭에서 ACTIVE 로 전환하세요.`)) return;
+    setBusy(c.id);
+    const r = await fetch(`/api/contractors/${c.id}/restore`, { method: 'POST' });
+    setBusy(null);
+    if (r.ok) load();
+    else alert('실패');
+  }
+
+  async function hardDelete(c: ContractorRow) {
+    if (!confirm(`⚠ '${c.companyName}' 영구 삭제\n\n복구 불가. 연결된 사용자·차량·민원이 1건이라도 있으면 차단됩니다.\n진행하시겠습니까?`)) return;
+    setBusy(c.id);
+    const r = await fetch(`/api/contractors/${c.id}?hard=true`, { method: 'DELETE' });
+    setBusy(null);
+    if (r.ok) load();
+    else alert('실패: ' + ((await r.json().catch(() => ({}))).detail ?? 'unknown'));
+  }
+
+  function daysLeft(deletedAt: string): number {
+    const expire = new Date(deletedAt).getTime() + 30 * 24 * 3600 * 1000;
+    return Math.max(0, Math.ceil((expire - Date.now()) / (24 * 3600 * 1000)));
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-purple-50 border border-purple-300 rounded-md px-3 py-2 text-xs text-purple-900">
+        <b>📝 위탁업체 삭제 정책 (§8 Q4=B)</b>
+        <ul className="mt-1 ml-5 list-disc space-y-0.5">
+          <li>[🗑 휴지통] = soft-delete: 30일 내 복구 가능, 데이터 보존</li>
+          <li>30일 경과 후 자동 영구 삭제 (별도 cron 필요 — 추후)</li>
+          <li>[⚠ 영구삭제] = hard-delete: FK 의존성 0 일 때만, 즉시 복구 불가</li>
+        </ul>
+      </div>
+
+      <div className="flex gap-1.5">
+        <ViewBtn active={view === 'all'} onClick={() => setView('all')}>전체</ViewBtn>
+        <ViewBtn active={view === 'active'} onClick={() => setView('active')}>정상</ViewBtn>
+        <ViewBtn active={view === 'trash'} onClick={() => setView('trash')}>🗑 휴지통</ViewBtn>
+      </div>
+
+      <div className="bg-surface border border-line rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[800px]">
+            <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
+              <tr>
+                <th className="px-2 py-2 text-left">회사명</th>
+                <th className="px-2 py-2 text-left">사업자번호</th>
+                <th className="px-2 py-2 text-left">지자체</th>
+                <th className="px-2 py-2 text-left">상태</th>
+                <th className="px-2 py-2 text-left">삭제일</th>
+                <th className="px-2 py-2 text-right">액션</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {loading && <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-500">로딩 중…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-500">결과 없음</td></tr>}
+              {items.map((c) => {
+                const isDeleted = !!c.deletedAt;
+                return (
+                  <tr key={c.id} className={isDeleted ? 'bg-rose-50' : ''}>
+                    <td className="px-2 py-2 font-bold text-ink">{c.companyName}</td>
+                    <td className="px-2 py-2 font-mono text-xs">{c.businessNo}</td>
+                    <td className="px-2 py-2 text-xs">{c.municipalityName ?? '—'}</td>
+                    <td className="px-2 py-2">
+                      <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
+                        c.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                        c.status === 'EXPIRED' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                        'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>{c.status}</span>
+                    </td>
+                    <td className="px-2 py-2 font-mono text-[0.6875rem]">
+                      {c.deletedAt ? (
+                        <span className="text-rose-700">
+                          {c.deletedAt.slice(0, 10)} <span className="text-[0.625rem] text-rose-500">(D-{daysLeft(c.deletedAt)})</span>
+                        </span>
+                      ) : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap">
+                      {!isDeleted && (
+                        <button
+                          disabled={busy === c.id}
+                          onClick={() => softDelete(c)}
+                          className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                        >
+                          🗑 휴지통
+                        </button>
+                      )}
+                      {isDeleted && (
+                        <>
+                          <button
+                            disabled={busy === c.id}
+                            onClick={() => restore(c)}
+                            className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 mr-1 disabled:opacity-50"
+                          >
+                            ↩ 복구
+                          </button>
+                          <button
+                            disabled={busy === c.id}
+                            onClick={() => hardDelete(c)}
+                            className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-rose-700 text-white hover:bg-rose-800 disabled:opacity-50"
+                          >
+                            ⚠ 영구삭제
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ViewBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-md text-xs font-extrabold transition ${
+        active ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 /* ─────────── 공통 ─────────── */
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

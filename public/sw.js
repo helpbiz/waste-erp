@@ -6,7 +6,7 @@
  *  - 사용자 폰의 v1 SW가 v3로 자동 교체되도록 설계
  */
 /* PWA Mobile UX Mastering 적용 — v4 강제 캐시 무효화로 모바일 사용자에게 즉시 새 UI 배포 */
-const CACHE_NAME = 'cleanerp-v35-2026-04-29-audit-org-cols';
+const CACHE_NAME = 'cleanerp-v36-2026-04-29-soft-delete';
 const APP_SHELL = ['/login', '/manifest.json'];  /* 최소 셸만 — 페이지는 항상 네트워크 우선 */
 
 self.addEventListener('install', (event) => {
