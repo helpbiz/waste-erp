@@ -38,6 +38,9 @@ module.exports = {
       /* /login: 캐시 0 — PWA에서 옛 디자인 잔존 방지 */
       { source: '/login', headers: noCacheHeaders },
       { source: '/login/:path*', headers: noCacheHeaders },
+      /* sw.js / manifest.json — 브라우저 HTTP 캐시 차단 (사양상 24h까지 stale 허용 → 즉시 갱신 차단됨) */
+      { source: '/sw.js', headers: noCacheHeaders },
+      { source: '/manifest.json', headers: noCacheHeaders },
     ];
   },
 };
