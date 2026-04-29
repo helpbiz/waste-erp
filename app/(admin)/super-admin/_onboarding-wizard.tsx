@@ -100,6 +100,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [csvImportProgress, setCsvImportProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
   const [copyOk, setCopyOk] = useState(false);
+  const [showManualCopy, setShowManualCopy] = useState(false);
 
   function onCsvFile(file: File) {
     const reader = new FileReader();
@@ -143,13 +144,49 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
 
   async function copyCredentials() {
     const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyOk(true);
-      setTimeout(() => setCopyOk(false), 2000);
-    } catch {
-      setError('클립보드 복사 실패 — 수동 복사 부탁');
+
+    /* Strategy 1: 모던 Clipboard API (HTTPS / localhost / 보안 컨텍스트 필수) */
+    if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopyOk(true);
+        setError(null);
+        setTimeout(() => setCopyOk(false), 2000);
+        return;
+      } catch {
+        /* permission denied / not focused 등 — fallback 시도 */
+      }
     }
+
+    /* Strategy 2: 레거시 execCommand('copy') — HTTP LAN 접속 등 비보안 컨텍스트 대응.
+       임시 textarea 생성 → 선택 → 복사 → 제거. */
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        setCopyOk(true);
+        setError(null);
+        setTimeout(() => setCopyOk(false), 2000);
+        return;
+      }
+    } catch {
+      /* 무시 — Strategy 3 으로 */
+    }
+
+    /* Strategy 3: 직접 복사 영역 노출 + 안내 — 사용자가 수동 Ctrl+C */
+    setError('자동 복사 실패 (HTTP 접속 시 브라우저 보안 정책). 아래 텍스트를 직접 선택 후 Ctrl+C 하세요.');
+    setShowManualCopy(true);
   }
 
   /* Step 2 진입 시 지자체 목록 로드 — 모든 상태 (ACTIVE / SUSPENDED) 모두 노출.
@@ -575,6 +612,11 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 </button>
               </div>
 
+              {/* Strategy 3: 자동 복사 실패 시 수동 복사용 textarea 노출 */}
+              {showManualCopy && (
+                <ManualCopyArea data={data} />
+              )}
+
               {/* P1-5 CSV 임포트 결과 */}
               {csvImportProgress && (
                 <div className={`border rounded-md px-3 py-2 text-xs font-bold ${
@@ -683,6 +725,35 @@ function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual
         {auto ? '자동' : '수동'}
       </span>
     </li>
+  );
+}
+
+/* 자동 복사 실패 시 수동 복사용 — readonly textarea + 자동 select.
+   HTTP 접속 + execCommand 거부된 환경 대응. */
+function ManualCopyArea({ data }: { data: WizardData }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+  useEffect(() => {
+    /* 마운트 시 자동 select — 사용자가 Ctrl+C 만 누르면 됨 */
+    if (ref.current) {
+      ref.current.focus();
+      ref.current.select();
+    }
+  }, []);
+  return (
+    <div className="bg-amber-50 border-2 border-amber-400 rounded-md px-3 py-2">
+      <div className="text-[0.6875rem] font-extrabold text-amber-900 mb-1.5">
+        ⚠ 자동 복사가 차단되었습니다 (HTTP 접속 / 보안 정책). 아래 영역을 클릭 후 <b>Ctrl+C</b> (Mac: <b>Cmd+C</b>) 누르세요.
+      </div>
+      <textarea
+        ref={ref}
+        readOnly
+        value={text}
+        rows={8}
+        className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-xs font-mono text-slate-800 select-all"
+        onClick={(e) => (e.currentTarget as HTMLTextAreaElement).select()}
+      />
+    </div>
   );
 }
 
