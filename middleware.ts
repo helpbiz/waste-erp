@@ -41,10 +41,15 @@ const MUTATING_METHODS = new Set<string>(['POST', 'PUT', 'PATCH', 'DELETE']);
  * MUNI_ADMIN은 원칙적으로 GET-only이지만 일부 정당한 입력은 허용:
  *  - 민원 입력 (POST /api/complaints) — 시민 대신 입력
  *  - 로그아웃 (POST /api/auth/logout)
+ *  - 개인정보 동의 (POST /api/auth/consent) — 최초 로그인 시 필수, 동의 안 하면 어떤 페이지도 접근 불가
+ *  - 비밀번호 변경 (PATCH /api/users/me/password) — 본인 계정 보안
+ *  - 본인 프로필 사진/서명 (PATCH/POST /api/users/me/...) — 본인 데이터 한정
  */
 function isReadOnlyExempt(method: string, path: string): boolean {
   if (method === 'POST' && path === '/api/complaints') return true;       // 민원 입력
   if (method === 'POST' && path === '/api/auth/logout') return true;      // 로그아웃
+  if (method === 'POST' && path === '/api/auth/consent') return true;     // 동의 (사용자 진단 2026-04-29)
+  if (path.startsWith('/api/users/me/')) return true;                     // 본인 계정 관리 (PW/사진/서명)
   return false;
 }
 
