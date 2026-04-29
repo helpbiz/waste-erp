@@ -33,6 +33,38 @@ type WizardData = {
   adminPhone: string;
 };
 
+/* P1-5 CSV 파싱: 헤더 row 자동 감지, 콤마/탭 모두 지원, 빈 행 skip */
+type CsvWorker = { name: string; username: string; phone: string; password: string };
+
+function parseEmployeeCsv(text: string): { rows: CsvWorker[]; errors: string[] } {
+  const errors: string[] = [];
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return { rows: [], errors: ['빈 파일'] };
+  /* 첫 줄이 한글/영문 헤더면 skip ('이름' '아이디' '전화' 등이 포함되면 헤더로 판단) */
+  const first = lines[0];
+  const startIdx = /이름|name|username|phone|전화|아이디/i.test(first) ? 1 : 0;
+  const rows: CsvWorker[] = [];
+  for (let i = startIdx; i < lines.length; i++) {
+    const cells = lines[i].split(/[,\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
+    const [name = '', username = '', phone = '', password = ''] = cells;
+    if (!name || !username) {
+      errors.push(`${i + 1}행: 이름·아이디 필수`);
+      continue;
+    }
+    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username)) {
+      errors.push(`${i + 1}행: 아이디 형식 (영문/숫자/_-, 3~30자)`);
+      continue;
+    }
+    rows.push({
+      name,
+      username,
+      phone: phone ? phone.replace(/[^0-9-]/g, '') : '',
+      password: password.length >= 6 ? password : 'cleanerp123', // 디폴트 임시 PW
+    });
+  }
+  return { rows, errors };
+}
+
 const INITIAL: WizardData = {
   companyName: '',
   businessNo: '',
@@ -62,6 +94,62 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   const [munis, setMunis] = useState<Muni[]>([]);
   const [muniQuery, setMuniQuery] = useState('');
   const [createdContractorId, setCreatedContractorId] = useState<string | null>(null);
+  /* P1-5 CSV 직원 일괄 등록 */
+  const [csvRows, setCsvRows] = useState<CsvWorker[]>([]);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [csvImportProgress, setCsvImportProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
+  const [copyOk, setCopyOk] = useState(false);
+
+  function onCsvFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      const { rows, errors } = parseEmployeeCsv(text);
+      setCsvRows(rows);
+      setCsvErrors(errors);
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  async function importCsv(contractorId: string) {
+    if (csvRows.length === 0) return;
+    setCsvImportProgress({ done: 0, total: csvRows.length, failed: 0 });
+    let done = 0;
+    let failed = 0;
+    for (const r of csvRows) {
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: r.username,
+            password: r.password,
+            name: r.name,
+            role: 'WORKER',
+            contractorId,
+            phone: r.phone || undefined,
+            status: 'ACTIVE',
+          }),
+        });
+        if (res.ok) done++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+      setCsvImportProgress({ done: done + failed, total: csvRows.length, failed });
+    }
+  }
+
+  async function copyCredentials() {
+    const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyOk(true);
+      setTimeout(() => setCopyOk(false), 2000);
+    } catch {
+      setError('클립보드 복사 실패 — 수동 복사 부탁');
+    }
+  }
 
   /* Step 2 진입 시 지자체 목록 로드 */
   useEffect(() => {
@@ -165,6 +253,11 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
       });
       const uJson = await uRes.json().catch(() => ({}));
       if (!uRes.ok) throw new Error(uJson?.error ?? '관리자 계정 생성 실패');
+
+      /* 4. P1-5 CSV 직원 일괄 등록 (있을 때만) */
+      if (csvRows.length > 0) {
+        await importCsv(contractorId);
+      }
 
       setStep(6);
     } catch (e) {
@@ -321,12 +414,49 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
             <>
               <h3 className="text-sm font-extrabold text-ink">5단계: 직원 CSV 일괄 등록 (선택)</h3>
               <p className="text-xs text-slate-600">
-                Phase 1 P1-3 범위 — CSV 업로드는 다음 작업(P1-5)에서 추가됩니다.
-                <br />
-                지금은 [건너뛰고 완료] 후 사용자 관리에서 개별 등록하거나, CONTRACTOR_ADMIN이 직접 추가하면 됩니다.
+                CSV 형식: <code className="px-1 bg-slate-100 rounded">이름,아이디,전화,비밀번호</code> (헤더 자동 인식, 비밀번호 누락 시 <code>cleanerp123</code>)
               </p>
+              <input
+                type="file"
+                accept=".csv,text/csv,text/plain"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) onCsvFile(f); }}
+                className="block w-full text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-accent file:text-white file:font-bold file:cursor-pointer"
+              />
+              {csvRows.length > 0 && (
+                <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-2">
+                  <div className="text-xs font-extrabold text-emerald-900">✓ {csvRows.length}명 미리보기</div>
+                  <div className="mt-1.5 max-h-32 overflow-y-auto border border-emerald-200 rounded bg-white">
+                    <table className="w-full text-[0.625rem] font-mono">
+                      <thead className="bg-emerald-100 text-emerald-900">
+                        <tr><th className="px-1.5 py-1 text-left">이름</th><th className="px-1.5 py-1 text-left">아이디</th><th className="px-1.5 py-1 text-left">전화</th><th className="px-1.5 py-1 text-left">PW</th></tr>
+                      </thead>
+                      <tbody>
+                        {csvRows.slice(0, 50).map((r, i) => (
+                          <tr key={i} className="border-t border-emerald-100">
+                            <td className="px-1.5 py-1">{r.name}</td>
+                            <td className="px-1.5 py-1">{r.username}</td>
+                            <td className="px-1.5 py-1">{r.phone || '—'}</td>
+                            <td className="px-1.5 py-1 text-slate-500">{r.password.slice(0, 3)}***</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {csvRows.length > 50 && <div className="px-2 py-1 text-[0.625rem] text-slate-500">... 외 {csvRows.length - 50}명</div>}
+                  </div>
+                </div>
+              )}
+              {csvErrors.length > 0 && (
+                <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-[0.6875rem] text-amber-900 max-h-24 overflow-y-auto">
+                  <b>⚠ {csvErrors.length}건 무시됨:</b>
+                  <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                    {csvErrors.slice(0, 8).map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
               <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900 font-semibold">
-                💡 다음 단계 [완료]를 누르면 위탁업체 + 권한 정책 + CONTRACTOR_ADMIN 계정이 모두 생성됩니다.
+                💡 [완료] 시 위탁업체 + 권한 + 관리자 + {csvRows.length > 0 ? `직원 ${csvRows.length}명` : '직원 0명'} 모두 생성됩니다.
+                <br />
+                건너뛰려면 파일을 선택하지 말고 [완료]를 누르세요.
               </div>
             </>
           )}
@@ -342,13 +472,36 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 <h3 className="text-base font-black text-ink">개설 완료</h3>
                 <p className="text-xs text-slate-600 mt-1">아래 정보를 안전한 채널로 위탁업체 대표에게 전달하세요.</p>
               </div>
-              <div className="bg-slate-50 border border-line rounded-md px-3 py-3 space-y-1.5 text-sm font-mono">
+              <div className="bg-slate-50 border border-line rounded-md px-3 py-3 space-y-1.5 text-sm font-mono relative">
                 <div><b className="text-slate-700">접속 URL:</b> <span className="text-accent">https://wci.helpbiz.kr/login</span></div>
                 <div><b className="text-slate-700">아이디:</b> {data.adminUsername}</div>
                 <div><b className="text-slate-700">임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">{data.adminPassword}</code></div>
                 <div><b className="text-slate-700">회사:</b> {data.companyName} ({data.businessNo})</div>
                 <div><b className="text-slate-700">계약 상태:</b> SETUP</div>
+                <button
+                  type="button"
+                  onClick={copyCredentials}
+                  className={`mt-1 w-full px-2.5 py-1.5 rounded text-xs font-extrabold transition ${
+                    copyOk ? 'bg-emerald-600 text-white' : 'bg-accent hover:bg-cyan-800 text-white'
+                  }`}
+                >
+                  {copyOk ? '✓ 복사됨!' : '📋 클립보드 복사 (메일/메신저 붙여넣기용)'}
+                </button>
               </div>
+
+              {/* P1-5 CSV 임포트 결과 */}
+              {csvImportProgress && (
+                <div className={`border rounded-md px-3 py-2 text-xs font-bold ${
+                  csvImportProgress.failed === 0 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-amber-50 border-amber-300 text-amber-900'
+                }`}>
+                  📥 직원 CSV 임포트: {csvImportProgress.done}/{csvImportProgress.total}
+                  {csvImportProgress.failed > 0 && ` (실패 ${csvImportProgress.failed})`}
+                </div>
+              )}
+
+              {/* P1-4 셋업 체크리스트 — 자동 검증 + 수동 확인 항목 분리 */}
+              <SetupChecklist contractorId={createdContractorId} />
+
               <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900 font-semibold">
                 ⚠ 첫 로그인 후 비밀번호 변경을 권장하세요. 30일 동안 미접속 시 계정 잠금.
               </div>
@@ -398,6 +551,52 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
         </div>
       </div>
     </div>
+  );
+}
+
+/* P1-4 셋업 체크리스트 — 위저드 완료 시 자동 검증.
+   - 자동: 위저드가 직접 만든 contractor + admin + policy 3종 (마운트 즉시 ✓)
+   - 수동: cross-tenant 격리 / 첫 로그인 / 직원·차량 등록 (사용자가 직접 체크)
+   서버 검증 X — 위저드 호출이 모두 200이면 자동 합격. */
+function SetupChecklist({ contractorId }: { contractorId: string }) {
+  return (
+    <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-3 space-y-2">
+      <div className="text-xs font-extrabold text-emerald-900">📋 셋업 체크리스트 (Design §5.3)</div>
+      <ul className="space-y-1 text-[0.6875rem]">
+        <ChecklistItem auto label="위탁업체 레코드 생성됨" detail={`contractorId=${contractorId} (status=SETUP)`} />
+        <ChecklistItem auto label="권한 정책(매트릭스) 적용됨" detail="선택한 프리셋이 지자체에 매핑됨" />
+        <ChecklistItem auto label="CONTRACTOR_ADMIN 계정 발급됨" detail="status=ACTIVE, 임시 PW 부여" />
+        <ChecklistItem manual label="CONTRACTOR_ADMIN 첫 로그인 + PW 변경" detail="대표가 안전 채널로 정보 수신 후" />
+        <ChecklistItem manual label="cross-tenant 격리 검증" detail="다른 위탁업체 데이터가 안 보이는지 확인" />
+        <ChecklistItem manual label="직원 명단 등록 (CSV 또는 개별)" detail="CONTRACTOR_ADMIN이 /users 메뉴에서 직접" />
+        <ChecklistItem manual label="차량 명단 등록" detail="CONTRACTOR_ADMIN이 /vehicles 메뉴에서" />
+        <ChecklistItem manual label="결재 라인 정의" detail="휴가/근태 결재선 1회 설정" />
+      </ul>
+      <div className="text-[0.625rem] text-slate-600 leading-snug">
+        ✓ 자동 항목 = 위저드 진행 중 즉시 검증. □ 수동 항목 = CONTRACTOR_ADMIN 또는 운영자 후속 작업.
+      </div>
+    </div>
+  );
+}
+
+function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual?: boolean; label: string; detail?: string }) {
+  return (
+    <li className="flex items-start gap-1.5">
+      <span className={`flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded text-[0.5625rem] font-mono font-black ${
+        auto ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-400 text-slate-400'
+      }`}>
+        {auto ? '✓' : '□'}
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className={`font-bold ${auto ? 'text-emerald-900' : 'text-slate-700'}`}>{label}</div>
+        {detail && <div className="text-[0.625rem] text-slate-600 font-mono">{detail}</div>}
+      </div>
+      <span className={`text-[0.5625rem] font-mono font-extrabold px-1 rounded ${
+        auto ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-100 text-amber-800'
+      }`}>
+        {auto ? '자동' : '수동'}
+      </span>
+    </li>
   );
 }
 

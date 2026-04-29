@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FacilitiesTab } from './facilities/_facilities-tab';
 import { BottomSheet } from '@/components/BottomSheet';
 import OnboardingWizardModal from './_onboarding-wizard';
+import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -74,10 +75,19 @@ export default function SuperAdminClient() {
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-extrabold text-ink">슈퍼관리자 콘솔</h2>
         <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-purple-600 text-white">SUPER_ADMIN ONLY</span>
+        <a
+          href="/super-admin/permission-print"
+          target="_blank"
+          rel="noopener"
+          className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-extrabold transition"
+          title="권한 매트릭스 인쇄용 페이지 (Ctrl+P → PDF)"
+        >
+          🖨 권한 매트릭스 인쇄
+        </a>
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="ml-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95 transition"
+          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95 transition"
           title="회사 정보 + 지자체 + 권한 + 관리자 계정을 5단계로 한 번에 개설"
         >
           ＋ 신규 위탁업체 개설
@@ -1118,12 +1128,42 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
   }
 
+  /* P1-1 프리셋 적용 — 세부 항목을 일괄로 채움. 적용 직후에도 사용자가 추가 조정 가능. */
+  function applyPreset(key: PresetKey) {
+    const p = PRESETS.find((x) => x.key === key);
+    if (!p) return;
+    setScreens(new Set(p.allowedScreens));
+    setReports(new Set(p.allowedReports));
+    setExportEnabled(p.exportEnabled);
+    setBulkExportEnabled(p.bulkExportEnabled);
+  }
+
   return (
     <BottomSheet open={true} onClose={onClose} title={`${muni.name} — 권한 정책`} desktopMaxWidth="640px">
       <div className="px-5 py-2 bg-purple-50 border-b border-line">
         <div className="text-[0.6875rem] font-mono text-slate-600">{muni.code} · 관할 거래처 {muni.contractorCount}</div>
       </div>
       <div className="p-5 space-y-4">
+        {/* P1-1: 프리셋 3종 일괄 적용 버튼 — 잘 모르면 [표준] */}
+        <div>
+          <div className="font-extrabold text-ink text-sm mb-2">⚡ 프리셋 일괄 적용 <span className="text-[0.6875rem] font-normal text-slate-500">(잘 모르면 [표준] 추천)</span></div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {PRESETS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => applyPreset(p.key)}
+                className="px-2 py-2 rounded-md border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 active:scale-95 transition text-xs font-extrabold text-purple-900"
+                title={p.description}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="text-[0.625rem] text-slate-500 mt-1.5 leading-snug">
+            ※ 적용 후에도 아래 체크박스로 세부 조정 가능. 저장 누르기 전엔 반영 안 됩니다.
+          </div>
+        </div>
         <div>
           <div className="font-extrabold text-ink text-sm mb-2">허용 화면 ({screens.size}/{ALL_SCREENS.length})</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
