@@ -2,9 +2,17 @@
 // API 재사용: POST /api/live-tracking/optimize-route (source=complaints 기본값)
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import NavButtons from '@/components/NavButtons';
+import {
+  type NavApp,
+  NAV_LABEL,
+  getPreferredNav,
+  setPreferredNav,
+  clearPreferredNav,
+  NAV_PREF_CHANGE_EVENT,
+} from '@/lib/nav-launch';
 
 const RouteMap = dynamic(() => import('@/app/(admin)/live-vehicles/_leaflet-map'), {
   ssr: false,
@@ -95,6 +103,10 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
           </button>
         </div>
       </div>
+
+      {/* 네비게이션 설정 카드 — 길안내 시 사용할 외부 내비 미리 선택.
+          기본 접힘. 설정 변경 시 NavButtons가 이벤트로 즉시 반영. */}
+      <NavSettingCard />
 
       {/* 안내 (초기) */}
       {!data && !busy && !error && (
@@ -202,6 +214,98 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
               </li>
             ))}
           </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   NavSettingCard — 길안내 시 기본 사용 내비 선택.
+   ◉ 카카오맵 / ○ 네이버지도 / ○ T맵 / ○ 매번 묻기
+   localStorage에 저장 → NavButtons가 이벤트로 즉시 반영.
+───────────────────────────────────────────────────────────── */
+const NAV_OPTIONS: Array<{ value: NavApp | 'ASK'; label: string; color: string }> = [
+  { value: 'kakaomap', label: '카카오맵', color: 'bg-yellow-400 text-slate-900' },
+  { value: 'nmap',     label: '네이버지도', color: 'bg-emerald-500 text-white' },
+  { value: 'tmap',     label: 'T맵',       color: 'bg-rose-500 text-white' },
+  { value: 'ASK',      label: '매번 묻기', color: 'bg-slate-200 text-slate-700' },
+];
+
+function NavSettingCard() {
+  const [open, setOpen] = useState(false);
+  const [pref, setPref] = useState<NavApp | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setPref(getPreferredNav());
+    function onChange(e: Event) {
+      setPref((e as CustomEvent<NavApp | null>).detail ?? null);
+    }
+    window.addEventListener(NAV_PREF_CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(NAV_PREF_CHANGE_EVENT, onChange);
+  }, []);
+
+  function pick(v: NavApp | 'ASK') {
+    if (v === 'ASK') clearPreferredNav();
+    else setPreferredNav(v);
+  }
+
+  /* 헤더 우측 상태 라벨 — SSR 안정성 위해 mounted 후에만 표시 */
+  const currentLabel = !mounted ? '' : pref ? NAV_LABEL[pref] : '매번 묻기';
+
+  return (
+    <div className="bg-surface border-2 border-line rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5 active:bg-surface-soft"
+        aria-expanded={open}
+        aria-controls="nav-setting-body"
+      >
+        <span className="flex items-center gap-2">
+          <span aria-hidden className="text-base">⚙️</span>
+          <span className="text-sm font-extrabold text-ink">네비게이션 설정</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          {currentLabel && (
+            <span className="text-[0.6875rem] font-mono font-bold text-slate-700 bg-surface-soft px-1.5 py-0.5 rounded">
+              {currentLabel}
+            </span>
+          )}
+          <span aria-hidden className="text-xs font-mono text-slate-500">{open ? '▲' : '▼'}</span>
+        </span>
+      </button>
+      {open && (
+        <div id="nav-setting-body" className="px-3 pb-3 pt-1 border-t border-line space-y-2">
+          <p className="text-[0.6875rem] font-semibold text-slate-700 leading-snug">
+            길안내 시 사용할 내비를 선택하세요. 각 민원의 길안내 버튼에 자동 적용됩니다.
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {NAV_OPTIONS.map((opt) => {
+              const selected = mounted && (opt.value === 'ASK' ? pref === null : pref === opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => pick(opt.value)}
+                  className={`px-2 py-2 rounded-md text-xs font-extrabold flex items-center justify-center gap-1 border-2 active:scale-95 transition-transform ${
+                    selected
+                      ? `${opt.color} border-slate-900 shadow-md`
+                      : 'bg-surface-soft text-slate-600 border-line hover:bg-slate-100'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <span aria-hidden>{selected ? '◉' : '○'}</span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[0.625rem] text-slate-500 leading-snug">
+            ※ &lsquo;매번 묻기&rsquo; 선택 시 길안내 버튼에 3개 내비가 모두 표시됩니다.
+          </p>
         </div>
       )}
     </div>
