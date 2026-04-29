@@ -24,6 +24,8 @@ export default async function ComplaintsPage() {
     status: c.status,
     description: c.description,
     locationAddress: c.locationAddress,
+    locationLat: c.locationLat ? Number(c.locationLat) : null,
+    locationLng: c.locationLng ? Number(c.locationLng) : null,
     reportedAt: c.reportedAt.toISOString(),
     dueDate: c.dueDate?.toISOString() ?? null,
     overdue: isOverdue({ dueDate: c.dueDate, status: c.status }),

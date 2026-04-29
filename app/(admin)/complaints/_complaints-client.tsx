@@ -9,6 +9,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { FilterToggle } from '@/components/FilterToggle';
 import { useToast } from '@/components/ui/Toast';
 import { formatKoreanPhone } from '@/lib/phone';
+import NavButtons from '@/components/NavButtons';
 
 /* leaflet은 SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -29,6 +30,9 @@ export type Row = {
   status: string;
   description: string | null;
   locationAddress: string | null;
+  /* 내비 길안내용 좌표 (없으면 NavButtons 자동 비표시) */
+  locationLat: number | null;
+  locationLng: number | null;
   reportedAt: string;
   dueDate: string | null;
   overdue: boolean;
@@ -262,6 +266,17 @@ export default function ComplaintsClient({
                 {c.resolveNote && (
                   <div className="mt-2.5 px-3 py-2 bg-surface-alt rounded-md text-xs text-ink-muted font-semibold border-l-4 border-l-success">
                     <strong className="text-ink">처리 메모:</strong> {c.resolveNote}
+                  </div>
+                )}
+                {/* 내비 길안내 — 좌표 있을 때만, 미완료 민원만 */}
+                {c.locationLat != null && c.locationLng != null &&
+                  c.status !== 'COMPLETED' && c.status !== 'REJECTED' && (
+                  <div className="mt-2.5">
+                    <NavButtons
+                      lat={c.locationLat}
+                      lng={c.locationLng}
+                      name={c.locationAddress ?? `민원 #${c.id}`}
+                    />
                   </div>
                 )}
               </div>

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import NavButtons from '@/components/NavButtons';
 
 const RouteMap = dynamic(() => import('@/app/(admin)/live-vehicles/_leaflet-map'), {
   ssr: false,
@@ -160,18 +161,26 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
           </div>
           <ol className="divide-y divide-line">
             {data.stops.map((stop, i) => (
-              <li key={i} className="px-3 py-2.5 flex items-start gap-2.5">
-                <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-black ${
-                  i === 0 ? 'bg-emerald-700 text-white' : i === data.stops.length - 1 ? 'bg-purple-700 text-white' : 'bg-accent text-white'
-                }`}>
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-ink leading-tight break-words">{stop.label}</div>
-                  <div className="text-xs font-mono text-slate-700 mt-0.5 truncate">
-                    {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
+              <li key={i} className="px-3 py-2.5 flex flex-col gap-2">
+                <div className="flex items-start gap-2.5">
+                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-black ${
+                    i === 0 ? 'bg-emerald-700 text-white' : i === data.stops.length - 1 ? 'bg-purple-700 text-white' : 'bg-accent text-white'
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-ink leading-tight break-words">{stop.label}</div>
+                    <div className="text-xs font-mono text-slate-700 mt-0.5 truncate">
+                      {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
+                    </div>
                   </div>
                 </div>
+                {/* 내비 길안내 — 첫 stop(현재위치) 제외, 그 외 stop 마다 */}
+                {i > 0 && (
+                  <div className="ml-9">
+                    <NavButtons lat={stop.lat} lng={stop.lng} name={stop.label} />
+                  </div>
+                )}
               </li>
             ))}
           </ol>
