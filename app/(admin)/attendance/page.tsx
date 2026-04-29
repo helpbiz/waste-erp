@@ -1,6 +1,8 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { todayKstDate } from '@/lib/dates';
+import { contractorScopeWhere } from '@/lib/scopes';
+import { userScope } from '@/lib/users';
 import AttendanceClient from './_attendance-client';
 
 export const dynamic = 'force-dynamic';
@@ -10,12 +12,13 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
   const dateStr = searchParams.date ?? todayKstDate().toISOString().slice(0, 10);
   const date = new Date(dateStr);
 
-  /* 가시범위 - 본인 위탁업체만 */
-  const contractorId = session.contractorId ? BigInt(session.contractorId) : undefined;
+  /* 가시범위 — 사용자 진단 2026-04-29: MUNI_ADMIN 은 본인 지자체 산하만, contractorId=null 폴백 금지 */
+  const recordScope = contractorScopeWhere(session);
+  const userWhere = userScope(session);
 
   const [records, workers] = await Promise.all([
     prisma.attendanceRecord.findMany({
-      where: { workDate: date, contractorId },
+      where: { workDate: date, ...recordScope },
       include: {
         worker: { select: { id: true, name: true, employeeNo: true, position: { select: { label: true } }, department: { select: { name: true } } } },
         zone: { select: { zoneName: true } },
@@ -23,7 +26,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       orderBy: [{ workType: 'asc' }, { worker: { name: 'asc' } }],
     }),
     prisma.user.findMany({
-      where: { role: 'WORKER', status: 'ACTIVE', contractorId },
+      where: { role: 'WORKER', status: 'ACTIVE', ...userWhere },
       include: { position: { select: { label: true } }, department: { select: { name: true } } },
       orderBy: { name: 'asc' },
     }),

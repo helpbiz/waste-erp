@@ -104,11 +104,25 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
   const [to, setTo] = useState(ymEnd);
   const [data, setData] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
+  /* 사용자 요청 2026-04-29: 위탁업체별 개별/통합 보고서.
+     contractorId='' = 통합 (전체) / 특정 id = 개별 보고서. */
+  const [contractorId, setContractorId] = useState<string>('');
+  const [contractorOpts, setContractorOpts] = useState<Array<{ id: string; companyName: string; municipalityName: string | null }>>([]);
+
+  /* SUPER/MUNI/CONTRACTOR 모두 본인 가시범위 안의 업체 목록 fetch */
+  useEffect(() => {
+    fetch('/api/contractors')
+      .then((r) => r.json())
+      .then((d) => setContractorOpts(d.items ?? []))
+      .catch(() => null);
+  }, []);
 
   async function load() {
     setLoading(true);
     try {
-      const r = await fetch(`/api/reports/master-stats?from=${from}&to=${to}`);
+      const params = new URLSearchParams({ from, to });
+      if (contractorId) params.set('contractorId', contractorId);
+      const r = await fetch(`/api/reports/master-stats?${params}`);
       setData(await r.json());
     } finally { setLoading(false); }
   }
@@ -132,6 +146,23 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
     <div className="space-y-5">
       {/* 컨트롤 (인쇄 시 숨김) */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
+        {/* 위탁업체 선택 — 통합 vs 개별 */}
+        <div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">위탁업체</div>
+          <select
+            value={contractorId}
+            onChange={(e) => setContractorId(e.target.value)}
+            className="px-3 py-1.5 rounded border border-line text-sm font-bold min-w-[180px]"
+            aria-label="위탁업체 선택"
+          >
+            <option value="">📊 통합 (전체)</option>
+            {contractorOpts.map((c) => (
+              <option key={c.id} value={c.id}>
+                🏢 {c.companyName}{c.municipalityName ? ` (${c.municipalityName})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="시작일"
@@ -423,20 +454,7 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             </div>
           </Section>
 
-          {/* 결재란 — 서명 워터마크 */}
-          <div className="mt-8 pt-4 border-t-2 border-slate-700 grid grid-cols-3 gap-6 text-sm">
-            {['담당자', '관리자', '대표'].map((role) => (
-              <div key={role} className="text-center">
-                <div className="font-bold mb-1">{role}</div>
-                <div className="relative border border-slate-400 h-16 bg-white overflow-hidden">
-                  {/* 서명란 — 인쇄용 워터마크. 화면 표시 시 axe color-contrast 회피 위해 print:만 노출 */}
-                  <span aria-hidden="true" className="hidden print:flex absolute inset-0 items-center justify-center text-3xl font-black text-slate-200 select-none pointer-events-none tracking-[0.4em] -rotate-12">
-                    서명
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* 결재란 — 사용자 요청 2026-04-29: 통합 운영 보고서에서 결재라인 표시 감춤. */}
         </div>
       )}
 

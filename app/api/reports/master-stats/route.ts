@@ -10,10 +10,18 @@ import { readSession } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
+/* 사용자 진단 2026-04-29: MUNI_ADMIN cross-tenant leak 차단.
+   기존엔 MUNI_ADMIN 의 contractorId=null → { id: -1 } 폴백이지만,
+   여러 prisma 쿼리에서 cWhere 가 'where' 의 일부로 spread 되면 안전 무효화 가능.
+   명시적으로 MUNI 분기 추가. */
 function contractorScope<T extends { contractorId?: bigint | { equals?: bigint } | null }>(
   session: { role: string; contractorId: string | null; municipalityId: string | null }
 ): Record<string, unknown> {
   if (session.role === 'SUPER_ADMIN') return {};
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    /* contractor relation 통한 muni 필터 — User/Complaint/Attendance 등 contractor relation 보유 모델 적용 */
+    return { contractor: { municipalityId: BigInt(session.municipalityId) } };
+  }
   if (session.contractorId) return { contractorId: BigInt(session.contractorId) };
   return { id: BigInt(-1) };
 }
@@ -56,6 +64,42 @@ export async function GET(req: Request) {
 
   const cWhere = contractorScope(session) as Prisma.UserWhereInput;
   const userScopeWhere = cWhere as Prisma.UserWhereInput;
+  /* MUNI_ADMIN 일 때 contractorId 가 cWhere 에 없고 contractor relation 으로 들어옴.
+     cross-tenant leak 방지를 위해 모든 모델에 일관 적용할 scope 미리 산출. */
+  const muniId = session.role === 'MUNI_ADMIN' && session.municipalityId
+    ? BigInt(session.municipalityId) : null;
+  const directContractorId = session.role !== 'SUPER_ADMIN' && session.role !== 'MUNI_ADMIN' && session.contractorId
+    ? BigInt(session.contractorId) : null;
+  /* 사용자 요청 2026-04-29: 위탁업체별 개별/통합 보고서 — ?contractorId=X 옵션.
+     SUPER/MUNI 가 선택한 단일 contractorId 가 있으면 그것만 필터링.
+     없으면 권한별 기본 scope (MUNI 산하 전체 / SUPER 전체) 적용. */
+  const explicitContractorId = url.searchParams.get('contractorId');
+  let pickedContractorId: bigint | null = null;
+  if (explicitContractorId && /^\d+$/.test(explicitContractorId)) {
+    const candidate = BigInt(explicitContractorId);
+    /* 권한 검증: SUPER 는 모두 가능, MUNI 는 본인 muni 산하만, CONTRACTOR/INTERNAL 은 본인 회사만 */
+    if (session.role === 'SUPER_ADMIN') {
+      pickedContractorId = candidate;
+    } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+      const ownsMuni = await prisma.contractor.findFirst({
+        where: { id: candidate, municipalityId: BigInt(session.municipalityId) },
+        select: { id: true },
+      });
+      if (ownsMuni) pickedContractorId = candidate;
+    } else if (session.contractorId && candidate.toString() === session.contractorId) {
+      pickedContractorId = candidate;
+    }
+  }
+  /* 모델별 scope (해당 모델의 prisma where 에 spread):
+     - 단일 contractor 선택 시 그것만
+     - 그 외는 권한별 기본 scope */
+  const scopeContractorIdField: Record<string, unknown> = pickedContractorId
+    ? { contractorId: pickedContractorId }
+    : directContractorId
+    ? { contractorId: directContractorId }
+    : muniId
+    ? { contractor: { municipalityId: muniId } }
+    : {};
 
   /* ──────── 인사 ──────── */
   const [users, byRole, byPosition, byDept] = await Promise.all([
@@ -87,7 +131,7 @@ export async function GET(req: Request) {
   /* ──────── 근태 ──────── */
   const attendanceWhere: Prisma.AttendanceRecordWhereInput = {
     workDate: { gte: fromDate, lte: toDate },
-    ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}),
+    ...scopeContractorIdField,
   };
   const [attTotal, attendances] = await Promise.all([
     prisma.attendanceRecord.count({ where: attendanceWhere }),
@@ -111,7 +155,7 @@ export async function GET(req: Request) {
   /* ──────── 휴가 ──────── */
   const leaveWhere: Prisma.LeaveRequestWhereInput = {
     AND: [{ startDate: { lte: toDate } }, { endDate: { gte: fromDate } }],
-    worker: cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : undefined,
+    worker: scopeContractorIdField,
   };
   const leaveItems = await prisma.leaveRequest.findMany({ where: leaveWhere });
   const leaveByType = new Map<string, number>();
@@ -132,7 +176,7 @@ export async function GET(req: Request) {
   /* ──────── 민원 ──────── */
   const cWhere2: Prisma.ComplaintWhereInput = {
     reportedAt: { gte: fromDate, lte: toDate },
-    ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}),
+    ...scopeContractorIdField,
   };
   const complaints = await prisma.complaint.findMany({
     where: cWhere2,
@@ -264,13 +308,13 @@ export async function GET(req: Request) {
   const cSatAvg = cSatCount > 0 ? Math.round((cSatTotal / cSatCount) * 10) / 10 : 0;
 
   /* ──────── 차량/운행 ──────── */
-  const vehicleWhere: Prisma.VehicleWhereInput = cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {};
+  const vehicleWhere: Prisma.VehicleWhereInput = scopeContractorIdField as Prisma.VehicleWhereInput;
   const [vehicles, vehicleLogs] = await Promise.all([
     prisma.vehicle.findMany({ where: vehicleWhere, select: { id: true, status: true, vehicleType: true } }),
     prisma.vehicleLog.findMany({
       where: {
         logDate: { gte: fromDate, lte: toDate },
-        vehicle: cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : undefined,
+        vehicle: scopeContractorIdField,
       },
       select: { wasteWeightKg: true, fuelUsed: true, startMileage: true, endMileage: true, logDate: true },
     }),
@@ -284,7 +328,7 @@ export async function GET(req: Request) {
 
   /* ──────── 처리실적 ──────── */
   const wasteRecords = await prisma.wasteTreatmentRecord.findMany({
-    where: { recordDate: { gte: fromDate, lte: toDate }, ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}) },
+    where: { recordDate: { gte: fromDate, lte: toDate }, ...scopeContractorIdField },
   });
   const wasteByMaterial = new Map<string, number>();
   let wasteTotal = 0;
@@ -296,7 +340,7 @@ export async function GET(req: Request) {
 
   /* ──────── 반입실적 ──────── */
   const intakes = await prisma.recyclingCenterIntake.findMany({
-    where: { intakeDate: { gte: fromDate, lte: toDate }, ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}) },
+    where: { intakeDate: { gte: fromDate, lte: toDate }, ...scopeContractorIdField },
     include: { vehicle: { select: { vehicleNo: true } } },
   });
   const intakeByCategory = new Map<string, number>();
@@ -316,7 +360,7 @@ export async function GET(req: Request) {
   /* ──────── 안전보건 ──────── */
   const safetyWhereC: Prisma.SafetyReportWhereInput = {
     reportDate: { gte: fromDate, lte: toDate },
-    ...(cWhere.contractorId ? { contractorId: cWhere.contractorId as bigint } : {}),
+    ...scopeContractorIdField,
   };
   const safetyReports = await prisma.safetyReport.findMany({ where: safetyWhereC });
   const sByType = new Map<string, number>();
