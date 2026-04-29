@@ -48,8 +48,20 @@ type Stats = {
     byMonth: Array<{ ym: string; count: number }>;
     byArea: Array<{ area: string; count: number }>;
     byContractor: Array<{ contractorId: string; name: string; count: number }>;
-    performance: { avgResolveHours: number; resolvedCount: number; overdueCount: number; overdueRate: number; urgentCount: number; unassignedCount: number };
+    performance: {
+      avgResolveHours: number;
+      resolvedCount: number;
+      overdueCount: number;
+      overdueRate: number;
+      urgentCount: number;
+      unassignedCount: number;
+      avgReportToDepartMin: number;
+      avgDepartToArriveMin: number;
+      avgArriveToResolveMin: number;
+      departToArriveCount: number;
+    };
     satisfaction: { count: number; avg: number; byScore: Array<{ score: number; count: number }> };
+    byWorker: Array<{ workerId: string; name: string; count: number; resolvedCount: number; avgResolveHours: number; avgDepartToArriveMin: number; avgArriveToResolveMin: number }>;
   };
   vehicles: { total: number; active: number; maintenance: number; logsCount: number; wasteKg: number; wasteTon: number; fuelL: number; totalKm: number };
   waste: { total: number; records: number; byMaterial: Array<{ code: string; weight: number }> };
@@ -297,6 +309,47 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
                 </Card>
               )}
             </div>
+
+            {/* Phase 2 자동경로탐색 KPI — 응답성 + 처리 사이클 + 워커별 */}
+            {(data.complaints.performance.departToArriveCount > 0 || data.complaints.byWorker.length > 0) && (
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <KCard label="평균 응답시간" value={`${data.complaints.performance.avgReportToDepartMin}분`} unit="(접수→출동)" tone="accent" />
+                  <KCard label="평균 출동시간" value={`${data.complaints.performance.avgDepartToArriveMin}분`} unit="(출동→도착)" tone="accent" />
+                  <KCard label="평균 현장처리" value={`${data.complaints.performance.avgArriveToResolveMin}분`} unit="(도착→완료)" tone="accent" />
+                </div>
+                {data.complaints.byWorker.length > 0 && (
+                  <Card title="워커별 KPI Top 10">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+                          <tr className="border-b border-line">
+                            <th className="text-left py-1.5">워커</th>
+                            <th className="text-right py-1.5">담당</th>
+                            <th className="text-right py-1.5">완료</th>
+                            <th className="text-right py-1.5">평균 처리(h)</th>
+                            <th className="text-right py-1.5">출동→도착(분)</th>
+                            <th className="text-right py-1.5">도착→완료(분)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.complaints.byWorker.map((w) => (
+                            <tr key={w.workerId} className="border-b border-line last:border-b-0">
+                              <td className="py-1.5 font-bold text-ink">{w.name}</td>
+                              <td className="py-1.5 text-right font-mono">{w.count}</td>
+                              <td className="py-1.5 text-right font-mono font-extrabold text-emerald-700">{w.resolvedCount}</td>
+                              <td className="py-1.5 text-right font-mono">{w.avgResolveHours > 0 ? w.avgResolveHours : '—'}</td>
+                              <td className="py-1.5 text-right font-mono">{w.avgDepartToArriveMin > 0 ? w.avgDepartToArriveMin : '—'}</td>
+                              <td className="py-1.5 text-right font-mono">{w.avgArriveToResolveMin > 0 ? w.avgArriveToResolveMin : '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
           </Section>
 
           {/* 5. 차량/운행 */}

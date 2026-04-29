@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   const source = b.source ?? 'complaints';
   const maxStops = b.maxStops ?? 30;
 
-  let stops: Array<LatLng & { label: string; type?: string }> = [];
+  let stops: Array<LatLng & { label: string; type?: string; complaintId?: string }> = [];
 
   /* 시작점 — 우선순위: body.startLat/Lng > Contractor.garageLat/Lng > 강남구 기본 좌표 */
   let startLat = b.startLat;
@@ -86,6 +86,7 @@ export async function POST(req: Request) {
         lng: Number(c.locationLng.toString()),
         label: `${c.type === 'BULKY_WASTE' ? '📦' : c.type === 'ILLEGAL_DUMP' ? '🗑' : '📋'} #${c.id} ${c.locationAddress ?? c.citizenName ?? ''}`.slice(0, 60),
         type: c.type,
+        complaintId: c.id.toString(),  // Phase 2: 워커 RAPID 경로에서 depart/arrive 호출용
       });
     }
   }

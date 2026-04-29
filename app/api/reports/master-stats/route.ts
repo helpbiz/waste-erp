@@ -136,7 +136,10 @@ export async function GET(req: Request) {
   };
   const complaints = await prisma.complaint.findMany({
     where: cWhere2,
-    include: { contractor: { select: { companyName: true } } },
+    include: {
+      contractor: { select: { companyName: true } },
+      assignee: { select: { id: true, name: true } },
+    },
   });
   const cByType = new Map<string, number>();
   const cByStatus = new Map<string, number>();
@@ -154,6 +157,25 @@ export async function GET(req: Request) {
   let cOverdue = 0;
   let cUrgent = 0;
   let cUnassigned = 0;
+  /* Phase 2 KPI: 출동~도착 / 도착~완료 / 응답시간 */
+  let cDepartToArriveSumMs = 0;
+  let cDepartToArriveCount = 0;
+  let cArriveToResolveSumMs = 0;
+  let cArriveToResolveCount = 0;
+  let cReportToDepartSumMs = 0;
+  let cReportToDepartCount = 0;
+  /* 워커별 KPI: assigneeId → { name, count, resolvedCount, avgResolveHrs, avgDepartArrMin, avgArrResMin } */
+  type WorkerKpiAcc = {
+    name: string;
+    count: number;
+    resolvedCount: number;
+    resolveSumMs: number;
+    departArriveSumMs: number;
+    departArriveCount: number;
+    arriveResolveSumMs: number;
+    arriveResolveCount: number;
+  };
+  const cByWorker = new Map<string, WorkerKpiAcc>();
   /* KST 기준으로 시간/요일 카운트 (UTC offset +9h) */
   const KST_MS = 9 * 3600 * 1000;
   for (const c of complaints) {
@@ -184,12 +206,56 @@ export async function GET(req: Request) {
       cResolveSumMs += c.resolvedAt.getTime() - c.reportedAt.getTime();
       cResolvedCount++;
     }
+    /* Phase 2 KPI */
+    if (c.departedAt && c.arrivedAt) {
+      cDepartToArriveSumMs += c.arrivedAt.getTime() - c.departedAt.getTime();
+      cDepartToArriveCount++;
+    }
+    if (c.arrivedAt && c.resolvedAt) {
+      cArriveToResolveSumMs += c.resolvedAt.getTime() - c.arrivedAt.getTime();
+      cArriveToResolveCount++;
+    }
+    if (c.departedAt) {
+      cReportToDepartSumMs += c.departedAt.getTime() - c.reportedAt.getTime();
+      cReportToDepartCount++;
+    }
+    if (c.assignee) {
+      const wk = c.assignee.id.toString();
+      const acc = cByWorker.get(wk) ?? {
+        name: c.assignee.name, count: 0, resolvedCount: 0, resolveSumMs: 0,
+        departArriveSumMs: 0, departArriveCount: 0,
+        arriveResolveSumMs: 0, arriveResolveCount: 0,
+      };
+      acc.count++;
+      if (c.resolvedAt) {
+        acc.resolvedCount++;
+        acc.resolveSumMs += c.resolvedAt.getTime() - c.reportedAt.getTime();
+      }
+      if (c.departedAt && c.arrivedAt) {
+        acc.departArriveSumMs += c.arrivedAt.getTime() - c.departedAt.getTime();
+        acc.departArriveCount++;
+      }
+      if (c.arrivedAt && c.resolvedAt) {
+        acc.arriveResolveSumMs += c.resolvedAt.getTime() - c.arrivedAt.getTime();
+        acc.arriveResolveCount++;
+      }
+      cByWorker.set(wk, acc);
+    }
     if (c.dueDate && c.dueDate < new Date() && c.status !== 'COMPLETED' && c.status !== 'REJECTED') {
       cOverdue++;
     }
     if (c.isUrgent) cUrgent++;
     if (!c.assignedTo && c.status !== 'COMPLETED' && c.status !== 'REJECTED') cUnassigned++;
   }
+  const cAvgDepartArriveMin = cDepartToArriveCount > 0
+    ? Math.round((cDepartToArriveSumMs / cDepartToArriveCount) / 60_000)
+    : 0;
+  const cAvgArriveResolveMin = cArriveToResolveCount > 0
+    ? Math.round((cArriveToResolveSumMs / cArriveToResolveCount) / 60_000)
+    : 0;
+  const cAvgReportDepartMin = cReportToDepartCount > 0
+    ? Math.round((cReportToDepartSumMs / cReportToDepartCount) / 60_000)
+    : 0;
   const cAvgResolveHours = cResolvedCount > 0
     ? Math.round((cResolveSumMs / cResolvedCount) / 3600_000 * 10) / 10
     : 0;
@@ -313,7 +379,24 @@ export async function GET(req: Request) {
         overdueRate: cOverdueRate,
         urgentCount: cUrgent,
         unassignedCount: cUnassigned,
+        /* Phase 2 KPI (분 단위) */
+        avgReportToDepartMin: cAvgReportDepartMin,
+        avgDepartToArriveMin: cAvgDepartArriveMin,
+        avgArriveToResolveMin: cAvgArriveResolveMin,
+        departToArriveCount: cDepartToArriveCount,
       },
+      byWorker: Array.from(cByWorker.entries())
+        .map(([id, w]) => ({
+          workerId: id,
+          name: w.name,
+          count: w.count,
+          resolvedCount: w.resolvedCount,
+          avgResolveHours: w.resolvedCount > 0 ? Math.round((w.resolveSumMs / w.resolvedCount) / 3600_000 * 10) / 10 : 0,
+          avgDepartToArriveMin: w.departArriveCount > 0 ? Math.round((w.departArriveSumMs / w.departArriveCount) / 60_000) : 0,
+          avgArriveToResolveMin: w.arriveResolveCount > 0 ? Math.round((w.arriveResolveSumMs / w.arriveResolveCount) / 60_000) : 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
       satisfaction: {
         count: cSatCount,
         avg: cSatAvg,

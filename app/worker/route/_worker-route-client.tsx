@@ -11,7 +11,7 @@ const RouteMap = dynamic(() => import('@/app/(admin)/live-vehicles/_leaflet-map'
   loading: () => <div className="h-[280px] flex items-center justify-center text-slate-700 font-bold">지도 로드 중…</div>,
 });
 
-type Stop = { lat: number; lng: number; label: string };
+type Stop = { lat: number; lng: number; label: string; complaintId?: string };
 
 type RouteResp = {
   ok: boolean;
@@ -175,10 +175,28 @@ export default function WorkerRouteClient({ positionLabel }: { positionLabel: st
                     </div>
                   </div>
                 </div>
-                {/* 내비 길안내 — 첫 stop(현재위치) 제외, 그 외 stop 마다 */}
+                {/* 내비 길안내 + 도착 확인 — 첫 stop(현재위치) 제외, 그 외 stop 마다 */}
                 {i > 0 && (
-                  <div className="ml-9">
-                    <NavButtons lat={stop.lat} lng={stop.lng} name={stop.label} />
+                  <div className="ml-9 space-y-1.5">
+                    <NavButtons
+                      lat={stop.lat}
+                      lng={stop.lng}
+                      name={stop.label}
+                      departEndpoint={stop.complaintId ? `/api/complaints/${stop.complaintId}/depart` : undefined}
+                    />
+                    {stop.complaintId && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const r = await fetch(`/api/complaints/${stop.complaintId}/arrive`, { method: 'POST' });
+                          if (r.ok) alert('도착 기록 완료');
+                          else alert('도착 기록 실패');
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95"
+                      >
+                        📍 도착 확인
+                      </button>
+                    )}
                   </div>
                 )}
               </li>

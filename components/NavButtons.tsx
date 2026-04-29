@@ -15,6 +15,9 @@ type Props = {
   name?: string;
   /** 컴팩트 모드 — 작은 셀에 적합 (text-[0.625rem], py-1) */
   compact?: boolean;
+  /** Phase 2: 클릭 시 자동 호출되는 백엔드 endpoint (예: /api/complaints/123/depart).
+   *  sendBeacon 으로 비동기 전송 — 내비 앱 실행을 절대 막지 않음. */
+  departEndpoint?: string;
 };
 
 const COLOR: Record<NavApp, string> = {
@@ -23,7 +26,7 @@ const COLOR: Record<NavApp, string> = {
   tmap: 'bg-rose-500 hover:bg-rose-600 text-white',
 };
 
-export default function NavButtons({ lat, lng, name = '민원지', compact = false }: Props) {
+export default function NavButtons({ lat, lng, name = '민원지', compact = false, departEndpoint }: Props) {
   const [pref, setPref] = useState<NavApp | null>(null);
   const [showAll, setShowAll] = useState(false);
   /* 마운트 후에만 localStorage 접근 (SSR hydration mismatch 방지) */
@@ -34,10 +37,28 @@ export default function NavButtons({ lat, lng, name = '민원지', compact = fal
     setPref(getPreferredNav());
   }, []);
 
+  function fireDepart() {
+    if (!departEndpoint || typeof navigator === 'undefined') return;
+    /* Phase 2: 출동 timestamp 자동 기록.
+       sendBeacon 사용 — 페이지 언로드/내비 앱 전환 직전에도 안정적 전송, 응답 무시. */
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
+        navigator.sendBeacon(departEndpoint, blob);
+      } else {
+        /* fallback: keepalive fetch — 응답 기다리지 않음 */
+        fetch(departEndpoint, { method: 'POST', keepalive: true }).catch(() => null);
+      }
+    } catch {
+      /* 무시 — 내비 실행이 더 중요 */
+    }
+  }
+
   function go(app: NavApp) {
     setPreferredNav(app);
     setPref(app);
     setShowAll(false);
+    fireDepart();
     launchNav(app, lat, lng, name);
   }
 

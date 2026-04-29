@@ -575,6 +575,13 @@ model Complaint {
   resolveNote String?         @map("resolve_note") @db.Text
   resolvedAt  DateTime?       @map("resolved_at")
 
+  // Phase 2 자동경로탐색 KPI 트래킹 (사용자 요청 2026-04-29)
+  // - departedAt: 워커가 내비 길안내 누른 시점 (= 출동)
+  // - arrivedAt: 워커가 '도착 확인' 누른 시점 (= 현장 도착)
+  // - 출동시간 = arrivedAt - departedAt, 처리시간 = resolvedAt - arrivedAt
+  departedAt DateTime? @map("departed_at")
+  arrivedAt  DateTime? @map("arrived_at")
+
   // 청구항 7: 도착 예정 시각 (배출 수행 기관 위치/경로 기반)
   arrivalEta DateTime? @map("arrival_eta")
 
