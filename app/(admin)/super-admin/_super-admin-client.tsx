@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FacilitiesTab } from './facilities/_facilities-tab';
 import { BottomSheet } from '@/components/BottomSheet';
+import OnboardingWizardModal from './_onboarding-wizard';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -65,13 +66,30 @@ export default function SuperAdminClient() {
     }
     return 'munis';
   });
+  /* P1-3 신규 위탁업체 개설 마법사 (5단계) */
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-extrabold text-ink">슈퍼관리자 콘솔</h2>
         <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-purple-600 text-white">SUPER_ADMIN ONLY</span>
+        <button
+          type="button"
+          onClick={() => setWizardOpen(true)}
+          className="ml-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95 transition"
+          title="회사 정보 + 지자체 + 권한 + 관리자 계정을 5단계로 한 번에 개설"
+        >
+          ＋ 신규 위탁업체 개설
+        </button>
       </div>
+
+      {wizardOpen && (
+        <OnboardingWizardModal
+          onClose={() => setWizardOpen(false)}
+          onCreated={() => { /* 다음 진입 시 탭들이 fresh fetch */ }}
+        />
+      )}
 
       <div className="flex gap-1 border-b-2 border-line overflow-x-auto">
         <Tab active={tab === 'munis'} onClick={() => setTab('munis')}>지자체 관리</Tab>
