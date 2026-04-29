@@ -13,7 +13,7 @@ import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { formatKoreanPhone } from '@/lib/phone';
 import { formatBusinessNo, validateBusinessNo } from '@/lib/business-no';
 
-type Muni = { id: string; name: string; code: string; region: string | null };
+type Muni = { id: string; name: string; code: string; region: string | null; status: string };
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6; // 6 = 완료 화면
 
@@ -152,10 +152,12 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
     }
   }
 
-  /* Step 2 진입 시 지자체 목록 로드 */
+  /* Step 2 진입 시 지자체 목록 로드 — 모든 상태 (ACTIVE / SUSPENDED) 모두 노출.
+     SUSPENDED 지자체도 선택 가능 (시드만 된 미운영 지자체 → 위탁업체 등록 시 활성화).
+     INACTIVE/폐지 등은 API 가 명시 시에만 반환 — 본 위저드는 default 전체. */
   useEffect(() => {
     if (step !== 2 || munis.length > 0) return;
-    fetch('/api/super-admin/municipalities?status=ACTIVE&limit=500')
+    fetch('/api/super-admin/municipalities?limit=500')
       .then((r) => r.json())
       .then((j) => setMunis(j.items ?? []))
       .catch(() => setError('지자체 목록 로드 실패'));
@@ -388,6 +390,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 {filteredMunis.map((m, i) => {
                   const selected = data.municipalityId === m.id;
                   const hovered = i === muniHover;
+                  const isSuspended = m.status === 'SUSPENDED';
                   return (
                     <button
                       type="button"
@@ -408,6 +411,16 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                       </span>
                       <span className={`ml-2 text-[0.625rem] font-mono ${selected ? 'text-cyan-100' : 'text-slate-500'}`}>
                         {m.region ?? ''} · {m.code}
+                      </span>
+                      {/* 상태 배지 — ACTIVE 는 emerald, SUSPENDED 는 amber (시드만 됨) */}
+                      <span className={`ml-1.5 text-[0.5625rem] font-mono font-extrabold px-1 py-0.5 rounded border ${
+                        selected
+                          ? 'bg-white/20 text-white border-white/40'
+                          : isSuspended
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      }`}>
+                        {isSuspended ? '시드만' : '운영중'}
                       </span>
                     </button>
                   );

@@ -98,9 +98,19 @@ export async function POST(req: Request) {
   /* 지자체 존재 확인 */
   const muni = await prisma.municipality.findUnique({
     where: { id: BigInt(b.municipalityId) },
-    select: { id: true, name: true },
+    select: { id: true, name: true, status: true },
   });
   if (!muni) return NextResponse.json({ error: 'municipality_not_found' }, { status: 400 });
+
+  /* SUSPENDED (시드만 된 미운영) 지자체에 위탁업체가 등록되면 자동으로 ACTIVE 승급.
+     사용자 요청 2026-04-29: 용산구 검색 안 되던 원인 (status=ACTIVE 필터)을
+     해결하면서 새 위탁업체 추가 시 muni 상태도 자연 정합성 있게 갱신. */
+  if (muni.status === 'SUSPENDED') {
+    await prisma.municipality.update({
+      where: { id: muni.id },
+      data: { status: 'ACTIVE' },
+    });
+  }
 
   const created = await prisma.contractor.create({
     data: {
