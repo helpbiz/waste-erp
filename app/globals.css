@@ -15,9 +15,10 @@
 :root { color-scheme: light; }
 
 /* 사용자 요청 2026-04-29: 앱 전체 폰트 일괄 확대 — 시니어/현장 가독성 우선.
-   v1:18 → v2:20 → v3:30 → v4:32 → v5:34 → v6:36 (post-login 한 단계 더 업).
-   고정 px → rem 변환 완료 → root 변경 시 자동 따라감. */
-html { font-size: 36px; }
+   v1:18 → v2:20 → v3:30 → v4:32 → v5:34 → v6:36 → v7:32 (랜딩 너무 큼 → 2단계 다운).
+   고정 px → rem 변환 완료 → root 변경 시 자동 따라감.
+   ※ 로그인 화면은 별도 inline px 스코프로 영향 받지 않음 (page.tsx v8). */
+html { font-size: 32px; }
 
 html, body { height: 100%; }
 body {
