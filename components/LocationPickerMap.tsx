@@ -103,8 +103,11 @@ export default function LocationPickerMap({
         scrollWheelZoom
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          /* CartoDB Positron — 글로벌 CDN, OSM 보다 응답 ~50% 빠름.
+             CSP img-src 에 *.basemaps.cartocdn.com 이미 허용됨. */
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          subdomains="abcd"
           maxZoom={19}
         />
         <Marker
