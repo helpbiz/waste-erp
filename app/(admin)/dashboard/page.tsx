@@ -604,8 +604,13 @@ function VehiclePanel({
 /* ─────────────── 휴가 신청 대기 ─────────────── */
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
-  ANNUAL: '연차', SICK: '병가', SPECIAL: '경조사', BUSINESS_TRIP: '출장', TRAINING: '교육', OTHER: '기타',
+  ANNUAL: '연차', ANNUAL_HALF: '반차', SPECIAL: '경조사', MATERNITY: '출산',
+  FAMILY_CARE: '가족돌봄', MENSTRUAL: '생리', OFFICIAL: '공가',
+  SICK: '병가', BUSINESS_TRIP: '출장', TRAINING: '교육', OTHER: '기타',
 };
+
+/* MM-DD 짧은 포맷 (당해 가정) */
+const shortDate = (iso: string) => iso.slice(5).replace('-', '.');
 
 function PendingLeavePanel({
   items,
@@ -626,27 +631,31 @@ function PendingLeavePanel({
   return (
     <div className="grid grid-cols-2 gap-2.5">
       {items.map((r) => {
-        const days = Math.max(1, Math.floor((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / 86_400_000) + 1);
+        const isHalf = r.requestType === 'ANNUAL_HALF';
+        const dayCount = Math.max(1, Math.floor((new Date(r.endDate).getTime() - new Date(r.startDate).getTime()) / 86_400_000) + 1);
+        const days = isHalf ? 0.5 : dayCount;
+        const sameDay = r.startDate === r.endDate;
+        const dateRange = sameDay ? shortDate(r.startDate) : `${shortDate(r.startDate)} ~ ${shortDate(r.endDate)}`;
         return (
           <div key={r.id} className="border border-line rounded-lg p-3 bg-surface-soft hover:bg-white transition">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[0.9375rem] font-extrabold text-ink">{r.workerName}</span>
+              <span className="text-[0.9375rem] font-extrabold text-ink truncate">{r.workerName}</span>
               <span className="text-[0.625rem] font-mono font-bold text-ink-muted">{r.employeeNo ?? '—'}</span>
               <span className="ml-auto text-[0.625rem] font-mono font-extrabold px-2 py-0.5 rounded border bg-amber-100 text-amber-700 border-amber-300">
                 대기
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs mb-1">
               <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[0.625rem]">
                 {LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}
               </span>
-              <span className="font-mono text-ink-muted">
-                {r.startDate} ~ {r.endDate}
-              </span>
-              <span className="font-mono font-extrabold text-ink">{days}일</span>
+              <span className="ml-auto font-mono font-extrabold text-ink">{days}일</span>
+            </div>
+            <div className="font-mono text-[0.6875rem] text-ink-muted">
+              {dateRange}
             </div>
             {r.reason && (
-              <div className="text-[0.6875rem] text-ink-muted mt-1.5 line-clamp-1" title={r.reason}>
+              <div className="text-[0.6875rem] text-ink-muted mt-1 line-clamp-1" title={r.reason}>
                 {r.reason}
               </div>
             )}

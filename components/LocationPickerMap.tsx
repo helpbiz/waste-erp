@@ -58,6 +58,31 @@ function ClickHandler({ onChange }: { onChange: (lat: number, lng: number) => vo
   return null;
 }
 
+/**
+ * BottomSheet 슬라이드 애니메이션 중 mount 되면 Leaflet 이 컨테이너 크기 0×0 으로 인식 →
+ * 타일 fetch 안 함. invalidateSize() 를 다단계(100/300/600/1000ms) 강제 호출하여
+ * 모달 트랜지션 완료 시점에 지도 크기 재인식 + 타일 로딩 트리거.
+ */
+function ResizeFix() {
+  const map = useMap();
+  useEffect(() => {
+    const delays = [100, 300, 600, 1000];
+    const timers = delays.map((d) =>
+      setTimeout(() => {
+        try { map.invalidateSize(false); } catch { /* unmount race */ }
+      }, d),
+    );
+    /* window resize 시에도 즉시 보정 */
+    const onResize = () => { try { map.invalidateSize(false); } catch { /* */ } };
+    window.addEventListener('resize', onResize);
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      window.removeEventListener('resize', onResize);
+    };
+  }, [map]);
+  return null;
+}
+
 export default function LocationPickerMap({
   lat,
   lng,
@@ -95,6 +120,7 @@ export default function LocationPickerMap({
         />
         <ClickHandler onChange={onChange} />
         <Recenter lat={lat} lng={lng} />
+        <ResizeFix />
       </MapContainer>
     </div>
   );
