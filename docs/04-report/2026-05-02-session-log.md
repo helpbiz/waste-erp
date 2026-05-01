@@ -15,6 +15,7 @@
 | 자동 배정 | lib/complaint-assign.ts | 기동반 우선 + 부하·거리·zone 점수로 best 1명 자동 배정 |
 | AI 인근 추천 | 주소 인식 + 거리 계산 | 동(洞)→AdminDong→zone 매칭 / 출퇴근 GPS Haversine ≤2km |
 | 회사별 기능 권한 | ContractorFeature + UI | 슈퍼관리자가 회사마다 기능 ON/OFF |
+| 회귀 수정 | /worker/complaint 기본 탭 'inbox' → 'register' | 첫 진입 시 지도 즉시 표시 |
 
 ---
 
@@ -214,7 +215,40 @@ model ContractorFeature {
 
 ---
 
-## 5. 운영 메모
+## 5. 회귀 진단 및 수정 — /worker/complaint 지도 비표시
+
+### 사용자 신고
+> "민원 관련 지도가 안 올라와"
+
+### 진단
+- §1 InboxPanel 도입 시 `/worker/complaint` 기본 탭을 `'inbox'` 로 두었음.
+- inbox 탭은 자기 배정 민원 목록 — 지도 없음.
+- 첫 진입 시 사용자가 등록 폼(+지도)이 안 보이는 것을 "지도 비표시" 회귀로 인식.
+
+### 검증 (지도 자체는 정상)
+- `LocationPickerMap` (CartoDB Positron CDN) 코드·CSP·타일 호출 모두 OK
+- `curl https://a.basemaps.cartocdn.com/light_all/16/...` → 200, PNG 정상 응답
+- `next.config.js` CSP `img-src` 에 `*.basemaps.cartocdn.com` 이미 허용됨
+- `ResizeFix` (100/300/600/1000ms 다단계 invalidateSize) 정상 동작
+
+### 수정
+```ts
+// app/worker/complaint/_complaint-client.tsx
+- const [tab, setTab] = useState<'inbox' | 'register'>('inbox');
++ const [tab, setTab] = useState<'inbox' | 'register'>('register');
+```
+
+### 결정 근거
+- 일반 워커의 주 행동은 등록(신고) — 지도 즉시 가시 우선.
+- RAPID(기동반) 워커는 `📥 내 민원` 탭을 명시 클릭하여 배정 목록 확인.
+- 자동화된 해결은 부하: 둘 다 보여주려면 split view 가 필요한데 모바일 ≤ 5인치 폭 제약.
+
+### Commit
+- `23b5f40` fix(worker): /worker/complaint 기본 탭 → 'register' (지도 즉시 가시)
+
+---
+
+## 6. 운영 메모
 
 ### Service Worker 캐시
 - v50 (2026-05-02 announcement-role-clarify)
@@ -222,7 +256,8 @@ model ContractorFeature {
 - v52 (worker-report-label)
 - v53 (announcement-voice-tts)
 - v54 (complaint-tts-autoassign)
-- v55 (contractor-features) — 본 세션 마지막
+- v55 (contractor-features)
+- v56 (worker-complaint-default-register) — 본 세션 마지막
 
 ### 배포 플로우 (변동 없음)
 ```bash
@@ -231,33 +266,61 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 ```
 
 ### 다음 세션 후보
-1. 회사별 기능 게이트 점진 적용 (recommendedRoute, vehicleTracking 등)
+1. 회사별 기능 게이트 점진 적용 (recommendedRoute, vehicleTracking, costCalculation, attendanceGps)
 2. 클라이언트 사이드 기능 게이트 — `/api/me/features` 엔드포인트로 sidebar 메뉴 항목 자체 숨김
-3. ContractorFeature 변경 audit 로그
-4. 슈퍼관리자 콘솔 — 회사별 기능 일괄 복사(template) 기능
+3. ContractorFeature 변경 audit 로그 상세 페이지 (현재는 audit 테이블에만 기록)
+4. 슈퍼관리자 콘솔 — 회사별 기능 일괄 복사(template / 요금제 패키지) 기능
 5. 기능 비활성 시 사용자 친화적 안내 페이지(403 대신)
+6. /worker/complaint 진입 시 inbox 카운트(N) 뱃지 — 본인 배정 민원 있으면 inbox 탭 자동 진입
+7. AttendanceRecord GPS 미수집 contractor 의 AI 인근 추천 fallback 정책 (현재는 score 페널티만)
+8. 인근 broadcast Announcement 의 audience 를 'WORKER' 가 아닌 per-user targeting 으로 정밀화
+   (Announcement 모델에 `targetUserId` 필드 추가 필요)
+9. WebPush API 풀스택 — 백그라운드(앱 닫힘)에서도 공지/민원 푸시 수신
+10. 공지/민원 음성 발화 큐 처리 — 동시 다발 신규 발생 시 cancel() 후 마지막만 발화하는 현재 정책 검토
 
 ---
 
-## 6. Files Touched (본 세션 누적)
+## 7. Commits (본 세션 시간순)
+
+| # | SHA | 영역 | 요약 |
+|---|---|---|---|
+| 1 | `55dfbf8` | worker | feat(worker): 기동반 민원처리 UI — InboxPanel + 가시범위 버그 수정 |
+| 2 | `df3d5c1` | worker | fix(worker): 민원 등록 탭 라벨 '처리 내용' → '신고 내용' |
+| 3 | `dc423f7` | announcements | feat(announcements): TTS 음성 알림 + 남/여 설정 |
+| 4 | `27c62c8` | complaint | feat(complaint): 신규 민원 TTS + 기동반 자동배정 + AI 인근 워커 broadcast |
+| 5 | `6f903b9` | super-admin | feat(super-admin): 회사별 기능 권한(엔타이틀먼트) 시스템 + 세션 기록 |
+| 6 | `23b5f40` | worker | fix(worker): /worker/complaint 기본 탭 → 'register' (지도 즉시 가시) |
+
+---
+
+## 8. Files Touched (본 세션 누적)
 
 ```
-lib/complaints.ts                                        +6  -2
-lib/voice-settings.ts                                    NEW
-lib/complaint-assign.ts                                  NEW
-lib/features.ts                                          NEW
-components/AnnouncementBanner.tsx                        +18 -3
-components/VoiceSettingsModal.tsx                        NEW
-components/ComplaintBanner.tsx                           NEW
-app/worker/complaint/_complaint-client.tsx               +259 -3
-app/api/announcements/route.ts                           +2
-app/api/complaints/route.ts                              +20 -2
-app/api/super-admin/contractor-features/route.ts         NEW
-app/(admin)/announcements/_announcements-client.tsx      +12
-app/(admin)/super-admin/_super-admin-client.tsx          +N
-app/(admin)/_admin-shell.tsx                             +3
-app/worker/_layout-shell.tsx                             +3
-prisma/schema.prisma                                     +18
-public/sw.js                                             v50→v55
+lib/complaints.ts                                        WORKER OR(reportedBy, assignedTo)
+lib/voice-settings.ts                                    NEW — TTS 설정/발화 helper
+lib/complaint-assign.ts                                  NEW — 자동배정+AI 인근 추천
+lib/features.ts                                          NEW — 카탈로그+hasFeature
+components/AnnouncementBanner.tsx                        TTS 트리거 + 🔊 음성 버튼
+components/VoiceSettingsModal.tsx                        NEW — voice 선호 UI
+components/ComplaintBanner.tsx                           NEW — 폴링+TTS+OS 알림
+app/worker/complaint/_complaint-client.tsx               +259/-3 — InboxPanel + 탭 + 라벨
+app/api/announcements/route.ts                           authorRole + announcements 게이트
+app/api/complaints/route.ts                              reporter.role + 자동배정 호출+게이트
+app/api/super-admin/contractor-features/route.ts         NEW — 기능 GET/PATCH
+app/(admin)/announcements/_announcements-client.tsx      🔊 음성 설정 버튼
+app/(admin)/super-admin/_super-admin-client.tsx          features 탭 등록
+app/(admin)/super-admin/_features-tab.tsx                NEW — 매트릭스 UI
+app/(admin)/_admin-shell.tsx                             ComplaintBanner 마운트
+app/worker/_layout-shell.tsx                             ComplaintBanner 마운트
+prisma/schema.prisma                                     ContractorFeature 모델 + relation
+public/sw.js                                             v50 → v56 (cache bust 7회)
 docs/04-report/2026-05-02-session-log.md                 NEW (this file)
 ```
+
+### 누적 통계 (본 세션 6 commit)
+- 14 신규 파일 (라이브러리 4, 컴포넌트 3, API 2, UI 1, 문서 1, 마이그레이션 1, 기타 2)
+- 6 기존 파일 수정
+- 총 ~1,140 lines added (대부분 InboxPanel + features matrix UI + 세션 로그)
+- prisma db push 1회 (ContractorFeature 테이블 생성)
+- docker compose rebuild 6회 (각 commit 직후 자동 재배포)
+
