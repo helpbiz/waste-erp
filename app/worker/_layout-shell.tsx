@@ -7,6 +7,7 @@ import { TabLink } from './_tab-link';
 import { AppBar } from '@/components/worker/AppBar';
 import { ToastProvider } from '@/components/ui/Toast';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import ComplaintBanner from '@/components/ComplaintBanner';
 
 type Props = {
   user: { name: string; userId: string; role: string };
@@ -33,6 +34,8 @@ export function WorkerLayoutShell({ user, children }: Props) {
 
           {/* 글로벌 공지 banner (사용자 요청 2026-05-01) */}
           <AnnouncementBanner />
+          {/* 신규 민원 음성 알림 — 폴링 + TTS (사용자 요청 2026-05-02) */}
+          <ComplaintBanner />
 
           {/* 본문 */}
           <main className="flex-1 overflow-y-auto overscroll-contain">{children}</main>

@@ -17,6 +17,7 @@ import {
   listKoreanVoices,
   guessVoiceGender,
   speakAnnouncement,
+  speakComplaintArrival,
   onVoicesReady,
 } from '@/lib/voice-settings';
 
@@ -42,8 +43,11 @@ export default function VoiceSettingsModal({ onClose }: { onClose: () => void })
     saveVoiceSettings(next);
   }
 
-  function preview(role: 'MUNI_ADMIN' | 'CONTRACTOR_ADMIN') {
+  function previewAnnouncement(role: 'MUNI_ADMIN' | 'CONTRACTOR_ADMIN') {
     speakAnnouncement(role, { ...settings, enabled: true });
+  }
+  function previewComplaint(role: 'MUNI_ADMIN' | 'CONTRACTOR_ADMIN') {
+    speakComplaintArrival(role, { ...settings, enabled: true });
   }
 
   return (
@@ -132,19 +136,19 @@ export default function VoiceSettingsModal({ onClose }: { onClose: () => void })
             </div>
           )}
 
-          {/* 4. 미리듣기 */}
+          {/* 4. 미리듣기 — 공지 */}
           <div>
-            <div className="text-xs font-extrabold text-ink mb-2">▶ 미리듣기</div>
+            <div className="text-xs font-extrabold text-ink mb-2">▶ 공지사항 미리듣기</div>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => preview('CONTRACTOR_ADMIN')}
+                onClick={() => previewAnnouncement('CONTRACTOR_ADMIN')}
                 disabled={!supported}
                 className="px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-extrabold active:scale-95 disabled:opacity-40"
               >
                 🏢 회사 공지
               </button>
               <button
-                onClick={() => preview('MUNI_ADMIN')}
+                onClick={() => previewAnnouncement('MUNI_ADMIN')}
                 disabled={!supported}
                 className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold active:scale-95 disabled:opacity-40"
               >
@@ -154,6 +158,31 @@ export default function VoiceSettingsModal({ onClose }: { onClose: () => void })
             <div className="text-[0.6875rem] text-slate-500 mt-1.5 leading-relaxed">
               ▸ 회사: <span className="font-mono">"회사에서 공지사항이 도착했습니다."</span><br />
               ▸ 지자체: <span className="font-mono">"지자체에서 공지사항이 도착했습니다."</span>
+            </div>
+          </div>
+
+          {/* 5. 미리듣기 — 민원 접수 */}
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-2">▶ 민원 접수 미리듣기</div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => previewComplaint('CONTRACTOR_ADMIN')}
+                disabled={!supported}
+                className="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold active:scale-95 disabled:opacity-40"
+              >
+                🏢 회사 접수
+              </button>
+              <button
+                onClick={() => previewComplaint('MUNI_ADMIN')}
+                disabled={!supported}
+                className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold active:scale-95 disabled:opacity-40"
+              >
+                🏛 지자체 접수
+              </button>
+            </div>
+            <div className="text-[0.6875rem] text-slate-500 mt-1.5 leading-relaxed">
+              ▸ 회사: <span className="font-mono">"회사에서 새로운 민원이 접수되었습니다."</span><br />
+              ▸ 지자체: <span className="font-mono">"지자체에서 새로운 민원이 접수되었습니다."</span>
             </div>
           </div>
         </div>

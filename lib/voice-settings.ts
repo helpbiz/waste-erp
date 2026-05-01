@@ -92,12 +92,17 @@ export function announcementSpeechText(authorRole: string | null | undefined): s
   return '회사에서 공지사항이 도착했습니다.';
 }
 
-/* 발화 — settings.enabled 면 즉시 speak */
-export function speakAnnouncement(authorRole: string | null | undefined, settings: VoiceSettings) {
+/* 민원 reporter role → 메시지 */
+export function complaintSpeechText(reporterRole: string | null | undefined): string {
+  if (reporterRole === 'MUNI_ADMIN') return '지자체에서 새로운 민원이 접수되었습니다.';
+  return '회사에서 새로운 민원이 접수되었습니다.';
+}
+
+/* 내부 공통 발화 helper */
+function speakText(text: string, settings: VoiceSettings) {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
   if (!settings.enabled) return;
 
-  const text = announcementSpeechText(authorRole);
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
   u.rate = 1.0;
@@ -108,6 +113,15 @@ export function speakAnnouncement(authorRole: string | null | undefined, setting
   /* 진행중 발화 정리 후 새로 시작 */
   try { window.speechSynthesis.cancel(); } catch { /* */ }
   try { window.speechSynthesis.speak(u); } catch { /* */ }
+}
+
+/* 발화 — settings.enabled 면 즉시 speak */
+export function speakAnnouncement(authorRole: string | null | undefined, settings: VoiceSettings) {
+  speakText(announcementSpeechText(authorRole), settings);
+}
+
+export function speakComplaintArrival(reporterRole: string | null | undefined, settings: VoiceSettings) {
+  speakText(complaintSpeechText(reporterRole), settings);
 }
 
 /* voiceschanged 이벤트 — 비동기 로드 보정 */

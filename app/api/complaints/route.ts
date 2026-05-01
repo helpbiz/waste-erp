@@ -6,6 +6,7 @@ import { isInsideKorea } from '@/lib/gps';
 import { roundCoord } from '@/lib/geo';
 import { complaintWhere, isOverdue } from '@/lib/complaints';
 import { writeAudit } from '@/lib/audit';
+import { autoAssignComplaint } from '@/lib/complaint-assign';
 
 export const runtime = 'nodejs';
 
@@ -118,14 +119,30 @@ export async function POST(req: Request) {
     },
   });
 
+  /* 자동 배정 — 기동반 우선 + AI 인근 워커 broadcast (best-effort) */
+  let assignment: Awaited<ReturnType<typeof autoAssignComplaint>> | null = null;
+  try {
+    assignment = await autoAssignComplaint({
+      complaintId: created.id,
+      contractorId,
+      locationLat: b.locationLat ?? null,
+      locationLng: b.locationLng ?? null,
+      locationAddress: b.locationAddress ?? null,
+      zoneId: b.zoneId !== undefined ? BigInt(b.zoneId) : null,
+    });
+  } catch (e) {
+    console.error('[autoAssignComplaint] failed:', e);
+  }
+
   return NextResponse.json({
     ok: true,
     complaint: {
       id: created.id.toString(),
       type: created.type,
-      status: created.status,
+      status: assignment?.primary ? 'ASSIGNED' : created.status,
       reportedAt: created.reportedAt.toISOString(),
     },
+    assignment,
   });
 }
 
@@ -155,7 +172,7 @@ export async function GET(req: Request) {
       take: limit,
       skip: offset,
       include: {
-        reporter: { select: { id: true, name: true } },
+        reporter: { select: { id: true, name: true, role: true } },
         assignee: { select: { id: true, name: true } },
         zone: { select: { zoneName: true } },
       },
@@ -174,8 +191,8 @@ export async function GET(req: Request) {
       reportedAt: c.reportedAt.toISOString(),
       locationAddress: c.locationAddress,
       reporter: c.reporter
-        ? { id: c.reporter.id.toString(), name: c.reporter.name }
-        : { id: '0', name: c.citizenName ?? '시민' },
+        ? { id: c.reporter.id.toString(), name: c.reporter.name, role: c.reporter.role }
+        : { id: '0', name: c.citizenName ?? '시민', role: null },
       assignee: c.assignee ? { id: c.assignee.id.toString(), name: c.assignee.name } : null,
       zoneName: c.zone?.zoneName ?? null,
       dueDate: c.dueDate?.toISOString() ?? null,

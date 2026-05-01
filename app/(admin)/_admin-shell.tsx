@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import LogoutButton from './_logout-button';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
+import ComplaintBanner from '@/components/ComplaintBanner';
 
 type Session = {
   role: string;
@@ -125,6 +126,8 @@ export default function AdminShell({
         </header>
         {/* 글로벌 공지 banner — 모든 admin 페이지 상단 (사용자 요청 2026-05-01) */}
         <AnnouncementBanner />
+        {/* 신규 민원 음성 알림 — 폴링 + TTS (사용자 요청 2026-05-02) */}
+        <ComplaintBanner />
         <section className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">{children}</section>
       </main>
     </div>
