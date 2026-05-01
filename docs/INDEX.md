@@ -28,6 +28,14 @@
 
 ---
 
+## 🇰🇷 1.5 신규 프로젝트 시작 (Playbook)
+
+| 문서 | 용도 |
+|---|---|
+| [`playbook/RAPID_DEV_PROMPT.md`](playbook/RAPID_DEV_PROMPT.md) ⭐ | **대한민국 최고 개발자 프롬프트** — 14일 MVP 출시 가이드 (CleanERP 검증) |
+
+---
+
 ## 🛠 2. 운영 (Operations)
 
 | 문서 | 빈도 | 내용 |
@@ -37,6 +45,7 @@
 | [`OPS-NOC-SETUP.md`](OPS-NOC-SETUP.md) | 1회 | NOC 56인치 TV 키오스크 셋업 절차 |
 | [`DEPLOY-READINESS.md`](DEPLOY-READINESS.md) | 배포 전 | 배포 전 점검 체크리스트 |
 | [`서비스_개설_절차.md`](../서비스_개설_절차.md) | 신규 도입 시 | 신규 위탁업체/지자체 개설 절차 |
+| [`operations/BACKUP-GUIDE.md`](operations/BACKUP-GUIDE.md) | 1회 셋업 + 매일 cron | 192.168.1.25 wci-worm 자동 백업·복원 |
 
 ---
 

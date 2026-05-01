@@ -25,6 +25,8 @@
 | WebPush 인프라 | WebPushSubscription + SW push handler + subscriber | 백그라운드 푸시 수신 가능 (VAPID 키 설정 후 활성) |
 | inbox 카운트 뱃지 | /worker/complaint 탭에 활성 N건 뱃지 | RAPID 워커 본인 배정건 즉시 인지 |
 | 문서 허브 구축 | docs/INDEX.md + architecture/ 4종 신규 | 유지보수 시 단일 진입점 (feature-catalog/api-reference/data-model/rbac-matrix) |
+| 신규 프로젝트 프롬프트 | docs/playbook/RAPID_DEV_PROMPT.md | 14일 MVP 출시 가이드 — 대한민국 최고 개발자 프롬프트(12 섹션) |
+| 백업 자동화 | scripts/backup-to-wci-worm.sh + BACKUP-GUIDE.md | 192.168.1.25 SSH/rsync 일일+주간 백업 + 복원 |
 
 ---
 
