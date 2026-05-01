@@ -1081,3 +1081,25 @@ model ApprovalEvent {
   @@index([signatureRef])
   @@map("approval_events")
 }
+
+// 공지사항 — 사용자 요청 2026-05-01: 관리자 입력 + 모든 사용자 전달 + 인앱 푸시
+model Announcement {
+  id             BigInt   @id @default(autoincrement())
+  title          String   @db.VarChar(200)
+  body           String   @db.Text
+  severity       String   @default("INFO") @db.VarChar(20) // INFO / WARNING / CRITICAL
+  audience       String   @default("ALL") @db.VarChar(20)  // ALL / ADMIN / WORKER / MUNI
+  contractorId   BigInt?  @map("contractor_id")  // 회사 한정 공지 (null = 시스템 전체)
+  municipalityId BigInt?  @map("municipality_id")
+  pinned         Boolean  @default(false)
+  publishedAt    DateTime @default(now()) @map("published_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdBy      BigInt   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([publishedAt])
+  @@index([audience, publishedAt])
+  @@index([contractorId, publishedAt])
+  @@map("announcements")
+}

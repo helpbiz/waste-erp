@@ -81,6 +81,10 @@ export default function ComplaintsClient({
   const isMuni = role === 'MUNI_ADMIN';
   const canCreate = isManager || isMuni;
   const needsContractorPicker = role === 'SUPER_ADMIN' || role === 'MUNI_ADMIN';
+  /* 사용자 요청 2026-05-01: 매니저 시점에선 [처리시작/완료/수정/반려] 기본 숨김.
+     [담당배정] 만 유지. 비상시엔 ?manager-mode=true URL 로 진입 시 활성. */
+  const managerMode = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('manager-mode') === 'true';
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return items;
@@ -309,8 +313,10 @@ export default function ComplaintsClient({
                     {c.assignee ? '담당 변경' : '담당 배정'}
                   </button>
                 )}
+                {/* 처리시작/완료/수정/반려 — 워커 본인 또는 비상시 (?manager-mode=true) 만.
+                    민원관리는 모니터링 + [담당배정] 중심으로 단순화. */}
                 {(c.status === 'RECEIVED' || c.status === 'ASSIGNED') &&
-                  (isManager || c.assignee?.id === userId) && (
+                  (c.assignee?.id === userId || (isManager && managerMode)) && (
                     <button
                       onClick={() => call(`/api/complaints/${c.id}/start`)}
                       disabled={busy}
@@ -319,7 +325,7 @@ export default function ComplaintsClient({
                       처리 시작
                     </button>
                   )}
-                {(isManager || c.assignee?.id === userId) && (
+                {(c.assignee?.id === userId || (isManager && managerMode)) && (
                   <button
                     onClick={() => { setOpenCompleteId(c.id); setOpenAssignId(null); setOpenRejectId(null); }}
                     disabled={busy}
@@ -328,7 +334,7 @@ export default function ComplaintsClient({
                     처리 완료
                   </button>
                 )}
-                {isManager && (
+                {isManager && managerMode && (
                   <button
                     onClick={() => setEditTarget(c)}
                     disabled={busy}
@@ -337,7 +343,7 @@ export default function ComplaintsClient({
                     수정
                   </button>
                 )}
-                {isManager && (
+                {isManager && managerMode && (
                   <button
                     onClick={() => { setOpenRejectId(c.id); setOpenAssignId(null); setOpenCompleteId(null); }}
                     disabled={busy}

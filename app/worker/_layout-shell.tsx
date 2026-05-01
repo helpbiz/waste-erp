@@ -6,6 +6,7 @@ import { type ReactNode } from 'react';
 import { TabLink } from './_tab-link';
 import { AppBar } from '@/components/worker/AppBar';
 import { ToastProvider } from '@/components/ui/Toast';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 type Props = {
   user: { name: string; userId: string; role: string };
@@ -29,6 +30,9 @@ export function WorkerLayoutShell({ user, children }: Props) {
             subtitle={`${user.role} · ID ${user.userId}`}
             userName={user.name}
           />
+
+          {/* 글로벌 공지 banner (사용자 요청 2026-05-01) */}
+          <AnnouncementBanner />
 
           {/* 본문 */}
           <main className="flex-1 overflow-y-auto overscroll-contain">{children}</main>

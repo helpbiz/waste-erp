@@ -57,6 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {
             group: 'SETTINGS',
             items: [
+              { href: '/announcements', label: '📢 공지사항' },
               { href: '/users', label: '사용자관리' },
               { href: '/bulky-waste', label: '대형폐기물 설정' },
               ...(session.role === 'SUPER_ADMIN'
