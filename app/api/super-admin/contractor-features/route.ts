@@ -21,6 +21,7 @@ import {
   listContractorFeatures,
   setContractorFeature,
 } from '@/lib/features';
+import { FEATURE_PACKAGES, detectPackage } from '@/lib/feature-packages';
 
 export const runtime = 'nodejs';
 
@@ -42,10 +43,15 @@ export async function GET(req: Request) {
 
   if (contractorIdParam) {
     const features = await listContractorFeatures(contractorIdParam);
+    /* 현재 기능 상태가 어느 패키지와 일치하는지 자동 감지 */
+    const featureMap = Object.fromEntries(features.map((f) => [f.key, f.enabled])) as Record<FeatureKey, boolean>;
+    const currentPackage = detectPackage(featureMap);
     return NextResponse.json({
       contractorId: contractorIdParam,
       features,
       catalog: FEATURE_CATALOG,
+      packages: FEATURE_PACKAGES,
+      currentPackage, /* PackageKey | null (커스텀이면 null) */
     });
   }
 
@@ -63,12 +69,18 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     catalog: FEATURE_CATALOG,
+    packages: FEATURE_PACKAGES,
     contractors: contractors.map((c) => {
       const overrides = new Map(c.features.map((f) => [f.featureKey, f.enabled]));
-      const enabledCount = FEATURE_CATALOG.filter((meta) => {
+      const featureMap: Record<string, boolean> = {};
+      let enabledCount = 0;
+      for (const meta of FEATURE_CATALOG) {
         const v = overrides.get(meta.key);
-        return v === undefined ? meta.defaultEnabled : v;
-      }).length;
+        const on = v === undefined ? meta.defaultEnabled : v;
+        featureMap[meta.key] = on;
+        if (on) enabledCount += 1;
+      }
+      const currentPackage = detectPackage(featureMap as Record<FeatureKey, boolean>);
       return {
         id: c.id.toString(),
         companyName: c.companyName,
@@ -76,6 +88,7 @@ export async function GET(req: Request) {
         enabledCount,
         totalCount: FEATURE_CATALOG.length,
         customCount: c.features.length, /* 명시 override row 수 */
+        currentPackage,
       };
     }),
   });

@@ -19,6 +19,7 @@
 | 글로벌 알림 마운트 | AnnouncementBanner+ComplaintBanner → root layout | shell 외부 화면(/noc 등)도 자동 팝업 |
 | 공지 audience 정책 | role-based 옵션 + MUNI 작성권 + OWNER audience 추가 | 회사는 [관리자/근로자/전체], 지자체는 [회사대표/회사+관리자/전체] |
 | AI 인근 추천 정밀화 | Announcement.targetUserId per-user targeting | 인근 워커 N명 개별 알림 → 진짜 인근만 수신 |
+| 요금제 패키지 | TRIAL/BASIC/STANDARD/PRO 4-tier + 일괄 적용 | 슈퍼관리자가 회사에 패키지 1클릭 적용 |
 
 ---
 
@@ -397,6 +398,47 @@ where.AND.push({
 
 ---
 
+## 6.4 요금제 패키지 — 슈퍼관리자 1클릭 적용
+
+### 사용자 요청
+> RESUME_NOTE 다음 우선 처리 후보 #3 — 요금제 패키지(template) 기능
+
+### 카탈로그 (4-tier)
+
+| Package | 활성 기능 (8개 중) | 용도 |
+|---|---|---|
+| 🆓 **TRIAL** | announcements, voiceTts (2) | 신규 도입사 1개월 평가 |
+| 🟢 **BASIC** | + complaintAutoAssign, attendanceGps, costCalculation (5) | 소규모 — 민원 자동·근태·원가 |
+| 🔵 **STANDARD** | + recommendedRoute, vehicleTracking (7) | 중형 — 운영 자동화 |
+| ⭐ **PRO** | + aiNearbyDispatch (8 전체) | 전체 기능 |
+
+### 구현
+- **lib/feature-packages.ts** (신규)
+  - `FEATURE_PACKAGES[]` — 4 패키지 정의 (label, description, features map)
+  - `getPackage(key)` / `detectPackage(features)` — 현재 상태 ↔ 패키지 자동 매핑
+- **API**
+  - `POST /api/super-admin/contractor-features/apply-package` — 일괄 적용 + 단일 audit
+  - `GET /api/super-admin/contractor-features` — `currentPackage` 자동 감지 응답
+- **UI** (`_features-tab.tsx`)
+  - 회사 리스트 카드: `📦 PACKAGE_KEY` 또는 `🛠 커스텀` 뱃지
+  - 우측 패널 상단: 4개 패키지 카드 grid + "✓ 적용" 버튼
+  - 현재 적용 패키지는 비활성 + ring 표시
+  - 적용 시 confirm 다이얼로그 (덮어쓰기 경고)
+
+### 동작
+1. 회사 선택 → 우측 상단 패키지 카드 4개 표시
+2. 패키지 클릭 → confirm → POST `/apply-package`
+3. 8개 feature 모두 upsert (true/false 명시) + audit log 1건
+4. 즉시 detail/list 재조회 → UI 갱신
+
+### 향후 확장
+- 신규 위탁업체 개설 마법사 마지막 단계에 패키지 선택 통합
+- DB 기반 커스텀 패키지(`FeaturePackage` 모델) — 슈퍼관리자가 패키지 자체를 만들고 수정
+- 결제 모델 연동 (현재는 `monthlyHint` 영업 표기만)
+- 패키지 history (`ContractorPackageHistory`) — 적용 이력 추적
+
+---
+
 ## 7. 운영 메모
 
 ### Service Worker 캐시
@@ -409,7 +451,8 @@ where.AND.push({
 - v56 (worker-complaint-default-register)
 - v57 (global-notifications-root)
 - v58 (announcement-audience-policy)
-- v59 (ai-nearby-per-user-targeting) — 본 세션 마지막
+- v59 (ai-nearby-per-user-targeting)
+- v60 (feature-packages) — 본 세션 마지막
 
 ### 배포 플로우 (변동 없음)
 ```bash
@@ -447,6 +490,8 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 9 | `249d7fe` | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
 | 10 | `f8f4486` | docs | docs: 세션 로그 commit#9 SHA 채움 |
 | 11 | `865dd69` | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
+| 12 | `35257db` | docs | docs: 세션 로그 commit#11 SHA 채움 |
+| 13 | TBD | packages | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
 
 ---
 

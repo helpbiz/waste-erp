@@ -8,8 +8,18 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 
+type FeaturePackageInfo = {
+  key: 'TRIAL' | 'BASIC' | 'STANDARD' | 'PRO';
+  label: string;
+  description: string;
+  badge: string;
+  monthlyHint: string;
+  features: Record<string, boolean>;
+};
+
 type ListResponse = {
   catalog: { key: string; label: string; description: string; group: string; defaultEnabled: boolean }[];
+  packages: FeaturePackageInfo[];
   contractors: {
     id: string;
     companyName: string;
@@ -17,12 +27,15 @@ type ListResponse = {
     enabledCount: number;
     totalCount: number;
     customCount: number;
+    currentPackage: 'TRIAL' | 'BASIC' | 'STANDARD' | 'PRO' | null;
   }[];
 };
 
 type DetailResponse = {
   contractorId: string;
   catalog: ListResponse['catalog'];
+  packages: FeaturePackageInfo[];
+  currentPackage: 'TRIAL' | 'BASIC' | 'STANDARD' | 'PRO' | null;
   features: {
     key: string;
     label: string;
@@ -94,6 +107,34 @@ export default function ContractorFeaturesTab() {
     loadList();
   }
 
+  async function applyPackage(packageKey: string) {
+    if (!selected) return;
+    const pkg = detail?.packages.find((p) => p.key === packageKey);
+    const companyName = list?.contractors.find((c) => c.id === selected)?.companyName ?? '';
+    if (!pkg) return;
+    if (!confirm(
+      `[${companyName}] 회사에 [${pkg.label}] 패키지를 적용합니다.\n\n` +
+      `▸ 기존 커스텀 설정이 패키지 정의로 덮어쓰기됩니다.\n` +
+      `▸ 8개 기능 중 활성: ${Object.values(pkg.features).filter(Boolean).length}개\n\n` +
+      `진행하시겠습니까?`
+    )) return;
+
+    setBusy(true);
+    const r = await fetch('/api/super-admin/contractor-features/apply-package', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractorId: selected, packageKey }),
+    });
+    setBusy(false);
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      alert('패키지 적용 실패: ' + (j.error ?? 'unknown'));
+      return;
+    }
+    loadDetail(selected);
+    loadList();
+  }
+
   /* group 별 분류 */
   const grouped = useMemo(() => {
     if (!detail) return new Map<string, DetailResponse['features']>();
@@ -141,14 +182,18 @@ export default function ContractorFeaturesTab() {
                   <div className="text-sm font-extrabold text-ink">{c.companyName}</div>
                   <div className="text-[0.6875rem] text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
                     {c.municipalityName && <span>🏛 {c.municipalityName}</span>}
-                    <span className={`px-1.5 py-0.5 rounded font-extrabold ${allOn ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                      {c.enabledCount}/{c.totalCount} 활성
-                    </span>
-                    {c.customCount > 0 && (
-                      <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-extrabold">
-                        커스텀 {c.customCount}
+                    {c.currentPackage ? (
+                      <span className="px-1.5 py-0.5 rounded font-extrabold bg-cyan-100 text-cyan-800 border border-cyan-300">
+                        📦 {c.currentPackage}
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded font-extrabold bg-amber-100 text-amber-800">
+                        🛠 커스텀
                       </span>
                     )}
+                    <span className={`px-1.5 py-0.5 rounded font-extrabold ${allOn ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                      {c.enabledCount}/{c.totalCount}
+                    </span>
                   </div>
                 </button>
               );
@@ -167,8 +212,60 @@ export default function ContractorFeaturesTab() {
                   {list?.contractors.find((c) => c.id === selected)?.companyName ?? '—'}
                 </h3>
                 <span className="text-[0.6875rem] font-mono text-slate-500">contractorId: {selected}</span>
+                {detail.currentPackage ? (
+                  <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                    📦 현재: {detail.currentPackage}
+                  </span>
+                ) : (
+                  <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                    🛠 커스텀 (패키지 미일치)
+                  </span>
+                )}
                 {busy && <span className="text-xs text-amber-700 font-bold">저장 중…</span>}
               </div>
+
+              {/* 요금제 패키지 일괄 적용 */}
+              <section className="border-2 border-purple-200 bg-purple-50/50 rounded-lg p-3">
+                <div className="text-xs font-extrabold text-purple-900 mb-2 flex items-center gap-2">
+                  📦 요금제 패키지 일괄 적용
+                  <span className="text-[0.625rem] font-bold text-slate-500 font-mono">
+                    (8개 기능 모두 패키지 정의로 덮어쓰기)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {detail.packages.map((p) => {
+                    const isCurrent = detail.currentPackage === p.key;
+                    const enabledCount = Object.values(p.features).filter(Boolean).length;
+                    return (
+                      <div
+                        key={p.key}
+                        className={`border-2 rounded-lg p-2.5 text-left bg-white ${
+                          isCurrent ? 'border-purple-500 ring-2 ring-purple-200' : 'border-line'
+                        }`}
+                      >
+                        <div className="text-xs font-extrabold text-ink">{p.label}</div>
+                        <div className="text-[0.625rem] text-slate-500 mt-0.5 leading-snug">
+                          {p.description}
+                        </div>
+                        <div className="text-[0.625rem] font-mono text-slate-500 mt-1">
+                          기능 {enabledCount}/8 · {p.monthlyHint}
+                        </div>
+                        <button
+                          onClick={() => applyPackage(p.key)}
+                          disabled={busy || isCurrent}
+                          className={`mt-2 w-full px-2 py-1 rounded text-[0.6875rem] font-extrabold transition active:scale-95 ${
+                            isCurrent
+                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              : 'bg-purple-600 hover:bg-purple-700 text-white'
+                          } ${busy && !isCurrent ? 'opacity-50' : ''}`}
+                        >
+                          {isCurrent ? '✓ 현재 적용중' : '✓ 적용'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
 
               {Array.from(grouped.entries()).map(([group, features]) => (
                 <section key={group}>
