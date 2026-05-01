@@ -38,6 +38,8 @@ const TYPES: { id: Type; label: string; color: string }[] = [
 ];
 
 export default function ComplaintClient() {
+  /* 사용자 요청 2026-05-02: 탭 구조 — 내 민원 처리 + 신규 등록 */
+  const [tab, setTab] = useState<'inbox' | 'register'>('inbox');
   const router = useRouter();
   const toast = useToast();
   const [type, setType] = useState<Type | null>(null);
@@ -133,6 +135,30 @@ export default function ComplaintClient() {
 
   return (
     <div className="px-4 py-5 space-y-4">
+      {/* 탭 — 기본 'inbox' (배정받은 민원 처리) */}
+      <div className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card">
+        <button
+          onClick={() => setTab('inbox')}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${
+            tab === 'inbox' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'
+          }`}
+        >
+          📥 내 민원
+        </button>
+        <button
+          onClick={() => setTab('register')}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${
+            tab === 'register' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'
+          }`}
+        >
+          ✏ 신규 등록
+        </button>
+      </div>
+
+      {tab === 'inbox' && <InboxPanel />}
+
+      {tab === 'register' && (
+      <>
       <div className="px-1">
         <h1 className="text-xl font-black text-ink">민원 등록</h1>
         <p className="text-xs font-bold text-ink-muted mt-1">현장에서 발견한 민원을 등록합니다.</p>
@@ -253,6 +279,239 @@ export default function ComplaintClient() {
       </button>
 
       {/* 인라인 에러 배너 → Toast (Wave 3-D) */}
+      </>
+      )}
+    </div>
+  );
+}
+
+/* ─────────── InboxPanel — 자기 배정 민원 처리 (사용자 요청 2026-05-02) ─────────── */
+
+type InboxComplaint = {
+  id: string;
+  type: string;
+  status: string;
+  description: string | null;
+  reportedAt: string;
+  locationAddress: string | null;
+  zoneName: string | null;
+  dueDate: string | null;
+  isOverdue: boolean;
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  RECEIVED: '접수', ASSIGNED: '배정', IN_PROGRESS: '처리중', COMPLETED: '완료', REJECTED: '반려',
+};
+const TYPE_LABEL: Record<string, string> = {
+  PICKUP_MISS: '수거미비', ILLEGAL_DUMP: '불법투기', ODOR_NOISE: '악취/소음', BULKY_WASTE: '대형폐기물', OTHER: '기타',
+};
+
+function InboxPanel() {
+  const toast = useToast();
+  const [items, setItems] = useState<InboxComplaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'active' | 'completed' | 'all'>('active');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [completeModal, setCompleteModal] = useState<{ id: string; mode: 'complete' | 'reject' } | null>(null);
+
+  function load() {
+    setLoading(true);
+    fetch('/api/complaints?limit=50')
+      .then((r) => r.json())
+      .then((d) => setItems(d.items ?? []))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  async function action(id: string, endpoint: 'start' | 'arrive', label: string) {
+    setBusyId(id);
+    const r = await fetch(`/api/complaints/${id}/${endpoint}`, { method: 'POST' });
+    setBusyId(null);
+    if (r.ok) {
+      toast.success(`${label} 기록됨`);
+      load();
+    } else {
+      const j = await r.json().catch(() => ({}));
+      toast.error(`실패: ${j.error ?? 'unknown'}`);
+    }
+  }
+
+  const filtered = items.filter((c) => {
+    if (filter === 'active') return c.status === 'ASSIGNED' || c.status === 'IN_PROGRESS' || c.status === 'RECEIVED';
+    if (filter === 'completed') return c.status === 'COMPLETED' || c.status === 'REJECTED';
+    return true;
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="px-1">
+        <h1 className="text-xl font-black text-ink">📥 내 민원 처리</h1>
+        <p className="text-xs font-bold text-ink-muted mt-1">배정받은 민원의 도착·처리 시작·완료·반려를 기록합니다.</p>
+      </div>
+
+      {/* 필터 */}
+      <div className="flex gap-1.5">
+        <FilterBtn active={filter === 'active'} onClick={() => setFilter('active')}>처리 중 ({items.filter(c => c.status !== 'COMPLETED' && c.status !== 'REJECTED').length})</FilterBtn>
+        <FilterBtn active={filter === 'completed'} onClick={() => setFilter('completed')}>완료/반려</FilterBtn>
+        <FilterBtn active={filter === 'all'} onClick={() => setFilter('all')}>전체</FilterBtn>
+      </div>
+
+      {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+      {!loading && filtered.length === 0 && (
+        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-slate-500 font-bold">
+          {filter === 'active' ? '🎉 처리 중인 민원 없음' : '결과 없음'}
+        </div>
+      )}
+
+      {filtered.map((c) => {
+        const isActive = c.status !== 'COMPLETED' && c.status !== 'REJECTED';
+        return (
+          <article key={c.id} className={`bg-surface border-2 rounded-xl shadow-card overflow-hidden ${
+            c.isOverdue ? 'border-rose-400' : 'border-line'
+          }`}>
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span className="text-sm font-extrabold text-ink">{TYPE_LABEL[c.type] ?? c.type}</span>
+                <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${
+                  c.status === 'IN_PROGRESS' ? 'bg-cyan-100 text-cyan-800 border-cyan-300' :
+                  c.status === 'COMPLETED'   ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                  c.status === 'REJECTED'    ? 'bg-slate-200 text-slate-700 border-slate-400' :
+                  c.status === 'ASSIGNED'    ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                                                'bg-rose-100 text-rose-800 border-rose-300'
+                }`}>
+                  {STATUS_LABEL[c.status]}
+                </span>
+                {c.isOverdue && <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-rose-600 text-white">⚠ 기한 초과</span>}
+                <code className="ml-auto text-[0.625rem] font-mono text-slate-500">#{c.id}</code>
+              </div>
+              {c.locationAddress && (
+                <div className="text-sm text-ink font-semibold leading-snug">📍 {c.locationAddress}</div>
+              )}
+              {c.description && (
+                <div className="text-xs text-slate-700 mt-1.5 line-clamp-3 whitespace-pre-wrap">{c.description}</div>
+              )}
+              <div className="text-[0.625rem] font-mono text-slate-500 mt-2">
+                접수: {new Date(c.reportedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                {c.dueDate && ` · 마감: ${new Date(c.dueDate).toLocaleDateString('ko-KR')}`}
+                {c.zoneName && ` · ${c.zoneName}`}
+              </div>
+            </div>
+
+            {/* 처리 액션 — 활성 민원만 */}
+            {isActive && (
+              <div className="px-4 py-2.5 bg-surface-soft border-t border-line flex flex-wrap gap-1.5">
+                {(c.status === 'ASSIGNED' || c.status === 'RECEIVED') && (
+                  <button
+                    disabled={busyId === c.id}
+                    onClick={() => action(c.id, 'start', '처리 시작')}
+                    className="px-3 py-2 rounded-lg text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                  >
+                    ▶ 처리 시작
+                  </button>
+                )}
+                <button
+                  disabled={busyId === c.id}
+                  onClick={() => action(c.id, 'arrive', '도착')}
+                  className="px-3 py-2 rounded-lg text-xs font-extrabold bg-purple-600 hover:bg-purple-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                >
+                  📍 도착 확인
+                </button>
+                <button
+                  disabled={busyId === c.id}
+                  onClick={() => setCompleteModal({ id: c.id, mode: 'complete' })}
+                  className="px-3 py-2 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                >
+                  ✓ 처리 완료
+                </button>
+                <button
+                  disabled={busyId === c.id}
+                  onClick={() => setCompleteModal({ id: c.id, mode: 'reject' })}
+                  className="ml-auto px-3 py-2 rounded-lg text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                >
+                  ✕ 반려
+                </button>
+              </div>
+            )}
+          </article>
+        );
+      })}
+
+      {completeModal && (
+        <CompleteModal
+          {...completeModal}
+          onClose={() => setCompleteModal(null)}
+          onDone={() => { setCompleteModal(null); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FilterBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={`px-3 py-1.5 rounded-md text-xs font-extrabold transition ${
+      active ? 'bg-accent text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+    }`}>
+      {children}
+    </button>
+  );
+}
+
+function CompleteModal({ id, mode, onClose, onDone }: { id: string; mode: 'complete' | 'reject'; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (mode === 'reject' && !note.trim()) {
+      toast.error('반려 사유 필수');
+      return;
+    }
+    setBusy(true);
+    const r = await fetch(`/api/complaints/${id}/${mode === 'complete' ? 'complete' : 'reject'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: note.trim() }),
+    });
+    setBusy(false);
+    if (r.ok) {
+      toast.success(mode === 'complete' ? '처리 완료' : '반려 처리됨');
+      onDone();
+    } else {
+      const j = await r.json().catch(() => ({}));
+      toast.error(`실패: ${j.error ?? 'unknown'}`);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/55 flex items-end sm:items-center justify-center p-3">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[480px] w-full">
+        <div className="px-5 py-3 border-b border-line">
+          <h2 className="text-base font-black text-ink">
+            {mode === 'complete' ? '✓ 처리 완료' : '✕ 반려'} (#{id})
+          </h2>
+        </div>
+        <div className="px-5 py-4 space-y-2">
+          <div className="text-xs font-extrabold text-ink mb-1">
+            {mode === 'complete' ? '처리 내용 (선택)' : '반려 사유 (필수)'}
+          </div>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={4}
+            placeholder={mode === 'complete' ? '예: 청소 완료, 사진 첨부' : '예: 중복 신고, 관할 외 위치'}
+            className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent"
+          />
+        </div>
+        <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
+          <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold">취소</button>
+          <button onClick={submit} disabled={busy} className={`px-4 py-1.5 rounded text-white text-sm font-extrabold disabled:opacity-50 ${
+            mode === 'complete' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+          }`}>
+            {busy ? '처리 중…' : mode === 'complete' ? '✓ 완료' : '✕ 반려'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

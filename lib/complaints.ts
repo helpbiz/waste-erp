@@ -19,7 +19,14 @@ export function complaintWhere(session: SessionPayload): Prisma.ComplaintWhereIn
     return { contractor: { municipalityId: BigInt(session.municipalityId) } };
   }
   if (session.role === 'WORKER') {
-    return { reportedBy: BigInt(session.userId) };
+    /* WORKER: 자기 신고한 민원 + 자기 배정 민원 모두 노출.
+       사용자 진단 2026-05-02: 기동반 처리 민원을 못 보던 버그. */
+    return {
+      OR: [
+        { reportedBy: BigInt(session.userId) },
+        { assignedTo: BigInt(session.userId) },
+      ],
+    };
   }
   if (session.contractorId) {
     return { contractorId: BigInt(session.contractorId) };
