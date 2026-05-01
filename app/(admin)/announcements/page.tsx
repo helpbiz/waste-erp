@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic';
 export default async function AnnouncementsPage() {
   const session = await readSession();
   if (!session) redirect('/login?next=/announcements');
-  const ADMIN = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'];
-  if (!ADMIN.includes(session.role)) redirect('/dashboard');
+  /* MUNI_ADMIN 도 공지 작성 가능 (2026-05-02 사용자 요구사항) */
+  const POSTERS = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'];
+  if (!POSTERS.includes(session.role)) redirect('/dashboard');
 
   return <AnnouncementsClient session={{ name: session.name, role: session.role }} />;
 }

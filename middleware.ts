@@ -50,6 +50,10 @@ function isReadOnlyExempt(method: string, path: string): boolean {
   if (method === 'POST' && path === '/api/auth/logout') return true;      // 로그아웃
   if (method === 'POST' && path === '/api/auth/consent') return true;     // 동의 (사용자 진단 2026-04-29)
   if (path.startsWith('/api/users/me/')) return true;                     // 본인 계정 관리 (PW/사진/서명)
+  /* 공지사항 — MUNI_ADMIN 도 작성/수정/삭제 허용 (사용자 요구사항 2026-05-02).
+     실제 audience 정책은 API 핸들러에서 강제 (lib/announcement-audience). */
+  if (path === '/api/announcements' && (method === 'POST')) return true;
+  if (path.startsWith('/api/announcements/') && (method === 'PATCH' || method === 'DELETE')) return true;
   return false;
 }
 

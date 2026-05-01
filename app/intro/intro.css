@@ -405,6 +405,985 @@
   margin: 0 0.5cqw;
 }
 
+/* ─────────────── 5. 통계 (Big Numbers) ─────────────── */
+
+.slide-stat {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2cqw;
+  flex: 1;
+  align-items: stretch;
+}
+
+.stat-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3cqw 2.5cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2cqw;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4cqw;
+  height: 0.4cqw;
+  background: #0e7490;
+}
+
+.stat-card-label {
+  font-size: 1cqw;
+  font-weight: 800;
+  color: #0e7490;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.stat-card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7cqw;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.stat-card-num .unit {
+  font-size: 2.2cqw;
+  font-weight: 700;
+  color: #475569;
+  margin-left: 0.4cqw;
+}
+
+.stat-card-body {
+  font-size: 1.05cqw;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.stat-source {
+  font-size: 0.85cqw;
+  color: #94a3b8;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1cqw;
+}
+
+/* ─────────────── 6. Before / After 비교 ─────────────── */
+
+.slide-compare {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2cqw;
+  align-items: stretch;
+  flex: 1;
+}
+
+.compare-side {
+  border: 1px solid #e2e8f0;
+  padding: 2.5cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+  border-radius: 4px;
+}
+
+.compare-side.before { background: #fafafa; }
+.compare-side.after { background: #ecfeff; border-color: #06b6d4; }
+
+.compare-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95cqw;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: #94a3b8;
+}
+
+.compare-side.after .compare-label { color: #0e7490; }
+
+.compare-headline {
+  font-size: 2cqw;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqw;
+  font-size: 1.05cqw;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.compare-list li {
+  padding-left: 1.4cqw;
+  position: relative;
+}
+
+.compare-list li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0.65cqw;
+  width: 0.6cqw; height: 0.6cqw;
+  background: #cbd5e1;
+  border-radius: 50%;
+}
+
+.compare-side.after .compare-list li::before { background: #06b6d4; }
+
+.compare-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3cqw;
+  color: #06b6d4;
+  font-weight: 800;
+}
+
+/* ─────────────── 7. Role 트리 ─────────────── */
+
+.slide-roles {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.role-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+  flex: 1;
+  justify-content: center;
+}
+
+.role-row {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  padding-left: 0;
+}
+
+.role-row[data-depth="1"] { padding-left: 4cqw; }
+.role-row[data-depth="2"] { padding-left: 8cqw; }
+.role-row[data-depth="3"] { padding-left: 12cqw; }
+.role-row[data-depth="4"] { padding-left: 16cqw; }
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 1cqw;
+  padding: 1cqw 1.8cqw;
+  background: white;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 4px;
+  min-width: 22cqw;
+}
+
+.role-pill-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85cqw;
+  font-weight: 800;
+  color: #0e7490;
+  background: #cffafe;
+  padding: 0.3cqw 0.8cqw;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.role-pill-name {
+  font-size: 1.3cqw;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.role-pill-desc {
+  font-size: 1cqw;
+  font-weight: 500;
+  color: #64748b;
+  flex: 1;
+}
+
+/* ─────────────── 8. Multi-tenancy 다이어그램 ─────────────── */
+
+.slide-tenancy {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.tenancy-canvas {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 3cqw;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2cqw;
+  align-items: center;
+}
+
+.tenancy-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+}
+
+.tenancy-col-title {
+  font-size: 1cqw;
+  font-weight: 800;
+  color: #0e7490;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.5cqw;
+}
+
+.tenancy-box {
+  background: white;
+  border: 1px solid #cbd5e1;
+  padding: 0.9cqw 1.2cqw;
+  font-size: 1cqw;
+  font-weight: 700;
+  color: #0f172a;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tenancy-box .count {
+  font-family: 'JetBrains Mono', monospace;
+  color: #06b6d4;
+  font-size: 0.85cqw;
+}
+
+.tenancy-arrow {
+  text-align: center;
+  font-size: 2cqw;
+  color: #cbd5e1;
+}
+
+.tenancy-hub {
+  background: #0f172a;
+  color: white;
+  text-align: center;
+  padding: 2cqw;
+  font-size: 1.4cqw;
+  font-weight: 900;
+  border-radius: 4px;
+  letter-spacing: -0.01em;
+}
+
+.tenancy-hub .sub {
+  font-size: 0.9cqw;
+  font-weight: 500;
+  color: #67e8f9;
+  margin-top: 0.5cqw;
+  letter-spacing: 0.1em;
+}
+
+/* ─────────────── 9. 6대 카테고리 타임라인 ─────────────── */
+
+.slide-timeline {
+  padding: 5cqw 5cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1cqw;
+  flex: 1;
+  align-items: stretch;
+  position: relative;
+}
+
+.timeline-grid::before {
+  content: '';
+  position: absolute;
+  top: 4.5cqw;
+  left: 4cqw;
+  right: 4cqw;
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.timeline-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqw;
+}
+
+.timeline-col-title {
+  font-size: 1.4cqw;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.timeline-dot {
+  width: 1.6cqw;
+  height: 1.6cqw;
+  background: #0e7490;
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 0.5cqw rgba(14, 116, 144, 0.15);
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6cqw;
+  font-size: 0.95cqw;
+  font-weight: 600;
+  color: #475569;
+  text-align: center;
+  letter-spacing: -0.005em;
+}
+
+.timeline-list li::before {
+  content: '·';
+  margin-right: 0.3cqw;
+  color: #0e7490;
+  font-weight: 900;
+}
+
+/* ─────────────── 10. Feature split (좌 카피 / 우 mock) ─────────────── */
+
+.slide-feature {
+  padding: 5cqw 6cqw 4cqw;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 4cqw;
+  align-items: center;
+}
+
+.feat-text { display: flex; flex-direction: column; gap: 1.5cqw; }
+
+.feat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7cqw;
+  background: #0e7490;
+  color: white;
+  padding: 0.6cqw 1.4cqw;
+  font-size: 0.95cqw;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+  border-radius: 2px;
+}
+
+.feat-title {
+  font-size: 3.6cqw;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.feat-body {
+  font-size: 1.15cqw;
+  color: #475569;
+  line-height: 1.7;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.feat-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9cqw;
+  margin-top: 0.5cqw;
+}
+
+.feat-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 1cqw;
+  font-size: 1.05cqw;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.feat-bullet::before {
+  content: '✓';
+  color: #06b6d4;
+  font-weight: 900;
+  font-size: 1.2cqw;
+  line-height: 1.2;
+}
+
+.feat-mock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Phone mockup */
+.mock-phone {
+  width: 22cqw;
+  aspect-ratio: 9 / 19;
+  border-radius: 2.5cqw;
+  background: #0f172a;
+  padding: 0.7cqw;
+  box-shadow: 0 2cqw 5cqw rgba(15, 23, 42, 0.25);
+  position: relative;
+}
+
+.mock-phone-screen {
+  width: 100%; height: 100%;
+  background: #f1f5f9;
+  border-radius: 2cqw;
+  padding: 2cqw 1.4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+  overflow: hidden;
+  position: relative;
+}
+
+.mock-phone-status {
+  position: absolute;
+  top: 0.5cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6cqw;
+  height: 0.7cqw;
+  background: #0f172a;
+  border-radius: 1cqw;
+}
+
+.mock-phone-h {
+  font-size: 0.95cqw;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 1cqw;
+  letter-spacing: -0.02em;
+}
+
+.mock-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5cqw;
+  padding: 0.8cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4cqw;
+}
+
+.mock-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7cqw;
+}
+
+.mock-row strong { font-weight: 900; color: #0f172a; }
+.mock-row .muted { color: #94a3b8; font-family: 'JetBrains Mono', monospace; }
+
+.mock-pill {
+  display: inline-block;
+  padding: 0.15cqw 0.5cqw;
+  font-size: 0.55cqw;
+  font-weight: 800;
+  border-radius: 1px;
+  letter-spacing: 0.05em;
+}
+
+.mock-pill.warn { background: #fef3c7; color: #b45309; }
+.mock-pill.danger { background: #fee2e2; color: #b91c1c; }
+.mock-pill.success { background: #dcfce7; color: #15803d; }
+.mock-pill.info { background: #cffafe; color: #0e7490; }
+
+/* Desktop mockup */
+.mock-desktop {
+  width: 100%;
+  max-width: 50cqw;
+  aspect-ratio: 16 / 10;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.6cqw;
+  box-shadow: 0 1.5cqw 4cqw rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mock-desktop-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5cqw 1cqw;
+  display: flex;
+  align-items: center;
+  gap: 0.5cqw;
+}
+
+.mock-desktop-bar::before {
+  content: '';
+  width: 0.7cqw; height: 0.7cqw;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 1cqw 0 0 #f59e0b, 2cqw 0 0 #22c55e;
+}
+
+.mock-desktop-body {
+  flex: 1;
+  padding: 1.2cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+  font-size: 0.85cqw;
+}
+
+/* NOC 6-zone preview */
+.mock-noc {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  border-radius: 0.6cqw;
+  padding: 0.8cqw;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.6cqw;
+  box-shadow: 0 1.5cqw 4cqw rgba(15, 23, 42, 0.3);
+}
+
+.mock-noc-zone {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 0.3cqw;
+  padding: 0.7cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3cqw;
+  font-size: 0.6cqw;
+}
+
+.mock-noc-zone-label {
+  font-family: 'JetBrains Mono', monospace;
+  color: #67e8f9;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mock-noc-zone-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6cqw;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.mock-noc-zone-sub {
+  color: #94a3b8;
+  font-size: 0.55cqw;
+}
+
+/* ─────────────── 11. 매트릭스 ─────────────── */
+
+.slide-matrix {
+  padding: 4cqw 5cqw 3.5cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+}
+
+.matrix-table {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 14cqw 1fr;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 0.95cqw;
+}
+
+.matrix-cat {
+  background: #ecfeff;
+  padding: 1.2cqw 1.5cqw;
+  font-weight: 900;
+  color: #0e7490;
+  font-size: 1.1cqw;
+  border-bottom: 1px solid #cffafe;
+  display: flex;
+  align-items: center;
+}
+
+.matrix-list {
+  background: white;
+  padding: 1.2cqw 1.5cqw;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5cqw 1.2cqw;
+  align-items: center;
+  color: #475569;
+  font-weight: 600;
+}
+
+.matrix-list span::before {
+  content: '·';
+  margin-right: 0.3cqw;
+  color: #0e7490;
+  font-weight: 900;
+}
+
+.matrix-cat:last-of-type, .matrix-list:last-of-type { border-bottom: none; }
+
+/* ─────────────── 12. 도입 4-스텝 ─────────────── */
+
+.slide-steps {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5cqw;
+  flex: 1;
+}
+
+.step-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+}
+
+.step-icon {
+  aspect-ratio: 1 / 1;
+  background: #0e7490;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5cqw;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.05em;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-icon::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 2cqw; height: 2cqw;
+  background: #06b6d4;
+}
+
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85cqw;
+  font-weight: 800;
+  color: #06b6d4;
+  letter-spacing: 0.2em;
+}
+
+.step-title {
+  font-size: 1.6cqw;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.step-body {
+  font-size: 1cqw;
+  color: #475569;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+/* ─────────────── 13. 요금제 ─────────────── */
+
+.slide-pricing {
+  padding: 4.5cqw 5cqw 3.5cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2cqw;
+  flex: 1;
+}
+
+.pricing-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-thead {
+  background: #0f172a;
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  font-size: 1cqw;
+  font-weight: 800;
+  padding: 1cqw 1.5cqw;
+  letter-spacing: 0.05em;
+}
+
+.pricing-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  padding: 1cqw 1.5cqw;
+  font-size: 1.1cqw;
+  border-bottom: 1px solid #f1f5f9;
+  align-items: center;
+}
+
+.pricing-row:last-child { border-bottom: none; }
+.pricing-row:nth-child(even) { background: #f8fafc; }
+
+.pricing-tier {
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.01em;
+}
+
+.pricing-amt {
+  font-weight: 900;
+  color: #0f172a;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2cqw;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+}
+
+.pricing-amt .badge {
+  background: #06b6d4;
+  color: white;
+  padding: 0.2cqw 0.7cqw;
+  font-size: 0.75cqw;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.pricing-side {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  color: white;
+  padding: 3cqw 2.5cqw;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5cqw;
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-side::before {
+  content: '';
+  position: absolute;
+  top: -3cqw; right: -3cqw;
+  width: 12cqw; height: 12cqw;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
+}
+
+.pricing-side-tag {
+  font-size: 0.85cqw;
+  font-weight: 800;
+  color: #67e8f9;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.pricing-side-title {
+  font-size: 2.2cqw;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.pricing-side-body {
+  font-size: 1cqw;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.pricing-side-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05cqw;
+  font-weight: 800;
+  color: #06b6d4;
+  letter-spacing: 0.05em;
+  margin-top: 1cqw;
+}
+
+.pricing-foot {
+  font-size: 0.85cqw;
+  color: #64748b;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* ─────────────── 14. 연락처 ─────────────── */
+
+.slide-contact {
+  padding: 6cqw 7cqw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4cqw;
+  align-items: center;
+  background: linear-gradient(135deg, #020617 0%, #0f172a 60%, #1e3a5f 100%);
+}
+
+.contact-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+}
+
+.contact-tag {
+  font-size: 1cqw;
+  font-weight: 800;
+  color: #67e8f9;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.contact-title {
+  font-size: 4cqw;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  color: white;
+}
+
+.contact-body {
+  font-size: 1.2cqw;
+  color: #94a3b8;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.contact-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(103, 232, 249, 0.2);
+  padding: 3cqw;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+  backdrop-filter: blur(10px);
+}
+
+.contact-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5cqw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1.2cqw;
+}
+
+.contact-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.contact-row-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85cqw;
+  color: #67e8f9;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  min-width: 4cqw;
+}
+
+.contact-row-value {
+  font-size: 1.5cqw;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.01em;
+}
+
+.contact-row-value a { color: white; text-decoration: none; }
+
+/* ─────────────── 15. Thank You ─────────────── */
+
+.slide-thanks {
+  padding: 6cqw 7cqw;
+  background:
+    radial-gradient(ellipse at center, rgba(14, 116, 144, 0.3) 0%, transparent 60%),
+    linear-gradient(135deg, #020617 0%, #0f172a 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.thanks-top {
+  font-size: 2.2cqw;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.thanks-top .accent { color: white; font-weight: 900; }
+
+.thanks-center {
+  text-align: center;
+  font-size: 11cqw;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  font-family: 'Pretendard Variable', sans-serif;
+}
+
+.thanks-brand {
+  text-align: right;
+  font-size: 2cqw;
+  font-weight: 900;
+  color: #06b6d4;
+  letter-spacing: -0.04em;
+}
+
 /* ─────────────── 인쇄 (PDF 저장) ─────────────── */
 
 @media print {

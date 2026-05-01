@@ -23,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ]);
 
   const isInternal = session.role === 'SUPER_ADMIN' || session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN';
+  const canPostAnnouncement = isInternal || session.role === 'MUNI_ADMIN';
 
   /* 메뉴 정의 (서버에서 권한 필터링 후 클라이언트에 전달).
      사용자 요청 2026-05-01: 첫 로그인 진입을 메인 대시보드로 변경 + 메뉴 첫 항목 추가. */
@@ -63,6 +64,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               ...(session.role === 'SUPER_ADMIN'
                 ? [{ href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' }]
                 : []),
+            ],
+          },
+        ]
+      : session.role === 'MUNI_ADMIN'
+      ? [
+          /* MUNI_ADMIN 도 공지 작성 가능 — 산하 회사들에 broadcast */
+          {
+            group: 'SETTINGS',
+            items: [
+              { href: '/announcements', label: '📢 공지사항' },
             ],
           },
         ]

@@ -16,6 +16,8 @@
 | AI 인근 추천 | 주소 인식 + 거리 계산 | 동(洞)→AdminDong→zone 매칭 / 출퇴근 GPS Haversine ≤2km |
 | 회사별 기능 권한 | ContractorFeature + UI | 슈퍼관리자가 회사마다 기능 ON/OFF |
 | 회귀 수정 | /worker/complaint 기본 탭 'inbox' → 'register' | 첫 진입 시 지도 즉시 표시 |
+| 글로벌 알림 마운트 | AnnouncementBanner+ComplaintBanner → root layout | shell 외부 화면(/noc 등)도 자동 팝업 |
+| 공지 audience 정책 | role-based 옵션 + MUNI 작성권 + OWNER audience 추가 | 회사는 [관리자/근로자/전체], 지자체는 [회사대표/회사+관리자/전체] |
 
 ---
 
@@ -248,7 +250,106 @@ model ContractorFeature {
 
 ---
 
-## 6. 운영 메모
+## 6.1 글로벌 알림 마운트 — 모든 화면에서 자동 팝업
+
+### 사용자 요구사항
+> "공지사항이 도착하면 앱이나 웹 어떤 화면을 보고있던 자동으로 팝업 노출"
+
+### 변경
+- `components/GlobalNotifications.tsx` (신규) — `AnnouncementBanner` + `ComplaintBanner` wrapper
+- `app/layout.tsx` — `<GlobalNotifications />` 추가 (root level mount)
+- `app/(admin)/_admin-shell.tsx` / `app/worker/_layout-shell.tsx` — 중복 마운트 제거
+
+### 효과
+- shell 외부 화면(`/noc`, `/citizen`, `/intro`, `/reset`) 에서도 동일 팝업 노출
+- 비로그인 화면(`/login`) 은 `/api/announcements` 401 → silent no-op
+- 폴링 1회 통합 (이전: admin/worker shell 마운트 + 페이지 전환 시 재마운트)
+
+### Commit
+- `f59c340` feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트
+
+---
+
+## 6.2 공지 audience 정책 — 작성자 role 기반
+
+### 사용자 요구사항
+> "위탁업체가 작성할 때는 관리자, 근로자, 전체만 대상으로 하고 지자체관리자는
+>  공지대상에서 절대로 제외하자. 지자체관리자가 작성할 때에는 회사, 회사+관리자,
+>  작업자 포함 전체로 구분해서 사용할 수 있도록 하자."
+
+### audience 카탈로그 확장
+| Value | Label | Visible to |
+|---|---|---|
+| `ALL` | 전체 (작업자 포함) | 누구나 |
+| `OWNER` | 회사 대표만 | CONTRACTOR_ADMIN |
+| `ADMIN` | 회사 + 관리자 | CONTRACTOR_ADMIN + INTERNAL_ADMIN |
+| `WORKER` | 근로자만 | WORKER |
+| `MUNI` | 지자체 담당자 | MUNI_ADMIN |
+
+`OWNER` 신규 추가. 기존 ALL/ADMIN/WORKER/MUNI 유지.
+
+### 작성자 role 별 선택 가능 audience (UI 드롭다운)
+| 작성자 role | 옵션 |
+|---|---|
+| SUPER_ADMIN | ALL, OWNER, ADMIN, WORKER, MUNI |
+| CONTRACTOR_ADMIN | ADMIN, WORKER, ALL ⚠ **MUNI 제외** |
+| INTERNAL_ADMIN | ADMIN, WORKER, ALL ⚠ **MUNI 제외** |
+| MUNI_ADMIN | OWNER, ADMIN, ALL |
+
+### 뷰어 role 별 가시 audience
+| 뷰어 role | 보이는 audience |
+|---|---|
+| SUPER_ADMIN | 전체 |
+| CONTRACTOR_ADMIN | ALL, OWNER, ADMIN |
+| INTERNAL_ADMIN | ALL, ADMIN |
+| WORKER | ALL, WORKER |
+| MUNI_ADMIN | ALL, MUNI |
+
+### 신규 권한
+- **MUNI_ADMIN 의 공지 작성 허용** (이전: GET-only)
+- middleware `isReadOnlyExempt` 에 `/api/announcements` POST/PATCH/DELETE 추가
+- POST 시 `contractorId = null`, `municipalityId = session.muni` → 산하 회사 broadcast
+
+### 가시성 스코프 — 지자체 broadcast
+GET 필터 확장:
+```ts
+where.AND = [{
+  OR: [
+    { contractorId: null, municipalityId: null },                  // 시스템(SUPER)
+    { contractorId: cId },                                          // 본인 회사
+    { contractorId: null, municipalityId: userMuniId },            // 본인 지자체 broadcast
+  ],
+}];
+```
+
+`userMuniId` 해상도: `session.municipalityId` 우선 → 없으면 `Contractor.municipalityId` 조회 (CONTRACTOR/INTERNAL/WORKER 의 muni 추정).
+
+### 구현
+- **lib/announcement-audience.ts** (신규)
+  - `audienceOptionsForCreator(role)` / `isAudienceAllowedFor(role, audience)`
+  - `visibleAudiencesForViewer(role)` / `AUDIENCE_LABEL`
+- **app/api/announcements/route.ts**
+  - zod enum 확장(OWNER 추가)
+  - `POSTER_ROLES` 에 MUNI_ADMIN 포함
+  - audience 정책 서버 측 강제 (400 audience_not_allowed)
+  - GET 가시성 + 지자체 broadcast scope
+- **app/api/announcements/[id]/route.ts**
+  - PATCH: audience 정책 강제 + MUNI_ADMIN canManage 분기
+- **app/(admin)/announcements/_announcements-client.tsx**
+  - CreateModal 에 `role` prop 추가
+  - audience 드롭다운 동적 옵션 (`audienceOptionsForCreator`)
+  - 헤더 안내 메시지 role 별 분기
+- **app/(admin)/announcements/page.tsx**
+  - POSTERS 에 MUNI_ADMIN 추가 (페이지 접근 허용)
+- **app/(admin)/layout.tsx**
+  - MUNI_ADMIN 사이드바에 📢 공지사항 메뉴 노출
+- **middleware.ts**
+  - `isReadOnlyExempt` 에 `/api/announcements` mutate 허용
+  - POST/PATCH/DELETE 모두 화이트리스트
+
+---
+
+## 7. 운영 메모
 
 ### Service Worker 캐시
 - v50 (2026-05-02 announcement-role-clarify)
@@ -257,7 +358,9 @@ model ContractorFeature {
 - v53 (announcement-voice-tts)
 - v54 (complaint-tts-autoassign)
 - v55 (contractor-features)
-- v56 (worker-complaint-default-register) — 본 세션 마지막
+- v56 (worker-complaint-default-register)
+- v57 (global-notifications-root)
+- v58 (announcement-audience-policy) — 본 세션 마지막
 
 ### 배포 플로우 (변동 없음)
 ```bash
@@ -280,7 +383,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 
 ---
 
-## 7. Commits (본 세션 시간순)
+## 8. Commits (본 세션 시간순)
 
 | # | SHA | 영역 | 요약 |
 |---|---|---|---|
@@ -290,10 +393,13 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 4 | `27c62c8` | complaint | feat(complaint): 신규 민원 TTS + 기동반 자동배정 + AI 인근 워커 broadcast |
 | 5 | `6f903b9` | super-admin | feat(super-admin): 회사별 기능 권한(엔타이틀먼트) 시스템 + 세션 기록 |
 | 6 | `23b5f40` | worker | fix(worker): /worker/complaint 기본 탭 → 'register' (지도 즉시 가시) |
+| 7 | `37dd841` | docs | docs: 본 세션 종료 기록 — 세션 로그 + RESUME_NOTE 갱신 |
+| 8 | `f59c340` | notifications | feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트 |
+| 9 | TBD | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
 
 ---
 
-## 8. Files Touched (본 세션 누적)
+## 9. Files Touched (본 세션 누적)
 
 ```
 lib/complaints.ts                                        WORKER OR(reportedBy, assignedTo)

@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import VoiceSettingsModal from '@/components/VoiceSettingsModal';
+import {
+  AUDIENCE_LABEL,
+  audienceOptionsForCreator,
+  type AudienceValue,
+} from '@/lib/announcement-audience';
 
 type Announcement = {
   id: string;
   title: string;
   body: string;
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
-  audience: 'ALL' | 'ADMIN' | 'WORKER' | 'MUNI';
+  audience: AudienceValue;
   pinned: boolean;
   publishedAt: string;
   updatedAt: string;
@@ -18,7 +23,7 @@ type Announcement = {
 };
 
 const SEV_LABEL = { INFO: '안내', WARNING: '주의', CRITICAL: '긴급' };
-const AUD_LABEL = { ALL: '전체', ADMIN: '관리자', WORKER: '근로자', MUNI: '지자체' };
+/* AUDIENCE_LABEL 은 lib/announcement-audience 에서 import — 5개 audience 통합 */
 
 const SEV_TONE: Record<string, string> = {
   INFO:     'border-cyan-400 bg-cyan-50 text-cyan-900',
@@ -58,8 +63,9 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
         <h2 className="text-xl font-extrabold text-ink">📢 공지사항</h2>
         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
           {session.role === 'SUPER_ADMIN' ? '🌐 시스템 전체 공지 가능' :
-           session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 작성·관리' :
-           session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 작성·관리' : ''}
+           session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 (관리자/근로자/전체)' :
+           session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 (관리자/근로자/전체)' :
+           session.role === 'MUNI_ADMIN' ? '🏛 지자체 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' : ''}
         </span>
         <button
           onClick={() => setVoiceOpen(true)}
@@ -76,8 +82,8 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
         </button>
       </div>
 
-      {createOpen && <CreateModal onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
-      {editTarget && <CreateModal initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
+      {createOpen && <CreateModal role={session.role} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
+      {editTarget && <CreateModal role={session.role} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
       {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
@@ -100,7 +106,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
                       {SEV_LABEL[a.severity]}
                     </span>
                     <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
-                      {AUD_LABEL[a.audience]}
+                      {AUDIENCE_LABEL[a.audience]}
                     </span>
                     {expired && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-300 text-slate-700">만료</span>}
                   </div>
@@ -141,12 +147,19 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   );
 }
 
-function CreateModal({ initial, onClose, onCreated }: { initial?: Announcement; onClose: () => void; onCreated: () => void }) {
+function CreateModal({ role, initial, onClose, onCreated }: { role: string; initial?: Announcement; onClose: () => void; onCreated: () => void }) {
   const isEdit = !!initial;
   const [title, setTitle] = useState(initial?.title ?? '');
   const [body, setBody] = useState(initial?.body ?? '');
   const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>(initial?.severity ?? 'INFO');
-  const [audience, setAudience] = useState<'ALL' | 'ADMIN' | 'WORKER' | 'MUNI'>(initial?.audience ?? 'ALL');
+
+  /* 작성자 role 별 audience 옵션 — 사용자 요구사항 2026-05-02 */
+  const audienceOptions = audienceOptionsForCreator(role);
+  /* 초기값 보정: initial.audience 가 현재 role 옵션에 없으면 첫 옵션으로 fallback */
+  const initialAudience: AudienceValue = initial?.audience && audienceOptions.includes(initial.audience)
+    ? initial.audience
+    : (audienceOptions[0] ?? 'ALL');
+  const [audience, setAudience] = useState<AudienceValue>(initialAudience);
   const [pinned, setPinned] = useState(initial?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(initial?.expiresAt ? initial.expiresAt.slice(0, 10) : '');
   const [busy, setBusy] = useState(false);
@@ -207,13 +220,22 @@ function CreateModal({ initial, onClose, onCreated }: { initial?: Announcement; 
             </div>
             <div>
               <div className="text-xs font-extrabold text-ink mb-1">대상</div>
-              <select value={audience} onChange={(e) => setAudience(e.target.value as 'ALL'|'ADMIN'|'WORKER'|'MUNI')}
+              <select value={audience} onChange={(e) => setAudience(e.target.value as AudienceValue)}
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm">
-                <option value="ALL">👥 전체 (모든 사용자)</option>
-                <option value="ADMIN">🛠 관리자만</option>
-                <option value="WORKER">👷 근로자만</option>
-                <option value="MUNI">🏛 지자체만</option>
+                {audienceOptions.map((opt) => {
+                  const icon = { ALL: '👥', OWNER: '🏢', ADMIN: '🛠', WORKER: '👷', MUNI: '🏛' }[opt];
+                  return (
+                    <option key={opt} value={opt}>
+                      {icon} {AUDIENCE_LABEL[opt]}
+                    </option>
+                  );
+                })}
               </select>
+              {role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN' ? (
+                <div className="text-[0.625rem] text-slate-500 mt-1">※ 회사 작성: 지자체관리자에게 발송 불가</div>
+              ) : role === 'MUNI_ADMIN' ? (
+                <div className="text-[0.625rem] text-slate-500 mt-1">※ 지자체 작성: 산하 회사 broadcast (회사대표/회사+관리자/전체 선택)</div>
+              ) : null}
             </div>
           </div>
           <div>

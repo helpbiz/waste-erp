@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { isAudienceAllowedFor, type AudienceValue } from '@/lib/announcement-audience';
 
 export const runtime = 'nodejs';
 
@@ -15,16 +16,24 @@ const PatchBody = z.object({
   title: z.string().min(1).max(200).optional(),
   body: z.string().min(1).max(10_000).optional(),
   severity: z.enum(['INFO', 'WARNING', 'CRITICAL']).optional(),
-  audience: z.enum(['ALL', 'ADMIN', 'WORKER', 'MUNI']).optional(),
+  audience: z.enum(['ALL', 'OWNER', 'ADMIN', 'WORKER', 'MUNI']).optional(),
   pinned: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
 });
 
-function canManage(session: { role: string; contractorId: string | null }, target: { contractorId: bigint | null }): boolean {
+function canManage(
+  session: { role: string; contractorId: string | null; municipalityId: string | null },
+  target: { contractorId: bigint | null; municipalityId: bigint | null },
+): boolean {
   if (session.role === 'SUPER_ADMIN') return true;
+  /* MUNI_ADMIN — 본인 지자체 broadcast 수정/삭제 가능 */
+  if (session.role === 'MUNI_ADMIN') {
+    return target.contractorId === null
+      && target.municipalityId !== null
+      && session.municipalityId === target.municipalityId.toString();
+  }
   if (!ADMIN_ROLES.has(session.role)) return false;
-  /* 같은 회사 관리자 — contractorId 일치 또는 시스템 전체 공지 (target.contractorId=null 은 SUPER 만) */
-  if (target.contractorId === null) return false; // 시스템 공지는 SUPER 만
+  if (target.contractorId === null) return false; /* 시스템 공지는 SUPER 만 */
   return session.contractorId === target.contractorId.toString();
 }
 
@@ -42,6 +51,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
   const b = parsed.data;
+
+  /* audience 변경 시 작성자 role 정책 검증 (MUNI 가 WORKER 직접 지정, CONTRACTOR 가 MUNI 지정 등 차단) */
+  if (b.audience !== undefined && !isAudienceAllowedFor(session.role, b.audience as AudienceValue)) {
+    return NextResponse.json({ error: 'audience_not_allowed', audience: b.audience, role: session.role }, { status: 400 });
+  }
+
   const data: Record<string, unknown> = {};
   if (b.title !== undefined) data.title = b.title.trim();
   if (b.body !== undefined) data.body = b.body.trim();
