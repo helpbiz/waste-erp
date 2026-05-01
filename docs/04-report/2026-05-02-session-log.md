@@ -446,7 +446,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 8 | `f59c340` | notifications | feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트 |
 | 9 | `249d7fe` | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
 | 10 | `f8f4486` | docs | docs: 세션 로그 commit#9 SHA 채움 |
-| 11 | TBD | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
+| 11 | `865dd69` | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
 
 ---
 
