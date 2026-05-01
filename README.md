@@ -2,7 +2,20 @@
 
 > 환경미화의 디지털 전환을 14일 안에. 멀티테넌트 SaaS형 ERP로 시민·작업자·관리자·지자체·슈퍼관리자가 한 시스템에서 협업.
 
-**현재 버전**: v0.1.0-alpha · **Phase 1A ~ Phase 24 완료** · **마지막 갱신**: 2026-04-26
+**현재 버전**: v0.1.0-alpha · **Phase 1A ~ Phase 24 완료** · **마지막 갱신**: 2026-05-02
+
+---
+
+## 🧭 빠른 진입점
+
+| 목적 | 시작 위치 |
+|---|---|
+| 모든 문서 인덱스 (체계적 유지보수 허브) | **[`docs/INDEX.md`](./docs/INDEX.md)** ⭐ |
+| 다음 세션 재개 | [`RESUME_NOTE.md`](./RESUME_NOTE.md) |
+| 기능 인벤토리 (파일·API·RBAC) | [`docs/architecture/feature-catalog.md`](./docs/architecture/feature-catalog.md) |
+| API 레퍼런스 (112 endpoints) | [`docs/architecture/api-reference.md`](./docs/architecture/api-reference.md) |
+| 데이터 모델 + 다중 테넌트 트리 | [`docs/architecture/data-model.md`](./docs/architecture/data-model.md) |
+| RBAC 권한 매트릭스 | [`docs/architecture/rbac-matrix.md`](./docs/architecture/rbac-matrix.md) |
 
 ---
 

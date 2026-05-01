@@ -1,0 +1,681 @@
+/* CleanERP 사용자 매뉴얼 — 디자인 시스템.
+   원칙: 배려 (Caring) — 큰 글자, 넉넉한 여백, 부드러운 색감, 단계 시각화.
+   - 본문 18px+, 헤드라인 32px+
+   - 둥근 모서리 12px, 부드러운 그림자
+   - 부정 강조 X (빨강 대신 앰버 톤)
+   - 인쇄 시 A4 portrait, 슬라이드 X 페이지 ○ 형태 */
+
+.manual {
+  background: #fafbfc;
+  min-height: 100vh;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.manual a { color: #0e7490; text-decoration: none; }
+.manual a:hover { text-decoration: underline; }
+
+/* ─── 상단 툴바 (역할 표시 + PDF) ─── */
+.manual-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.manual-toolbar-brand {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.manual-toolbar-brand a { color: #0f172a; }
+
+.manual-toolbar-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.manual-toolbar-actions { display: flex; gap: 12px; align-items: center; }
+
+.manual-print-btn {
+  background: #0e7490;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.manual-print-btn:hover { background: #0891b2; }
+.manual-print-btn:focus-visible { outline: 3px solid #06b6d4; outline-offset: 3px; }
+
+/* ─── 컨테이너 ─── */
+.manual-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+/* ─── 헤더 영역 (랜딩) ─── */
+.manual-hero {
+  text-align: center;
+  padding: 56px 0 32px;
+}
+
+.manual-hero-eyebrow {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0e7490;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.manual-hero-title {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+
+.manual-hero-subtitle {
+  font-size: 22px;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.55;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ─── 역할 카드 (랜딩) ─── */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.role-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  text-decoration: none;
+}
+
+.role-card[data-tone="cyan"]   { border-top: 4px solid #06b6d4; }
+.role-card[data-tone="teal"]   { border-top: 4px solid #0e7490; }
+.role-card[data-tone="navy"]   { border-top: 4px solid #1e3a5f; }
+
+.role-card:hover[data-tone="cyan"]   { border-color: #06b6d4; }
+.role-card:hover[data-tone="teal"]   { border-color: #0e7490; }
+.role-card:hover[data-tone="navy"]   { border-color: #1e3a5f; }
+
+.role-card-icon {
+  width: 64px;
+  height: 64px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 900;
+  color: #0e7490;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.role-card[data-tone="cyan"] .role-card-icon { background: #cffafe; color: #0e7490; }
+.role-card[data-tone="teal"] .role-card-icon { background: #ccfbf1; color: #0f766e; }
+.role-card[data-tone="navy"] .role-card-icon { background: #dbeafe; color: #1e3a5f; }
+
+.role-card-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.role-card-subtitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: -0.005em;
+}
+
+.role-card-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  flex: 1;
+}
+
+.role-card-bullet {
+  font-size: 15px;
+  color: #475569;
+  font-weight: 500;
+  padding-left: 18px;
+  position: relative;
+}
+
+.role-card-bullet::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #06b6d4;
+  font-weight: 900;
+}
+
+.role-card-cta {
+  margin-top: 8px;
+  padding: 12px 0 0;
+  border-top: 1px solid #f1f5f9;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0e7490;
+  letter-spacing: -0.01em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ─── 역할 찾기 안내 ─── */
+.role-finder {
+  margin-top: 64px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 40px;
+}
+
+.role-finder-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.role-finder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-finder-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 16px;
+}
+
+.role-finder-item:last-child { border-bottom: none; }
+
+.role-finder-q {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.role-finder-arrow { color: #06b6d4; font-weight: 900; }
+
+.role-finder-a {
+  font-weight: 800;
+  color: #0e7490;
+}
+
+/* ─── 매뉴얼 본문 ─── */
+
+.manual-page-header {
+  margin-bottom: 56px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 32px;
+}
+
+.manual-page-eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: #06b6d4;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.manual-page-title {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.manual-page-lead {
+  font-size: 19px;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.65;
+  max-width: 720px;
+}
+
+/* 챕터 */
+.manual-chapter {
+  margin: 80px 0;
+  scroll-margin-top: 80px;
+}
+
+.manual-chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  color: #06b6d4;
+  letter-spacing: 0.2em;
+}
+
+.manual-chapter-title {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #0f172a;
+  margin: 8px 0 12px;
+}
+
+.manual-chapter-lead {
+  font-size: 17px;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 32px;
+  max-width: 680px;
+}
+
+/* ─── Step 카드 ─── */
+.step-list { display: flex; flex-direction: column; gap: 24px; }
+
+.step-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 24px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.step-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0e7490;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.step-body {
+  font-size: 17px;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.step-body strong { color: #0f172a; font-weight: 800; }
+.step-body code {
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 15px;
+  color: #0e7490;
+  font-weight: 700;
+}
+
+/* ─── Tip Box (이럴 때는 이렇게) ─── */
+.tip-box {
+  background: #ecfeff;
+  border-left: 4px solid #06b6d4;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tip-box-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0e7490;
+  text-transform: uppercase;
+}
+
+.tip-box-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.tip-box-body {
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.65;
+}
+
+/* ─── Warn Box (주의하세요) — 부드러운 앰버 ─── */
+.warn-box {
+  background: #fffbeb;
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warn-box-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #b45309;
+  text-transform: uppercase;
+}
+
+.warn-box-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.warn-box-body {
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.65;
+}
+
+/* ─── 화면 목업 (모바일/데스크톱) ─── */
+.screen-mock-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0 8px;
+}
+
+.screen-mock-phone {
+  width: 280px;
+  border-radius: 32px;
+  background: #0f172a;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+}
+
+.screen-mock-phone-screen {
+  background: #f1f5f9;
+  border-radius: 26px;
+  min-height: 400px;
+  padding: 24px 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.screen-mock-phone-notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 8px;
+  background: #0f172a;
+  border-radius: 4px;
+}
+
+.screen-mock-phone-h {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* ─── FAQ 아코디언 ─── */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+}
+
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 24px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+.faq-item summary::after {
+  content: '+';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  font-weight: 900;
+  color: #0e7490;
+  flex-shrink: 0;
+}
+
+.faq-item[open] summary::after { content: '−'; }
+
+.faq-item summary:hover { background: #f8fafc; }
+
+.faq-item-body {
+  padding: 0 24px 20px;
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.faq-item-body p { margin-bottom: 12px; }
+.faq-item-body p:last-child { margin-bottom: 0; }
+
+/* ─── Role badge ─── */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.role-badge[data-tone="cyan"] { background: #cffafe; color: #0e7490; }
+.role-badge[data-tone="teal"] { background: #ccfbf1; color: #0f766e; }
+.role-badge[data-tone="navy"] { background: #dbeafe; color: #1e3a5f; }
+
+/* ─── 챕터 사이 구분선 ─── */
+.manual-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+  margin: 64px 0;
+}
+
+/* ─── 다음 단계 안내 ─── */
+.next-step {
+  margin-top: 32px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.next-step-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0e7490;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.next-step-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.next-step-arrow {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0e7490;
+}
+
+/* ─── 인쇄 (PDF) ─── */
+@media print {
+  @page { size: A4 portrait; margin: 18mm 14mm; }
+
+  html, body { background: white !important; }
+
+  .manual { background: white !important; font-size: 14px; }
+  .manual-toolbar { display: none !important; }
+  .manual-container { max-width: none; padding: 0; }
+
+  .manual-hero { padding: 0 0 24px; }
+  .manual-hero-title { font-size: 36px; }
+  .manual-hero-subtitle { font-size: 16px; }
+
+  .role-grid { grid-template-columns: 1fr; gap: 12px; }
+  .role-card { box-shadow: none; padding: 20px; page-break-inside: avoid; }
+
+  .manual-page-title { font-size: 32px; }
+  .manual-page-lead { font-size: 15px; }
+
+  .manual-chapter { margin: 32px 0; page-break-before: auto; page-break-inside: auto; }
+  .manual-chapter-title { font-size: 24px; }
+  .manual-chapter-lead { font-size: 14px; }
+
+  .step-card {
+    box-shadow: none;
+    padding: 18px;
+    page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .step-num { width: 40px; height: 40px; font-size: 16px; }
+  .step-title { font-size: 17px; }
+  .step-body { font-size: 13px; }
+
+  .tip-box, .warn-box, .next-step {
+    page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    padding: 14px 18px;
+  }
+
+  .faq-item { box-shadow: none; page-break-inside: avoid; }
+  .faq-item summary { padding: 12px 18px; font-size: 14px; }
+  .faq-item-body { padding: 0 18px 14px; font-size: 13px; }
+
+  .screen-mock-phone {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ─── 모바일 반응형 ─── */
+@media (max-width: 768px) {
+  .manual-container { padding: 24px 16px; }
+  .manual-hero-title { font-size: 36px; }
+  .manual-hero-subtitle { font-size: 17px; }
+  .role-grid { grid-template-columns: 1fr; gap: 16px; }
+  .manual-page-title { font-size: 32px; }
+  .manual-chapter-title { font-size: 26px; }
+  .step-card { grid-template-columns: 44px 1fr; padding: 20px; gap: 16px; }
+  .step-num { width: 44px; height: 44px; font-size: 18px; }
+  .step-title { font-size: 19px; }
+  .step-body { font-size: 16px; }
+  .role-finder { padding: 24px; }
+  .role-finder-item { grid-template-columns: 1fr; gap: 4px; padding: 12px 0; }
+  .role-finder-arrow { display: none; }
+}

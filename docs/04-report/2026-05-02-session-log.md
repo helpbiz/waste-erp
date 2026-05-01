@@ -24,6 +24,7 @@
 | 클라이언트 게이트 | sidebar 메뉴 동적 필터 + /api/me/features | feature OFF 시 메뉴 자체 미노출 |
 | WebPush 인프라 | WebPushSubscription + SW push handler + subscriber | 백그라운드 푸시 수신 가능 (VAPID 키 설정 후 활성) |
 | inbox 카운트 뱃지 | /worker/complaint 탭에 활성 N건 뱃지 | RAPID 워커 본인 배정건 즉시 인지 |
+| 문서 허브 구축 | docs/INDEX.md + architecture/ 4종 신규 | 유지보수 시 단일 진입점 (feature-catalog/api-reference/data-model/rbac-matrix) |
 
 ---
 
@@ -518,6 +519,41 @@ where.AND.push({
 ### 효과
 - RAPID 워커가 본인 배정 민원 N건이 있으면 한눈에 인지
 - 자동 진입 분기는 보류 (사용자 진단 2026-05-02: 기본 register 가 더 적절 — 지도 즉시 가시)
+
+---
+
+## 6.8 유지보수 문서 허브 구축
+
+### 사용자 요청
+> "우리가 개발한 프로그램의 모든 업무를 유지보수 할 수 있도록 개발관련된 문서를 체계적으로 관리할 수 있게 보관하자."
+
+### 문제
+- 기존 1366줄 `유지보수_메뉴얼.md` 등 풍부하지만 **산재** — 어디서 시작해야 할지 진입점 부재
+- 신규 기능(공지·민원 자동배정·요금제·게이트·WebPush)이 코드에는 있으나 **인벤토리 문서 부재**
+- "이 기능 어디 있지?" / "이 API 권한은?" → 매번 grep
+
+### 추가된 문서 (모두 `docs/`)
+| 문서 | 역할 |
+|---|---|
+| `docs/INDEX.md` ⭐ | **마스터 인덱스** — 모든 문서 카테고리별 정리 + 자주 찾는 답 표 |
+| `docs/architecture/feature-catalog.md` | **기능 인벤토리** — 8 features × 파일·API·RBAC·게이트 매핑 + 콘솔 12 탭 + 알림 시스템 |
+| `docs/architecture/api-reference.md` | **API 레퍼런스** — 112 endpoints 도메인별 (인증/사용자/공지/민원/근태/차량/...) |
+| `docs/architecture/data-model.md` | **데이터 모델** — 다중 테넌트 트리 + 핵심 테이블 + 신규 테이블(ContractorFeature/WebPushSubscription) + PIPA + 마이그레이션 절차 |
+| `docs/architecture/rbac-matrix.md` | **RBAC 매트릭스** — 5-tier 역할 × 작업 권한, 공지 audience 정책, MUNI 화이트리스트, 8 게이트 정리 |
+
+### README.md 갱신
+- 최상단에 "🧭 빠른 진입점" 표 추가 → INDEX/RESUME_NOTE/feature-catalog/api-reference/data-model/rbac-matrix 6개 링크
+
+### 갱신 정책 명문화
+INDEX.md 마지막 절에:
+- 신규 문서 작성 시 위치 결정 표
+- 갱신 책임 (세션 종료 / 신규 기능 배포 / 신규 사용자 절차)
+- 폐기·이관 정책
+
+### 효과
+- **단일 진입점** — `docs/INDEX.md` 만 보면 어떤 문서로 가야 할지 결정 가능
+- **유지보수 시 grep 대신 catalog 조회** — 1 분 → 10 초
+- 신규 개발자 온보딩 시 INDEX → architecture/* 4종 → 유지보수_메뉴얼 순으로 학습 가능
 
 ---
 

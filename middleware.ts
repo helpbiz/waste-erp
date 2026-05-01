@@ -63,6 +63,8 @@ function isPublic(path: string): boolean {
   if (path === '/favicon.ico') return true;
   /* 서비스 소개서 — 영업·홍보용 공개 페이지 */
   if (path === '/intro' || path.startsWith('/intro/')) return true;
+  /* 사용자 매뉴얼 — 도입 후 사용자 학습용 공개 페이지 */
+  if (path === '/manual' || path.startsWith('/manual/')) return true;
   /* 시민 민원앱 — 인증 불필요 (전화번호 기반 식별) */
   if (path === '/citizen' || path.startsWith('/citizen/')) return true;
   if (path.startsWith('/api/citizen/')) return true;
