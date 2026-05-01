@@ -24,9 +24,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const isInternal = session.role === 'SUPER_ADMIN' || session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN';
 
-  /* 메뉴 정의 (서버에서 권한 필터링 후 클라이언트에 전달)
-     OVERVIEW(메인 대시보드)는 앱에서 노출하지 않음 — 민원관리가 기본 랜딩 */
+  /* 메뉴 정의 (서버에서 권한 필터링 후 클라이언트에 전달).
+     사용자 요청 2026-05-01: 첫 로그인 진입을 메인 대시보드로 변경 + 메뉴 첫 항목 추가. */
   const groups = [
+    {
+      group: 'OVERVIEW',
+      items: [
+        { href: '/dashboard', label: '메인 대시보드' },
+      ],
+    },
     {
       group: 'CORE MODULES',
       items: [
@@ -67,7 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <AdminShell
         session={{ role: session.role, name: session.name }}
         groups={groups}
-        pageTitle="민원관리"
+        pageTitle="메인 대시보드"
         canMutate={canMutate(session.role)}
       >
         {children}

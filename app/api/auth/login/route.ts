@@ -118,8 +118,10 @@ export async function POST(req: Request) {
     },
   });
 
-  /* Role 기반 랜딩 페이지 — WORKER는 모바일 워커앱, 그 외는 민원관리 */
-  const redirectTo = user.role === 'WORKER' ? '/worker' : '/complaints';
+  /* Role 기반 랜딩 페이지.
+     사용자 요청 2026-05-01: WORKER → /worker, 그 외 admin 모두 → /dashboard (메인 대시보드).
+     기존엔 /complaints (민원관리) 였으나 첫 화면은 종합 KPI dashboard 가 자연스럽다는 결정. */
+  const redirectTo = user.role === 'WORKER' ? '/worker' : '/dashboard';
 
   return NextResponse.json({
     ok: true,

@@ -7,9 +7,10 @@
  *
  * 우선순위:
  *   1) explicitNext (URL ?next=/foo) — 사용자 의도 우선
- *   2) 모바일 + admin role → /dashboard (모바일 전용 admin 셸)
+ *   2) 모바일 + admin role → /dashboard
  *   3) 서버에서 내려준 redirectTo
- *   4) fallback /complaints
+ *   4) admin role fallback → /dashboard (사용자 요청 2026-05-01)
+ *   5) 그 외 fallback → /complaints
  */
 
 const ADMIN_ROLES = new Set([
@@ -39,6 +40,7 @@ export function resolveRoleRoute({
   if (explicitNext) return explicitNext;
   if (isMobile && role && ADMIN_ROLES.has(role)) return '/dashboard';
   if (redirectTo) return redirectTo;
+  if (role && ADMIN_ROLES.has(role)) return '/dashboard';
   return '/complaints';
 }
 
