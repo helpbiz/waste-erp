@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import './intro.css';
 import PrintButton from './_print-button';
+import { BRAND, EXAMPLE_MUNI, EXAMPLE_CONTRACTORS, EXAMPLE_PRESETS } from './_config';
 
 export const metadata = {
   title: 'CleanERP — 생활폐기물 수집운반업을 위한 운영·안전 통합 ERP',
@@ -36,7 +37,7 @@ const STATS = [
 ];
 
 const ROLES = [
-  { depth: 0, key: 'SUPER_ADMIN',      name: '시스템관리자',  desc: '플랫폼 전체 운영 (helpbiz)' },
+  { depth: 0, key: 'SUPER_ADMIN',      name: '시스템관리자',  desc: `플랫폼 전체 운영 (${BRAND.company})` },
   { depth: 1, key: 'MUNI_ADMIN',       name: '지자체관리자',  desc: '관할 위탁업체 모니터링·보고서 조회' },
   { depth: 2, key: 'CONTRACTOR_ADMIN', name: '회사관리자',     desc: '위탁업체 대표 — 회사 운영 총괄' },
   { depth: 3, key: 'INTERNAL_ADMIN',   name: '일반관리자',     desc: '팀장·실장·안전관리자 — 결재·배차·민원 배정' },

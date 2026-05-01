@@ -491,7 +491,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 10 | `f8f4486` | docs | docs: 세션 로그 commit#9 SHA 채움 |
 | 11 | `865dd69` | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
 | 12 | `35257db` | docs | docs: 세션 로그 commit#11 SHA 채움 |
-| 13 | TBD | packages | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
+| 13 | `e0fdd5b` | packages | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
 
 ---
 
