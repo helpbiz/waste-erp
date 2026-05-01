@@ -6,6 +6,7 @@ import { isInsideKorea } from '@/lib/gps';
 import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
+import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -38,15 +39,20 @@ export async function POST(req: Request) {
   }
 
   /* P0-residual: PIPA — GPS 좌표는 ~10m 격자 라운딩 후 저장 */
-  const lat = roundCoord(parsed.data.lat) as number;
-  const lng = roundCoord(parsed.data.lng) as number;
+  const rawLat = roundCoord(parsed.data.lat) as number;
+  const rawLng = roundCoord(parsed.data.lng) as number;
   const { zoneId } = parsed.data;
-  if (!isInsideKorea(lat, lng)) {
+  if (!isInsideKorea(rawLat, rawLng)) {
     return NextResponse.json(
       { error: 'gps_out_of_range', message: '국내 위경도 박스 밖의 좌표입니다.' },
       { status: 422 }
     );
   }
+
+  /* 회사별 기능 권한 — attendanceGps OFF 면 좌표 저장 skip (체크인 자체는 허용) */
+  const gpsOn = await hasFeature(session.contractorId, 'attendanceGps');
+  const lat: number | null = gpsOn ? rawLat : null;
+  const lng: number | null = gpsOn ? rawLng : null;
 
   const today = todayKstDate();
   const workerId = BigInt(session.userId);

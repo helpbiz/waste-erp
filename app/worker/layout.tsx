@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { hasFeature } from '@/lib/features';
 import { WorkerLayoutShell } from './_layout-shell';
 
 export default async function WorkerLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,10 @@ export default async function WorkerLayout({ children }: { children: React.React
     where: { id: BigInt(session.userId) },
     select: { position: { select: { code: true } } },
   });
-  const isRapid = me?.position?.code === 'RAPID';
+  /* 회사별 기능 권한 — recommendedRoute OFF 면 RAPID 워커여도 메뉴 숨김 */
+  const positionRapid = me?.position?.code === 'RAPID';
+  const featureOn = await hasFeature(session.contractorId, 'recommendedRoute');
+  const isRapid = positionRapid && featureOn;
 
   return (
     <WorkerLayoutShell

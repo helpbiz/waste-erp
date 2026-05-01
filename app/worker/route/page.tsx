@@ -4,12 +4,15 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { requireFeature } from '@/lib/feature-guard';
 import WorkerRouteClient from './_worker-route-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function WorkerRoutePage() {
   const session = (await readSession())!;
+  /* 회사별 기능 권한 — recommendedRoute OFF 면 안내 페이지로 */
+  await requireFeature(session, 'recommendedRoute');
   /* layout이 이미 WORKER 보장. 여기서는 position 체크만 추가 */
   const me = await prisma.user.findUnique({
     where: { id: BigInt(session.userId) },

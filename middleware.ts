@@ -75,6 +75,8 @@ function isPublic(path: string): boolean {
   if (path.startsWith('/brand/')) return true;
   /* Let's Encrypt HTTP-01 ACME challenge — 인증 불필요 */
   if (path.startsWith('/.well-known/acme-challenge/')) return true;
+  /* 기능 비활성 안내 페이지 — 게이트에서 redirect 받을 때 인증 흐름 끊지 않도록 public */
+  if (path === '/feature-disabled') return true;
   return false;
 }
 

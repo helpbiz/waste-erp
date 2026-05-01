@@ -20,6 +20,10 @@
 | 공지 audience 정책 | role-based 옵션 + MUNI 작성권 + OWNER audience 추가 | 회사는 [관리자/근로자/전체], 지자체는 [회사대표/회사+관리자/전체] |
 | AI 인근 추천 정밀화 | Announcement.targetUserId per-user targeting | 인근 워커 N명 개별 알림 → 진짜 인근만 수신 |
 | 요금제 패키지 | TRIAL/BASIC/STANDARD/PRO 4-tier + 일괄 적용 | 슈퍼관리자가 회사에 패키지 1클릭 적용 |
+| 게이트 점진 적용 | 4개 페이지/API 차단 + 친화 안내 페이지 | recommendedRoute / vehicleTracking / costCalculation / attendanceGps |
+| 클라이언트 게이트 | sidebar 메뉴 동적 필터 + /api/me/features | feature OFF 시 메뉴 자체 미노출 |
+| WebPush 인프라 | WebPushSubscription + SW push handler + subscriber | 백그라운드 푸시 수신 가능 (VAPID 키 설정 후 활성) |
+| inbox 카운트 뱃지 | /worker/complaint 탭에 활성 N건 뱃지 | RAPID 워커 본인 배정건 즉시 인지 |
 
 ---
 
@@ -439,6 +443,84 @@ where.AND.push({
 
 ---
 
+## 6.5 회사별 기능 게이트 점진 적용 (서버·클라이언트)
+
+### 사용자 요청
+> RESUME_NOTE 다음 우선 처리 후보 #1 #2 — 게이트 점진 적용 + sidebar 메뉴 자체 숨김
+
+### 서버 게이트 (lib/feature-guard.ts)
+- `requireFeature(session, key, fallback?)` — 페이지 server component 진입 시 호출
+- contractor 없는 사용자(SUPER/MUNI) 는 통과 (모니터링 권한 보존)
+- 기능 OFF 면 `/feature-disabled?feature=KEY` 로 redirect
+
+### 친화 안내 페이지
+- `/feature-disabled` (신규) — feature key 받아 라벨/설명/문의 안내 카드
+- middleware `isPublic` 에 추가 → 인증 흐름 안 끊고 표시
+
+### 적용된 페이지/API
+| 위치 | 게이트 키 | 동작 |
+|---|---|---|
+| `/worker/route` | recommendedRoute | OFF 시 안내 페이지 |
+| `/(admin)/live-vehicles` | vehicleTracking | OFF 시 안내 페이지 |
+| `/(admin)/payroll` | costCalculation | OFF 시 안내 페이지 |
+| `POST /api/attendance/check-in` | attendanceGps | OFF 시 좌표 저장 skip (체크인은 허용) |
+| `POST /api/attendance/check-out` | attendanceGps | 동일 |
+
+### 클라이언트 게이트 (sidebar 메뉴 자체 숨김)
+- `app/(admin)/layout.tsx` — `hasFeature` 호출 후 menu items 동적 조립
+  - vehicleTracking OFF → "실시간 차량조회" 메뉴 미노출
+  - announcements OFF → "공지사항" 메뉴 미노출
+- `app/worker/layout.tsx` — recommendedRoute OFF 면 RAPID 워커도 추천경로 메뉴 숨김
+- `/api/me/features` (신규) — 클라이언트가 본인 기능 상태 조회 가능
+
+### SUPER/MUNI 특칙
+- contractorId 없음 → 모든 게이트 자동 통과
+- `/api/me/features` 도 모든 키 true 반환 → 모니터링 화면에서 메뉴 차단 안 됨
+
+---
+
+## 6.6 WebPush 인프라 (MVP-lite)
+
+### 사용자 요청
+> RESUME_NOTE #5 — WebPush API 풀스택 (백그라운드 푸시)
+
+### 본 PR 범위 (인프라 준비)
+- ✅ DB 모델: `WebPushSubscription` (userId × endpoint unique)
+- ✅ API: `POST/DELETE /api/webpush/subscribe`
+- ✅ 클라이언트: `components/PushSubscriber.tsx` — SW PushManager.subscribe + 서버 등록
+- ✅ Service Worker: `push` + `notificationclick` 이벤트 핸들러 추가
+- ⚠ 서버 측 발송: VAPID 키 + `web-push` npm 패키지 미설정 → 다음 PR
+
+### 활성화 방법 (다음 세션)
+1. VAPID 키 발급 (e.g., `npx web-push generate-vapid-keys`)
+2. `.env.prod` 에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` 추가
+3. `npm i web-push`
+4. `lib/webpush-send.ts` 작성 — `sendPushToUser(userId, payload)`
+5. `autoAssignComplaint` 의 per-user announcement 생성 시점에 `sendPushToUser` 호출
+6. `POST /api/announcements` 에서도 audience 매칭 사용자에게 push
+
+### 현재 동작
+- VAPID public key 미설정 → `PushSubscriber` early-return → 사용자 영향 없음
+- 키 설정 후 자동 활성
+
+---
+
+## 6.7 inbox 활성 카운트 뱃지 (/worker/complaint)
+
+### 사용자 요청
+> RESUME_NOTE #6 — inbox 카운트(N) 뱃지
+
+### 구현
+- `/worker/complaint` mount 시 `/api/complaints?limit=50` 1회 fetch
+- `ASSIGNED|IN_PROGRESS|RECEIVED` 상태 카운트 → state
+- 📥 내 민원 탭 우측에 N 뱃지 (active 시 흰 배경, 비active 시 rose 배경)
+
+### 효과
+- RAPID 워커가 본인 배정 민원 N건이 있으면 한눈에 인지
+- 자동 진입 분기는 보류 (사용자 진단 2026-05-02: 기본 register 가 더 적절 — 지도 즉시 가시)
+
+---
+
 ## 7. 운영 메모
 
 ### Service Worker 캐시
@@ -452,7 +534,8 @@ where.AND.push({
 - v57 (global-notifications-root)
 - v58 (announcement-audience-policy)
 - v59 (ai-nearby-per-user-targeting)
-- v60 (feature-packages) — 본 세션 마지막
+- v60 (feature-packages)
+- v61 (gates-webpush-inbox-badge) — 본 세션 마지막
 
 ### 배포 플로우 (변동 없음)
 ```bash
@@ -492,6 +575,8 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 11 | `865dd69` | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
 | 12 | `35257db` | docs | docs: 세션 로그 commit#11 SHA 채움 |
 | 13 | `e0fdd5b` | packages | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
+| 14 | `d102e3b` | docs | docs: 세션 로그 commit#13 SHA 채움 |
+| 15 | TBD | gates+webpush+inbox | feat: 회사별 기능 게이트 점진 적용 + WebPush 인프라 + inbox 뱃지 |
 
 ---
 

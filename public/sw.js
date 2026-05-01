@@ -6,7 +6,7 @@
  *  - 사용자 폰의 v1 SW가 v3로 자동 교체되도록 설계
  */
 /* PWA Mobile UX Mastering 적용 — v4 강제 캐시 무효화로 모바일 사용자에게 즉시 새 UI 배포 */
-const CACHE_NAME = 'cleanerp-v60-2026-05-02-feature-packages';
+const CACHE_NAME = 'cleanerp-v61-2026-05-02-gates-webpush-inbox-badge';
 const APP_SHELL = ['/login', '/manifest.json'];  /* 최소 셸만 — 페이지는 항상 네트워크 우선 */
 
 self.addEventListener('install', (event) => {
@@ -33,6 +33,39 @@ self.addEventListener('activate', (event) => {
 /* 클라이언트가 강제 갱신 요청 시 */
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* WebPush 수신 — 백그라운드(앱 닫힘)에서도 OS 알림 표시.
+   서버가 sendPushToUser() 로 보낸 payload (JSON: { title, body, tag, url? }) 를 파싱.
+   사용자가 클릭하면 url 로 포커스 이동. */
+self.addEventListener('push', (event) => {
+  let data = { title: 'CleanERP', body: '새로운 알림이 있습니다', tag: 'cleanerp' };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) { /* */ }
+  const opts = {
+    body: data.body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: data.tag || 'cleanerp',
+    data: { url: data.url || '/dashboard' },
+    vibrate: [200, 100, 200],
+    requireInteraction: data.severity === 'CRITICAL',
+  };
+  event.waitUntil(self.registration.showNotification(data.title, opts));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/dashboard';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      /* 이미 열린 탭이 있으면 포커스 + url 이동 */
+      for (const c of list) {
+        if ('focus' in c) { c.navigate(url).catch(() => null); return c.focus(); }
+      }
+      /* 없으면 새 창 */
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener('fetch', (event) => {

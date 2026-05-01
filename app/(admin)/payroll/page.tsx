@@ -1,6 +1,7 @@
 import { readSession } from '@/lib/auth';
 import { aggregateContractorMonth, isAttendanceManager } from '@/lib/attendance-aggregate';
 import { prisma } from '@/lib/db';
+import { requireFeature } from '@/lib/feature-guard';
 import PayrollClient, { type Row } from './_payroll-client';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,9 @@ export default async function PayrollPage({
   searchParams: { ym?: string };
 }) {
   const session = (await readSession())!;
+  /* 회사별 기능 권한 — costCalculation OFF 면 안내 페이지로 */
+  await requireFeature(session, 'costCalculation');
+
   const ym = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchParams.ym ?? '')
     ? searchParams.ym!
     : defaultYearMonth();

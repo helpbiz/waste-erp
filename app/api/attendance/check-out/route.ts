@@ -6,6 +6,7 @@ import { isInsideKorea } from '@/lib/gps';
 import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
+import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -27,11 +28,16 @@ export async function POST(req: Request) {
     );
   }
   /* P0-residual: PIPA — GPS 라운딩 */
-  const lat = roundCoord(parsed.data.lat) as number;
-  const lng = roundCoord(parsed.data.lng) as number;
-  if (!isInsideKorea(lat, lng)) {
+  const rawLat = roundCoord(parsed.data.lat) as number;
+  const rawLng = roundCoord(parsed.data.lng) as number;
+  if (!isInsideKorea(rawLat, rawLng)) {
     return NextResponse.json({ error: 'gps_out_of_range' }, { status: 422 });
   }
+
+  /* 회사별 기능 권한 — attendanceGps OFF 면 좌표 저장 skip */
+  const gpsOn = session.contractorId ? await hasFeature(session.contractorId, 'attendanceGps') : false;
+  const lat: number | null = gpsOn ? rawLat : null;
+  const lng: number | null = gpsOn ? rawLng : null;
 
   const today = todayKstDate();
   const workerId = BigInt(session.userId);

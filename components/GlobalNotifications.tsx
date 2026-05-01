@@ -13,12 +13,14 @@
  */
 import AnnouncementBanner from './AnnouncementBanner';
 import ComplaintBanner from './ComplaintBanner';
+import PushSubscriber from './PushSubscriber';
 
 export default function GlobalNotifications() {
   return (
     <>
       <AnnouncementBanner />
       <ComplaintBanner />
+      <PushSubscriber />
     </>
   );
 }

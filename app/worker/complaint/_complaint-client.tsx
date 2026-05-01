@@ -39,9 +39,23 @@ const TYPES: { id: Type; label: string; color: string }[] = [
 
 export default function ComplaintClient() {
   /* 사용자 요청 2026-05-02: 탭 구조 — 내 민원 처리 + 신규 등록.
-     기본은 'register' — 첫 화면에 지도가 즉시 보이도록 (사용자 진단 2026-05-02:
-     기본을 inbox 로 두면 "지도가 안 올라와" 처럼 보이는 회귀). */
+     기본은 'register' (지도 즉시 가시); inbox 활성건이 있으면 뱃지 표시. */
   const [tab, setTab] = useState<'inbox' | 'register'>('register');
+  const [inboxActiveCount, setInboxActiveCount] = useState<number>(0);
+
+  /* 첫 mount 에 inbox 활성 카운트만 가볍게 fetch — N>0 면 뱃지 노출 */
+  useEffect(() => {
+    let abort = false;
+    fetch('/api/complaints?limit=50')
+      .then((r) => r.ok ? r.json() : null)
+      .then((j: { items?: { status: string }[] } | null) => {
+        if (abort || !j?.items) return;
+        const active = j.items.filter((c) => ['ASSIGNED', 'IN_PROGRESS', 'RECEIVED'].includes(c.status)).length;
+        setInboxActiveCount(active);
+      })
+      .catch(() => null);
+    return () => { abort = true; };
+  }, []);
   const router = useRouter();
   const toast = useToast();
   const [type, setType] = useState<Type | null>(null);
@@ -141,11 +155,21 @@ export default function ComplaintClient() {
       <div className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card">
         <button
           onClick={() => setTab('inbox')}
-          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition relative ${
             tab === 'inbox' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'
           }`}
         >
           📥 내 민원
+          {inboxActiveCount > 0 && (
+            <span
+              className={`ml-1.5 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[0.625rem] font-mono font-extrabold ${
+                tab === 'inbox' ? 'bg-white text-accent' : 'bg-rose-500 text-white'
+              }`}
+              aria-label={`처리 가능 ${inboxActiveCount}건`}
+            >
+              {inboxActiveCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setTab('register')}
