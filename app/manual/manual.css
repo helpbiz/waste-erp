@@ -609,6 +609,291 @@
   color: #0e7490;
 }
 
+/* ──────────────────────────────────────────────────────────
+   화면 목업 시스템 (옵션 B)
+   - ScreenShot = 외곽 폰 프레임 + 상단 앱바 + 본문 + 하단 탭바 슬롯
+   - 매뉴얼 안에서 18px+ 큰 글자로 실 시스템 재현 (가독성 우선)
+   ────────────────────────────────────────────────────────── */
+
+.screen-shot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 4px;
+}
+
+.screen-shot {
+  width: 252px;
+  background: white;
+  border-radius: 22px;
+  border: 2px solid #cbd5e1;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+/* 상단 앱바 — role별 색상 자동 */
+.mock-appbar {
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mock-appbar[data-role="worker"] { background: #0e7490; }
+.mock-appbar[data-role="admin"]  { background: #1e3a5f; }
+.mock-appbar[data-role="muni"]   { background: #1d4ed8; }
+
+.mock-appbar-back { font-size: 16px; opacity: 0.9; }
+.mock-appbar-title { flex: 1; }
+
+/* 본문 */
+.screen-shot-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8fafc;
+  min-height: 180px;
+}
+
+/* 하단 탭바 */
+.mock-tabbar {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  padding: 6px 0 4px;
+}
+
+.mock-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  color: #94a3b8;
+  font-weight: 700;
+  position: relative;
+}
+
+.mock-tab-glyph { font-size: 14px; line-height: 1; }
+.mock-tab-label { font-size: 9px; letter-spacing: 0.02em; }
+
+.mock-tab[data-active="true"] { color: #0e7490; font-weight: 900; }
+.mock-tab[data-active="true"]::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #06b6d4;
+}
+
+.screen-shot-caption {
+  font-size: 14px;
+  color: #475569;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 4px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* ─── 본문 안 primitives ─── */
+
+/* 버튼 */
+.mock-button {
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+
+.mock-button[data-fullwidth="true"] { width: 100%; }
+.mock-button[data-variant="primary"]   { background: #0e7490; color: white; }
+.mock-button[data-variant="success"]   { background: #15803d; color: white; }
+.mock-button[data-variant="danger"]    { background: #b91c1c; color: white; }
+.mock-button[data-variant="secondary"] { background: white;   color: #0e7490; border: 1.5px solid #0e7490; }
+.mock-button[data-variant="disabled"]  { background: #e2e8f0; color: #94a3b8; }
+
+.mock-button[data-highlighted="true"] {
+  outline: 3px dashed #f59e0b;
+  outline-offset: 4px;
+}
+
+/* 상태 배지 */
+.mock-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  align-self: flex-start;
+}
+
+.mock-chip[data-tone="info"]    { background: #cffafe; color: #0e7490; }
+.mock-chip[data-tone="warn"]    { background: #fef3c7; color: #b45309; }
+.mock-chip[data-tone="success"] { background: #dcfce7; color: #15803d; }
+.mock-chip[data-tone="danger"]  { background: #fee2e2; color: #b91c1c; }
+.mock-chip[data-tone="neutral"] { background: #f1f5f9; color: #475569; }
+
+/* 입력/정보 행 */
+.mock-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  background: white;
+  padding: 8px 10px;
+  border-radius: 6px;
+  gap: 8px;
+}
+
+.mock-row-label { font-weight: 700; color: #475569; }
+.mock-row-value { font-weight: 800; color: #0f172a; }
+
+.mock-row-input {
+  flex: 1;
+  text-align: right;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 2px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.mock-row-placeholder { color: #94a3b8; font-weight: 500; }
+
+.mock-row[data-type="header"] {
+  background: #ecfeff;
+  font-weight: 800;
+  color: #0e7490;
+  border-radius: 6px 6px 0 0;
+}
+
+/* 리스트 카드 */
+.mock-list-item {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.mock-list-item[data-highlighted="true"] {
+  border-color: #f59e0b;
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
+}
+
+.mock-list-item-main { flex: 1; min-width: 0; }
+.mock-list-item-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.mock-list-item-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.mock-list-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* 지도 placeholder */
+.mock-map {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e0f2fe;
+}
+
+.mock-map-grid {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.mock-map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 1;
+}
+
+.mock-map-pin::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  background: #b91c1c;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: block;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.mock-map-pin-dot {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 2px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.mock-map-label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ─── 모바일·인쇄 반응형 ─── */
+@media print {
+  .screen-shot {
+    box-shadow: none;
+    border: 1.5px solid #cbd5e1;
+    page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .mock-button, .mock-chip, .mock-row, .mock-list-item, .mock-appbar, .mock-tabbar, .mock-map {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 /* ─── 인쇄 (PDF) ─── */
 @media print {
   @page { size: A4 portrait; margin: 18mm 14mm; }

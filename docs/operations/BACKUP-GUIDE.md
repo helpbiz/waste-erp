@@ -133,6 +133,38 @@ bash scripts/restore-from-wci-worm.sh full 20260502-0330
 
 ---
 
+## ❓ 자주 발생하는 실수
+
+### 백업 머신(192.168.1.25)에서 직접 스크립트를 실행했어요
+```
+user@lab1:~$ bash scripts/backup-to-wci-worm.sh
+bash: scripts/backup-to-wci-worm.sh: 그런 파일이나 디렉터리가 없습니다
+```
+
+**원인**: `192.168.1.25` (= `lab1`, `wci-worm`) 는 백업 **받는** 쪽입니다. 프로젝트가 없어요.
+**해결**: `exit` 으로 lab1 에서 빠져나와 lab3(소스, 프로젝트가 있는 머신) 에서 실행.
+
+```
+[lab3] ─────── SSH/rsync ────▶ [lab1=192.168.1.25]
+프로젝트+Docker                   백업 저장소
+↑ 여기서 실행                       ↑ 받는 쪽
+```
+
+스크립트에 sanity check 가 있어 잘못된 머신에서 실행하면 명시 메시지로 차단됩니다.
+
+### `Permission denied (publickey,password)` 또는 매번 비번 묻기
+SSH 키 인증 미설정 — 위 §"1회 셋업" 섹션 절차 수행.
+
+### `~/.ssh/config` 에 등록 후에도 키 인식 안 됨
+권한 확인:
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/config ~/.ssh/id_ed25519_backup
+chmod 644 ~/.ssh/id_ed25519_backup.pub
+```
+
+---
+
 ## 🆘 장애 대응 시나리오
 
 ### "DB 가 깨졌어요"

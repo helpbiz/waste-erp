@@ -28,6 +28,29 @@ MODE="${1:-daily}"
 DRY="${2:-}"
 [[ "$MODE" == "--dry" ]] && { DRY="--dry"; MODE="daily"; }
 
+# ─── Sanity check — 본 스크립트는 SOURCE(프로젝트+Docker 가 있는 머신)에서 실행해야 함 ───
+# 1) 백업 대상 IP 가 자기 자신이면 잘못된 머신
+SELF_IPS="$(hostname -I 2>/dev/null || true)"
+if echo "$SELF_IPS" | grep -qw "$BACKUP_HOST"; then
+  echo "❌ 이 머신($(hostname)) 이 BACKUP_HOST=$BACKUP_HOST 입니다."
+  echo "   백업 스크립트는 받는 쪽(=대상)이 아니라 보내는 쪽(=프로젝트 + Docker 가 있는 머신)에서 실행해야 합니다."
+  echo "   ⇒ exit 후 source 머신(lab3 등)에서 다시 실행하세요."
+  exit 1
+fi
+# 2) Docker 없거나 컨테이너 없으면 잘못된 머신
+if ! command -v docker >/dev/null 2>&1 || ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
+  echo "❌ Docker / DB 컨테이너 '$DB_CONTAINER' 를 찾을 수 없습니다."
+  echo "   현재 머신($(hostname)): $SELF_IPS"
+  echo "   ⇒ 프로젝트가 설치되고 Docker 가 동작 중인 머신에서 실행하세요."
+  exit 1
+fi
+# 3) 프로젝트 경로 확인
+if [[ ! -d "$PROJECT_DIR/.git" ]]; then
+  echo "❌ 프로젝트 디렉터리($PROJECT_DIR)에 .git 가 없습니다."
+  echo "   PROJECT_DIR 환경변수로 프로젝트 위치를 지정하거나 올바른 머신에서 실행하세요."
+  exit 1
+fi
+
 DATE_TAG="$(date +%Y%m%d-%H%M)"
 WEEK_TAG="$(date +%Y-W%V)"
 TMP_DIR="$(mktemp -d /tmp/cleanerp-backup.XXXX)"

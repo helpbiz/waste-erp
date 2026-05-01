@@ -6,9 +6,16 @@ import WarnBox from './WarnBox';
 import FaqItem from './FaqItem';
 
 /** 매뉴얼 챕터 — 모든 역할 매뉴얼이 이 컴포넌트로 챕터를 렌더한다.
-    데이터 구조에 따라 welcome / standard / faq 세 종류 자동 분기. */
+    데이터 구조에 따라 welcome / standard / faq 자동 분기.
+    standard.steps[i].screenshot 이 있으면 해당 step body 아래 화면 목업 렌더. */
 
-export type StandardStep = { title: string; body: string };
+export type StandardStep = {
+  title: string;
+  body: string;
+  /** 선택 — 이 step에 보일 화면 목업 (ScreenShot 컴포넌트 산출물). */
+  screenshot?: ReactNode;
+};
+
 export type ChapterTip = { title: string; body: string };
 
 export type ChapterData =
@@ -19,6 +26,7 @@ export type ChapterData =
       lead: string;
       intro?: string;
       canDo: { title: string; body: string }[];
+      hero?: ReactNode;
     }
   | {
       kind: 'standard';
@@ -50,6 +58,7 @@ export default function Chapter({ ch }: { ch: ChapterData }): ReactNode {
         {ch.kind === 'welcome' && (
           <>
             {ch.intro && <p style={{ fontSize: 17, color: '#334155', lineHeight: 1.7, marginBottom: 24, maxWidth: 720 }}>{ch.intro}</p>}
+            {ch.hero}
             <div className="step-list">
               {ch.canDo.map((c) => (
                 <StepCard key={c.title} n={'✓'} title={c.title} body={c.body} />
@@ -62,7 +71,9 @@ export default function Chapter({ ch }: { ch: ChapterData }): ReactNode {
           <>
             <div className="step-list">
               {ch.steps.map((s, i) => (
-                <StepCard key={s.title} n={i + 1} title={s.title} body={s.body} />
+                <StepCard key={s.title} n={i + 1} title={s.title} body={s.body}>
+                  {s.screenshot}
+                </StepCard>
               ))}
             </div>
             {ch.tip && <TipBox title={ch.tip.title}>{ch.tip.body}</TipBox>}
