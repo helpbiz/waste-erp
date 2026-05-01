@@ -4,6 +4,7 @@
  *
  * 데이터: 시안 단계 mock (Plan §6.5 — 실데이터 연동은 Phase 1A-2 근태 API 이후)
  */
+import Link from 'next/link';
 import { readSession } from '@/lib/auth';
 import { canMutate } from '@/lib/rbac';
 import { getTodayAttendance, type AttendanceCard } from '@/lib/attendance';
@@ -318,25 +319,50 @@ function KpiCard({
 
 /* ─────────────── 근태 ─────────────── */
 
+/* 사용자 요청 2026-05-01 (4가지 개선):
+ * 1) 라벨 세로 깨짐 — 정상출근→정상 / 조정필요→조정 + whitespace-nowrap
+ * 2) 액션 우선순위 — 0인 카드 회색·dimmed / 값 있는 카드 톤 색 보더 + bg
+ * 3) 분모 표기 — N/totalWorkers 분수 형식 (위 KPI 일관성)
+ * 4) 클릭 가능 단서 — 카드 클릭 시 /attendance 필터 prefilled URL 로 이동 */
 function AttendStats({ summary }: { summary: { totalWorkers: number; checkedIn: number; late: number; absent: number; needAdjust: number } }) {
   const onTime = Math.max(0, summary.checkedIn - summary.late);
-  const stats = [
-    { value: onTime,             label: '정상출근', tone: 'text-success' },
-    { value: summary.late,       label: '지각',     tone: 'text-warn' },
-    { value: summary.absent,     label: '결근',     tone: 'text-danger' },
-    { value: summary.needAdjust, label: '조정필요', tone: 'text-info' },
+  const total = summary.totalWorkers;
+  type Tone = 'success' | 'warn' | 'danger' | 'info';
+  const stats: Array<{ value: number; label: string; tone: Tone; href: string }> = [
+    { value: onTime,             label: '정상', tone: 'success', href: '/attendance' },
+    { value: summary.late,       label: '지각', tone: 'warn',    href: '/attendance?filter=late' },
+    { value: summary.absent,     label: '결근', tone: 'danger',  href: '/attendance?filter=absent' },
+    { value: summary.needAdjust, label: '조정', tone: 'info',    href: '/attendance?filter=pending' },
   ];
+
+  /* 톤별 색상 (값 있을 때) vs idle 색상 (값 0) */
+  const toneClass: Record<Tone, { card: string; value: string }> = {
+    success: { card: 'bg-emerald-50 border-2 border-emerald-400', value: 'text-emerald-700' },
+    warn:    { card: 'bg-amber-50 border-2 border-amber-400',     value: 'text-amber-700' },
+    danger:  { card: 'bg-rose-50 border-2 border-rose-400',       value: 'text-rose-700' },
+    info:    { card: 'bg-cyan-50 border-2 border-cyan-400',       value: 'text-cyan-700' },
+  };
+  const idleClass = { card: 'bg-slate-50 border border-slate-200 opacity-70', value: 'text-slate-400' };
+
   return (
-    <div className="grid grid-cols-4 gap-2.5 mb-4">
-      {stats.map((s) => (
-        <div
-          key={s.label}
-          className="text-center py-3.5 px-2 bg-surface-alt rounded-lg border border-line"
-        >
-          <div className={`text-2xl font-black font-mono tracking-tight ${s.tone}`}>{s.value}</div>
-          <div className="text-xs font-extrabold text-ink mt-1.5">{s.label}</div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-4">
+      {stats.map((s) => {
+        const idle = s.value === 0;
+        const c = idle ? idleClass : toneClass[s.tone];
+        return (
+          <Link
+            key={s.label}
+            href={s.href}
+            className={`text-center py-3.5 px-2 rounded-lg transition hover:shadow-md active:scale-95 cursor-pointer block ${c.card}`}
+          >
+            <div className={`text-2xl font-black font-mono tracking-tight ${c.value}`}>
+              {s.value}
+              <span className="text-xs font-bold text-slate-500 ml-0.5">/{total}</span>
+            </div>
+            <div className="text-xs font-extrabold text-ink mt-1.5 whitespace-nowrap">{s.label}</div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
