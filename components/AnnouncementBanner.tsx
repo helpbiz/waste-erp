@@ -11,6 +11,8 @@
  * - dismissed 30일 후 자동 만료 (재공지 가능)
  */
 import { useEffect, useRef, useState } from 'react';
+import { loadVoiceSettings, speakAnnouncement } from '@/lib/voice-settings';
+import VoiceSettingsModal from '@/components/VoiceSettingsModal';
 
 type Announcement = {
   id: string;
@@ -21,6 +23,7 @@ type Announcement = {
   pinned: boolean;
   publishedAt: string;
   authorName: string;
+  authorRole?: string | null;
 };
 
 const SEV_TONE: Record<string, string> = {
@@ -70,6 +73,7 @@ export default function AnnouncementBanner() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<DismissedRecord>({});
   const [popupOpen, setPopupOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -107,6 +111,12 @@ export default function AnnouncementBanner() {
           if (fresh.length > 0) {
             try { audioRef.current?.play().catch(() => null); } catch { /* */ }
             try { navigator.vibrate?.([200, 100, 200]); } catch { /* */ }
+            /* TTS — 가장 최신 신규 공지의 author role 기준으로 발화 */
+            try {
+              const voiceSettings = loadVoiceSettings();
+              const top = fresh[0];
+              speakAnnouncement(top?.authorRole, voiceSettings);
+            } catch { /* */ }
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
               fresh.slice(0, 3).forEach((a) => {
                 try {
@@ -130,7 +140,13 @@ export default function AnnouncementBanner() {
             setTimeout(() => {
               try { audioRef.current?.play().catch(() => null); } catch { /* */ }
               try { navigator.vibrate?.(150); } catch { /* */ }
-            }, 1000);
+              /* TTS — 가장 우선순위 높은 미확인 공지(이미 정렬된 첫 항목) author role */
+              try {
+                const voiceSettings = loadVoiceSettings();
+                const top = visible[0];
+                speakAnnouncement(top?.authorRole, voiceSettings);
+              } catch { /* */ }
+            }, 1200);
             setPopupOpen(true);
           }
         }
@@ -186,7 +202,10 @@ export default function AnnouncementBanner() {
     return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   });
 
-  if (!popupOpen || visible.length === 0) return null;
+  if (!popupOpen || visible.length === 0) {
+    /* 팝업이 닫혀 있어도 음성 설정 모달은 단독 노출 가능해야 함 */
+    return voiceOpen ? <VoiceSettingsModal onClose={() => setVoiceOpen(false)} /> : null;
+  }
 
   const hasCritical = visible.some((a) => a.severity === 'CRITICAL');
 
@@ -205,10 +224,20 @@ export default function AnnouncementBanner() {
         <div className="px-5 py-3 border-b border-line bg-purple-50 flex items-center gap-2">
           <span className="text-xl">📢</span>
           <h2 className="text-base font-black text-ink flex-1">공지사항 ({visible.length}건)</h2>
+          <button
+            onClick={() => setVoiceOpen(true)}
+            aria-label="음성 알림 설정"
+            title="음성 알림 설정"
+            className="px-2 py-1 rounded text-xs font-extrabold bg-white/80 border border-purple-200 hover:bg-white active:scale-95"
+          >
+            🔊 음성
+          </button>
           {!hasCritical && (
             <button onClick={() => setPopupOpen(false)} aria-label="닫기" className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
           )}
         </div>
+
+        {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
         {/* List */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">

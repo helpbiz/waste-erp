@@ -90,6 +90,7 @@ export async function GET(req: Request) {
       edited: a.updatedAt.getTime() - a.publishedAt.getTime() > 1000,
       expiresAt: a.expiresAt?.toISOString() ?? null,
       authorName: authorMap.get(a.createdBy.toString())?.name ?? '시스템',
+      authorRole: authorMap.get(a.createdBy.toString())?.role ?? null,
       authorId: a.createdBy.toString(),
       contractorId: a.contractorId?.toString() ?? null,
       municipalityId: a.municipalityId?.toString() ?? null,

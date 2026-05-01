@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import VoiceSettingsModal from '@/components/VoiceSettingsModal';
 
 type Announcement = {
   id: string;
@@ -30,6 +31,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Announcement | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   function load() {
     setLoading(true);
@@ -60,8 +62,15 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
            session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 작성·관리' : ''}
         </span>
         <button
+          onClick={() => setVoiceOpen(true)}
+          className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-white hover:bg-purple-50 text-purple-800 text-sm font-extrabold active:scale-95"
+          title="공지 도착 음성 알림 설정"
+        >
+          🔊 음성 설정
+        </button>
+        <button
           onClick={() => setCreateOpen(true)}
-          className="ml-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
         >
           ＋ 신규 공지 작성
         </button>
@@ -69,6 +78,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
 
       {createOpen && <CreateModal onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
       {editTarget && <CreateModal initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
+      {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
       {!loading && items.length === 0 && (
