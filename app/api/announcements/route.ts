@@ -71,6 +71,13 @@ export async function GET(req: Request) {
           ...(muniId ? [{ contractorId: null, municipalityId: muniId }] : []), // 본인 지자체 broadcast
         ],
       },
+      /* per-user targeting — null 이면 일반 broadcast, 값있으면 본인만 수신 */
+      {
+        OR: [
+          { targetUserId: null },
+          { targetUserId: BigInt(session.userId) },
+        ],
+      },
     ];
   }
 

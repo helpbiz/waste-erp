@@ -179,35 +179,39 @@ export async function autoAssignComplaint(input: AssignInput): Promise<AssignRes
     .sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999))
     .slice(0, 5);
 
-  /* 5) 인근 워커 broadcast — Announcement 1건 (audience=WORKER, contractor 한정)
-        broadcastNearby=false 면 skip (회사별 기능 OFF) */
+  /* 5) 인근 워커 per-user 개별 알림 — 진짜 인근만 받도록 정밀화 (2026-05-02).
+        broadcastNearby=false 면 skip (회사별 기능 OFF).
+        이전: audience=WORKER 회사 broadcast 1건 → 회사 전체 워커가 알림 받음
+        지금: 인근 워커 N명 각각에게 targetUserId 지정 1건씩 → 인근만 수신 */
   if (primary && nearby.length > 0 && input.broadcastNearby !== false) {
-    const lines = nearby.map((w) => {
-      const dTxt = w.distanceKm != null ? ` (${w.distanceKm.toFixed(1)}km)` : '';
-      return `· ${w.name}${dTxt}`;
-    });
-    const body = [
+    const expiresAt = new Date(Date.now() + 6 * 3600_000); /* 6시간 유효 */
+    const baseBody = [
       `📍 ${locationAddress ?? '위치 정보 없음'}`,
       `▶ 주 배정: ${primary.name}`,
       '',
-      'AI 인근 작업자 추천:',
-      ...lines,
-      '',
-      '※ 추가 인력이 필요하면 [민원] 메뉴에서 본인을 추가 배정할 수 있습니다.',
+      '※ 인근 워커로 자동 추천되어 알림이 전송되었습니다.',
+      '※ 지원 가능하면 [민원] 메뉴에서 본인을 추가 배정할 수 있습니다.',
     ].join('\n');
 
-    await prisma.announcement.create({
-      data: {
-        title: '🚨 인근 민원 접수 — 지원 가능자 확인',
-        body,
-        severity: 'WARNING',
-        audience: 'WORKER',
-        contractorId,
-        pinned: false,
-        expiresAt: new Date(Date.now() + 6 * 3600_000), /* 6시간 유효 */
-        createdBy: primary.id, /* 시스템 발신 — primary 워커 명의로 (실제 createdBy 는 표시용) */
-      },
-    }).catch(() => null);
+    /* 워커별 거리 정보를 본문 1행으로 첨부 — 자기에게 얼마나 가까운지 표시 */
+    await Promise.all(
+      nearby.map((w) => {
+        const dTxt = w.distanceKm != null ? ` (당신과 약 ${w.distanceKm.toFixed(1)}km)` : '';
+        return prisma.announcement.create({
+          data: {
+            title: `🚨 인근 민원 접수${dTxt}`,
+            body: baseBody,
+            severity: 'WARNING',
+            audience: 'WORKER',
+            contractorId,
+            targetUserId: w.id,    /* per-user targeting — 본인만 수신 */
+            pinned: false,
+            expiresAt,
+            createdBy: primary.id, /* 시스템 발신 — primary 워커 명의 */
+          },
+        }).catch(() => null);
+      }),
+    );
   }
 
   return {

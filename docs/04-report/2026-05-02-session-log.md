@@ -18,6 +18,7 @@
 | 회귀 수정 | /worker/complaint 기본 탭 'inbox' → 'register' | 첫 진입 시 지도 즉시 표시 |
 | 글로벌 알림 마운트 | AnnouncementBanner+ComplaintBanner → root layout | shell 외부 화면(/noc 등)도 자동 팝업 |
 | 공지 audience 정책 | role-based 옵션 + MUNI 작성권 + OWNER audience 추가 | 회사는 [관리자/근로자/전체], 지자체는 [회사대표/회사+관리자/전체] |
+| AI 인근 추천 정밀화 | Announcement.targetUserId per-user targeting | 인근 워커 N명 개별 알림 → 진짜 인근만 수신 |
 
 ---
 
@@ -349,6 +350,53 @@ where.AND = [{
 
 ---
 
+## 6.3 AI 인근 추천 정밀화 — per-user targeting
+
+### 사용자 요청
+> RESUME_NOTE 다음 우선 처리 후보 #4 — AI 인근 추천 정밀화 (per-user targeting)
+
+### 이전 동작의 한계
+- `lib/complaint-assign.ts` 가 인근 워커 후보를 찾았지만 알림은 `audience='WORKER'` + 회사 한정 broadcast 1건으로 생성
+- 회사 전체 워커가 알림을 받음 → 실제 거리/zone 매칭과 무관하게 "인근 추천이 무의미"
+
+### 구현
+**스키마**
+- `Announcement.targetUserId BigInt?` 추가 (`@map("target_user_id")`, index)
+- `null` = 일반 broadcast(기존 동작), 값있음 = per-user targeting
+- `prisma db push` 적용 완료
+
+**autoAssignComplaint 변경**
+- broadcast 1건 → 인근 워커 N명 각각에게 `targetUserId` 지정 1건씩
+- 본인 거리(`(당신과 약 X.Xkm)`)가 제목에 표시됨
+- 6시간 expire 동일
+
+**API GET 필터**
+```ts
+where.AND.push({
+  OR: [
+    { targetUserId: null },                    // broadcast
+    { targetUserId: BigInt(session.userId) },  // 본인 targeted
+  ],
+});
+```
+
+### 효과
+- **인근 워커만 알림 수신** — 거리 ≤ 2km OR zone 일치 워커 top5 (primary 제외)
+- 다른 워커는 자기에게 targeted 된 게 없으면 안 보임
+- AnnouncementBanner 의 자동 팝업·TTS·진동은 그대로 적용
+
+### 권한
+- per-user 알림은 시스템 자동 생성 → WORKER 가 직접 수정/삭제 불가 (`canManage()`)
+- 워커는 dismiss 만 가능 (localStorage `cleanerp:dismissed-announcements:v2`)
+- SUPER_ADMIN 은 전체 관리 가능 (장애·검증 시)
+
+### Limitations / Future
+- TTS 메시지는 일반 공지와 동일("회사에서 공지사항이 도착했습니다") — 향후 dispatch 전용 메시지 추가 가능
+- per-user 알림 audit log 없음 (announcement 레코드 자체가 trail)
+- targetUserId IN [...] (다중 타깃 1행) 미지원 — 현재는 워커당 1행 N건 생성
+
+---
+
 ## 7. 운영 메모
 
 ### Service Worker 캐시
@@ -360,7 +408,8 @@ where.AND = [{
 - v55 (contractor-features)
 - v56 (worker-complaint-default-register)
 - v57 (global-notifications-root)
-- v58 (announcement-audience-policy) — 본 세션 마지막
+- v58 (announcement-audience-policy)
+- v59 (ai-nearby-per-user-targeting) — 본 세션 마지막
 
 ### 배포 플로우 (변동 없음)
 ```bash
@@ -396,6 +445,8 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 7 | `37dd841` | docs | docs: 본 세션 종료 기록 — 세션 로그 + RESUME_NOTE 갱신 |
 | 8 | `f59c340` | notifications | feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트 |
 | 9 | `249d7fe` | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
+| 10 | `f8f4486` | docs | docs: 세션 로그 commit#9 SHA 채움 |
+| 11 | TBD | ai-dispatch | feat(complaint): AI 인근 추천 per-user targeting (Announcement.targetUserId) |
 
 ---
 
