@@ -243,12 +243,12 @@ export default function ComplaintClient() {
         />
       </Section>
 
-      <Section label="처리 내용 (선택)">
+      <Section label="신고 내용 (선택)">
         <textarea
           rows={3}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="현장 상황 / 즉시 처리 내용"
+          placeholder="현장 상황 / 신고 내용"
           className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
         />
       </Section>
