@@ -38,8 +38,10 @@ const TYPES: { id: Type; label: string; color: string }[] = [
 ];
 
 export default function ComplaintClient() {
-  /* 사용자 요청 2026-05-02: 탭 구조 — 내 민원 처리 + 신규 등록 */
-  const [tab, setTab] = useState<'inbox' | 'register'>('inbox');
+  /* 사용자 요청 2026-05-02: 탭 구조 — 내 민원 처리 + 신규 등록.
+     기본은 'register' — 첫 화면에 지도가 즉시 보이도록 (사용자 진단 2026-05-02:
+     기본을 inbox 로 두면 "지도가 안 올라와" 처럼 보이는 회귀). */
+  const [tab, setTab] = useState<'inbox' | 'register'>('register');
   const router = useRouter();
   const toast = useToast();
   const [type, setType] = useState<Type | null>(null);
