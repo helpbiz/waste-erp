@@ -1,0 +1,438 @@
+/* CleanERP 서비스 소개서 — 슬라이드 deck 전용 스타일.
+   - 1280×720 고정 캔버스 (16:9). cqw 단위로 슬라이드 폭 비례 타이포 자동 스케일.
+   - 다크/라이트 슬라이드 패턴은 무사퇴근 PDF 디자인 시스템에서 차용, 컬러는 helpbiz 브랜드(#0e7490 teal).
+   - 인쇄 시 @page 1280×720으로 슬라이드당 1페이지 PDF 출력. */
+
+.intro-deck {
+  background: #020617;
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.intro-toolbar {
+  width: 100%;
+  max-width: 1280px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0 8px;
+}
+
+.intro-toolbar button {
+  background: #0e7490;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+}
+
+.intro-toolbar button:hover { background: #0891b2; }
+
+.slide {
+  width: 100%;
+  max-width: 1280px;
+  aspect-ratio: 16 / 9;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  container-type: inline-size;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.slide-dark { background: #0f172a; color: #f1f5f9; }
+.slide-light { background: #ffffff; color: #0f172a; }
+
+.slide-num {
+  position: absolute;
+  bottom: 2.5cqw;
+  right: 3cqw;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1cqw;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.5);
+  letter-spacing: 0.1em;
+}
+
+.slide-light .slide-num { color: rgba(71, 85, 105, 0.4); }
+
+/* ─────────────── 1. 표지 ─────────────── */
+
+.slide-cover {
+  padding: 6cqw 7cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    radial-gradient(ellipse at top right, rgba(14, 116, 144, 0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(6, 182, 212, 0.18) 0%, transparent 50%),
+    linear-gradient(135deg, #020617 0%, #0f172a 60%, #1e3a5f 100%);
+}
+
+.cover-tag {
+  font-size: 1.05cqw;
+  letter-spacing: 0.4em;
+  font-weight: 700;
+  color: #67e8f9;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 1cqw;
+}
+
+.cover-tag::before {
+  content: '';
+  width: 3cqw;
+  height: 1px;
+  background: #67e8f9;
+}
+
+.cover-headline {
+  font-size: 5.4cqw;
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+  margin-top: auto;
+  margin-bottom: 3cqw;
+}
+
+.cover-headline .accent {
+  color: #06b6d4;
+  font-style: normal;
+}
+
+.cover-divider {
+  width: 8cqw;
+  height: 3px;
+  background: #06b6d4;
+  margin-bottom: 2cqw;
+}
+
+.cover-brand {
+  font-size: 4.2cqw;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  color: #ffffff;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5cqw;
+}
+
+.cover-brand-dot {
+  width: 0.9cqw;
+  height: 0.9cqw;
+  background: #06b6d4;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cover-tagline {
+  font-size: 1.35cqw;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-top: 1cqw;
+  letter-spacing: -0.005em;
+}
+
+.cover-helpbiz {
+  position: absolute;
+  bottom: 3cqw;
+  right: 3.5cqw;
+  font-size: 0.95cqw;
+  color: #475569;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.15em;
+}
+
+/* ─────────────── 2. 목차 ─────────────── */
+
+.slide-toc {
+  padding: 6cqw 8cqw;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 6cqw;
+  align-items: start;
+}
+
+.toc-title {
+  font-size: 6cqw;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.toc-title::after {
+  content: '';
+  display: block;
+  width: 4cqw;
+  height: 4px;
+  background: #06b6d4;
+  margin-top: 2cqw;
+}
+
+.toc-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.toc-item {
+  display: grid;
+  grid-template-columns: 4cqw 1fr 4cqw;
+  align-items: baseline;
+  gap: 2cqw;
+  padding: 1.4cqw 0;
+  border-top: 1px solid rgba(241, 245, 249, 0.12);
+  font-size: 1.7cqw;
+}
+
+.toc-item:last-child { border-bottom: 1px solid rgba(241, 245, 249, 0.12); }
+
+.toc-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 1.2cqw;
+  color: #06b6d4;
+  letter-spacing: 0.05em;
+}
+
+.toc-label {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.toc-page {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: #64748b;
+  text-align: right;
+  font-size: 1.2cqw;
+}
+
+/* ─────────────── 3. 챕터 디바이더 ─────────────── */
+
+.slide-chapter {
+  padding: 6cqw 7cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2cqw;
+  background:
+    radial-gradient(ellipse at right, rgba(14, 116, 144, 0.18) 0%, transparent 60%),
+    linear-gradient(135deg, #020617 0%, #0f172a 100%);
+}
+
+.chapter-en {
+  font-size: 1.1cqw;
+  font-weight: 700;
+  color: #06b6d4;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11cqw;
+  font-weight: 900;
+  color: #06b6d4;
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  display: flex;
+  align-items: baseline;
+  gap: 1.5cqw;
+}
+
+.chapter-num-slash {
+  font-size: 4cqw;
+  color: rgba(6, 182, 212, 0.3);
+  font-weight: 700;
+}
+
+.chapter-title {
+  font-size: 6cqw;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: #ffffff;
+  margin-top: 1cqw;
+}
+
+.chapter-sub {
+  font-size: 1.4cqw;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: -0.005em;
+  max-width: 50cqw;
+  line-height: 1.55;
+  margin-top: 1.5cqw;
+}
+
+/* ─────────────── 4. 통증 카드 슬라이드 ─────────────── */
+
+.slide-pain {
+  padding: 5cqw 6cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+}
+
+.pain-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqw;
+  background: #0e7490;
+  color: #ffffff;
+  padding: 0.7cqw 1.6cqw 0.7cqw 1.4cqw;
+  font-size: 1.05cqw;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+  border-radius: 2px;
+}
+
+.pain-tag::before {
+  content: '';
+  width: 0.5cqw;
+  height: 0.5cqw;
+  background: #67e8f9;
+  border-radius: 50%;
+}
+
+.pain-title {
+  font-size: 4.4cqw;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: #0f172a;
+  max-width: 70cqw;
+}
+
+.pain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2cqw;
+  margin-top: 1cqw;
+  flex: 1;
+}
+
+.pain-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+}
+
+.pain-card-hero {
+  position: relative;
+  aspect-ratio: 5 / 3;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.pain-card-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 70% 30%, rgba(6, 182, 212, 0.18) 0%, transparent 50%);
+}
+
+.pain-card-icon {
+  position: absolute;
+  font-size: 12cqw;
+  opacity: 0.08;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.pain-card-headline {
+  position: relative;
+  z-index: 1;
+  font-size: 1.85cqw;
+  font-weight: 900;
+  color: white;
+  text-align: center;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  padding: 1cqw 1.5cqw;
+}
+
+.pain-card-emphasis {
+  font-size: 1.55cqw;
+  font-weight: 800;
+  color: #b91c1c;
+  letter-spacing: -0.015em;
+}
+
+.pain-card-body {
+  font-size: 1.1cqw;
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+}
+
+.pain-footer {
+  margin-top: 2cqw;
+  padding: 1.5cqw 2cqw;
+  background: #0f172a;
+  color: #f1f5f9;
+  font-size: 1.2cqw;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-align: center;
+  border-radius: 2px;
+}
+
+.pain-footer .arrow {
+  color: #06b6d4;
+  margin: 0 0.5cqw;
+}
+
+/* ─────────────── 인쇄 (PDF 저장) ─────────────── */
+
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+
+  html, body { background: white !important; }
+
+  .intro-deck {
+    background: white !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    min-height: 0;
+  }
+
+  .intro-toolbar { display: none !important; }
+
+  .slide {
+    width: 1280px !important;
+    height: 720px !important;
+    max-width: none;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .slide:last-child { page-break-after: auto; }
+}

@@ -10,8 +10,8 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import LogoutButton from './_logout-button';
-import AnnouncementBanner from '@/components/AnnouncementBanner';
-import ComplaintBanner from '@/components/ComplaintBanner';
+/* 글로벌 알림(AnnouncementBanner + ComplaintBanner)은 root layout 으로 이관됨.
+   사용자 요청 2026-05-02: shell 외부 화면에서도 자동 팝업 노출되도록. */
 
 type Session = {
   role: string;
@@ -124,10 +124,7 @@ export default function AdminShell({
           {/* 헤더 우측 끝 로그아웃 */}
           <LogoutButton theme="light" />
         </header>
-        {/* 글로벌 공지 banner — 모든 admin 페이지 상단 (사용자 요청 2026-05-01) */}
-        <AnnouncementBanner />
-        {/* 신규 민원 음성 알림 — 폴링 + TTS (사용자 요청 2026-05-02) */}
-        <ComplaintBanner />
+        {/* 글로벌 알림은 app/layout.tsx GlobalNotifications 으로 이관 — 모든 화면 공통 */}
         <section className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">{children}</section>
       </main>
     </div>

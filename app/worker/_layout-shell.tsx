@@ -6,8 +6,8 @@ import { type ReactNode } from 'react';
 import { TabLink } from './_tab-link';
 import { AppBar } from '@/components/worker/AppBar';
 import { ToastProvider } from '@/components/ui/Toast';
-import AnnouncementBanner from '@/components/AnnouncementBanner';
-import ComplaintBanner from '@/components/ComplaintBanner';
+/* 글로벌 알림(AnnouncementBanner + ComplaintBanner)은 root layout 으로 이관됨.
+   사용자 요청 2026-05-02: shell 외부 화면에서도 자동 팝업 노출되도록. */
 
 type Props = {
   user: { name: string; userId: string; role: string };
@@ -32,10 +32,7 @@ export function WorkerLayoutShell({ user, children }: Props) {
             userName={user.name}
           />
 
-          {/* 글로벌 공지 banner (사용자 요청 2026-05-01) */}
-          <AnnouncementBanner />
-          {/* 신규 민원 음성 알림 — 폴링 + TTS (사용자 요청 2026-05-02) */}
-          <ComplaintBanner />
+          {/* 글로벌 알림은 app/layout.tsx GlobalNotifications 으로 이관 */}
 
           {/* 본문 */}
           <main className="flex-1 overflow-y-auto overscroll-contain">{children}</main>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import SwRegister from './_sw-register';
+import GlobalNotifications from '@/components/GlobalNotifications';
 
 export const metadata: Metadata = {
   title: 'CleanERP — 생활폐기물 수집운반 관리시스템',
@@ -41,6 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased text-ink bg-page">
         <SwRegister />
         {children}
+        {/* 글로벌 알림 — 어떤 화면이든 자동 팝업·TTS·진동 (비로그인 시 401 silent) */}
+        <GlobalNotifications />
       </body>
     </html>
   );
