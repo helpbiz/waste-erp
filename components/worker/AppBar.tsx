@@ -8,6 +8,24 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import LogoutButton from '@/app/(admin)/_logout-button';
 
+/** 매뉴얼 진입 — AppBar 우상단 ❓ 아이콘. 사용자가 어디서든 1탭에 도움말 */
+function HelpButton({ href }: { href: string }) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener"
+      aria-label="사용 매뉴얼"
+      title="사용법 보기 (새 창)"
+      className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 transition"
+    >
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </Link>
+  );
+}
+
 type AppBarProps = {
   title: string;
   subtitle?: string;
@@ -37,9 +55,14 @@ export function AppBar({ title, subtitle, leading, trailing, userName: _userName
             </div>
           )}
         </div>
-        {/* default trailing: 로그아웃 compact (어두운 sidebar 배경에서 bg-danger 21:1 시인성).
+        {/* default trailing: ❓ 도움말 + 로그아웃 (compact).
             customize 필요 시 trailing prop 으로 override */}
-        {trailing ?? <LogoutButton variant="compact" />}
+        {trailing ?? (
+          <div className="flex items-center gap-1.5">
+            <HelpButton href="/manual/worker" />
+            <LogoutButton variant="compact" />
+          </div>
+        )}
       </div>
     </header>
   );

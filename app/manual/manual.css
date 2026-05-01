@@ -879,16 +879,242 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* ──────────────────────────────────────────────────────────
+   데스크톱 콘솔 목업 (회사관리자·지자체관리자 매뉴얼용)
+   - DesktopShot = 브라우저바 + 사이드바 + 메인 영역
+   - 폭 520px, 콘솔 layout과 동일 구조
+   ────────────────────────────────────────────────────────── */
+
+.desktop-shot-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 4px;
+}
+
+.desktop-shot {
+  width: 520px;
+  background: white;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.desktop-shot-bar {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desktop-shot-dots { display: flex; gap: 5px; }
+.desktop-shot-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.desktop-shot-dots span[data-c="r"] { background: #ef4444; }
+.desktop-shot-dots span[data-c="y"] { background: #f59e0b; }
+.desktop-shot-dots span[data-c="g"] { background: #22c55e; }
+
+.desktop-shot-url {
+  flex: 1;
+  background: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.desktop-shot-body {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  min-height: 280px;
+}
+
+.desktop-shot-main {
+  padding: 12px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+/* 사이드바 */
+.mock-sidebar {
+  background: #1e3a5f;
+  color: #cbd5e1;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mock-sidebar[data-variant="muni"] { background: #1d4ed8; }
+
+.mock-sidebar-brand {
+  font-size: 13px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -0.02em;
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 4px;
+}
+
+.mock-sidebar-group { display: flex; flex-direction: column; }
+
+.mock-sidebar-group-label {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  font-weight: 800;
+  color: rgba(203, 213, 225, 0.55);
+  padding: 6px 8px 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.mock-sidebar-item {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(241, 245, 249, 0.85);
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: default;
+  letter-spacing: -0.01em;
+}
+
+.mock-sidebar-item[data-active="true"] {
+  background: rgba(6, 182, 212, 0.25);
+  color: white;
+  font-weight: 900;
+  outline: 2px solid rgba(103, 232, 249, 0.4);
+}
+
+/* KPI 카드 */
+.mock-kpi {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mock-kpi-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mock-kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.mock-kpi-unit { font-size: 11px; color: #64748b; margin-left: 4px; font-weight: 700; }
+
+.mock-kpi-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.mock-kpi[data-tone="success"] .mock-kpi-value { color: #15803d; }
+.mock-kpi[data-tone="warn"] .mock-kpi-value    { color: #b45309; }
+.mock-kpi[data-tone="danger"] .mock-kpi-value  { color: #b91c1c; }
+
+.mock-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* 테이블 */
+.mock-table {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 10px;
+}
+
+.mock-table-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mock-table-row:last-child { border-bottom: none; }
+
+.mock-table-row[data-highlighted="true"] {
+  background: #fffbeb;
+  outline: 2px solid #f59e0b;
+  outline-offset: -2px;
+  border-radius: 2px;
+}
+
+.mock-table-head {
+  background: #f8fafc;
+  font-weight: 900;
+  color: #475569;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mock-table-cell {
+  padding: 6px 8px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* 데스크톱 화면 안 일반 텍스트 헤더 */
+.mock-h2 {
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.mock-h3 {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0e7490;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 /* ─── 모바일·인쇄 반응형 ─── */
+@media (max-width: 768px) {
+  .desktop-shot { width: 100%; max-width: 360px; }
+  .desktop-shot-body { grid-template-columns: 80px 1fr; min-height: 240px; }
+  .mock-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media print {
-  .screen-shot {
+  .screen-shot, .desktop-shot {
     box-shadow: none;
     border: 1.5px solid #cbd5e1;
     page-break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .mock-button, .mock-chip, .mock-row, .mock-list-item, .mock-appbar, .mock-tabbar, .mock-map {
+  .mock-button, .mock-chip, .mock-row, .mock-list-item, .mock-appbar, .mock-tabbar, .mock-map,
+  .mock-sidebar, .mock-kpi, .mock-table {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

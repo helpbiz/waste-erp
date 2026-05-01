@@ -88,6 +88,15 @@ export default async function WorkerHomePage() {
             desc="사진 · 서명 · 로그아웃"
             iconPath="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
           />
+          {/* 📘 사용법 — /manual/worker 새 탭 (PWA 셸 유지) */}
+          <MenuCard
+            href="/manual/worker"
+            color="bg-emerald-600"
+            title="사용법"
+            desc="처음 쓰는 분도 막힘없이"
+            iconPath="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            newTab
+          />
         </div>
       </section>
 
@@ -106,16 +115,20 @@ function MenuCard({
   desc,
   color,
   iconPath,
+  newTab,
 }: {
   href: string;
   title: string;
   desc: string;
   color: string;
   iconPath: string;
+  newTab?: boolean;
 }) {
+  const linkProps = newTab ? { target: '_blank', rel: 'noopener' } : {};
   return (
     <Link
       href={href}
+      {...linkProps}
       className="bg-surface border border-line rounded-xl p-2.5 shadow-card flex flex-col gap-1 min-h-[64px] active:scale-[0.97] active:bg-surface-soft transition-transform"
     >
       <div className={`w-7 h-7 rounded-md ${color} flex items-center justify-center flex-shrink-0 shadow-md`}>

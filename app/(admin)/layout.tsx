@@ -90,6 +90,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           },
         ]
       : []),
+    /* 도움말 — role 기반 자동 라우팅. 항상 노출 (게이트 영향 없음). 새 탭 — admin shell 유지 */
+    {
+      group: 'HELP',
+      items: [
+        {
+          href: session.role === 'MUNI_ADMIN' ? '/manual/muni' : '/manual/contractor',
+          label: '📘 사용 가이드',
+          newTab: true,
+        },
+      ],
+    },
   ];
 
   return (

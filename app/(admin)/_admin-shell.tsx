@@ -22,6 +22,8 @@ type NavItemDef = {
   href: string;
   label: string;
   badge?: string;
+  /** 새 탭 열기 (도움말·외부 등) */
+  newTab?: boolean;
 };
 
 type NavGroup = {
@@ -170,11 +172,13 @@ function SidebarBody({
               {g.group}
             </div>
             {g.items.map((it) => {
-              const active = pathname === it.href || pathname.startsWith(it.href + '/');
+              const active = !it.newTab && (pathname === it.href || pathname.startsWith(it.href + '/'));
+              const linkProps = it.newTab ? { target: '_blank', rel: 'noopener' } : {};
               return (
                 <Link
                   key={it.href}
                   href={it.href}
+                  {...linkProps}
                   className={`flex items-center gap-2.5 px-5 py-3 md:py-2.5 border-l-[3px] text-sm transition-colors ${
                     active
                       ? 'text-cyan-300 font-bold bg-cyan-500/15 border-l-cyan-400'
@@ -182,6 +186,7 @@ function SidebarBody({
                   }`}
                 >
                   <span className="flex-1">{it.label}</span>
+                  {it.newTab && <span aria-hidden className="text-[0.625rem] opacity-60">↗</span>}
                   {it.badge && (
                     <span className="text-[0.6875rem] font-mono font-extrabold px-2 py-0.5 rounded-full bg-red-600 text-white">
                       {it.badge}
