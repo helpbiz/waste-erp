@@ -1,14 +1,14 @@
-# 세션 재개 노트 — 2026-05-02
+# 세션 재개 노트 — 2026-05-02 (final)
 
 > 이 문서는 다음 세션 시작 시 빠르게 컨텍스트를 복구하기 위한 메모입니다.
-> 본 세션 종료 commit: `23b5f40` (worker complaint default tab → register)
+> 본 세션 종료 commit: `3ab64b8` (docs: 세션 로그 commit#15 SHA 채움)
 > 이전 세션 노트(2026-04-28)는 §부록 으로 보존.
 
 ---
 
 ## 본 세션(2026-05-02) 주요 결과 요약
 
-상세는 `docs/04-report/2026-05-02-session-log.md` 참조 — 6 commits.
+상세는 `docs/04-report/2026-05-02-session-log.md` 참조 — **15 feature commits + 4 docs commits**.
 
 ### ✅ 완료 + 운영 반영
 
@@ -17,34 +17,58 @@
    - `/worker/complaint` 탭 구조 (📥 내 민원 / ✏ 신규 등록), CompleteModal
    - 등록 폼 라벨: "처리 내용" → "신고 내용"
    - 기본 탭 → `register` (지도 즉시 가시 회귀 수정)
+   - 📥 내 민원 탭에 활성 N건 뱃지 (mount 시 1회 fetch)
 
 2. **공지/민원 음성 알림 (TTS)**
    - Web Speech API 기반, 외부 서비스 의존성 없음
    - reporter/author role 기반 메시지 자동 분기 (회사 / 지자체)
    - `lib/voice-settings.ts` + `VoiceSettingsModal` 사용자 선호(localStorage)
-   - `AnnouncementBanner` + `ComplaintBanner` (admin/worker shell 양쪽 마운트)
+   - `AnnouncementBanner` + `ComplaintBanner` → root layout 마운트(모든 화면 자동 팝업)
    - 미리듣기 4종 (공지·민원 × 회사·지자체)
 
-3. **민원 자동 배정 + AI 인근 워커 추천**
+3. **민원 자동 배정 + AI 인근 워커 추천 (per-user targeting)**
    - `lib/complaint-assign.ts` — 점수(부하·거리·zone 일치) 기반 best 1명 배정
    - 기동반(RAPID) 우선 → fallback 일반 WORKER
    - AI 인근 추천: AttendanceRecord GPS Haversine ≤2km OR 동(洞) 매칭
-   - 인근 워커 broadcast Announcement (6시간 expire)
-   - 회사별 기능 권한 게이트 적용 (autoAssign / aiNearbyDispatch)
+   - **per-user targeting**: `Announcement.targetUserId` 컬럼 추가 — 인근 워커 N명 개별 알림
+   - 다른 워커는 자기에게 targeted 된 게 아니면 안 보임 (진짜 인근만 수신)
 
-4. **회사별 기능 권한(엔타이틀먼트)** ⭐ 새 시스템
+4. **공지 audience 정책 (role-based)**
+   - `lib/announcement-audience.ts` — 5 audiences × 4 roles 매핑
+   - CONTRACTOR/INTERNAL: ADMIN/WORKER/ALL (지자체 차단)
+   - MUNI_ADMIN: OWNER/ADMIN/ALL (작성권 부여)
+   - SUPER: 전체 5종 + 시스템 공지(둘 다 null)
+   - 지자체 broadcast scope 추가 (산하 회사 범위)
+
+5. **회사별 기능 권한(엔타이틀먼트) ⭐ 새 시스템**
    - `ContractorFeature` 모델 (prisma db push 완료)
-   - 8개 기능 카탈로그 (announcements, voiceTts, complaintAutoAssign,
-     aiNearbyDispatch, recommendedRoute, costCalculation, vehicleTracking, attendanceGps)
-   - 슈퍼관리자 콘솔 신규 탭: 🎛 회사별 기능 권한
-   - row 미존재 → 카탈로그 default(true) → 기존 contractor 무중단 호환
-   - 1차 게이트: announcements / complaintAutoAssign / aiNearbyDispatch
+   - 8개 기능 카탈로그
+   - 슈퍼관리자 콘솔 🎛 탭 + 회사 × 기능 매트릭스
+   - row 미존재 → default(true) → 기존 contractor 무중단 호환
+
+6. **요금제 패키지 4-tier**
+   - 🆓 TRIAL / 🟢 BASIC / 🔵 STANDARD / ⭐ PRO
+   - `POST /api/super-admin/contractor-features/apply-package` 1클릭 적용
+   - `detectPackage()` 자동 감지 → 매트릭스에 현재 패키지 표시
+
+7. **회사별 기능 게이트 점진 적용 (서버 + 클라이언트)**
+   - `lib/feature-guard.ts` — `requireFeature(session, key)` 페이지 server component 진입 시 호출
+   - `/feature-disabled` 친화 안내 페이지
+   - 적용: `/worker/route`, `/(admin)/live-vehicles`, `/(admin)/payroll`, attendance check-in/out
+   - sidebar 메뉴 동적 필터 (admin + worker layout 모두)
+   - `/api/me/features` — 본인 기능 상태 JSON
+
+8. **WebPush 인프라 (MVP-lite)**
+   - `WebPushSubscription` 모델 (prisma db push 완료)
+   - `POST/DELETE /api/webpush/subscribe`
+   - `PushSubscriber` 컴포넌트 + SW `push`/`notificationclick` 핸들러
+   - 활성화: VAPID 키 발급 + `web-push` 패키지 설치 + `sendPushToUser()` 작성 (다음 세션)
 
 ### Service Worker 캐시 버전
-v50 → v56 (7회 cache bust, 모두 본 세션 내)
-- v56 final: `cleanerp-v56-2026-05-02-worker-complaint-default-register`
+v50 → v61 (12회 bump, 모두 본 세션 내)
+- v61 final: `cleanerp-v61-2026-05-02-gates-webpush-inbox-badge`
 
-### Commits (시간순)
+### Commits (시간순 — feature 15 + docs 4)
 | # | SHA | 영역 |
 |---|---|---|
 | 1 | `55dfbf8` | feat(worker): InboxPanel + WORKER scope 버그 수정 |
@@ -53,39 +77,50 @@ v50 → v56 (7회 cache bust, 모두 본 세션 내)
 | 4 | `27c62c8` | feat(complaint): 민원 TTS + 자동배정 + AI 인근 추천 |
 | 5 | `6f903b9` | feat(super-admin): 회사별 기능 권한 + 세션 로그 |
 | 6 | `23b5f40` | fix(worker): 기본 탭 → register (지도 회귀 수정) |
+| 7 | `37dd841` | docs: 본 세션 종료 기록 — 세션 로그 + RESUME_NOTE 갱신 |
+| 8 | `f59c340` | feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트 |
+| 9 | `249d7fe` | feat(announcements): role 기반 audience + MUNI 작성권 + OWNER |
+| 10 | `f8f4486` | docs: 세션 로그 commit#9 SHA 채움 |
+| 11 | `865dd69` | feat(complaint): AI 인근 추천 per-user targeting |
+| 12 | `35257db` | docs: 세션 로그 commit#11 SHA 채움 |
+| 13 | `e0fdd5b` | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
+| 14 | `d102e3b` | docs: 세션 로그 commit#13 SHA 채움 |
+| 15 | `7d11b04` | feat: 회사별 기능 게이트 점진 적용 + WebPush 인프라 + inbox 뱃지 |
+| 16 | `3ab64b8` | docs: 세션 로그 commit#15 SHA 채움 |
 
 ---
 
 ## 다음 세션 우선 처리 후보
 
-(우선순위 순)
+본 세션에서 RESUME_NOTE 의 1~6 후보 모두 처리 완료. 새 후보:
 
-1. **회사별 기능 게이트 점진 적용**
-   - recommendedRoute (`/worker/route` 진입 차단)
-   - vehicleTracking (`/live-vehicles` 진입 차단)
-   - costCalculation, attendanceGps
-   - 기능 비활성 시 사용자 친화 안내 페이지(403 raw 대신)
+1. **WebPush 실제 발송 활성화** (인프라는 본 세션에 준비 완료)
+   - `npx web-push generate-vapid-keys` → `.env.prod` 에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
+   - `npm i web-push`
+   - `lib/webpush-send.ts` — `sendPushToUser(userId, payload)` (deadlettr 시 subscription 정리)
+   - 트리거: `POST /api/announcements`, `autoAssignComplaint` 의 per-user 알림 시점
+   - 만료된 endpoint(410 Gone) 자동 cleanup cron
 
-2. **클라이언트 사이드 기능 게이트**
-   - `/api/me/features` 엔드포인트 (현재 사용자 contractor 의 활성 기능)
-   - sidebar 메뉴 항목 자체 숨김 (현재는 클릭 후 403)
-   - 슈퍼/지자체 사용자(contractorId 없음)는 모든 기능 ON
+2. **신규 위탁업체 개설 마법사에 요금제 패키지 통합**
+   - 마지막 단계에 4 패키지 카드 + 선택
+   - 생성 직후 `apply-package` 자동 호출
+   - 프리셋 패키지 별 영업가 표시(`monthlyHint` 활용)
 
-3. **요금제 패키지(Template) 기능**
-   - 슈퍼관리자 — 기본/프로/엔터프라이즈 같은 사전 정의 세트
-   - 신규 위탁업체 개설 마법사 마지막 단계에 패키지 선택
+3. **TTS 메시지 분기 정밀화**
+   - 일반 공지 vs AI 인근 dispatch 알림 메시지 분리
+   - "회사에서 새 민원이 인근에 발생했습니다" 별도 발화
 
-4. **AI 인근 추천 정밀화**
-   - Announcement 모델에 `targetUserId` 추가 → per-user notification
-   - 현재는 audience='WORKER' 회사 한정 broadcast(인근 아닌 워커도 알림 받음)
+4. **announcement audit 페이지**
+   - `/super-admin?tab=audit` 에 `CONTRACTOR_PACKAGE_APPLY` / `CONTRACTOR_FEATURE_TOGGLE` 필터
+   - 패키지 변경 이력 시각화 (회사별 변경 그래프)
 
-5. **WebPush API 풀스택**
-   - 백그라운드(앱 닫힘)에서도 공지/민원 푸시
-   - 현재 OS Notification 은 페이지 열려 있을 때만
+5. **세션 페이로드에 contractor.municipalityId 캐시**
+   - 현재 announcement GET 필터에서 매번 Contractor 조회 → 세션 cookie 에 미리 저장하여 1쿼리 절감
 
-6. **/worker/complaint UX 후속**
-   - 본인 배정 민원 N건 있으면 inbox 탭 우상단 뱃지(🔴 N) 표시
-   - 첫 진입 시 inbox 카운트 fetch 후 N>0 이면 inbox 자동 진입(register 보다 우선)
+6. **이전 세션 미해결 이슈 복귀**
+   - HTTPS 인증서 (Cloudflare 또는 Let's Encrypt)
+   - 워커 로그아웃 버튼 위치 재검토
+   - 회사/슈퍼/매니저 데스크톱 UI 품질 개선
 
 ---
 

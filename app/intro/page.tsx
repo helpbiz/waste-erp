@@ -41,7 +41,7 @@ export default function IntroPage() {
           <div className="cover-brand">CleanERP<span className="cover-brand-dot" /></div>
           <div className="cover-tagline">{C.cover.tagline}</div>
         </div>
-        <div className="cover-helpbiz">{C.toolbar.split(' / ')[0]} · {C.cover.footerYear}</div>
+        <div className="cover-helpbiz">{C.cover.footerBrand} · {C.cover.footerYear}</div>
       </section>
 
       {/* ─── 02 목차 ─── */}

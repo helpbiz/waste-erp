@@ -580,34 +580,82 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 
 ---
 
-## 9. Files Touched (본 세션 누적)
+## 9. Files Touched (본 세션 누적 — 최종)
 
+### 신규 파일 (Library)
 ```
-lib/complaints.ts                                        WORKER OR(reportedBy, assignedTo)
-lib/voice-settings.ts                                    NEW — TTS 설정/발화 helper
-lib/complaint-assign.ts                                  NEW — 자동배정+AI 인근 추천
-lib/features.ts                                          NEW — 카탈로그+hasFeature
-components/AnnouncementBanner.tsx                        TTS 트리거 + 🔊 음성 버튼
-components/VoiceSettingsModal.tsx                        NEW — voice 선호 UI
-components/ComplaintBanner.tsx                           NEW — 폴링+TTS+OS 알림
-app/worker/complaint/_complaint-client.tsx               +259/-3 — InboxPanel + 탭 + 라벨
-app/api/announcements/route.ts                           authorRole + announcements 게이트
-app/api/complaints/route.ts                              reporter.role + 자동배정 호출+게이트
-app/api/super-admin/contractor-features/route.ts         NEW — 기능 GET/PATCH
-app/(admin)/announcements/_announcements-client.tsx      🔊 음성 설정 버튼
-app/(admin)/super-admin/_super-admin-client.tsx          features 탭 등록
-app/(admin)/super-admin/_features-tab.tsx                NEW — 매트릭스 UI
-app/(admin)/_admin-shell.tsx                             ComplaintBanner 마운트
-app/worker/_layout-shell.tsx                             ComplaintBanner 마운트
-prisma/schema.prisma                                     ContractorFeature 모델 + relation
-public/sw.js                                             v50 → v56 (cache bust 7회)
-docs/04-report/2026-05-02-session-log.md                 NEW (this file)
+lib/voice-settings.ts                  TTS 설정 + 발화 helper (Web Speech API)
+lib/complaint-assign.ts                자동배정 + AI 인근 추천 알고리즘
+lib/features.ts                        기능 카탈로그(8) + hasFeature/listContractorFeatures
+lib/feature-packages.ts                요금제 패키지 4-tier (TRIAL/BASIC/STANDARD/PRO)
+lib/feature-guard.ts                   페이지 server-side 게이트 (requireFeature)
+lib/announcement-audience.ts           role 기반 audience 정책 (5 audiences × 4 roles)
 ```
 
-### 누적 통계 (본 세션 6 commit)
-- 14 신규 파일 (라이브러리 4, 컴포넌트 3, API 2, UI 1, 문서 1, 마이그레이션 1, 기타 2)
-- 6 기존 파일 수정
-- 총 ~1,140 lines added (대부분 InboxPanel + features matrix UI + 세션 로그)
-- prisma db push 1회 (ContractorFeature 테이블 생성)
-- docker compose rebuild 6회 (각 commit 직후 자동 재배포)
+### 신규 파일 (Component)
+```
+components/VoiceSettingsModal.tsx      voice 선호 UI (남/여 토글, 미리듣기 4종)
+components/ComplaintBanner.tsx         신규 민원 폴링 + TTS + OS 알림
+components/GlobalNotifications.tsx     root 마운트용 wrapper (Banner+Push)
+components/PushSubscriber.tsx          WebPush 구독 등록 (SW PushManager)
+```
+
+### 신규 파일 (API)
+```
+app/api/super-admin/contractor-features/route.ts                GET/PATCH 회사별 기능
+app/api/super-admin/contractor-features/apply-package/route.ts  POST 패키지 일괄 적용
+app/api/me/features/route.ts                                    본인 contractor 기능 상태
+app/api/webpush/subscribe/route.ts                              POST/DELETE WebPush 구독
+```
+
+### 신규 파일 (UI / Page)
+```
+app/(admin)/super-admin/_features-tab.tsx     회사 × 기능 매트릭스 + 패키지 grid
+app/feature-disabled/page.tsx                 기능 비활성 친화 안내 페이지
+```
+
+### 수정된 기존 파일
+```
+lib/complaints.ts                              WORKER 가시범위 OR(reportedBy, assignedTo)
+components/AnnouncementBanner.tsx              TTS 트리거 + 🔊 음성 버튼 + targetUserId
+app/worker/complaint/_complaint-client.tsx     +259 — InboxPanel + 탭 + 라벨 + inbox 카운트 뱃지
+app/api/announcements/route.ts                 authorRole + audience 정책 + targetUserId 필터
+                                              + announcements feature gate
+app/api/announcements/[id]/route.ts            audience 정책 + MUNI canManage 분기
+app/api/complaints/route.ts                    reporter.role + autoAssign + complaintAutoAssign 게이트
+app/api/attendance/check-in/route.ts           attendanceGps 게이트 (좌표 저장 skip)
+app/api/attendance/check-out/route.ts          동일
+app/(admin)/announcements/_announcements-client.tsx  role-based 옵션 + 🔊 음성 설정 버튼
+app/(admin)/announcements/page.tsx             POSTERS 에 MUNI 추가
+app/(admin)/super-admin/_super-admin-client.tsx 🎛 회사별 기능 권한 탭 등록
+app/(admin)/_admin-shell.tsx                   GlobalNotifications 으로 이관(중복 마운트 제거)
+app/(admin)/layout.tsx                         MUNI 메뉴 + sidebar 동적 필터(vehicleTracking/announcements)
+app/(admin)/live-vehicles/page.tsx             vehicleTracking 게이트
+app/(admin)/payroll/page.tsx                   costCalculation 게이트
+app/worker/route/page.tsx                      recommendedRoute 게이트
+app/worker/layout.tsx                          recommendedRoute OFF 시 RAPID 메뉴 숨김
+app/worker/_layout-shell.tsx                   GlobalNotifications 으로 이관
+app/layout.tsx                                 root level <GlobalNotifications /> 마운트
+middleware.ts                                  MUNI mutate 화이트리스트 + /feature-disabled public
+public/sw.js                                   v50 → v61 (12회 bust) + push/notificationclick handler
+prisma/schema.prisma                           +ContractorFeature, +Announcement.targetUserId,
+                                              +WebPushSubscription, +audience 'OWNER' 카탈로그 명시
+docs/04-report/2026-05-02-session-log.md       본 문서
+RESUME_NOTE.md                                 본 세션 결과 요약 + 다음 후보
+```
+
+### 누적 통계 (15 feature commits + 4 docs commits)
+- **신규 파일 18**: lib 6 / component 4 / API 4 / UI page 2 / docs 1 (this) / RESUME 1
+- **수정된 기존 파일 23**
+- **총 ~3,500 lines** added (다수 feature 누적)
+- **prisma db push 3회**:
+  · ContractorFeature 테이블
+  · Announcement.targetUserId 컬럼
+  · WebPushSubscription 테이블
+- **docker compose rebuild 14회** (commit 직후 자동 재배포)
+- **SW 캐시 12회 bump**: v50 → v61
+
+### Commit 매핑 (요약)
+- 운영 6 commits + 9 feature commits + 4 docs commits = **19 commits**
+- 모두 `main` 직접 푸시 (PR 우회 — `helpbiz` 조직 bypass rule)
 

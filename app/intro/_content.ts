@@ -21,6 +21,8 @@ export const COPY = {
       line2: { pre: '안전은 ', accent: '시스템', post: '으로 지킵니다.' },
     },
     tagline: '생활폐기물 수집운반업을 위한 운영·안전 통합 ERP',
+    /** 표지 우하단 footer — "{운영사 대문자} · {연도}" 형식. */
+    footerBrand: BRAND.companyUpper,
     footerYear: '2026',
   },
 
