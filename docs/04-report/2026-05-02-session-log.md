@@ -576,7 +576,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 12 | `35257db` | docs | docs: 세션 로그 commit#11 SHA 채움 |
 | 13 | `e0fdd5b` | packages | feat(super-admin): 요금제 패키지 4-tier + 1클릭 적용 |
 | 14 | `d102e3b` | docs | docs: 세션 로그 commit#13 SHA 채움 |
-| 15 | TBD | gates+webpush+inbox | feat: 회사별 기능 게이트 점진 적용 + WebPush 인프라 + inbox 뱃지 |
+| 15 | `7d11b04` | gates+webpush+inbox | feat: 회사별 기능 게이트 점진 적용 + WebPush 인프라 + inbox 뱃지 |
 
 ---
 
