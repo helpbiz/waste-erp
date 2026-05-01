@@ -1,14 +1,16 @@
 'use client';
 
 /**
- * 글로벌 공지 banner — 모든 인증 사용자에게 표시.
- * 30초 폴링 + 신규 공지 감지 시 사운드 + 진동 (사용자 요청 2026-05-01).
+ * 공지사항 자동 팝업 — 접속 즉시 미확인 공지를 모달로 표시 (사용자 요청 2026-05-02).
  *
- * - INFO/WARNING/CRITICAL 시각적 톤 차등
- * - 사용자가 dismiss 시 localStorage 에 ID 저장 → 재표시 안 함
- * - CRITICAL 은 dismiss 안 됨 (운영 중요 알림)
+ * - 페이지 mount → 1초 후 미확인 공지 fetch → 있으면 모달 자동 오픈
+ * - 사운드 + 진동 + Notification API
+ * - 30초 폴링 — 신규 공지 발생 시 popup 다시 노출
+ * - CRITICAL 은 dismiss 안 됨 (확인 강제)
+ * - INFO/WARNING 은 [확인] 으로 dismiss → localStorage 저장
+ * - dismissed 30일 후 자동 만료 (재공지 가능)
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Announcement = {
   id: string;
@@ -24,7 +26,7 @@ type Announcement = {
 const SEV_TONE: Record<string, string> = {
   INFO:     'border-cyan-400 bg-cyan-50 text-cyan-900',
   WARNING:  'border-amber-400 bg-amber-50 text-amber-900',
-  CRITICAL: 'border-rose-500 bg-rose-50 text-rose-900 animate-pulse',
+  CRITICAL: 'border-rose-500 bg-rose-50 text-rose-900',
 };
 
 const SEV_ICON: Record<string, string> = {
@@ -33,34 +35,63 @@ const SEV_ICON: Record<string, string> = {
   CRITICAL: '🚨',
 };
 
-const DISMISSED_KEY = 'cleanerp:dismissed-announcements';
+const SEV_LABEL: Record<string, string> = {
+  INFO: '안내',
+  WARNING: '주의',
+  CRITICAL: '긴급',
+};
+
+const DISMISSED_KEY = 'cleanerp:dismissed-announcements:v2';
+
+type DismissedRecord = Record<string, number>; // id → timestamp ms
+
+function loadDismissed(): DismissedRecord {
+  try {
+    const raw = localStorage.getItem(DISMISSED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as DismissedRecord;
+    /* 30일 경과 자동 만료 */
+    const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+    const filtered: DismissedRecord = {};
+    for (const [id, ts] of Object.entries(parsed)) {
+      if (ts > cutoff) filtered[id] = ts;
+    }
+    return filtered;
+  } catch {
+    return {};
+  }
+}
+
+function saveDismissed(rec: DismissedRecord) {
+  try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(rec)); } catch { /* */ }
+}
 
 export default function AnnouncementBanner() {
   const [items, setItems] = useState<Announcement[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState(false);
+  const [dismissed, setDismissed] = useState<DismissedRecord>({});
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  /* 마운트 — dismissed 로드 + 사운드 객체 생성 */
+  /* 마운트 — dismissed 로드 + 사운드 객체 + 첫 fetch */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DISMISSED_KEY);
-      if (raw) setDismissed(new Set(JSON.parse(raw)));
-    } catch { /* 무시 */ }
-    /* 짧은 알림 사운드 — base64 비프 (외부 의존 0) */
+    setMounted(true);
+    setDismissed(loadDismissed());
     try {
       const beep = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
         'pvT19fX19fX18BBAAA///5/wAAAAD///nA==';
       audioRef.current = new Audio();
       audioRef.current.src = beep;
       audioRef.current.preload = 'auto';
-    } catch { /* iOS 등 자동재생 차단 환경 무시 */ }
+    } catch { /* */ }
   }, []);
 
-  /* 폴링 — 30초 마다 */
+  /* 폴링 — 30초 마다 + 첫 mount 시 즉시 */
   useEffect(() => {
+    if (!mounted) return;
     let abort = false;
+
     async function fetchOnce() {
       try {
         const r = await fetch('/api/announcements');
@@ -69,19 +100,13 @@ export default function AnnouncementBanner() {
         if (abort) return;
         const nextItems: Announcement[] = j.items ?? [];
 
-        /* 신규 공지 감지 — 처음 mount 가 아닐 때만 알림 */
-        if (seenIdsRef.current.size > 0) {
+        /* 신규 공지 감지 — 처음 mount 가 아닐 때 사운드+진동 */
+        const isFirstFetch = seenIdsRef.current.size === 0;
+        if (!isFirstFetch) {
           const fresh = nextItems.filter((a) => !seenIdsRef.current.has(a.id));
           if (fresh.length > 0) {
-            /* 사운드 + 진동 */
             try { audioRef.current?.play().catch(() => null); } catch { /* */ }
-            try {
-              if ('vibrate' in navigator) {
-                /* 신규 공지 알림 — 짧게 두 번 */
-                navigator.vibrate?.([200, 100, 200]);
-              }
-            } catch { /* */ }
-            /* 브라우저 Notification (권한 있을 때만) */
+            try { navigator.vibrate?.([200, 100, 200]); } catch { /* */ }
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
               fresh.slice(0, 3).forEach((a) => {
                 try {
@@ -93,83 +118,154 @@ export default function AnnouncementBanner() {
                 } catch { /* */ }
               });
             }
+            /* 신규 공지 발생 → popup 다시 오픈 */
+            setPopupOpen(true);
+          }
+        } else {
+          /* 첫 fetch — 미확인 공지 1개 이상이면 popup 자동 오픈 */
+          const dis = loadDismissed();
+          const visible = nextItems.filter((a) => a.severity === 'CRITICAL' || !dis[a.id]);
+          if (visible.length > 0) {
+            /* 사운드 1회 재생 — 사용자 환영 */
+            setTimeout(() => {
+              try { audioRef.current?.play().catch(() => null); } catch { /* */ }
+              try { navigator.vibrate?.(150); } catch { /* */ }
+            }, 1000);
+            setPopupOpen(true);
           }
         }
+
         nextItems.forEach((a) => seenIdsRef.current.add(a.id));
         setItems(nextItems);
-      } catch { /* 무시 */ }
+      } catch { /* */ }
     }
+
     fetchOnce();
     const t = setInterval(fetchOnce, 30_000);
     return () => { abort = true; clearInterval(t); };
-  }, []);
+  }, [mounted]);
 
-  /* 권한 요청 — 사용자 첫 클릭 시 */
-  function requestNotifPermission() {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => null);
-    }
-  }
+  /* Notification 권한 — 첫 사용자 클릭 시 */
   useEffect(() => {
-    /* 첫 사용자 클릭으로 권한 요청 */
     const onClick = () => {
-      requestNotifPermission();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => null);
+      }
       window.removeEventListener('click', onClick);
     };
     window.addEventListener('click', onClick, { once: true });
     return () => window.removeEventListener('click', onClick);
   }, []);
 
-  function dismiss(id: string) {
-    const next = new Set(dismissed);
-    next.add(id);
+  function dismissOne(id: string) {
+    const next = { ...dismissed, [id]: Date.now() };
     setDismissed(next);
-    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(Array.from(next))); } catch { /* */ }
+    saveDismissed(next);
   }
 
-  /* CRITICAL은 dismiss 무시, 나머지는 dismissed 필터 */
-  const visible = items.filter((a) => a.severity === 'CRITICAL' || !dismissed.has(a.id));
-  if (visible.length === 0) return null;
+  function confirmAll() {
+    const next = { ...dismissed };
+    visible.forEach((a) => {
+      if (a.severity !== 'CRITICAL') next[a.id] = Date.now();
+    });
+    setDismissed(next);
+    saveDismissed(next);
+    /* CRITICAL 만 남았는지 확인 */
+    const stillCritical = visible.some((a) => a.severity === 'CRITICAL');
+    if (!stillCritical) setPopupOpen(false);
+  }
 
-  /* CRITICAL 우선 노출 */
+  /* 표시 대상 계산 */
+  const visible = items.filter((a) => a.severity === 'CRITICAL' || !dismissed[a.id]);
+
+  /* CRITICAL 우선 정렬 */
   visible.sort((a, b) => {
     const order = { CRITICAL: 0, WARNING: 1, INFO: 2 };
-    return (order[a.severity] - order[b.severity]) || (a.pinned ? -1 : 1);
+    if (order[a.severity] !== order[b.severity]) return order[a.severity] - order[b.severity];
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   });
 
-  const top = visible[0];
-  const more = visible.length - 1;
+  if (!popupOpen || visible.length === 0) return null;
+
+  const hasCritical = visible.some((a) => a.severity === 'CRITICAL');
 
   return (
-    <div className="relative">
-      <div className={`border-l-4 px-3 py-2 ${SEV_TONE[top.severity]}`}>
-        <div className="flex items-start gap-2">
-          <span aria-hidden className="text-base">{SEV_ICON[top.severity]}</span>
-          <div className="flex-1 min-w-0">
-            <div className="font-extrabold text-sm">{top.title}</div>
-            {expanded && (
-              <div className="text-xs mt-1 whitespace-pre-wrap leading-relaxed">{top.body}</div>
-            )}
-            {!expanded && (
-              <div className="text-xs mt-0.5 truncate">{top.body}</div>
-            )}
-            <div className="text-[0.625rem] font-mono mt-1 opacity-70">
-              {top.authorName} · {new Date(top.publishedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              {more > 0 && ` · 외 ${more}건`}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            <button onClick={() => setExpanded((v) => !v)} className="text-xs font-bold px-2 py-0.5 rounded bg-white/60 hover:bg-white">
-              {expanded ? '접기' : '자세히'}
-            </button>
-            {top.severity !== 'CRITICAL' && (
-              <button onClick={() => dismiss(top.id)} aria-label="공지 닫기" className="text-xs font-bold px-2 py-0.5 rounded bg-white/60 hover:bg-white">
-                ✕
-              </button>
-            )}
-          </div>
+    <div
+      className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-3"
+      onClick={(e) => {
+        /* 외부 클릭 — CRITICAL 없을 때만 닫기 (단, dismiss 는 안 함 → 다음 폴링 시 다시 뜸) */
+        if (e.target === e.currentTarget && !hasCritical) {
+          setPopupOpen(false);
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[640px] w-full max-h-[88vh] flex flex-col animate-popup-in">
+        {/* Header */}
+        <div className="px-5 py-3 border-b border-line bg-purple-50 flex items-center gap-2">
+          <span className="text-xl">📢</span>
+          <h2 className="text-base font-black text-ink flex-1">공지사항 ({visible.length}건)</h2>
+          {!hasCritical && (
+            <button onClick={() => setPopupOpen(false)} aria-label="닫기" className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+          )}
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {visible.map((a) => (
+            <article
+              key={a.id}
+              className={`border-l-4 rounded-md p-3 ${SEV_TONE[a.severity]} ${a.severity === 'CRITICAL' ? 'animate-pulse' : ''}`}
+            >
+              <div className="flex items-start gap-2">
+                <span aria-hidden className="text-base flex-shrink-0">{SEV_ICON[a.severity]}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    {a.pinned && <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-purple-600 text-white">📌 고정</span>}
+                    <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-white border border-current">
+                      {SEV_LABEL[a.severity]}
+                    </span>
+                  </div>
+                  <h3 className="font-extrabold text-sm">{a.title}</h3>
+                  <p className="text-xs mt-1.5 whitespace-pre-wrap leading-relaxed">{a.body}</p>
+                  <div className="text-[0.625rem] font-mono opacity-70 mt-2">
+                    {a.authorName} · {new Date(a.publishedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                {a.severity !== 'CRITICAL' && (
+                  <button
+                    onClick={() => dismissOne(a.id)}
+                    className="text-xs font-bold px-2 py-0.5 rounded bg-white/60 hover:bg-white flex-shrink-0"
+                  >
+                    ✓ 확인
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-line bg-slate-50 flex items-center justify-between">
+          <span className="text-[0.6875rem] text-slate-500 font-bold">
+            {hasCritical ? '🚨 긴급 공지는 확인 필수' : '✕ 또는 외부 클릭 시 다음 접속 시 다시 표시'}
+          </span>
+          <button
+            onClick={confirmAll}
+            className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold active:scale-95"
+          >
+            {hasCritical ? '✓ 일반 공지만 확인' : '✓ 모두 확인'}
+          </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes popup-in {
+          from { transform: scale(0.92) translateY(8px); opacity: 0; }
+          to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-popup-in { animation: popup-in 200ms ease-out; }
+      `}</style>
     </div>
   );
 }

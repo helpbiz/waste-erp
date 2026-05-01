@@ -85,8 +85,12 @@ export async function GET(req: Request) {
       audience: a.audience,
       pinned: a.pinned,
       publishedAt: a.publishedAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString(),
+      /* updated == published 면 수정 안 됨, 그렇지 않으면 수정 이력 있음 */
+      edited: a.updatedAt.getTime() - a.publishedAt.getTime() > 1000,
       expiresAt: a.expiresAt?.toISOString() ?? null,
       authorName: authorMap.get(a.createdBy.toString())?.name ?? '시스템',
+      authorId: a.createdBy.toString(),
       contractorId: a.contractorId?.toString() ?? null,
       municipalityId: a.municipalityId?.toString() ?? null,
     })),

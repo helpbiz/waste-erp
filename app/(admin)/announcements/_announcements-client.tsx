@@ -10,6 +10,8 @@ type Announcement = {
   audience: 'ALL' | 'ADMIN' | 'WORKER' | 'MUNI';
   pinned: boolean;
   publishedAt: string;
+  updatedAt: string;
+  edited: boolean;
   expiresAt: string | null;
   authorName: string;
 };
@@ -27,6 +29,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Announcement | null>(null);
 
   function load() {
     setLoading(true);
@@ -38,10 +41,13 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   useEffect(() => { load(); }, []);
 
   async function del(id: string, title: string) {
-    if (!confirm(`'${title}' 공지를 삭제하시겠습니까?`)) return;
+    if (!confirm(`⚠ 공지 삭제\n\n'${title}'\n\n이 공지를 영구 삭제합니다. 복구 불가.\n진행하시겠습니까?`)) return;
     const r = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
     if (r.ok) load();
-    else alert('실패');
+    else {
+      const j = await r.json().catch(() => ({}));
+      alert('실패: ' + (j.error ?? 'unknown'));
+    }
   }
 
   return (
@@ -58,6 +64,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
       </div>
 
       {createOpen && <CreateModal onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
+      {editTarget && <CreateModal initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
 
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
       {!loading && items.length === 0 && (
@@ -85,12 +92,32 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
                   </div>
                   <h3 className="text-base font-black text-ink">{a.title}</h3>
                   <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1.5 leading-relaxed">{a.body}</p>
-                  <div className="text-[0.6875rem] font-mono text-slate-500 mt-2">
-                    {a.authorName} · {new Date(a.publishedAt).toLocaleString('ko-KR')}
-                    {a.expiresAt && ` · 만료: ${new Date(a.expiresAt).toLocaleDateString('ko-KR')}`}
+                  <div className="text-[0.6875rem] font-mono text-slate-500 mt-2 flex items-center gap-1.5 flex-wrap">
+                    <span>{a.authorName}</span>
+                    <span>·</span>
+                    <span>{new Date(a.publishedAt).toLocaleString('ko-KR')}</span>
+                    {a.edited && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[0.625rem] font-extrabold">
+                        ✏ 수정됨 {new Date(a.updatedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    {a.expiresAt && <span>· 만료: {new Date(a.expiresAt).toLocaleDateString('ko-KR')}</span>}
                   </div>
                 </div>
-                <button onClick={() => del(a.id, a.title)} className="text-xs font-bold text-rose-600 hover:underline flex-shrink-0">삭제</button>
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setEditTarget(a)}
+                    className="px-2.5 py-1 rounded text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95"
+                  >
+                    ✏ 수정
+                  </button>
+                  <button
+                    onClick={() => del(a.id, a.title)}
+                    className="px-2.5 py-1 rounded text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95"
+                  >
+                    🗑 삭제
+                  </button>
+                </div>
               </div>
             </article>
           );
@@ -100,13 +127,14 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   );
 }
 
-function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>('INFO');
-  const [audience, setAudience] = useState<'ALL' | 'ADMIN' | 'WORKER' | 'MUNI'>('ALL');
-  const [pinned, setPinned] = useState(false);
-  const [expiresAt, setExpiresAt] = useState('');
+function CreateModal({ initial, onClose, onCreated }: { initial?: Announcement; onClose: () => void; onCreated: () => void }) {
+  const isEdit = !!initial;
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [body, setBody] = useState(initial?.body ?? '');
+  const [severity, setSeverity] = useState<'INFO' | 'WARNING' | 'CRITICAL'>(initial?.severity ?? 'INFO');
+  const [audience, setAudience] = useState<'ALL' | 'ADMIN' | 'WORKER' | 'MUNI'>(initial?.audience ?? 'ALL');
+  const [pinned, setPinned] = useState(initial?.pinned ?? false);
+  const [expiresAt, setExpiresAt] = useState(initial?.expiresAt ? initial.expiresAt.slice(0, 10) : '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,8 +143,10 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     if (!title.trim()) return setError('제목 필수');
     if (!body.trim()) return setError('내용 필수');
     setBusy(true);
-    const r = await fetch('/api/announcements', {
-      method: 'POST',
+    const url = isEdit ? `/api/announcements/${initial.id}` : '/api/announcements';
+    const method = isEdit ? 'PATCH' : 'POST';
+    const r = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: title.trim(),
@@ -136,7 +166,7 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-3">
       <div className="bg-white rounded-2xl shadow-2xl max-w-[600px] w-full max-h-[92vh] flex flex-col">
         <div className="px-5 py-3 border-b border-line flex items-center justify-between">
-          <h2 className="text-base font-black text-ink">📢 신규 공지 작성</h2>
+          <h2 className="text-base font-black text-ink">{isEdit ? '✏ 공지 수정' : '📢 신규 공지 작성'}</h2>
           <button onClick={onClose} disabled={busy} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
@@ -186,7 +216,7 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
           <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold">취소</button>
           <button onClick={submit} disabled={busy} className="px-4 py-1.5 rounded bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
-            {busy ? '게시 중…' : '✓ 공지 게시'}
+            {busy ? (isEdit ? '저장 중…' : '게시 중…') : (isEdit ? '✓ 수정 저장' : '✓ 공지 게시')}
           </button>
         </div>
       </div>
