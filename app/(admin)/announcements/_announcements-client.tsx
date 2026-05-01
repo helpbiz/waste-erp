@@ -54,7 +54,11 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-extrabold text-ink">📢 공지사항</h2>
-        <span className="text-xs text-ink-faint font-bold">{session.role === 'SUPER_ADMIN' ? '시스템 전체' : '회사 내부'}</span>
+        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
+          {session.role === 'SUPER_ADMIN' ? '🌐 시스템 전체 공지 가능' :
+           session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 작성·관리' :
+           session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 작성·관리' : ''}
+        </span>
         <button
           onClick={() => setCreateOpen(true)}
           className="ml-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
