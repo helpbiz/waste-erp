@@ -395,7 +395,7 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build app
 | 6 | `23b5f40` | worker | fix(worker): /worker/complaint 기본 탭 → 'register' (지도 즉시 가시) |
 | 7 | `37dd841` | docs | docs: 본 세션 종료 기록 — 세션 로그 + RESUME_NOTE 갱신 |
 | 8 | `f59c340` | notifications | feat(notifications): 공지/민원 자동 팝업 — 모든 화면 글로벌 마운트 |
-| 9 | TBD | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
+| 9 | `249d7fe` | announcements | feat(announcements): role 기반 audience 정책 + MUNI 작성권 + OWNER audience |
 
 ---
 
