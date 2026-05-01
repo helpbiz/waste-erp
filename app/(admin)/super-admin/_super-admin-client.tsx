@@ -7,6 +7,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import OnboardingWizardModal from './_onboarding-wizard';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { UsersGlobalTab, SystemStatsTab, AuditLogTab, OrgTreeTab, ContractorTrashTab } from './_phase2-tabs';
+import ContractorFeaturesTab from './_features-tab';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -63,7 +64,7 @@ type Aggregate = {
   } | null;
 };
 
-type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash';
+type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features';
 
 export default function SuperAdminClient() {
   const [tab, setTab] = useState<SuperTab>(() => {
@@ -129,6 +130,7 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'audit'} onClick={() => setTab('audit')}>📜 감사 로그</Tab>
         <Tab active={tab === 'org-tree'} onClick={() => setTab('org-tree')}>🌲 조직 트리</Tab>
         <Tab active={tab === 'contractor-trash'} onClick={() => setTab('contractor-trash')}>🗑 위탁업체 삭제·복구</Tab>
+        <Tab active={tab === 'features'} onClick={() => setTab('features')}>🎛 회사별 기능 권한</Tab>
       </div>
 
       {tab === 'munis' && <MunicipalitiesTab />}
@@ -142,6 +144,7 @@ export default function SuperAdminClient() {
       {tab === 'audit' && <AuditLogTab />}
       {tab === 'org-tree' && <OrgTreeTab />}
       {tab === 'contractor-trash' && <ContractorTrashTab />}
+      {tab === 'features' && <ContractorFeaturesTab />}
     </div>
   );
 }

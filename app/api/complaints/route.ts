@@ -7,6 +7,7 @@ import { roundCoord } from '@/lib/geo';
 import { complaintWhere, isOverdue } from '@/lib/complaints';
 import { writeAudit } from '@/lib/audit';
 import { autoAssignComplaint } from '@/lib/complaint-assign';
+import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -119,17 +120,22 @@ export async function POST(req: Request) {
     },
   });
 
-  /* 자동 배정 — 기동반 우선 + AI 인근 워커 broadcast (best-effort) */
+  /* 자동 배정 — 회사별 기능 권한 ON 일 때만 실행 (best-effort) */
   let assignment: Awaited<ReturnType<typeof autoAssignComplaint>> | null = null;
   try {
-    assignment = await autoAssignComplaint({
-      complaintId: created.id,
-      contractorId,
-      locationLat: b.locationLat ?? null,
-      locationLng: b.locationLng ?? null,
-      locationAddress: b.locationAddress ?? null,
-      zoneId: b.zoneId !== undefined ? BigInt(b.zoneId) : null,
-    });
+    const autoAssignOn = await hasFeature(contractorId, 'complaintAutoAssign');
+    if (autoAssignOn) {
+      const aiNearbyOn = await hasFeature(contractorId, 'aiNearbyDispatch');
+      assignment = await autoAssignComplaint({
+        complaintId: created.id,
+        contractorId,
+        locationLat: b.locationLat ?? null,
+        locationLng: b.locationLng ?? null,
+        locationAddress: b.locationAddress ?? null,
+        zoneId: b.zoneId !== undefined ? BigInt(b.zoneId) : null,
+        broadcastNearby: aiNearbyOn,
+      });
+    }
   } catch (e) {
     console.error('[autoAssignComplaint] failed:', e);
   }

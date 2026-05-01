@@ -1,0 +1,158 @@
+/**
+ * 회사(위탁업체)별 기능 권한 — Feature Entitlements.
+ *
+ * 슈퍼관리자가 회사마다 기능을 ON/OFF 할 수 있도록 한다.
+ * row 미존재 시 카탈로그 default 값(true) 반환 → 기존 contractor 자동 호환.
+ */
+import { prisma } from '@/lib/db';
+
+export type FeatureKey =
+  | 'announcements'
+  | 'voiceTts'
+  | 'complaintAutoAssign'
+  | 'aiNearbyDispatch'
+  | 'recommendedRoute'
+  | 'costCalculation'
+  | 'vehicleTracking'
+  | 'attendanceGps';
+
+export type FeatureMeta = {
+  key: FeatureKey;
+  label: string;
+  description: string;
+  group: string;
+  defaultEnabled: boolean;
+};
+
+export const FEATURE_CATALOG: FeatureMeta[] = [
+  {
+    key: 'announcements',
+    label: '공지사항 시스템',
+    description: '회사 내부 공지 작성·표시·푸시 기능',
+    group: '커뮤니케이션',
+    defaultEnabled: true,
+  },
+  {
+    key: 'voiceTts',
+    label: '음성 알림 (TTS)',
+    description: '공지·민원 도착 시 음성 안내(남/여 voice)',
+    group: '커뮤니케이션',
+    defaultEnabled: true,
+  },
+  {
+    key: 'complaintAutoAssign',
+    label: '민원 자동 배정',
+    description: '신규 민원을 기동반에 자동 할당 (부하·거리 점수 기반)',
+    group: '민원',
+    defaultEnabled: true,
+  },
+  {
+    key: 'aiNearbyDispatch',
+    label: 'AI 인근 워커 추천',
+    description: '주소·GPS 기반 거리 분석으로 인근 작업자에게 broadcast',
+    group: '민원',
+    defaultEnabled: true,
+  },
+  {
+    key: 'recommendedRoute',
+    label: '기동반 추천 경로',
+    description: 'RAPID 워커용 미처리 민원 최적 순회 경로 안내',
+    group: '운행',
+    defaultEnabled: true,
+  },
+  {
+    key: 'costCalculation',
+    label: '원가 계산',
+    description: '월별 인건비·차량·연료·간접비 원가 산출',
+    group: '관리',
+    defaultEnabled: true,
+  },
+  {
+    key: 'vehicleTracking',
+    label: '차량 실시간 위치',
+    description: 'Live Vehicles 트래킹 + 추천 경로 시각화',
+    group: '운행',
+    defaultEnabled: true,
+  },
+  {
+    key: 'attendanceGps',
+    label: '출퇴근 GPS',
+    description: 'check-in 시 위경도 기록 — AI 인근 추천에도 사용',
+    group: '근태',
+    defaultEnabled: true,
+  },
+];
+
+const CATALOG_MAP = new Map<string, FeatureMeta>(FEATURE_CATALOG.map((f) => [f.key, f]));
+
+export function getFeatureMeta(key: string): FeatureMeta | null {
+  return CATALOG_MAP.get(key) ?? null;
+}
+
+/**
+ * 단일 기능 활성 여부.
+ *  - contractorId null/undefined 면 false (시스템 단위 기능은 별도 처리).
+ *  - 카탈로그 미정의 key 는 false (방어적 default — 새 key 추가 시 명시적 등록 강제).
+ *  - DB row 없음 → 카탈로그 defaultEnabled.
+ */
+export async function hasFeature(
+  contractorId: bigint | string | number | null | undefined,
+  key: FeatureKey
+): Promise<boolean> {
+  if (contractorId == null) return false;
+  const meta = CATALOG_MAP.get(key);
+  if (!meta) return false;
+
+  const cId = typeof contractorId === 'bigint' ? contractorId : BigInt(contractorId);
+  const row = await prisma.contractorFeature.findUnique({
+    where: { contractorId_featureKey: { contractorId: cId, featureKey: key } },
+    select: { enabled: true },
+  });
+  return row ? row.enabled : meta.defaultEnabled;
+}
+
+/** 회사의 전체 기능 상태 (UI 매트릭스용). DB row 없는 항목은 default 값으로 채움. */
+export async function listContractorFeatures(contractorId: bigint | string | number) {
+  const cId = typeof contractorId === 'bigint' ? contractorId : BigInt(contractorId);
+  const rows = await prisma.contractorFeature.findMany({
+    where: { contractorId: cId },
+    orderBy: { featureKey: 'asc' },
+  });
+  const rowMap = new Map(rows.map((r) => [r.featureKey, r]));
+
+  return FEATURE_CATALOG.map((meta) => {
+    const row = rowMap.get(meta.key);
+    return {
+      key: meta.key,
+      label: meta.label,
+      description: meta.description,
+      group: meta.group,
+      defaultEnabled: meta.defaultEnabled,
+      enabled: row ? row.enabled : meta.defaultEnabled,
+      isDefault: !row,
+      updatedAt: row ? row.updatedAt.toISOString() : null,
+      updatedBy: row?.updatedBy?.toString() ?? null,
+    };
+  });
+}
+
+/** upsert — 변경 audit 는 호출자 책임 */
+export async function setContractorFeature(params: {
+  contractorId: bigint | string | number;
+  featureKey: FeatureKey;
+  enabled: boolean;
+  updatedBy: bigint | string | number;
+}) {
+  const cId = typeof params.contractorId === 'bigint' ? params.contractorId : BigInt(params.contractorId);
+  const uId = typeof params.updatedBy === 'bigint' ? params.updatedBy : BigInt(params.updatedBy);
+  return prisma.contractorFeature.upsert({
+    where: { contractorId_featureKey: { contractorId: cId, featureKey: params.featureKey } },
+    update: { enabled: params.enabled, updatedBy: uId },
+    create: {
+      contractorId: cId,
+      featureKey: params.featureKey,
+      enabled: params.enabled,
+      updatedBy: uId,
+    },
+  });
+}

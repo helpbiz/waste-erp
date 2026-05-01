@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { hasFeature } from '@/lib/features';
 import type { Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -103,6 +104,14 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!ADMIN_ROLES.has(session.role)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  /* 회사별 기능 권한 — 공지사항 비활성 시 차단 (SUPER_ADMIN 시스템 공지는 contractorId null 이므로 통과) */
+  if (session.contractorId) {
+    const allowed = await hasFeature(session.contractorId, 'announcements');
+    if (!allowed) {
+      return NextResponse.json({ error: 'feature_disabled', feature: 'announcements' }, { status: 403 });
+    }
   }
 
   const parsed = Body.safeParse(await req.json().catch(() => null));

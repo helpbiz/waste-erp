@@ -230,9 +230,29 @@ model Contractor {
   healthRecords       HealthRecord[]
   // treatmentFacilities 는 Municipality 로 이관됨 — Contractor 는 muni 산하 facility 를 자동 사용
   reportTemplates     ReportTemplate[]
+  features            ContractorFeature[]
 
   @@index([municipalityId])
   @@map("contractors")
+}
+
+/// 회사(위탁업체)별 기능 권한 — 슈퍼관리자가 회사마다 ON/OFF.
+/// row 미존재 → 카탈로그 기본값(true) 반환 → 기존 contractor 자동 호환.
+model ContractorFeature {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  featureKey   String   @map("feature_key") @db.VarChar(50)
+  enabled      Boolean  @default(true)
+  config       Json?
+  updatedBy    BigInt?  @map("updated_by")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@unique([contractorId, featureKey])
+  @@index([contractorId])
+  @@map("contractor_features")
 }
 
 model CleaningZone {

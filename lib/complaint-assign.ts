@@ -25,6 +25,8 @@ type AssignInput = {
   locationLng: number | null;
   locationAddress: string | null;
   zoneId: bigint | null;
+  /* AI 인근 워커 broadcast 활성 여부 — 회사별 기능 권한에서 주입 */
+  broadcastNearby?: boolean;
 };
 
 type WorkerLoc = {
@@ -177,8 +179,9 @@ export async function autoAssignComplaint(input: AssignInput): Promise<AssignRes
     .sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999))
     .slice(0, 5);
 
-  /* 5) 인근 워커 broadcast — Announcement 1건 (audience=WORKER, contractor 한정) */
-  if (primary && nearby.length > 0) {
+  /* 5) 인근 워커 broadcast — Announcement 1건 (audience=WORKER, contractor 한정)
+        broadcastNearby=false 면 skip (회사별 기능 OFF) */
+  if (primary && nearby.length > 0 && input.broadcastNearby !== false) {
     const lines = nearby.map((w) => {
       const dTxt = w.distanceKm != null ? ` (${w.distanceKm.toFixed(1)}km)` : '';
       return `· ${w.name}${dTxt}`;
