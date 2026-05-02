@@ -57,6 +57,18 @@ export async function issueSession(payload: SessionPayload): Promise<string> {
   return token;
 }
 
+/**
+ * 쿠키 미세팅·임의 TTL JWT 발급 (NOC 무인 단말 등 long-lived 토큰 전용).
+ * 발급 호출자(노출된 시크릿 보유자)가 토큰을 받아 적절히 보관·주입.
+ */
+export async function issueRawToken(payload: SessionPayload, ttlSec: number): Promise<string> {
+  return new SignJWT(payload as unknown as Record<string, unknown>)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${ttlSec}s`)
+    .sign(SECRET);
+}
+
 export async function readSession(): Promise<SessionPayload | null> {
   const token = cookies().get(SESSION_COOKIE)?.value;
   if (!token) return null;

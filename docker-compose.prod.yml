@@ -45,6 +45,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-cleanerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cleanerp_prod}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET env required}
+      NOC_ISSUE_SECRET: ${NOC_ISSUE_SECRET:-}
       KMS_PROVIDER: ${KMS_PROVIDER:-local}
       KMS_LOCAL_KEY: ${KMS_LOCAL_KEY:?KMS_LOCAL_KEY env required}
       AWS_KMS_ENCRYPTED_DEK_BASE64: ${AWS_KMS_ENCRYPTED_DEK_BASE64:-}

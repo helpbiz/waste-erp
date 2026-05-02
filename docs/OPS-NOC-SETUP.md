@@ -230,16 +230,51 @@ sudo systemctl restart systemd-logind
 
 ---
 
-## 8. 7단계 — SUPER_ADMIN 첫 로그인
+## 8. 7단계 — 첫 로그인 (long-lived 토큰 자동 발급 권장)
 
-NOC 페이지는 인증 필요. **노트북 본체 키보드/마우스**로 1회만:
+### 8.1 권장 — long-lived JWT 자동 발급 (사용자 개입 0회)
+
+> 일반 `wciSession`은 8시간 만료라 NOC에는 부적합. NOC 전용 90일 토큰을 발급하고
+> 만료 14일 전에 cron이 자동 재발급하는 구조 (2026-05-02 도입).
+
+서버측 사전조건:
+- `.env.prod` 에 `NOC_ISSUE_SECRET` (32바이트 이상) 설정 후 컨테이너 재기동.
+- `POST /api/auth/noc-issue` (Bearer 시크릿) 활성 — 미설정 시 503.
+
+NOC PC측 1회 셋업:
+```bash
+# 1) 시크릿 보관 (운영 .env.prod 의 NOC_ISSUE_SECRET 값)
+echo '<NOC_ISSUE_SECRET>' > ~/.noc-issue-secret
+chmod 600 ~/.noc-issue-secret
+
+# 2) 갱신 스크립트 배포 (저장소의 scripts/noc-renew.sh 또는 별도 보관본)
+cp scripts/noc-renew.sh ~/bin/noc-renew.sh
+chmod +x ~/bin/noc-renew.sh
+
+# 3) 첫 발급 + 쿠키 주입 + chromium 재기동
+~/bin/noc-renew.sh
+tail ~/.noc-renew.log    # "갱신 완료" 보여야 OK
+
+# 4) cron 등록 — 매일 04:30 KST 만료 임박(<=14일)일 때만 실제 발급
+( crontab -l 2>/dev/null | grep -v 'noc-renew'
+  echo '30 4 * * * /home/user/bin/noc-renew.sh >/dev/null 2>&1' ) | crontab -
+```
+
+자동 사이클:
+- 매일 04:30: `noc-renew.sh` 호출. 만료까지 14일 초과면 즉시 종료(no-op).
+- 만료 14일 이내가 되는 첫 호출에서 신규 90일 토큰 발급 → 쿠키 DB INSERT → watchdog 호출로 chromium 재시작.
+- 분기에 1번 자동 갱신, 사용자 개입 0회.
+
+### 8.2 폴백 — 본체에서 SUPER_ADMIN 수동 로그인
+
+long-lived 발급 인프라가 없거나 시크릿이 회전 중일 때:
 
 1. 부팅 → GNOME 자동 로그인 → autostart 트리거 → Chromium kiosk 시작
 2. NOC 페이지가 로그인 화면으로 redirect됨
 3. 노트북에 SUPER_ADMIN 계정 입력 + 로그인
-4. NOC 화면 정상 표시 → Chromium 프로필에 세션 쿠키 영구 저장 (JWT TTL 기간)
+4. NOC 화면 정상 표시 → 쿠키 8시간 만료까지 유지
 
-**세션 만료 시**: TV에 다시 로그인 화면이 보이면 노트북 키보드로 재로그인.
+**세션 만료 시**: 본체 키보드 재로그인 또는 `~/bin/noc-renew.sh` 강제 호출.
 
 ---
 
@@ -297,7 +332,11 @@ curl -sk -I https://wci.helpbiz.kr/noc -m 5 | head -1
 ```
 
 ### 11.2 SUPER_ADMIN 세션 만료
-TV에 로그인 화면 표시 → 노트북 본체에서 로그인. 또는 SSH로 chromium 죽이고 watchdog 호출 후 본체에서 1회 로그인.
+**8.1 long-lived 발급이 활성화된 환경**: SSH로 `~/bin/noc-renew.sh` 즉시 실행 → 90일 신규 토큰 자동 주입 + chromium 재시작. 로그: `tail ~/.noc-renew.log`.
+
+발급 실패 시(HTTP 403/503/네트워크): 시크릿 만료/회전 또는 백엔드 `NOC_ISSUE_SECRET` 미설정 가능성. `~/.noc-renew.log` 확인 후 시크릿 재배포.
+
+**long-lived 미사용 환경 (폴백)**: TV에 로그인 화면 표시 → 노트북 본체에서 로그인. 또는 SSH로 chromium 죽이고 watchdog 호출 후 본체에서 1회 로그인.
 
 ### 11.3 mutter가 해상도 되돌림
 Watchdog 다음 사이클(최대 1분) 안 자동 복원. 즉시:
@@ -352,7 +391,7 @@ watchdog 스크립트 안 `chromium` 명령을 실제 경로로 변경.
 
 | 작업 | 효과 |
 |---|---|
-| **NOC 전용 long-lived JWT** | 세션 7일 만료 후 수동 로그인 불필요 (영구 무인) |
+| ~~**NOC 전용 long-lived JWT**~~ | ✅ **2026-05-02 구현 완료** (8.1 절). 90일 토큰 + cron 자동 갱신. |
 | **Grafana + Prometheus** | 인프라 KPI 1초 해상도 추가 |
 | **Slack/SMS 알람** | Critical 이벤트 발생 시 즉시 알림 |
 | **CSV/PDF 일별 자동 리포트** | 5 AM reboot 직전 자동 생성 + 이메일 |

@@ -21,6 +21,7 @@ const SECRET = new TextEncoder().encode(RAW_SECRET);
 const PUBLIC_PATHS = new Set<string>([
   '/login',
   '/api/auth/login',
+  '/api/auth/noc-issue',  /* NOC 무인 단말 long-lived JWT 발급 — Bearer 시크릿 별도 검증 */
   '/api/health',
   '/reset',  /* 캐시 초기화 페이지 — 로그인 불필요 */
 ]);
