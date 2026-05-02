@@ -14,7 +14,8 @@ export type FeatureKey =
   | 'recommendedRoute'
   | 'costCalculation'
   | 'vehicleTracking'
-  | 'attendanceGps';
+  | 'attendanceGps'
+  | 'workerSuggestion';
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -79,6 +80,13 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
     label: '출퇴근 GPS',
     description: 'check-in 시 위경도 기록 — AI 인근 추천에도 사용',
     group: '근태',
+    defaultEnabled: true,
+  },
+  {
+    key: 'workerSuggestion',
+    label: '작업자 익명 건의함',
+    description: '익명 만족도·개선 의견 수집 → 경영 반영. userId 미저장(완전 익명).',
+    group: '커뮤니케이션',
     defaultEnabled: true,
   },
 ];

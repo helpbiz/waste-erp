@@ -41,6 +41,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       costCalculation: false,
       vehicleTracking: false,
       attendanceGps: false,
+      workerSuggestion: true,
     },
   },
   {
@@ -58,6 +59,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       costCalculation: true,
       vehicleTracking: false,
       attendanceGps: true,
+      workerSuggestion: true,
     },
   },
   {
@@ -75,6 +77,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       costCalculation: true,
       vehicleTracking: true,
       attendanceGps: true,
+      workerSuggestion: true,
     },
   },
   {
@@ -92,6 +95,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       costCalculation: true,
       vehicleTracking: true,
       attendanceGps: true,
+      workerSuggestion: true,
     },
   },
 ];

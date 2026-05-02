@@ -5,6 +5,7 @@ import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getTodayAttendance } from '@/lib/attendance';
 import { formatHmKst } from '@/lib/dates';
+import { hasFeature } from '@/lib/features';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,9 @@ export default async function WorkerHomePage() {
     select: { position: { select: { code: true } } },
   });
   const isRapid = userInfo?.position?.code === 'RAPID';
+
+  /* 익명 건의함 — 회사 기능 권한 게이트 */
+  const suggestionEnabled = await hasFeature(session.contractorId, 'workerSuggestion');
 
   const checkedIn = !!me?.checkInTime;
   const checkedOut = !!me?.checkOutTime;
@@ -88,6 +92,15 @@ export default async function WorkerHomePage() {
             desc="사진 · 서명 · 로그아웃"
             iconPath="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
           />
+          {suggestionEnabled && (
+            <MenuCard
+              href="/worker/suggestion"
+              color="bg-indigo-600"
+              title="익명 건의함"
+              desc="만족도 · 개선의견 (익명)"
+              iconPath="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
+          )}
           {/* 📘 사용법 — /manual/worker 새 탭 (PWA 셸 유지) */}
           <MenuCard
             href="/manual/worker"

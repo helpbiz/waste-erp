@@ -211,26 +211,27 @@ model Contractor {
   garageLng      Decimal?         @map("garage_lng") @db.Decimal(11, 7)
   createdAt      DateTime         @default(now()) @map("created_at")
 
-  municipality        Municipality             @relation(fields: [municipalityId], references: [id])
-  cleaningZones       CleaningZone[]
-  adminDongs          AdminDong[]
-  users               User[]
-  departments         Department[]
-  approvalPolicies    ApprovalPolicy[]
-  bulkyWasteConfig    BulkyWasteConfig?
-  liveTrackingConfig  LiveTrackingConfig?
-  wasteRecords        WasteTreatmentRecord[]
-  recyclingIntakes    RecyclingCenterIntake[]
-  attendances         AttendanceRecord[]
-  vehicles            Vehicle[]
-  costCalcs           CostCalculation[]
-  complaints          Complaint[]
-  safetyReports       SafetyReport[]
-  tbmSessions         TbmSession[]
-  healthRecords       HealthRecord[]
+  municipality       Municipality            @relation(fields: [municipalityId], references: [id])
+  cleaningZones      CleaningZone[]
+  adminDongs         AdminDong[]
+  users              User[]
+  departments        Department[]
+  approvalPolicies   ApprovalPolicy[]
+  bulkyWasteConfig   BulkyWasteConfig?
+  liveTrackingConfig LiveTrackingConfig?
+  wasteRecords       WasteTreatmentRecord[]
+  recyclingIntakes   RecyclingCenterIntake[]
+  attendances        AttendanceRecord[]
+  vehicles           Vehicle[]
+  costCalcs          CostCalculation[]
+  complaints         Complaint[]
+  safetyReports      SafetyReport[]
+  tbmSessions        TbmSession[]
+  healthRecords      HealthRecord[]
   // treatmentFacilities 는 Municipality 로 이관됨 — Contractor 는 muni 산하 facility 를 자동 사용
-  reportTemplates     ReportTemplate[]
-  features            ContractorFeature[]
+  reportTemplates    ReportTemplate[]
+  features           ContractorFeature[]
+  workerSuggestions  WorkerSuggestion[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -239,13 +240,13 @@ model Contractor {
 /// 사용자별 WebPush 구독 — 백그라운드 푸시 수신용.
 /// 한 사용자가 여러 디바이스/브라우저에서 구독 가능 → endpoint unique.
 model WebPushSubscription {
-  id        BigInt   @id @default(autoincrement())
-  userId    BigInt   @map("user_id")
-  endpoint  String   @unique @db.Text
-  p256dh    String   @db.Text
-  auth      String   @db.Text
-  userAgent String?  @map("user_agent") @db.VarChar(500)
-  createdAt DateTime @default(now()) @map("created_at")
+  id         BigInt    @id @default(autoincrement())
+  userId     BigInt    @map("user_id")
+  endpoint   String    @unique @db.Text
+  p256dh     String    @db.Text
+  auth       String    @db.Text
+  userAgent  String?   @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime  @default(now()) @map("created_at")
   lastUsedAt DateTime? @map("last_used_at")
 
   @@index([userId])
@@ -264,7 +265,7 @@ model ContractorFeature {
   updatedAt    DateTime @updatedAt @map("updated_at")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  contractor   Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
 
   @@unique([contractorId, featureKey])
   @@index([contractorId])
@@ -377,6 +378,7 @@ model User {
   tbmCreated             TbmSession[]            @relation("TbmCreator")
   tbmSignatures          TbmSignature[]          @relation("TbmSigner")
   healthRecord           HealthRecord?           @relation("HealthSubject")
+  suggestionReplies      WorkerSuggestionReply[] @relation("SuggestionReplier")
 
   @@index([contractorId])
   @@index([role])
@@ -822,11 +824,12 @@ model Department {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
 
-  contractor Contractor   @relation(fields: [contractorId], references: [id])
-  parent     Department?  @relation("DeptTree", fields: [parentId], references: [id])
-  children   Department[] @relation("DeptTree")
-  head       User?        @relation("DepartmentHead", fields: [headUserId], references: [id])
-  users      User[]
+  contractor        Contractor         @relation(fields: [contractorId], references: [id])
+  parent            Department?        @relation("DeptTree", fields: [parentId], references: [id])
+  children          Department[]       @relation("DeptTree")
+  head              User?              @relation("DepartmentHead", fields: [headUserId], references: [id])
+  users             User[]
+  workerSuggestions WorkerSuggestion[]
 
   @@unique([contractorId, parentId, name])
   @@index([contractorId])
@@ -1120,27 +1123,97 @@ model ApprovalEvent {
 
 // 공지사항 — 사용자 요청 2026-05-01: 관리자 입력 + 모든 사용자 전달 + 인앱 푸시
 model Announcement {
-  id             BigInt   @id @default(autoincrement())
-  title          String   @db.VarChar(200)
-  body           String   @db.Text
-  severity       String   @default("INFO") @db.VarChar(20) // INFO / WARNING / CRITICAL
-  audience       String   @default("ALL") @db.VarChar(20)  // ALL / OWNER / ADMIN / WORKER / MUNI
-  contractorId   BigInt?  @map("contractor_id")  // 회사 한정 공지 (null = 시스템 전체)
-  municipalityId BigInt?  @map("municipality_id")
+  id             BigInt    @id @default(autoincrement())
+  title          String    @db.VarChar(200)
+  body           String    @db.Text
+  severity       String    @default("INFO") @db.VarChar(20) // INFO / WARNING / CRITICAL
+  audience       String    @default("ALL") @db.VarChar(20) // ALL / OWNER / ADMIN / WORKER / MUNI
+  contractorId   BigInt?   @map("contractor_id") // 회사 한정 공지 (null = 시스템 전체)
+  municipalityId BigInt?   @map("municipality_id")
   /// per-user targeting (2026-05-02 AI 인근 정밀화).
   /// null  = audience/scope 기반 broadcast (기존 동작)
   /// 값있음 = 해당 user 만 수신 — AI 인근 워커 개별 알림 등에 사용
-  targetUserId   BigInt?  @map("target_user_id")
-  pinned         Boolean  @default(false)
-  publishedAt    DateTime @default(now()) @map("published_at")
+  targetUserId   BigInt?   @map("target_user_id")
+  pinned         Boolean   @default(false)
+  publishedAt    DateTime  @default(now()) @map("published_at")
   expiresAt      DateTime? @map("expires_at")
-  createdBy      BigInt   @map("created_by")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      BigInt    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@index([publishedAt])
   @@index([audience, publishedAt])
   @@index([contractorId, publishedAt])
   @@index([targetUserId])
   @@map("announcements")
+}
+
+// ─────────────────── 작업자 익명 건의함 (2026-05-02) ───────────────────
+//
+// 익명성 보장 원칙:
+//   - userId/IP/UA 일절 저장 금지.
+//   - 메타: contractorId(필수) + departmentId/positionCode (NULL 허용, 통계용).
+//   - 작성자가 자기 글을 다시 보려면 클라이언트가 보관한 token(UUID)을 보내고,
+//     서버는 SHA-256 해시(authorTokenHash)로만 비교 → 토큰 분실 시 누구도 복원 불가.
+//   - 부서 인원 < 3 명이면 응답에서 departmentId/positionCode 마스킹(서비스 레이어 책임).
+enum SuggestionCategory {
+  WORK_ENV // 업무환경
+  EQUIPMENT // 장비/도구
+  SAFETY // 안전
+  MANAGEMENT // 관리/소통
+  WELFARE // 복지/처우
+  OTHER // 기타
+}
+
+enum SuggestionStatus {
+  NEW // 신규(미열람)
+  REVIEWING // 검토 중
+  ANSWERED // 공식 답변 완료
+  ARCHIVED // 보관(처리 종료)
+}
+
+model WorkerSuggestion {
+  id           BigInt @id @default(autoincrement())
+  contractorId BigInt @map("contractor_id")
+
+  // 익명 메타 — 통계용. 부서/직책 인원 < 3 이면 응답에서 마스킹.
+  departmentId BigInt? @map("department_id")
+  positionCode String? @map("position_code") @db.VarChar(20)
+
+  category          SuggestionCategory
+  satisfactionScore Int                @map("satisfaction_score") // 1..5
+  content           String             @db.Text
+  photos            Json? // string[] (data URL 또는 MediaAsset URL)
+
+  // 작성자 본인 식별용 — 클라가 발급한 UUID 의 SHA-256 hex (64자).
+  authorTokenHash String @map("author_token_hash") @db.Char(64)
+
+  status    SuggestionStatus @default(NEW)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  contractor Contractor              @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  department Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  replies    WorkerSuggestionReply[]
+
+  @@index([contractorId, createdAt])
+  @@index([contractorId, status])
+  @@index([authorTokenHash])
+  @@map("worker_suggestions")
+}
+
+model WorkerSuggestionReply {
+  id           BigInt   @id @default(autoincrement())
+  suggestionId BigInt   @map("suggestion_id")
+  // 답변자는 익명이 아님 — 신뢰성 위해 관리자 이름·역할 노출.
+  repliedBy    BigInt   @map("replied_by")
+  content      String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  suggestion WorkerSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  replier    User             @relation("SuggestionReplier", fields: [repliedBy], references: [id])
+
+  @@index([suggestionId])
+  @@map("worker_suggestion_replies")
 }
