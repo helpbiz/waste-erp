@@ -9,7 +9,6 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { FilterToggle } from '@/components/FilterToggle';
 import { useToast } from '@/components/ui/Toast';
 import { formatKoreanPhone } from '@/lib/phone';
-import NavButtons from '@/components/NavButtons';
 
 /* leaflet은 SSR 불가 — 동적 import */
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
@@ -30,7 +29,7 @@ export type Row = {
   status: string;
   description: string | null;
   locationAddress: string | null;
-  /* 내비 길안내용 좌표 (없으면 NavButtons 자동 비표시) */
+  /* 좌표는 admin 화면에서 직접 노출하지 않지만, 향후 지도 표시·재배정 시 사용을 위해 보존 */
   locationLat: number | null;
   locationLng: number | null;
   reportedAt: string;
@@ -272,32 +271,8 @@ export default function ComplaintsClient({
                     <strong className="text-ink">처리 메모:</strong> {c.resolveNote}
                   </div>
                 )}
-                {/* 내비 길안내 + 도착 확인 — 좌표 있을 때만, 미완료 민원만 */}
-                {c.locationLat != null && c.locationLng != null &&
-                  c.status !== 'COMPLETED' && c.status !== 'REJECTED' && (
-                  <div className="mt-2.5 space-y-1.5">
-                    <NavButtons
-                      lat={c.locationLat}
-                      lng={c.locationLng}
-                      name={c.locationAddress ?? `민원 #${c.id}`}
-                      departEndpoint={`/api/complaints/${c.id}/depart`}
-                    />
-                    {/* Phase 2: 도착 확인 — 출동 후 도착 timestamp 수동 기록 */}
-                    {(isManager || c.assignee?.id === userId) && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await fetch(`/api/complaints/${c.id}/arrive`, { method: 'POST' });
-                          toast.success('도착이 기록되었습니다.');
-                          router.refresh();
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white transition active:scale-95"
-                      >
-                        📍 도착 확인
-                      </button>
-                    )}
-                  </div>
-                )}
+                {/* 사용자 요청 2026-05-02: 내비 길안내·도착 확인은 워커 앱(기동반)에서만.
+                   admin 화면은 접수·배정·완료 흐름만 보여 깔끔히. */}
               </div>
             </div>
 
