@@ -6,7 +6,9 @@
  *  - 사용자 폰의 v1 SW가 v3로 자동 교체되도록 설계
  */
 /* PWA Mobile UX Mastering 적용 — v4 강제 캐시 무효화로 모바일 사용자에게 즉시 새 UI 배포 */
-const CACHE_NAME = 'cleanerp-v62-2026-05-02-pwa-manual-entry-points';
+/* v63 (2026-05-02): cross-origin 요청 pass-through — 지도 타일이 catch 폴백으로
+   /login HTML 을 받아 디코딩 실패 → 회색 타일 되던 버그 수정. */
+const CACHE_NAME = 'cleanerp-v63-2026-05-02-map-tile-passthrough';
 const APP_SHELL = ['/login', '/manifest.json'];  /* 최소 셸만 — 페이지는 항상 네트워크 우선 */
 
 self.addEventListener('install', (event) => {
@@ -71,6 +73,11 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  /* Cross-origin (지도 타일·Nominatim·ORS·OSRM 등) 요청은 SW가 일절 개입하지 않는다.
+     이전 v62 까지: 외부 도메인 GET 도 catch 폴백을 거쳐 /login HTML 을 반환 →
+     <img> 디코딩 실패 → 회색 타일. 이를 방지. */
+  if (url.origin !== self.location.origin) return;
 
   /* API: network-only — 절대 캐시 사용 안 함 */
   if (url.pathname.startsWith('/api/')) return;
