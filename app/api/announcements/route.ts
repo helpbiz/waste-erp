@@ -29,6 +29,7 @@ const Body = z.object({
   audience: z.enum(['ALL', 'OWNER', 'ADMIN', 'WORKER', 'MUNI']).default('ALL'),
   pinned: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
+  facilityId: z.string().optional(), // AVAC: 집하장별 공지
 });
 
 export async function GET(req: Request) {
@@ -38,6 +39,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const includeExpired = url.searchParams.get('includeExpired') === 'true';
   const adminMode = url.searchParams.get('admin') === 'true' && ADMIN_ROLES.has(session.role);
+  const facilityIdParam = url.searchParams.get('facilityId');
+  const facilityId = facilityIdParam ? BigInt(facilityIdParam) : null;
 
   const now = new Date();
   const where: Prisma.AnnouncementWhereInput = {};
@@ -66,9 +69,10 @@ export async function GET(req: Request) {
     where.AND = [
       {
         OR: [
-          { contractorId: null, municipalityId: null },                    // 시스템 전체 공지 (SUPER)
-          ...(cId ? [{ contractorId: cId }] : []),                          // 본인 회사 공지
-          ...(muniId ? [{ contractorId: null, municipalityId: muniId }] : []), // 본인 지자체 broadcast
+          { contractorId: null, municipalityId: null, facilityId: null }, // 시스템 전체 공지 (SUPER)
+          ...(cId ? [{ contractorId: cId, facilityId: null }] : []),        // 본인 회사 공지 (시설 무관)
+          ...(cId && facilityId ? [{ contractorId: cId, facilityId }] : []), // AVAC 집하장별 공지
+          ...(muniId ? [{ contractorId: null, municipalityId: muniId, facilityId: null }] : []), // 지자체 broadcast
         ],
       },
       /* per-user targeting — null 이면 일반 broadcast, 값있으면 본인만 수신 */
@@ -115,6 +119,7 @@ export async function GET(req: Request) {
       authorId: a.createdBy.toString(),
       contractorId: a.contractorId?.toString() ?? null,
       municipalityId: a.municipalityId?.toString() ?? null,
+      facilityId: a.facilityId?.toString() ?? null,
     })),
   });
 }
@@ -150,6 +155,7 @@ export async function POST(req: Request) {
      municipalityId 는 본인 지자체. CONTRACTOR/INTERNAL 은 본인 회사 한정. */
   const contractorId = session.role === 'MUNI_ADMIN' ? null : (session.contractorId ? BigInt(session.contractorId) : null);
   const municipalityId = session.municipalityId ? BigInt(session.municipalityId) : null;
+  const facilityId = b.facilityId ? BigInt(b.facilityId) : null;
 
   const created = await prisma.announcement.create({
     data: {
@@ -162,6 +168,7 @@ export async function POST(req: Request) {
       createdBy: BigInt(session.userId),
       contractorId,
       municipalityId,
+      facilityId,
     },
   });
 

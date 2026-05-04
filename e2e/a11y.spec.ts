@@ -13,6 +13,9 @@ for (const path of ADMIN_PAGES) {
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      /* meta-viewport: userScalable=false is a deliberate product decision (PWA mobile UX,
+         user-requested 2026-04-29). OS-level a11y zoom (iOS 손쉬운 사용) still works. */
+      .disableRules(['meta-viewport'])
       .analyze();
 
     const blocking = results.violations.filter(

@@ -1026,12 +1026,13 @@ model WasteTreatmentFacility {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  municipality Municipality            @relation(fields: [municipalityId], references: [id])
-  intakes      RecyclingCenterIntake[]
-  primaryUsers User[]                  @relation("UserPrimaryFacility")
-  attendances  AttendanceRecord[]      @relation("AttendanceFacility")
-  dailyOps     FacilityDailyOps[]
-  tbmSessions  TbmSession[]            @relation("TbmFacility")
+  municipality  Municipality            @relation(fields: [municipalityId], references: [id])
+  intakes       RecyclingCenterIntake[]
+  primaryUsers  User[]                  @relation("UserPrimaryFacility")
+  attendances   AttendanceRecord[]      @relation("AttendanceFacility")
+  dailyOps      FacilityDailyOps[]
+  tbmSessions   TbmSession[]            @relation("TbmFacility")
+  announcements Announcement[]          @relation("AnnouncementFacility")
 
   @@unique([municipalityId, type, name])
   @@index([municipalityId, active])
@@ -1156,6 +1157,7 @@ model Announcement {
   audience       String    @default("ALL") @db.VarChar(20) // ALL / OWNER / ADMIN / WORKER / MUNI
   contractorId   BigInt?   @map("contractor_id") // 회사 한정 공지 (null = 시스템 전체)
   municipalityId BigInt?   @map("municipality_id")
+  facilityId     BigInt?   @map("facility_id")  // AVAC: 집하장별 공지 (null = 회사/시스템 전체)
   /// per-user targeting (2026-05-02 AI 인근 정밀화).
   /// null  = audience/scope 기반 broadcast (기존 동작)
   /// 값있음 = 해당 user 만 수신 — AI 인근 워커 개별 알림 등에 사용
@@ -1167,9 +1169,12 @@ model Announcement {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  facility WasteTreatmentFacility? @relation("AnnouncementFacility", fields: [facilityId], references: [id])
+
   @@index([publishedAt])
   @@index([audience, publishedAt])
   @@index([contractorId, publishedAt])
+  @@index([facilityId, publishedAt])
   @@index([targetUserId])
   @@map("announcements")
 }

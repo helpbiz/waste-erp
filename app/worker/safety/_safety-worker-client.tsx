@@ -51,12 +51,13 @@ export default function SafetyWorkerClient({
   const [tbmSignaturePad, setTbmSignaturePad] = useState<string | null>(null);
   const [tbmShowPad, setTbmShowPad] = useState(false);
 
-  // AVAC: 시설 선택 + 동적 TBM 로드
+  // AVAC: 시설 선택 + 동적 TBM + 공지 로드
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(
     isAvac && facilities.length === 1 ? facilities[0].id : null
   );
   const [avacTbm, setAvacTbm] = useState<TbmInfo | null>(null);
   const [avacTbmLoading, setAvacTbmLoading] = useState(false);
+  const [avacNotices, setAvacNotices] = useState<{ id: string; title: string; body: string; severity: string; pinned: boolean }[]>([]);
 
   const tbm = isAvac ? avacTbm : tbmProp;
 
@@ -81,10 +82,25 @@ export default function SafetyWorkerClient({
     }
   }
 
+  async function loadAvacNotices(facilityId: string) {
+    const res = await fetch(`/api/announcements?facilityId=${facilityId}`).catch(() => null);
+    if (!res?.ok) return;
+    const data = await res.json();
+    setAvacNotices(data.items ?? []);
+  }
+
+  function selectFacility(fId: string) {
+    setSelectedFacilityId(fId);
+    setTbmShowPad(false);
+    setTbmSignaturePad(null);
+    loadAvacTbm(fId);
+    loadAvacNotices(fId);
+  }
+
   // 시설 1개면 자동 로드
   useEffect(() => {
     if (isAvac && facilities.length === 1) {
-      loadAvacTbm(facilities[0].id);
+      selectFacility(facilities[0].id);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -263,7 +279,7 @@ export default function SafetyWorkerClient({
             {facilities.map((f) => (
               <button
                 key={f.id}
-                onClick={() => { setSelectedFacilityId(f.id); loadAvacTbm(f.id); setTbmShowPad(false); setTbmSignaturePad(null); }}
+                onClick={() => selectFacility(f.id)}
                 className={`min-h-12 px-3 py-2.5 rounded-lg border-2 text-sm font-extrabold transition active:scale-95 text-center ${
                   selectedFacilityId === f.id
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
@@ -344,6 +360,24 @@ export default function SafetyWorkerClient({
             오늘 TBM 세션이 아직 등록되지 않았습니다. 관리자에게 문의해 주세요.
           </section>
         )
+      )}
+
+      {/* AVAC: 집하장별 공지 */}
+      {isAvac && selectedFacilityId && avacNotices.length > 0 && (
+        <section className="space-y-2">
+          <div className="text-xs font-extrabold text-indigo-800 px-1">🏗 집하장 공지</div>
+          {avacNotices.map((n) => (
+            <div key={n.id} className={`rounded-xl border-2 px-4 py-3 ${
+              n.severity === 'CRITICAL' ? 'bg-red-50 border-red-300' :
+              n.severity === 'WARNING'  ? 'bg-amber-50 border-amber-300' :
+                                          'bg-indigo-50 border-indigo-200'
+            }`}>
+              {n.pinned && <span className="text-[0.6875rem] font-extrabold mr-1.5">📌</span>}
+              <span className="text-sm font-extrabold text-ink">{n.title}</span>
+              {n.body && <p className="text-sm text-ink-mid mt-1 whitespace-pre-wrap leading-relaxed">{n.body}</p>}
+            </div>
+          ))}
+        </section>
       )}
 
       {/* 일일 체크리스트 */}

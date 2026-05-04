@@ -20,7 +20,9 @@ type Announcement = {
   edited: boolean;
   expiresAt: string | null;
   authorName: string;
+  facilityId: string | null;
 };
+type FacilityOption = { id: string; name: string };
 
 const SEV_LABEL = { INFO: '안내', WARNING: '주의', CRITICAL: '긴급' };
 /* AUDIENCE_LABEL 은 lib/announcement-audience 에서 import — 5개 audience 통합 */
@@ -31,7 +33,15 @@ const SEV_TONE: Record<string, string> = {
   CRITICAL: 'border-rose-500 bg-rose-50 text-rose-900',
 };
 
-export default function AnnouncementsClient({ session }: { session: { name: string; role: string } }) {
+export default function AnnouncementsClient({
+  session,
+  isAvac = false,
+  facilities = [],
+}: {
+  session: { name: string; role: string };
+  isAvac?: boolean;
+  facilities?: FacilityOption[];
+}) {
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -82,8 +92,8 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
         </button>
       </div>
 
-      {createOpen && <CreateModal role={session.role} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
-      {editTarget && <CreateModal role={session.role} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
+      {createOpen && <CreateModal role={session.role} facilities={isAvac ? facilities : []} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
+      {editTarget && <CreateModal role={session.role} facilities={isAvac ? facilities : []} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
       {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
@@ -108,6 +118,7 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
                     <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
                       {AUDIENCE_LABEL[a.audience]}
                     </span>
+                    {a.facilityId && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300">🏗 집하장 공지</span>}
                     {expired && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-300 text-slate-700">만료</span>}
                   </div>
                   <h3 className="text-base font-black text-ink">{a.title}</h3>
@@ -147,7 +158,15 @@ export default function AnnouncementsClient({ session }: { session: { name: stri
   );
 }
 
-function CreateModal({ role, initial, onClose, onCreated }: { role: string; initial?: Announcement; onClose: () => void; onCreated: () => void }) {
+function CreateModal({
+  role, facilities = [], initial, onClose, onCreated,
+}: {
+  role: string;
+  facilities?: FacilityOption[];
+  initial?: Announcement;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const isEdit = !!initial;
   const [title, setTitle] = useState(initial?.title ?? '');
   const [body, setBody] = useState(initial?.body ?? '');
@@ -155,13 +174,13 @@ function CreateModal({ role, initial, onClose, onCreated }: { role: string; init
 
   /* 작성자 role 별 audience 옵션 — 사용자 요구사항 2026-05-02 */
   const audienceOptions = audienceOptionsForCreator(role);
-  /* 초기값 보정: initial.audience 가 현재 role 옵션에 없으면 첫 옵션으로 fallback */
   const initialAudience: AudienceValue = initial?.audience && audienceOptions.includes(initial.audience)
     ? initial.audience
     : (audienceOptions[0] ?? 'ALL');
   const [audience, setAudience] = useState<AudienceValue>(initialAudience);
   const [pinned, setPinned] = useState(initial?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(initial?.expiresAt ? initial.expiresAt.slice(0, 10) : '');
+  const [facilityId, setFacilityId] = useState<string>(initial?.facilityId ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,6 +201,7 @@ function CreateModal({ role, initial, onClose, onCreated }: { role: string; init
         audience,
         pinned,
         expiresAt: expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null,
+        facilityId: facilityId || undefined,
       }),
     });
     setBusy(false);
@@ -238,6 +258,20 @@ function CreateModal({ role, initial, onClose, onCreated }: { role: string; init
               ) : null}
             </div>
           </div>
+          {/* AVAC: 집하장별 공지 (시설 목록 있을 때만 표시) */}
+          {facilities.length > 0 && (
+            <div>
+              <div className="text-xs font-extrabold text-ink mb-1">🏗 집하장 한정 공지 (선택, 비워두면 회사 전체)</div>
+              <select value={facilityId} onChange={(e) => setFacilityId(e.target.value)}
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm">
+                <option value="">— 전체 공지 (시설 무관) —</option>
+                {facilities.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+              <div className="text-[0.625rem] text-slate-500 mt-1">집하장을 선택하면 해당 시설 근무자만 이 공지를 받습니다.</div>
+            </div>
+          )}
           <div>
             <div className="text-xs font-extrabold text-ink mb-1">만료일 (선택, 비워두면 영구)</div>
             <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)}
