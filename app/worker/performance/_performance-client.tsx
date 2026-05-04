@@ -39,9 +39,32 @@ type IntakeRecord = {
   vehicleNo: string; materialCategory: string; weightTon: number; note: string | null;
   recorderName: string;
 };
+type OpsRecord = {
+  id: string; opsDate: string;
+  generalOpHours: number; foodOpHours: number; downtimeHours: number;
+  downtimeReason: string | null;
+  generalWasteTon: number; foodWasteTon: number;
+  generalCollectTon: number; foodCollectTon: number;
+  generalTransferTon: number; foodTransferTon: number;
+  prevDayPowerKwh: number; notes: string | null;
+};
 
-export default function PerformanceClient({ vehicles }: { vehicles: Vehicle[] }) {
-  const [tab, setTab] = useState<'waste' | 'intake'>('waste');
+type Props = {
+  vehicles: Vehicle[];
+  isFacilityOperator?: boolean;
+  primaryFacility?: { id: string; name: string } | null;
+  opsHistory?: OpsRecord[];
+};
+
+export default function PerformanceClient({ vehicles, isFacilityOperator = false, primaryFacility = null, opsHistory = [] }: Props) {
+  const showOps = isFacilityOperator && !!primaryFacility;
+  const [tab, setTab] = useState<'waste' | 'intake' | 'ops'>(showOps ? 'ops' : 'waste');
+
+  const tabs = [
+    { key: 'waste' as const, label: '📊 처리실적' },
+    { key: 'intake' as const, label: '🚚 반입실적' },
+    ...(showOps ? [{ key: 'ops' as const, label: '🏭 운전기록' }] : []),
+  ];
 
   return (
     <div className="px-4 py-5 space-y-4">
@@ -51,27 +74,23 @@ export default function PerformanceClient({ vehicles }: { vehicles: Vehicle[] })
       </div>
 
       {/* 탭 */}
-      <div className="grid grid-cols-2 gap-1 bg-surface-soft rounded-lg p-1 border border-line">
-        <button
-          onClick={() => setTab('waste')}
-          className={`py-2.5 rounded-md text-sm font-extrabold transition ${
-            tab === 'waste' ? 'bg-accent text-white shadow-card' : 'text-ink-muted hover:bg-surface'
-          }`}
-        >
-          📊 처리실적
-        </button>
-        <button
-          onClick={() => setTab('intake')}
-          className={`py-2.5 rounded-md text-sm font-extrabold transition ${
-            tab === 'intake' ? 'bg-accent text-white shadow-card' : 'text-ink-muted hover:bg-surface'
-          }`}
-        >
-          🚚 반입실적
-        </button>
+      <div className={`grid gap-1 bg-surface-soft rounded-lg p-1 border border-line`} style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`py-2.5 rounded-md text-sm font-extrabold transition ${
+              tab === t.key ? 'bg-accent text-white shadow-card' : 'text-ink-muted hover:bg-surface'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {tab === 'waste' && <WasteTab />}
       {tab === 'intake' && <IntakeTab vehicles={vehicles} />}
+      {tab === 'ops' && showOps && <OpsHistoryTab facility={primaryFacility!} records={opsHistory} />}
     </div>
   );
 }
@@ -433,4 +452,220 @@ import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
   return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-slate-600 mb-1'} />;
+}
+
+/* ────────────────  운전기록 이력  ──────────────── */
+
+const OPS_FIELDS = [
+  ['generalOpHours',   '일반가동(h)'],
+  ['foodOpHours',      '음식가동(h)'],
+  ['downtimeHours',    '비가동(h)'],
+  ['generalWasteTon',  '일반처리(t)'],
+  ['foodWasteTon',     '음식처리(t)'],
+  ['generalCollectTon','일반수거(t)'],
+  ['foodCollectTon',   '음식수거(t)'],
+  ['generalTransferTon','일반반출(t)'],
+  ['foodTransferTon',  '음식반출(t)'],
+  ['prevDayPowerKwh',  '전일전력(kWh)'],
+] as const;
+
+type OpsFormKey = typeof OPS_FIELDS[number][0];
+type OpsForm = Record<OpsFormKey, string> & { downtimeReason: string; notes: string };
+
+function emptyForm(): OpsForm {
+  return {
+    generalOpHours: '', foodOpHours: '', downtimeHours: '',
+    generalWasteTon: '', foodWasteTon: '',
+    generalCollectTon: '', foodCollectTon: '',
+    generalTransferTon: '', foodTransferTon: '',
+    prevDayPowerKwh: '',
+    downtimeReason: '', notes: '',
+  };
+}
+
+function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: string; name: string }; records: OpsRecord[] }) {
+  const [records, setRecords] = useState<OpsRecord[]>(initialRecords);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [opsDate, setOpsDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [form, setForm] = useState<OpsForm>(emptyForm());
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  function set(key: keyof OpsForm, val: string) {
+    setForm((p) => ({ ...p, [key]: val }));
+  }
+  function toNum(v: string) { return parseFloat(v) || 0; }
+
+  async function save() {
+    setSaving(true); setMsg('');
+    try {
+      const res = await fetch('/api/super-admin/facility-ops', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          facilityId: facility.id,
+          opsDate,
+          generalOpHours: toNum(form.generalOpHours),
+          foodOpHours: toNum(form.foodOpHours),
+          downtimeHours: toNum(form.downtimeHours),
+          downtimeReason: form.downtimeReason || undefined,
+          generalWasteTon: toNum(form.generalWasteTon),
+          foodWasteTon: toNum(form.foodWasteTon),
+          generalCollectTon: toNum(form.generalCollectTon),
+          foodCollectTon: toNum(form.foodCollectTon),
+          generalTransferTon: toNum(form.generalTransferTon),
+          foodTransferTon: toNum(form.foodTransferTon),
+          prevDayPowerKwh: toNum(form.prevDayPowerKwh),
+          notes: form.notes || undefined,
+        }),
+      });
+      if (res.ok) {
+        setMsg('✅ 저장 완료');
+        setForm(emptyForm());
+        setShowForm(false);
+        // 목록 새로고침
+        const d = await fetch(`/api/super-admin/facility-ops?facilityId=${facility.id}&from=${(() => { const t = new Date(); t.setDate(t.getDate() - 29); return t.toISOString().slice(0, 10); })()}&to=${new Date().toISOString().slice(0, 10)}`).then((r) => r.json());
+        setRecords(
+          (d.items ?? []).map((r: { id: string; opsDate: string; generalOpHours: string; foodOpHours: string; downtimeHours: string; downtimeReason: string | null; generalWasteTon: string; foodWasteTon: string; generalCollectTon: string; foodCollectTon: string; generalTransferTon: string; foodTransferTon: string; prevDayPowerKwh: string; notes: string | null }) => ({
+            id: r.id, opsDate: r.opsDate,
+            generalOpHours: Number(r.generalOpHours), foodOpHours: Number(r.foodOpHours),
+            downtimeHours: Number(r.downtimeHours), downtimeReason: r.downtimeReason,
+            generalWasteTon: Number(r.generalWasteTon), foodWasteTon: Number(r.foodWasteTon),
+            generalCollectTon: Number(r.generalCollectTon), foodCollectTon: Number(r.foodCollectTon),
+            generalTransferTon: Number(r.generalTransferTon), foodTransferTon: Number(r.foodTransferTon),
+            prevDayPowerKwh: Number(r.prevDayPowerKwh), notes: r.notes,
+          }))
+        );
+      } else {
+        setMsg('❌ 저장 실패. 다시 시도해 주세요.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 헤더 + 입력 토글 */}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs font-extrabold text-ink-muted">{facility.name}</span>
+        <button
+          type="button"
+          onClick={() => { setShowForm((v) => !v); setMsg(''); }}
+          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-extrabold active:scale-95"
+        >
+          {showForm ? '✕ 닫기' : '+ 운전기록 입력'}
+        </button>
+      </div>
+
+      {/* 입력 폼 */}
+      {showForm && (
+        <div className="bg-surface border-2 border-indigo-300 rounded-xl shadow-card p-4 space-y-3">
+          <div className="text-sm font-extrabold text-indigo-800">📋 운전기록 입력</div>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-extrabold text-ink-muted">운영일자</span>
+            <input type="date" value={opsDate} onChange={(e) => setOpsDate(e.target.value)} className="border border-line rounded px-3 py-2 text-sm" />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {OPS_FIELDS.map(([key, label]) => (
+              <label key={key} className="flex flex-col gap-1">
+                <span className="text-xs font-extrabold text-ink-muted">{label}</span>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={form[key]}
+                  onChange={(e) => set(key, e.target.value)}
+                  className="border border-line rounded px-2 py-1.5 text-sm text-right"
+                />
+              </label>
+            ))}
+            <label className="flex flex-col gap-1 col-span-2">
+              <span className="text-xs font-extrabold text-ink-muted">비가동 사유</span>
+              <input value={form.downtimeReason} onChange={(e) => set('downtimeReason', e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
+            </label>
+            <label className="flex flex-col gap-1 col-span-2">
+              <span className="text-xs font-extrabold text-ink-muted">비고</span>
+              <input value={form.notes} onChange={(e) => set('notes', e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
+            </label>
+          </div>
+          {msg && <p className={`text-sm font-bold ${msg.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{msg}</p>}
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-extrabold disabled:opacity-50 active:scale-[0.98]"
+          >
+            {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+      )}
+
+      {/* 이력 목록 */}
+      {msg && !showForm && <p className={`text-sm font-bold px-1 ${msg.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{msg}</p>}
+
+      {records.length === 0 ? (
+        <div className="text-center py-12 text-ink-muted">
+          <div className="text-4xl mb-3">📋</div>
+          <div className="text-xs mt-1">아직 입력된 운전기록이 없습니다</div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="text-xs font-extrabold text-ink-muted px-1">최근 {records.length}건</div>
+          {records.map((r) => {
+            const isOpen = expanded === r.id;
+            const totalWaste = r.generalWasteTon + r.foodWasteTon;
+            const totalOp = r.generalOpHours + r.foodOpHours;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setExpanded(isOpen ? null : r.id)}
+                className="w-full text-left bg-surface border border-line rounded-xl shadow-card overflow-hidden active:scale-[0.99] transition"
+              >
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-extrabold text-sm text-ink">{r.opsDate}</div>
+                    <div className="text-xs text-ink-muted mt-0.5">
+                      처리 {totalWaste.toFixed(2)}t · 가동 {totalOp.toFixed(1)}h · 전력 {r.prevDayPowerKwh.toFixed(0)}kWh
+                    </div>
+                  </div>
+                  {r.downtimeHours > 0 && (
+                    <span className="text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 whitespace-nowrap">
+                      비가동 {r.downtimeHours}h
+                    </span>
+                  )}
+                  <span className="text-ink-muted text-sm">{isOpen ? '▲' : '▼'}</span>
+                </div>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-1 border-t border-line bg-surface-soft">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                      {([
+                        ['일반 가동시간', `${r.generalOpHours}h`],
+                        ['음식물 가동시간', `${r.foodOpHours}h`],
+                        ['비가동시간', `${r.downtimeHours}h`],
+                        ['일반 처리량', `${r.generalWasteTon}t`],
+                        ['음식물 처리량', `${r.foodWasteTon}t`],
+                        ['일반 수거량', `${r.generalCollectTon}t`],
+                        ['음식물 수거량', `${r.foodCollectTon}t`],
+                        ['일반 반출량', `${r.generalTransferTon}t`],
+                        ['음식물 반출량', `${r.foodTransferTon}t`],
+                        ['전일 전력', `${r.prevDayPowerKwh}kWh`],
+                      ] as const).map(([label, value]) => (
+                        <div key={label} className="flex justify-between gap-2">
+                          <span className="text-ink-muted">{label}</span>
+                          <span className="font-bold text-ink">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {r.downtimeReason && <div className="mt-2 text-xs text-amber-700 font-bold">비가동 사유: {r.downtimeReason}</div>}
+                    {r.notes && <div className="mt-1 text-xs text-ink-muted">비고: {r.notes}</div>}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -74,6 +74,26 @@ export default async function DashboardPage() {
   const attendanceRate = totalActiveWorkers > 0
     ? Math.round((todayCheckIns / totalActiveWorkers) * 100) : 0;
 
+  /* 집하장별 실적 — AVAC 시설만, 최근 7일 합산 */
+  const avacFacilityIds = facilities.filter((f) => f.type === 'AVAC').map((f) => f.id);
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+  const facilityOpsData = avacFacilityIds.length > 0
+    ? await prisma.facilityDailyOps.groupBy({
+        by: ['facilityId'],
+        where: { facilityId: { in: avacFacilityIds }, opsDate: { gte: sevenDaysAgo } },
+        _sum: {
+          generalWasteTon: true, foodWasteTon: true,
+          generalCollectTon: true, foodCollectTon: true,
+          generalTransferTon: true, foodTransferTon: true,
+          generalOpHours: true, foodOpHours: true,
+          prevDayPowerKwh: true,
+        },
+        _count: { id: true },
+      })
+    : [];
+
   return (
     <div className="space-y-3.5 md:space-y-5">
       {/* KPI — 민원 위주 3종 */}
@@ -148,6 +168,23 @@ export default async function DashboardPage() {
         </section>
       )}
 
+      {/* 집하장별 실적 위젯 — AVAC 시설만 */}
+      {avacFacilityIds.length > 0 && (
+        <section>
+          <Panel
+            title="집하장별 실적 (최근 7일)"
+            actionHref="/super-admin?tab=facility-ops"
+            actionLabel="실적 전체보기 →"
+            iconPath="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          >
+            <FacilityOpsWidget
+              facilities={facilities.filter((f) => f.type === 'AVAC')}
+              opsData={facilityOpsData}
+            />
+          </Panel>
+        </section>
+      )}
+
       {/* 최근 민원 — 단독 패널 (full width) */}
       <section>
         <Panel
@@ -214,6 +251,104 @@ function FacilityList({ facilities }: { facilities: FacilityRow[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ─────────────── 집하장별 실적 위젯 ─────────────── */
+
+type OpsRow = {
+  facilityId: bigint;
+  _sum: {
+    generalWasteTon:    import('@prisma/client').Prisma.Decimal | null;
+    foodWasteTon:       import('@prisma/client').Prisma.Decimal | null;
+    generalCollectTon:  import('@prisma/client').Prisma.Decimal | null;
+    foodCollectTon:     import('@prisma/client').Prisma.Decimal | null;
+    generalTransferTon: import('@prisma/client').Prisma.Decimal | null;
+    foodTransferTon:    import('@prisma/client').Prisma.Decimal | null;
+    generalOpHours:     import('@prisma/client').Prisma.Decimal | null;
+    foodOpHours:        import('@prisma/client').Prisma.Decimal | null;
+    prevDayPowerKwh:    import('@prisma/client').Prisma.Decimal | null;
+  };
+  _count: { id: number };
+};
+
+function FacilityOpsWidget({
+  facilities,
+  opsData,
+}: {
+  facilities: { id: bigint; name: string }[];
+  opsData: OpsRow[];
+}) {
+  const byFacility = new Map(opsData.map((r) => [r.facilityId.toString(), r]));
+  const dec = (v: import('@prisma/client').Prisma.Decimal | null | undefined) =>
+    Math.round(Number(v?.toString() ?? '0') * 10) / 10;
+
+  if (facilities.length === 0) {
+    return <div className="py-8 text-center text-sm text-ink-muted font-semibold">자동집하시설이 없습니다.</div>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {facilities.map((f) => {
+        const ops = byFacility.get(f.id.toString());
+        const wasteTon    = dec(ops?._sum.generalWasteTon)    + dec(ops?._sum.foodWasteTon);
+        const collectTon  = dec(ops?._sum.generalCollectTon)  + dec(ops?._sum.foodCollectTon);
+        const transferTon = dec(ops?._sum.generalTransferTon) + dec(ops?._sum.foodTransferTon);
+        const opHours     = dec(ops?._sum.generalOpHours)     + dec(ops?._sum.foodOpHours);
+        const powerKwh    = dec(ops?._sum.prevDayPowerKwh);
+        const dayCount    = ops?._count.id ?? 0;
+        const noData      = dayCount === 0;
+
+        return (
+          <div key={f.id.toString()} className="rounded-xl border-2 border-cyan-200 bg-cyan-50 p-3.5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🏭</span>
+              <span className="text-sm font-extrabold text-ink">{f.name}</span>
+              {!noData && (
+                <span className="ml-auto text-[0.625rem] font-mono font-bold text-ink-muted bg-white border border-cyan-200 rounded px-1.5 py-0.5">
+                  {dayCount}일치 집계
+                </span>
+              )}
+            </div>
+            {noData ? (
+              <div className="py-3 text-center text-xs text-ink-muted font-semibold">최근 7일 실적 없음</div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <OpsKpi label="처리량" value={wasteTon.toFixed(1)} unit="t" color="cyan" />
+                <OpsKpi label="수거량" value={collectTon.toFixed(1)} unit="t" color="teal" />
+                <OpsKpi label="반출량" value={transferTon.toFixed(1)} unit="t" color="emerald" />
+                <OpsKpi label="가동시간" value={opHours.toFixed(1)} unit="h" color="sky" />
+                <OpsKpi label="전기사용량" value={powerKwh.toFixed(0)} unit="kWh" color="indigo" colSpan={2} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OpsKpi({
+  label, value, unit, color, colSpan = 1,
+}: {
+  label: string; value: string; unit: string; color: string; colSpan?: number;
+}) {
+  const bgMap: Record<string, string> = {
+    cyan:    'bg-cyan-100 text-cyan-800',
+    teal:    'bg-teal-100 text-teal-800',
+    emerald: 'bg-emerald-100 text-emerald-800',
+    sky:     'bg-sky-100 text-sky-800',
+    indigo:  'bg-indigo-100 text-indigo-800',
+  };
+  const cls = bgMap[color] ?? 'bg-slate-100 text-slate-800';
+  return (
+    <div className={`rounded-lg p-2 text-center ${cls} ${colSpan === 2 ? 'col-span-2' : ''}`}>
+      <div className="text-[0.625rem] font-extrabold tracking-wide opacity-70 mb-0.5">{label}</div>
+      <div className="text-base font-black font-mono leading-none">
+        {value}
+        <span className="text-[0.625rem] font-semibold ml-0.5">{unit}</span>
+      </div>
     </div>
   );
 }

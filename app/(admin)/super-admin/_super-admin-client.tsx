@@ -2111,7 +2111,7 @@ type OpsRecord = {
   updatedAt: string;
 };
 
-type FacilityItem = { id: string; name: string; municipalityName: string };
+type FacilityItem = { id: string; name: string; municipalityName: string; avacDesignCapKg: string | null };
 type OpsSubTab = 'record' | 'summary' | 'export';
 
 function today(): string {
@@ -2132,10 +2132,11 @@ function FacilityOpsTab() {
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((d) =>
         setFacilities(
-          (d.items ?? []).map((f: { id: string; name: string; municipalityName: string }) => ({
+          (d.items ?? []).map((f: { id: string; name: string; municipalityName: string; avacDesignCapKg?: string | null }) => ({
             id: f.id,
             name: f.name,
             municipalityName: f.municipalityName ?? '',
+            avacDesignCapKg: f.avacDesignCapKg ?? null,
           }))
         )
       )
@@ -2424,7 +2425,27 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
     { generalWaste: 0, foodWaste: 0, opHours: 0, power: 0, count: 0 }
   );
 
-  const facilityMap = Object.fromEntries(facilities.map((f) => [f.id, f.name]));
+  const facilityMap = Object.fromEntries(facilities.map((f) => [f.id, f]));
+
+  // 시설별 집계 (가동률 계산용)
+  const facilityTotals = items.reduce<Record<string, { waste: number; days: number }>>((acc, r) => {
+    const prev = acc[r.facilityId] ?? { waste: 0, days: 0 };
+    acc[r.facilityId] = {
+      waste: prev.waste + Number(r.generalWasteTon) + Number(r.foodWasteTon),
+      days: prev.days + 1,
+    };
+    return acc;
+  }, {});
+
+  function utilizationRate(facilityId: string): number | null {
+    const fac = facilityMap[facilityId];
+    if (!fac?.avacDesignCapKg || !facilityTotals[facilityId]) return null;
+    const designTonPerDay = Number(fac.avacDesignCapKg) / 1000;
+    if (designTonPerDay <= 0) return null;
+    const { waste, days } = facilityTotals[facilityId];
+    const avgActual = waste / days;
+    return Math.min((avgActual / designTonPerDay) * 100, 999);
+  }
 
   return (
     <div className="space-y-4">
@@ -2448,43 +2469,62 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
         {error && <span className="text-sm text-red-500 font-bold">{error}</span>}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {[
-          { label: '일반처리 합계', value: `${kpi.generalWaste.toFixed(2)}t` },
-          { label: '음식처리 합계', value: `${kpi.foodWaste.toFixed(2)}t` },
-          { label: '총 가동시간', value: `${kpi.opHours.toFixed(1)}h` },
-          { label: '전력 합계', value: `${kpi.power.toFixed(0)}kWh` },
-          { label: '기록 건수', value: `${kpi.count}건` },
-        ].map((k) => (
-          <div key={k.label} className="bg-surface-soft border border-line rounded-lg p-3 text-center">
-            <div className="text-xs text-ink-muted font-bold mb-1">{k.label}</div>
-            <div className="text-lg font-extrabold text-ink">{k.value}</div>
+      {(() => {
+        // 가동률이 있는 시설만 평균
+        const rates = Object.keys(facilityTotals)
+          .map((fid) => utilizationRate(fid))
+          .filter((r): r is number => r !== null);
+        const avgRate = rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {[
+              { label: '일반처리 합계', value: `${kpi.generalWaste.toFixed(2)}t` },
+              { label: '음식처리 합계', value: `${kpi.foodWaste.toFixed(2)}t` },
+              { label: '총 가동시간', value: `${kpi.opHours.toFixed(1)}h` },
+              { label: '전력 합계', value: `${kpi.power.toFixed(0)}kWh` },
+              {
+                label: '평균 가동률',
+                value: avgRate !== null ? `${avgRate.toFixed(1)}%` : '—',
+                highlight: avgRate !== null && avgRate >= 80 ? 'text-emerald-600' : avgRate !== null && avgRate < 50 ? 'text-red-500' : undefined,
+              },
+            ].map((k) => (
+              <div key={k.label} className="bg-surface-soft border border-line rounded-lg p-3 text-center">
+                <div className="text-xs text-ink-muted font-bold mb-1">{k.label}</div>
+                <div className={`text-lg font-extrabold ${'highlight' in k && k.highlight ? k.highlight : 'text-ink'}`}>{k.value}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {items.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[700px]">
             <thead>
               <tr className="bg-surface-soft">
-                {['날짜', '시설', '일반처리(t)', '음식처리(t)', '일반가동(h)', '음식가동(h)', '전일전력(kWh)'].map((h) => (
+                {['날짜', '시설', '일반처리(t)', '음식처리(t)', '일반가동(h)', '음식가동(h)', '전일전력(kWh)', '가동률(%)'].map((h) => (
                   <th key={h} className="px-2 py-1.5 text-left font-extrabold text-ink-muted border-b border-line">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {items.map((r) => (
+              {items.map((r) => {
+                const rate = utilizationRate(r.facilityId);
+                return (
                 <tr key={r.id} className="border-b border-line hover:bg-surface-soft">
                   <td className="px-2 py-1.5">{r.opsDate}</td>
-                  <td className="px-2 py-1.5">{r.facilityName || facilityMap[r.facilityId] || r.facilityId}</td>
+                  <td className="px-2 py-1.5">{r.facilityName || facilityMap[r.facilityId]?.name || r.facilityId}</td>
                   <td className="px-2 py-1.5">{r.generalWasteTon}</td>
                   <td className="px-2 py-1.5">{r.foodWasteTon}</td>
                   <td className="px-2 py-1.5">{r.generalOpHours}</td>
                   <td className="px-2 py-1.5">{r.foodOpHours}</td>
                   <td className="px-2 py-1.5">{r.prevDayPowerKwh}</td>
+                  <td className={`px-2 py-1.5 font-bold ${rate !== null && rate >= 80 ? 'text-emerald-600' : rate !== null && rate < 50 ? 'text-red-500' : 'text-ink-muted'}`}>
+                    {rate !== null ? `${rate.toFixed(1)}%` : '—'}
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

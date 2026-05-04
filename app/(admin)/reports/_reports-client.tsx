@@ -69,17 +69,19 @@ type Stats = {
   safety: { total: number; byType: Array<{ type: string; count: number }>; bySeverity: Array<{ severity: string; count: number }> };
 };
 
-export default function ReportsClient({ session }: { session: { role: string; name: string } }) {
+export default function ReportsClient({ session, isAvac = false }: { session: { role: string; name: string }; isAvac?: boolean }) {
   const [reportTab, setReportTab] = useState<ReportTab>('master');
 
   return (
     <div className="space-y-4">
       <nav className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card overflow-x-auto print:hidden">
         <TabBtn active={reportTab === 'master'} onClick={() => setReportTab('master')}>📊 통합 운영 보고서</TabBtn>
-        <TabBtn active={reportTab === 'f02'} onClick={() => setReportTab('f02')}>📄 일일 처리실적 일보</TabBtn>
+        {!isAvac && (
+          <TabBtn active={reportTab === 'f02'} onClick={() => setReportTab('f02')}>📄 일일 처리실적 일보</TabBtn>
+        )}
       </nav>
-      {reportTab === 'master' && <MasterStatsView session={session} />}
-      {reportTab === 'f02' && <DailyTreatmentTab role={session.role} />}
+      {reportTab === 'master' && <MasterStatsView session={session} isAvac={isAvac} />}
+      {reportTab === 'f02' && !isAvac && <DailyTreatmentTab role={session.role} />}
     </div>
   );
 }
@@ -97,7 +99,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   );
 }
 
-function MasterStatsView({ session }: { session: { role: string; name: string } }) {
+function MasterStatsView({ session, isAvac = false }: { session: { role: string; name: string }; isAvac?: boolean }) {
   const ymStart = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
   const ymEnd = new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
   const [from, setFrom] = useState(ymStart);
@@ -398,40 +400,45 @@ function MasterStatsView({ session }: { session: { role: string; name: string } 
             </div>
           </Section>
 
-          {/* 6. 처리실적 */}
-          <Section no={6} title="생활폐기물 처리실적 (14성상)" color="text-slate-700">
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              <KCard label="총 처리량" value={`${data.waste.total} ton`} tone="accent" />
-              <KCard label="기록 건수" value={`${data.waste.records}건`} />
-              <KCard label="성상 종류" value={`${data.waste.byMaterial.length}종`} />
-            </div>
-            <Card title="성상별">
-              {data.waste.byMaterial.length === 0 ? <Empty /> : data.waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
-                <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={max(data.waste.byMaterial.map((x) => x.weight))} suffix="t" />
-              ))}
-            </Card>
-          </Section>
+          {/* 6. 처리실적 — 일반 수집운반 업체만 표시 */}
+          {!isAvac && (
+            <>
+              {/* 6. 처리실적 — 일반 수집운반 업체만 */}
+              <Section no={6} title="생활폐기물 처리실적 (14성상)" color="text-slate-700">
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <KCard label="총 처리량" value={`${data.waste.total} ton`} tone="accent" />
+                  <KCard label="기록 건수" value={`${data.waste.records}건`} />
+                  <KCard label="성상 종류" value={`${data.waste.byMaterial.length}종`} />
+                </div>
+                <Card title="성상별">
+                  {data.waste.byMaterial.length === 0 ? <Empty /> : data.waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
+                    <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={max(data.waste.byMaterial.map((x) => x.weight))} suffix="t" />
+                  ))}
+                </Card>
+              </Section>
 
-          {/* 7. 반입실적 */}
-          <Section no={7} title="자원순환센터 반입실적" color="text-emerald-700">
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              <KCard label="총 반입량" value={`${data.intake.total} ton`} tone="success" />
-              <KCard label="반입 건수" value={`${data.intake.records}건`} />
-              <KCard label="반입 차량" value={`${data.intake.byVehicle.length}대`} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Card title="성상별">
-                {data.intake.byCategory.length === 0 ? <Empty /> : data.intake.byCategory.map((c) => (
-                  <BarRow key={c.code} label={MATERIAL_LABEL[c.code] ?? c.code} value={c.weight} max={max(data.intake.byCategory.map((x) => x.weight))} suffix="t" color="bg-emerald-500" />
-                ))}
-              </Card>
-              <Card title="차량별 Top 10">
-                {data.intake.byVehicle.length === 0 ? <Empty /> : data.intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
-                  <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={max(data.intake.byVehicle.map((x) => x.weight))} suffix="t" color="bg-blue-400" />
-                ))}
-              </Card>
-            </div>
-          </Section>
+              {/* 7. 반입실적 — 일반 수집운반 업체만 */}
+              <Section no={7} title="자원순환센터 반입실적" color="text-emerald-700">
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <KCard label="총 반입량" value={`${data.intake.total} ton`} tone="success" />
+                  <KCard label="반입 건수" value={`${data.intake.records}건`} />
+                  <KCard label="반입 차량" value={`${data.intake.byVehicle.length}대`} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Card title="성상별">
+                    {data.intake.byCategory.length === 0 ? <Empty /> : data.intake.byCategory.map((c) => (
+                      <BarRow key={c.code} label={MATERIAL_LABEL[c.code] ?? c.code} value={c.weight} max={max(data.intake.byCategory.map((x) => x.weight))} suffix="t" color="bg-emerald-500" />
+                    ))}
+                  </Card>
+                  <Card title="차량별 Top 10">
+                    {data.intake.byVehicle.length === 0 ? <Empty /> : data.intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
+                      <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={max(data.intake.byVehicle.map((x) => x.weight))} suffix="t" color="bg-blue-400" />
+                    ))}
+                  </Card>
+                </div>
+              </Section>
+            </>
+          )}
 
           {/* 8. 안전보건 */}
           <Section no={8} title="산업안전보건" color="text-red-700">

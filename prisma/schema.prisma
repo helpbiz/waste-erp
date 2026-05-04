@@ -1027,6 +1027,8 @@ model WasteTreatmentFacility {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  avacDesignCapKg Decimal? @map("avac_design_cap_kg") @db.Decimal(10, 2) // AVAC 설계 처리용량(kg/일) — 가동률 계산용
+
   municipality  Municipality            @relation(fields: [municipalityId], references: [id])
   intakes       RecyclingCenterIntake[]
   primaryUsers  User[]                  @relation("UserPrimaryFacility")

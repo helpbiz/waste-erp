@@ -87,6 +87,7 @@ export async function GET(req: Request) {
       type: f.type,
       name: f.name,
       address: f.address,
+      avacDesignCapKg: f.avacDesignCapKg?.toString() ?? null,
       active: f.active,
       createdAt: f.createdAt.toISOString(),
       updatedAt: f.updatedAt.toISOString(),

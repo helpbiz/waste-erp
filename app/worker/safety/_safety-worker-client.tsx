@@ -105,15 +105,6 @@ export default function SafetyWorkerClient({
   const [opTbmTopic, setOpTbmTopic] = useState('');
   const [opTbmContent, setOpTbmContent] = useState('');
   const [opTbmSaving, setOpTbmSaving] = useState(false);
-  // 시설 담당자: 운전기록 입력 폼
-  const [opOpsDate, setOpOpsDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [opOpsForm, setOpOpsForm] = useState({
-    generalOpHours: '', foodOpHours: '', downtimeHours: '', downtimeReason: '',
-    generalWasteTon: '', foodWasteTon: '', generalCollectTon: '', foodCollectTon: '',
-    generalTransferTon: '', foodTransferTon: '', prevDayPowerKwh: '', notes: '',
-  });
-  const [opOpsSaving, setOpOpsSaving] = useState(false);
-  const [opOpsMsg, setOpOpsMsg] = useState('');
 
   async function saveTbm() {
     if (!operatorFacility || !opTbmTopic.trim()) return;
@@ -132,37 +123,6 @@ export default function SafetyWorkerClient({
       }
     } finally {
       setOpTbmSaving(false);
-    }
-  }
-
-  async function saveOpsRecord() {
-    if (!operatorFacility) return;
-    setOpOpsSaving(true); setOpOpsMsg('');
-    const toNum = (v: string) => parseFloat(v) || 0;
-    try {
-      const res = await fetch('/api/super-admin/facility-ops', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          facilityId: operatorFacility.id,
-          opsDate: opOpsDate,
-          generalOpHours: toNum(opOpsForm.generalOpHours),
-          foodOpHours: toNum(opOpsForm.foodOpHours),
-          downtimeHours: toNum(opOpsForm.downtimeHours),
-          downtimeReason: opOpsForm.downtimeReason || undefined,
-          generalWasteTon: toNum(opOpsForm.generalWasteTon),
-          foodWasteTon: toNum(opOpsForm.foodWasteTon),
-          generalCollectTon: toNum(opOpsForm.generalCollectTon),
-          foodCollectTon: toNum(opOpsForm.foodCollectTon),
-          generalTransferTon: toNum(opOpsForm.generalTransferTon),
-          foodTransferTon: toNum(opOpsForm.foodTransferTon),
-          prevDayPowerKwh: toNum(opOpsForm.prevDayPowerKwh),
-          notes: opOpsForm.notes || undefined,
-        }),
-      });
-      setOpOpsMsg(res.ok ? '✅ 저장 완료' : '❌ 저장 실패');
-    } finally {
-      setOpOpsSaving(false);
     }
   }
 
@@ -620,59 +580,6 @@ export default function SafetyWorkerClient({
             </div>
           </section>
 
-          {/* 운전기록 입력 카드 */}
-          <section className="bg-surface rounded-xl border-2 border-indigo-300 shadow-card overflow-hidden">
-            <header className="px-4 py-3 bg-indigo-50 border-b-2 border-indigo-200">
-              <div className="text-base font-extrabold text-indigo-800">📋 운전기록 입력 — {operatorFacility.name}</div>
-            </header>
-            <div className="p-4 space-y-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">운영일자</span>
-                <input type="date" value={opOpsDate} onChange={(e) => setOpOpsDate(e.target.value)} className="border border-line rounded px-3 py-2 text-sm" />
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  ['generalOpHours', '일반가동(h)'],
-                  ['foodOpHours', '음식가동(h)'],
-                  ['downtimeHours', '비가동(h)'],
-                  ['generalWasteTon', '일반처리(t)'],
-                  ['foodWasteTon', '음식처리(t)'],
-                  ['generalCollectTon', '일반수거(t)'],
-                  ['foodCollectTon', '음식수거(t)'],
-                  ['generalTransferTon', '일반반출(t)'],
-                  ['foodTransferTon', '음식반출(t)'],
-                  ['prevDayPowerKwh', '전일전력(kWh)'],
-                ] as const).map(([key, label]) => (
-                  <label key={key} className="flex flex-col gap-1">
-                    <span className="text-xs font-extrabold text-ink-muted">{label}</span>
-                    <input
-                      type="number" min="0" step="0.01"
-                      value={opOpsForm[key]}
-                      onChange={(e) => setOpOpsForm({ ...opOpsForm, [key]: e.target.value })}
-                      className="border border-line rounded px-2 py-1.5 text-sm text-right"
-                    />
-                  </label>
-                ))}
-                <label className="flex flex-col gap-1 col-span-2">
-                  <span className="text-xs font-extrabold text-ink-muted">비가동 사유</span>
-                  <input value={opOpsForm.downtimeReason} onChange={(e) => setOpOpsForm({ ...opOpsForm, downtimeReason: e.target.value })} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
-                </label>
-                <label className="flex flex-col gap-1 col-span-2">
-                  <span className="text-xs font-extrabold text-ink-muted">비고</span>
-                  <input value={opOpsForm.notes} onChange={(e) => setOpOpsForm({ ...opOpsForm, notes: e.target.value })} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
-                </label>
-              </div>
-              {opOpsMsg && <p className={`text-sm font-bold ${opOpsMsg.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{opOpsMsg}</p>}
-              <button
-                type="button"
-                onClick={saveOpsRecord}
-                disabled={opOpsSaving}
-                className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-extrabold disabled:opacity-50 active:scale-[0.98]"
-              >
-                {opOpsSaving ? '저장 중…' : '운전기록 저장'}
-              </button>
-            </div>
-          </section>
         </>
       )}
 

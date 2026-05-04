@@ -18,6 +18,7 @@ const PatchBody = z.object({
   type: z.string().refine(isFacilityType, { message: 'invalid_type' }).optional(),
   name: z.string().min(1).max(100).optional(),
   address: z.string().max(255).nullable().optional(),
+  avacDesignCapKg: z.number().nonnegative().nullable().optional(),
   active: z.boolean().optional(),
 });
 
@@ -71,6 +72,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (b.type !== undefined) data.type = b.type;
   if (b.name !== undefined) data.name = b.name;
   if (b.address !== undefined) data.address = b.address;
+  if (b.avacDesignCapKg !== undefined) data.avacDesignCapKg = b.avacDesignCapKg;
   if (b.active !== undefined) data.active = b.active;
 
   await prisma.wasteTreatmentFacility.update({ where: { id }, data });

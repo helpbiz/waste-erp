@@ -14,6 +14,7 @@ type Facility = {
   type: FacilityType;
   name: string;
   address: string | null;
+  avacDesignCapKg: string | null;
   active: boolean;
   updatedAt: string;
 };
@@ -122,6 +123,7 @@ export function FacilitiesTab() {
                   <th className="px-3 py-2 text-left">분류</th>
                   <th className="px-3 py-2 text-left">시설명</th>
                   <th className="px-3 py-2 text-left">주소</th>
+                  <th className="px-3 py-2 text-right">설계용량</th>
                   <th className="px-3 py-2 text-center">상태</th>
                   <th className="px-3 py-2"></th>
                 </tr>
@@ -136,6 +138,11 @@ export function FacilitiesTab() {
                     </td>
                     <td className="px-3 py-2 font-bold">{f.name}</td>
                     <td className="px-3 py-2 text-xs text-slate-700 max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-700">
+                      {f.type === 'AVAC' && f.avacDesignCapKg
+                        ? `${Number(f.avacDesignCapKg).toLocaleString()}kg/일`
+                        : f.type === 'AVAC' ? '—' : ''}
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                         f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-slate-700 border-slate-400'
@@ -190,6 +197,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
     type: initial?.type ?? ('RECYCLING_CENTER' as FacilityType),
     name: initial?.name ?? '',
     address: initial?.address ?? '',
+    avacDesignCapKg: initial?.avacDesignCapKg ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,6 +212,9 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
       name: form.name.trim(),
       address: form.address.trim() || null,
     };
+    if (form.type === 'AVAC') {
+      body.avacDesignCapKg = form.avacDesignCapKg !== '' ? Number(form.avacDesignCapKg) : null;
+    }
     if (!initial) body.municipalityId = municipalityId;
     const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
@@ -259,6 +270,22 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
               placeholder="(선택)"
               className="w-full px-3 py-1.5 rounded border border-line text-sm" />
           </div>
+          {form.type === 'AVAC' && (
+            <div>
+              <label htmlFor="fac-design-cap" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">
+                설계 처리용량 (kg/일) — 가동률 계산에 사용
+              </label>
+              <input
+                id="fac-design-cap"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.avacDesignCapKg}
+                onChange={(e) => setForm({ ...form, avacDesignCapKg: e.target.value })}
+                placeholder="예: 10000 (선택)"
+                className="w-full px-3 py-1.5 rounded border border-line text-sm" />
+            </div>
+          )}
           {error && (
             <div className="px-3 py-2 rounded bg-red-50 border border-red-200 text-xs font-bold text-red-700">{error}</div>
           )}
