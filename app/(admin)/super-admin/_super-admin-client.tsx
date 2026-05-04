@@ -2503,13 +2503,24 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
     if (facilities.length > 0 && !facilityId) setFacilityId(facilities[0].id);
   }, [facilities, facilityId]);
 
-  function download() {
+  function buildParams() {
+    const params = new URLSearchParams({ from, to });
+    if (facilityId) params.set('facilityId', facilityId);
+    return params;
+  }
+
+  function downloadExcel() {
     const diffDays = (new Date(to).getTime() - new Date(from).getTime()) / 86400000;
     if (diffDays > 90) { setError('기간은 최대 90일까지 조회 가능합니다.'); return; }
     setError('');
-    const params = new URLSearchParams({ from, to });
-    if (facilityId) params.set('facilityId', facilityId);
-    window.open(`/api/super-admin/facility-ops/export?${params.toString()}`, '_blank');
+    window.open(`/api/super-admin/facility-ops/export?${buildParams().toString()}`, '_blank');
+  }
+
+  function downloadPdf() {
+    const diffDays = (new Date(to).getTime() - new Date(from).getTime()) / 86400000;
+    if (diffDays > 90) { setError('기간은 최대 90일까지 조회 가능합니다.'); return; }
+    setError('');
+    window.open(`/api/super-admin/facility-ops/pdf?${buildParams().toString()}`, '_blank');
   }
 
   return (
@@ -2538,14 +2549,23 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
         </label>
       </div>
       {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
-      <button
-        type="button"
-        onClick={download}
-        className="px-5 py-2.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 min-h-[44px]"
-      >
-        📥 Excel 다운로드 (.xlsx)
-      </button>
-      <p className="text-xs text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 12개 컬럼</p>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={downloadExcel}
+          className="px-5 py-2.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 min-h-[44px]"
+        >
+          📥 Excel 다운로드 (.xlsx)
+        </button>
+        <button
+          type="button"
+          onClick={downloadPdf}
+          className="px-5 py-2.5 rounded bg-blue-700 text-white text-sm font-extrabold hover:bg-blue-800 min-h-[44px]"
+        >
+          📄 PDF 다운로드 (A4 가로)
+        </button>
+      </div>
+      <p className="text-xs text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 14개 컬럼</p>
     </div>
   );
 }
