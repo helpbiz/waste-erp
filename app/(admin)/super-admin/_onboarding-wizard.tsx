@@ -341,6 +341,13 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
         await importCsv(contractorId);
       }
 
+      /* 5. 기본 직책·직급 seed (Plan SC: FR-10) */
+      await fetch('/api/contractor/positions/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contractorId }),
+      }).catch(() => null); // 비치명적
+
       setStep(6);
     } catch (e) {
       setError(e instanceof Error ? e.message : '알 수 없는 오류');

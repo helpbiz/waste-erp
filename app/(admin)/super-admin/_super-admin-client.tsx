@@ -64,7 +64,7 @@ type Aggregate = {
   } | null;
 };
 
-type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features';
+type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'facility-ops' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features';
 
 export default function SuperAdminClient() {
   const [tab, setTab] = useState<SuperTab>(() => {
@@ -124,6 +124,7 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'company'} onClick={() => setTab('company')}>회사정보·차고지</Tab>
         <Tab active={tab === 'gis'} onClick={() => setTab('gis')}>GIS API 설정</Tab>
         <Tab active={tab === 'facilities'} onClick={() => setTab('facilities')}>처리시설 마스터</Tab>
+        <Tab active={tab === 'facility-ops'} onClick={() => setTab('facility-ops')}>🏭 시설 운전기록</Tab>
         {/* Phase 2 신규 탭 4종 */}
         <Tab active={tab === 'users-global'} onClick={() => setTab('users-global')}>👥 사용자 (전체)</Tab>
         <Tab active={tab === 'system'} onClick={() => setTab('system')}>📊 시스템 모니터링</Tab>
@@ -139,6 +140,7 @@ export default function SuperAdminClient() {
       {tab === 'company' && <CompanyInfoTab />}
       {tab === 'gis' && <GisConfigTab />}
       {tab === 'facilities' && <FacilitiesTab />}
+      {tab === 'facility-ops' && <FacilityOpsTab />}
       {tab === 'users-global' && <UsersGlobalTab />}
       {tab === 'system' && <SystemStatsTab />}
       {tab === 'audit' && <AuditLogTab />}
@@ -2083,5 +2085,467 @@ function ContractorCreateModal({
         </button>
       </footer>
     </BottomSheet>
+  );
+}
+
+/* ─────────────────  탭 13: AVAC 시설 운전기록  ───────────────── */
+// Design Ref: §4 — Option A 인라인. 3 서브탭: 운전기록 입력 / 집계 현황 / 출력
+
+type OpsRecord = {
+  id: string;
+  facilityId: string;
+  facilityName: string;
+  opsDate: string;
+  generalOpHours: string;
+  foodOpHours: string;
+  downtimeHours: string;
+  downtimeReason: string | null;
+  generalWasteTon: string;
+  foodWasteTon: string;
+  generalCollectTon: string;
+  foodCollectTon: string;
+  generalTransferTon: string;
+  foodTransferTon: string;
+  prevDayPowerKwh: string;
+  notes: string | null;
+  updatedAt: string;
+};
+
+type FacilityItem = { id: string; name: string; municipalityName: string };
+type OpsSubTab = 'record' | 'summary' | 'export';
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+function FacilityOpsTab() {
+  const [subTab, setSubTab] = useState<OpsSubTab>('record');
+  const [facilities, setFacilities] = useState<FacilityItem[]>([]);
+
+  useEffect(() => {
+    fetch('/api/super-admin/facilities?active=true')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) =>
+        setFacilities(
+          (d.items ?? []).map((f: { id: string; name: string; municipalityName: string }) => ({
+            id: f.id,
+            name: f.name,
+            municipalityName: f.municipalityName ?? '',
+          }))
+        )
+      )
+      .catch(() => undefined);
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1">
+        {(['record', 'summary', 'export'] as OpsSubTab[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setSubTab(t)}
+            className={`px-3 py-1.5 rounded text-sm font-bold border transition ${
+              subTab === t
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            {t === 'record' ? '운전기록 입력' : t === 'summary' ? '집계 현황' : '출력'}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'record' && <RecordSubtab facilities={facilities} />}
+      {subTab === 'summary' && <SummarySubtab facilities={facilities} />}
+      {subTab === 'export' && <ExportSubtab facilities={facilities} />}
+    </div>
+  );
+}
+
+function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
+  const [facilityId, setFacilityId] = useState('');
+  const [opsDate, setOpsDate] = useState(today());
+  const [form, setForm] = useState({
+    generalOpHours: '', foodOpHours: '', downtimeHours: '', downtimeReason: '',
+    generalWasteTon: '', foodWasteTon: '', generalCollectTon: '', foodCollectTon: '',
+    generalTransferTon: '', foodTransferTon: '', prevDayPowerKwh: '', notes: '',
+  });
+  const [history, setHistory] = useState<OpsRecord[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    if (facilities.length > 0 && !facilityId) setFacilityId(facilities[0].id);
+  }, [facilities, facilityId]);
+
+  function loadDay(fId: string, date: string) {
+    if (!fId || !date) return;
+    const from = date;
+    const to = date;
+    fetch(`/api/super-admin/facility-ops?facilityId=${fId}&from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const item: OpsRecord | undefined = d.items?.[0];
+        if (item) {
+          setForm({
+            generalOpHours: item.generalOpHours,
+            foodOpHours: item.foodOpHours,
+            downtimeHours: item.downtimeHours,
+            downtimeReason: item.downtimeReason ?? '',
+            generalWasteTon: item.generalWasteTon,
+            foodWasteTon: item.foodWasteTon,
+            generalCollectTon: item.generalCollectTon,
+            foodCollectTon: item.foodCollectTon,
+            generalTransferTon: item.generalTransferTon,
+            foodTransferTon: item.foodTransferTon,
+            prevDayPowerKwh: item.prevDayPowerKwh,
+            notes: item.notes ?? '',
+          });
+        } else {
+          setForm({ generalOpHours: '', foodOpHours: '', downtimeHours: '', downtimeReason: '',
+            generalWasteTon: '', foodWasteTon: '', generalCollectTon: '', foodCollectTon: '',
+            generalTransferTon: '', foodTransferTon: '', prevDayPowerKwh: '', notes: '' });
+        }
+      })
+      .catch(() => undefined);
+  }
+
+  function loadHistory(fId: string) {
+    if (!fId) return;
+    const to = today();
+    const from = daysAgo(6);
+    fetch(`/api/super-admin/facility-ops?facilityId=${fId}&from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((d) => setHistory(d.items ?? []))
+      .catch(() => undefined);
+  }
+
+  useEffect(() => {
+    loadDay(facilityId, opsDate);
+    loadHistory(facilityId);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [facilityId, opsDate]);
+
+  function n(v: string) { return v === '' ? 0 : Number(v); }
+
+  async function save() {
+    if (!facilityId) return;
+    setSaving(true);
+    setMsg('');
+    const res = await fetch('/api/super-admin/facility-ops', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        facilityId,
+        opsDate,
+        generalOpHours: n(form.generalOpHours),
+        foodOpHours: n(form.foodOpHours),
+        downtimeHours: n(form.downtimeHours),
+        downtimeReason: form.downtimeReason || undefined,
+        generalWasteTon: n(form.generalWasteTon),
+        foodWasteTon: n(form.foodWasteTon),
+        generalCollectTon: n(form.generalCollectTon),
+        foodCollectTon: n(form.foodCollectTon),
+        generalTransferTon: n(form.generalTransferTon),
+        foodTransferTon: n(form.foodTransferTon),
+        prevDayPowerKwh: n(form.prevDayPowerKwh),
+        notes: form.notes || undefined,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setMsg('운전기록이 저장되었습니다.');
+      loadHistory(facilityId);
+    } else {
+      const e = await res.json().catch(() => ({}));
+      setMsg(e.error === 'forbidden' ? '접근 권한이 없습니다.' : '저장 중 오류가 발생했습니다.');
+    }
+  }
+
+  const numField = (label: string, key: keyof typeof form) => (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs font-bold text-ink-muted">{label}</span>
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        value={form[key]}
+        onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+        className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+      />
+    </label>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-end">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">시설</span>
+          <select
+            value={facilityId}
+            onChange={(e) => setFacilityId(e.target.value)}
+            className="border border-line rounded px-2 py-1.5 text-sm min-w-[200px]"
+          >
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">운영일자</span>
+          <input
+            type="date"
+            value={opsDate}
+            onChange={(e) => setOpsDate(e.target.value)}
+            className="border border-line rounded px-2 py-1.5 text-sm"
+          />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 bg-surface-soft border border-line rounded-lg p-4">
+        {numField('일반가동(h)', 'generalOpHours')}
+        {numField('음식가동(h)', 'foodOpHours')}
+        {numField('비가동(h)', 'downtimeHours')}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">비가동 사유</span>
+          <input
+            type="text"
+            value={form.downtimeReason}
+            onChange={(e) => setForm((p) => ({ ...p, downtimeReason: e.target.value }))}
+            maxLength={200}
+            placeholder="선택사항"
+            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+          />
+        </label>
+        {numField('일반처리(t)', 'generalWasteTon')}
+        {numField('음식처리(t)', 'foodWasteTon')}
+        {numField('일반수거(t)', 'generalCollectTon')}
+        {numField('음식수거(t)', 'foodCollectTon')}
+        {numField('일반반출(t)', 'generalTransferTon')}
+        {numField('음식반출(t)', 'foodTransferTon')}
+        {numField('전일전력(kWh)', 'prevDayPowerKwh')}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">비고</span>
+          <input
+            type="text"
+            value={form.notes}
+            onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+            maxLength={1000}
+            placeholder="선택사항"
+            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+          />
+        </label>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !facilityId}
+          className="px-5 py-2 rounded bg-purple-600 text-white text-sm font-extrabold hover:bg-purple-700 disabled:opacity-50 min-h-[44px]"
+        >
+          {saving ? '저장 중…' : '저장'}
+        </button>
+        {msg && (
+          <span className={`text-sm font-bold ${msg.includes('저장되었') ? 'text-emerald-600' : 'text-red-500'}`}>
+            {msg}
+          </span>
+        )}
+      </div>
+
+      {history.length > 0 && (
+        <div>
+          <h4 className="text-sm font-extrabold text-ink mb-2">최근 7일 이력</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs min-w-[700px]">
+              <thead>
+                <tr className="bg-surface-soft">
+                  {['날짜', '일반가동', '음식가동', '비가동', '일반처리', '음식처리', '전일전력'].map((h) => (
+                    <th key={h} className="px-2 py-1.5 text-left font-extrabold text-ink-muted border-b border-line">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((r) => (
+                  <tr key={r.id} className="border-b border-line hover:bg-surface-soft">
+                    <td className="px-2 py-1.5">{r.opsDate}</td>
+                    <td className="px-2 py-1.5">{r.generalOpHours}h</td>
+                    <td className="px-2 py-1.5">{r.foodOpHours}h</td>
+                    <td className="px-2 py-1.5">{r.downtimeHours}h</td>
+                    <td className="px-2 py-1.5">{r.generalWasteTon}t</td>
+                    <td className="px-2 py-1.5">{r.foodWasteTon}t</td>
+                    <td className="px-2 py-1.5">{r.prevDayPowerKwh}kWh</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
+  const [from, setFrom] = useState(daysAgo(29));
+  const [to, setTo] = useState(today());
+  const [items, setItems] = useState<OpsRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function load() {
+    const diffDays = (new Date(to).getTime() - new Date(from).getTime()) / 86400000;
+    if (diffDays > 90) { setError('기간은 최대 90일까지 조회 가능합니다.'); return; }
+    setError('');
+    setLoading(true);
+    fetch(`/api/super-admin/facility-ops?from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((d) => setItems(d.items ?? []))
+      .catch(() => setError('조회 중 오류가 발생했습니다.'))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  const kpi = items.reduce(
+    (acc, r) => ({
+      generalWaste: acc.generalWaste + Number(r.generalWasteTon),
+      foodWaste: acc.foodWaste + Number(r.foodWasteTon),
+      opHours: acc.opHours + Number(r.generalOpHours) + Number(r.foodOpHours),
+      power: acc.power + Number(r.prevDayPowerKwh),
+      count: acc.count + 1,
+    }),
+    { generalWaste: 0, foodWaste: 0, opHours: 0, power: 0, count: 0 }
+  );
+
+  const facilityMap = Object.fromEntries(facilities.map((f) => [f.id, f.name]));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-end">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">시작일</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">종료일</span>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
+        </label>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="px-4 py-2 rounded bg-purple-600 text-white text-sm font-extrabold hover:bg-purple-700 disabled:opacity-50 min-h-[44px]"
+        >
+          {loading ? '조회 중…' : '조회'}
+        </button>
+        {error && <span className="text-sm text-red-500 font-bold">{error}</span>}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {[
+          { label: '일반처리 합계', value: `${kpi.generalWaste.toFixed(2)}t` },
+          { label: '음식처리 합계', value: `${kpi.foodWaste.toFixed(2)}t` },
+          { label: '총 가동시간', value: `${kpi.opHours.toFixed(1)}h` },
+          { label: '전력 합계', value: `${kpi.power.toFixed(0)}kWh` },
+          { label: '기록 건수', value: `${kpi.count}건` },
+        ].map((k) => (
+          <div key={k.label} className="bg-surface-soft border border-line rounded-lg p-3 text-center">
+            <div className="text-xs text-ink-muted font-bold mb-1">{k.label}</div>
+            <div className="text-lg font-extrabold text-ink">{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {items.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs min-w-[700px]">
+            <thead>
+              <tr className="bg-surface-soft">
+                {['날짜', '시설', '일반처리(t)', '음식처리(t)', '일반가동(h)', '음식가동(h)', '전일전력(kWh)'].map((h) => (
+                  <th key={h} className="px-2 py-1.5 text-left font-extrabold text-ink-muted border-b border-line">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((r) => (
+                <tr key={r.id} className="border-b border-line hover:bg-surface-soft">
+                  <td className="px-2 py-1.5">{r.opsDate}</td>
+                  <td className="px-2 py-1.5">{r.facilityName || facilityMap[r.facilityId] || r.facilityId}</td>
+                  <td className="px-2 py-1.5">{r.generalWasteTon}</td>
+                  <td className="px-2 py-1.5">{r.foodWasteTon}</td>
+                  <td className="px-2 py-1.5">{r.generalOpHours}</td>
+                  <td className="px-2 py-1.5">{r.foodOpHours}</td>
+                  <td className="px-2 py-1.5">{r.prevDayPowerKwh}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
+  const [facilityId, setFacilityId] = useState('');
+  const [from, setFrom] = useState(daysAgo(29));
+  const [to, setTo] = useState(today());
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (facilities.length > 0 && !facilityId) setFacilityId(facilities[0].id);
+  }, [facilities, facilityId]);
+
+  function download() {
+    const diffDays = (new Date(to).getTime() - new Date(from).getTime()) / 86400000;
+    if (diffDays > 90) { setError('기간은 최대 90일까지 조회 가능합니다.'); return; }
+    setError('');
+    const params = new URLSearchParams({ from, to });
+    if (facilityId) params.set('facilityId', facilityId);
+    window.open(`/api/super-admin/facility-ops/export?${params.toString()}`, '_blank');
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-end">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">시설 (전체: 선택 안 함)</span>
+          <select
+            value={facilityId}
+            onChange={(e) => setFacilityId(e.target.value)}
+            className="border border-line rounded px-2 py-1.5 text-sm min-w-[200px]"
+          >
+            <option value="">전체 시설</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">시작일</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-bold text-ink-muted">종료일</span>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
+        </label>
+      </div>
+      {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
+      <button
+        type="button"
+        onClick={download}
+        className="px-5 py-2.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 min-h-[44px]"
+      >
+        📥 Excel 다운로드 (.xlsx)
+      </button>
+      <p className="text-xs text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 12개 컬럼</p>
+    </div>
   );
 }
