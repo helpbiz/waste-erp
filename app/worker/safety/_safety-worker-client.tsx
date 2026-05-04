@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WeatherSnapshot } from '@/lib/weather';
 import SignaturePad from './_signature-pad';
@@ -10,6 +10,7 @@ import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 type ChecklistDef = { key: string; label: string };
 type ItemState = ChecklistDef & { ok: boolean };
 type TbmInfo = { id: string; topic: string; content: string | null; signed: boolean; signCount: number };
+type FacilityOption = { id: string; name: string };
 
 const ICONS: Record<string, string> = {
   helmet: '🪖', vest: '🦺', glove: '🧤', shoes: '👢',
@@ -21,9 +22,11 @@ export default function SafetyWorkerClient({
   submitted,
   submittedAt,
   allChecked,
-  tbm,
+  tbm: tbmProp,
   weather,
   guardian,
+  isAvac = false,
+  facilities = [],
 }: {
   checklistDef: ChecklistDef[];
   submitted: boolean;
@@ -32,6 +35,8 @@ export default function SafetyWorkerClient({
   tbm: TbmInfo | null;
   weather: WeatherSnapshot;
   guardian: { name: string | null; phone: string | null };
+  isAvac?: boolean;
+  facilities?: FacilityOption[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -45,6 +50,44 @@ export default function SafetyWorkerClient({
   const [sosResult, setSosResult] = useState<{ recipients: number; reportId: string; provider: string } | null>(null);
   const [tbmSignaturePad, setTbmSignaturePad] = useState<string | null>(null);
   const [tbmShowPad, setTbmShowPad] = useState(false);
+
+  // AVAC: 시설 선택 + 동적 TBM 로드
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(
+    isAvac && facilities.length === 1 ? facilities[0].id : null
+  );
+  const [avacTbm, setAvacTbm] = useState<TbmInfo | null>(null);
+  const [avacTbmLoading, setAvacTbmLoading] = useState(false);
+
+  const tbm = isAvac ? avacTbm : tbmProp;
+
+  async function loadAvacTbm(facilityId: string) {
+    setAvacTbmLoading(true);
+    setAvacTbm(null);
+    try {
+      const res = await fetch(`/api/tbm/today?facilityId=${facilityId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.session) {
+        setAvacTbm({
+          id: data.session.id,
+          topic: data.session.topic,
+          content: data.session.content,
+          signed: data.signed,
+          signCount: data.session.signCount,
+        });
+      }
+    } finally {
+      setAvacTbmLoading(false);
+    }
+  }
+
+  // 시설 1개면 자동 로드
+  useEffect(() => {
+    if (isAvac && facilities.length === 1) {
+      loadAvacTbm(facilities[0].id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkedCount = items.filter((i) => i.ok).length;
 
@@ -168,13 +211,13 @@ export default function SafetyWorkerClient({
       return;
     }
     setBusy(true);
-    
-    
     try {
+      const body: Record<string, unknown> = { signatureData: tbmSignaturePad };
+      if (isAvac && selectedFacilityId) body.facilityId = selectedFacilityId;
       const res = await fetch('/api/tbm/sign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatureData: tbmSignaturePad }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -184,7 +227,11 @@ export default function SafetyWorkerClient({
       toast.success(`✓ TBM 서명 완료 — "${data.sessionTopic}"`);
       setTbmSignaturePad(null);
       setTbmShowPad(false);
-      router.refresh();
+      if (isAvac && selectedFacilityId) {
+        await loadAvacTbm(selectedFacilityId);
+      } else {
+        router.refresh();
+      }
     } catch {
       toast.error('네트워크 오류');
     } finally {
@@ -205,8 +252,47 @@ export default function SafetyWorkerClient({
       {/* 기상 카드 — 위험도별 색상 */}
       <WeatherCard w={weather} />
 
+      {/* AVAC: 시설 선택 (2개 이상일 때만 표시. 1개면 자동 선택) */}
+      {isAvac && facilities.length > 1 && (
+        <section className="bg-surface rounded-xl border-2 border-indigo-200 shadow-card overflow-hidden">
+          <header className="px-4 py-3 bg-indigo-50 border-b-2 border-indigo-200">
+            <div className="text-base font-extrabold text-indigo-900">🏗 담당 시설 선택</div>
+            <div className="text-sm font-semibold text-indigo-700 mt-0.5">오늘 근무할 집하장을 선택하면 해당 시설의 TBM을 불러옵니다.</div>
+          </header>
+          <div className="p-3 grid grid-cols-2 gap-2">
+            {facilities.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => { setSelectedFacilityId(f.id); loadAvacTbm(f.id); setTbmShowPad(false); setTbmSignaturePad(null); }}
+                className={`min-h-12 px-3 py-2.5 rounded-lg border-2 text-sm font-extrabold transition active:scale-95 text-center ${
+                  selectedFacilityId === f.id
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                    : 'bg-surface border-line text-ink hover:border-indigo-400'
+                }`}
+              >
+                {f.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* AVAC + 시설 미선택 안내 */}
+      {isAvac && !selectedFacilityId && facilities.length > 1 && (
+        <section className="bg-indigo-50 border-2 border-indigo-200 rounded-xl px-4 py-3 text-sm text-indigo-800 font-semibold">
+          위에서 담당 시설을 선택하면 TBM 세션을 확인할 수 있습니다.
+        </section>
+      )}
+
+      {/* AVAC TBM 로딩 중 */}
+      {isAvac && selectedFacilityId && avacTbmLoading && (
+        <section className="bg-surface rounded-xl border border-line px-4 py-6 text-center text-sm text-ink-mid font-semibold">
+          TBM 세션 불러오는 중…
+        </section>
+      )}
+
       {/* TBM 서명판 */}
-      {tbm ? (
+      {(!isAvac || (selectedFacilityId && !avacTbmLoading)) && tbm ? (
         <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
           <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center gap-2">
             <span className="text-xl">📋</span>
@@ -252,9 +338,12 @@ export default function SafetyWorkerClient({
           </div>
         </section>
       ) : (
-        <section className="bg-amber-50 border-2 border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold">
-          오늘 TBM 세션이 아직 등록되지 않았습니다. 관리자에게 문의해 주세요.
-        </section>
+        // AVAC + 시설 미선택 상태에선 안내 생략 (위에서 별도 표시)
+        (!isAvac || (selectedFacilityId && !avacTbmLoading)) && (
+          <section className="bg-amber-50 border-2 border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold">
+            오늘 TBM 세션이 아직 등록되지 않았습니다. 관리자에게 문의해 주세요.
+          </section>
+        )
       )}
 
       {/* 일일 체크리스트 */}
