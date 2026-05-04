@@ -20,10 +20,8 @@ export default async function SafetyWorkerPage() {
       },
     }),
     session.contractorId
-      ? prisma.tbmSession.findUnique({
-          where: {
-            contractorId_sessionDate: { contractorId: BigInt(session.contractorId), sessionDate: today },
-          },
+      ? prisma.tbmSession.findFirst({
+          where: { contractorId: BigInt(session.contractorId), facilityId: null, sessionDate: today },
           include: { signatures: true },
         })
       : Promise.resolve(null),

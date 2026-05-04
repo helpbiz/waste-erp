@@ -231,7 +231,9 @@ model Contractor {
   // treatmentFacilities 는 Municipality 로 이관됨 — Contractor 는 muni 산하 facility 를 자동 사용
   reportTemplates    ReportTemplate[]
   features           ContractorFeature[]
-  workerSuggestions  WorkerSuggestion[]
+  workerSuggestions   WorkerSuggestion[]
+  contractorPositions ContractorPosition[]
+  contractorRanks     ContractorRank[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -351,6 +353,10 @@ model User {
   rank              String? @db.VarChar(30)              // 직급 enum: ENGINEER_HIGH/MID/BEGINNER, SKILL_HIGH/MID/BEGINNER, LABORER 등
   primaryFacilityId BigInt? @map("primary_facility_id")  // 주근무지 (AVAC 시설 등)
 
+  // 업체별 직책·직급 (contractor-org-master: 전역 Position 병행)
+  contractorPositionId BigInt? @map("contractor_position_id")
+  rankId               BigInt? @map("rank_id")
+
   // 개인정보 수집·이용 동의 (개인정보보호법 §15·22)
   privacyConsentAt      DateTime? @map("privacy_consent_at")
   privacyConsentVersion String?   @map("privacy_consent_version") @db.VarChar(20)
@@ -383,7 +389,12 @@ model User {
   tbmSignatures          TbmSignature[]          @relation("TbmSigner")
   healthRecord           HealthRecord?           @relation("HealthSubject")
   suggestionReplies      WorkerSuggestionReply[] @relation("SuggestionReplier")
+  facilityOpsCreated     FacilityDailyOps[]      @relation("FacilityOpsCreator")
   primaryFacility        WasteTreatmentFacility? @relation("UserPrimaryFacility", fields: [primaryFacilityId], references: [id], onDelete: SetNull)
+  contractorPosition     ContractorPosition?     @relation("UserContractorPosition", fields: [contractorPositionId], references: [id])
+  contractorRank         ContractorRank?         @relation("UserContractorRank", fields: [rankId], references: [id])
+  contractorPositionsCreated ContractorPosition[] @relation("ContractorPositionCreator")
+  contractorRanksCreated     ContractorRank[]     @relation("ContractorRankCreator")
 
   @@index([contractorId])
   @@index([role])
@@ -669,17 +680,20 @@ model Complaint {
 model TbmSession {
   id           BigInt   @id @default(autoincrement())
   contractorId BigInt   @map("contractor_id")
+  facilityId   BigInt?  @map("facility_id")   // NULL = 전사 TBM (비-AVAC); 값 있으면 시설별 TBM
+  department   String?  @map("department") @db.VarChar(50)
   sessionDate  DateTime @map("session_date") @db.Date
   topic        String   @db.VarChar(255)
   content      String?  @db.Text
   createdBy    BigInt   @map("created_by")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  contractor Contractor     @relation(fields: [contractorId], references: [id])
-  creator    User           @relation("TbmCreator", fields: [createdBy], references: [id])
+  contractor Contractor              @relation(fields: [contractorId], references: [id])
+  facility   WasteTreatmentFacility? @relation("TbmFacility", fields: [facilityId], references: [id])
+  creator    User                    @relation("TbmCreator", fields: [createdBy], references: [id])
   signatures TbmSignature[]
 
-  @@unique([contractorId, sessionDate])
+  @@index([contractorId, facilityId, sessionDate])
   @@map("tbm_sessions")
 }
 
@@ -1016,6 +1030,8 @@ model WasteTreatmentFacility {
   intakes      RecyclingCenterIntake[]
   primaryUsers User[]                  @relation("UserPrimaryFacility")
   attendances  AttendanceRecord[]      @relation("AttendanceFacility")
+  dailyOps     FacilityDailyOps[]
+  tbmSessions  TbmSession[]            @relation("TbmFacility")
 
   @@unique([municipalityId, type, name])
   @@index([municipalityId, active])
@@ -1226,4 +1242,77 @@ model WorkerSuggestionReply {
 
   @@index([suggestionId])
   @@map("worker_suggestion_replies")
+}
+
+// Design Ref: §2.1 — AVAC 시설 일일 운전기록. Streamlit FacilityDailyOpsORM 1:1 매핑.
+// Plan SC: FR-01 (모델), FR-02 (upsert @@unique)
+model FacilityDailyOps {
+  id                 BigInt   @id @default(autoincrement())
+  facilityId         BigInt   @map("facility_id")
+  opsDate            DateTime @map("ops_date") @db.Date
+  generalOpHours     Decimal  @default(0) @map("general_op_hours")     @db.Decimal(5, 2)
+  foodOpHours        Decimal  @default(0) @map("food_op_hours")        @db.Decimal(5, 2)
+  downtimeHours      Decimal  @default(0) @map("downtime_hours")       @db.Decimal(5, 2)
+  downtimeReason     String?  @map("downtime_reason")                  @db.VarChar(200)
+  generalWasteTon    Decimal  @default(0) @map("general_waste_ton")    @db.Decimal(8, 3)
+  foodWasteTon       Decimal  @default(0) @map("food_waste_ton")       @db.Decimal(8, 3)
+  generalCollectTon  Decimal  @default(0) @map("general_collect_ton")  @db.Decimal(8, 3)
+  foodCollectTon     Decimal  @default(0) @map("food_collect_ton")     @db.Decimal(8, 3)
+  generalTransferTon Decimal  @default(0) @map("general_transfer_ton") @db.Decimal(8, 3)
+  foodTransferTon    Decimal  @default(0) @map("food_transfer_ton")    @db.Decimal(8, 3)
+  prevDayPowerKwh    Decimal  @default(0) @map("prev_day_power_kwh")   @db.Decimal(10, 2)
+  notes              String?  @db.Text
+  createdBy          BigInt?  @map("created_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  facility WasteTreatmentFacility @relation(fields: [facilityId], references: [id])
+  creator  User?                  @relation("FacilityOpsCreator", fields: [createdBy], references: [id])
+
+  @@unique([facilityId, opsDate])
+  @@index([opsDate])
+  @@map("facility_daily_ops")
+}
+
+// Design Ref: §2.1 — 업체별 직책 마스터. 전역 Position과 독립 운영.
+// Plan SC: FR-01
+model ContractorPosition {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  name         String   @db.VarChar(50)
+  category     String   @db.VarChar(10)
+  sortOrder    Int      @default(0) @map("sort_order")
+  active       Boolean  @default(true)
+  createdBy    BigInt?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+  creator    User?      @relation("ContractorPositionCreator", fields: [createdBy], references: [id])
+  users      User[]     @relation("UserContractorPosition")
+
+  @@unique([contractorId, name])
+  @@index([contractorId, active])
+  @@map("contractor_positions")
+}
+
+// Plan SC: FR-02
+model ContractorRank {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  name         String   @db.VarChar(50)
+  level        Int      @default(99)
+  sortOrder    Int      @default(0) @map("sort_order")
+  active       Boolean  @default(true)
+  createdBy    BigInt?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+  creator    User?      @relation("ContractorRankCreator", fields: [createdBy], references: [id])
+  users      User[]     @relation("UserContractorRank")
+
+  @@unique([contractorId, name])
+  @@index([contractorId, active])
+  @@map("contractor_ranks")
 }

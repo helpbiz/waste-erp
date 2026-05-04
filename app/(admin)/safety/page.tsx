@@ -44,8 +44,8 @@ export default async function SafetyPage() {
         })
       : Promise.resolve(0),
     session.contractorId
-      ? prisma.tbmSession.findUnique({
-          where: { contractorId_sessionDate: { contractorId: BigInt(session.contractorId), sessionDate: today } },
+      ? prisma.tbmSession.findFirst({
+          where: { contractorId: BigInt(session.contractorId), facilityId: null, sessionDate: today },
           include: {
             signatures: { include: { worker: { select: { id: true, name: true, employeeNo: true } } } },
             creator: { select: { name: true } },

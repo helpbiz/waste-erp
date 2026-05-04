@@ -16,7 +16,8 @@ export type FeatureKey =
   | 'vehicleTracking'
   | 'attendanceGps'
   | 'workerSuggestion'
-  | 'nocAccess';   // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
+  | 'nocAccess'   // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
+  | 'avac';       // 자동집하시설(AVAC) 전용 모듈 — 시설별 TBM·시설운전기록·실적 3시트
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -100,6 +101,15 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
     group: '관제',
     defaultEnabled: false,   // 기본 OFF — SUPER_ADMIN 승인 시만 활성화
   },
+  {
+    key: 'avac',
+    label: '🏗 자동집하시설(AVAC) 모듈',
+    description:
+      '시설별 TBM·시설운전기록(일일 운전/처리량)·실적 Excel 3시트·PDF 출력. ' +
+      '자동집하시설 관리 위탁업체 전용. 비-AVAC 업체에는 이 탭들이 미노출.',
+    group: '시설운영',
+    defaultEnabled: false,   // 기본 OFF — 해당 업체에만 슈퍼관리자가 수동 활성화
+  },
 ];
 
 const CATALOG_MAP = new Map<string, FeatureMeta>(FEATURE_CATALOG.map((f) => [f.key, f]));
@@ -152,6 +162,25 @@ export async function listContractorFeatures(contractorId: bigint | string | num
       updatedAt: row ? row.updatedAt.toISOString() : null,
       updatedBy: row?.updatedBy?.toString() ?? null,
     };
+  });
+}
+
+/** AVAC(자동집하시설) 모듈 활성 여부 편의 함수. */
+export async function isAvacContractor(contractorId: bigint | string | number | null | undefined): Promise<boolean> {
+  return hasFeature(contractorId, 'avac');
+}
+
+/** AVAC 업체에 속한 시설 목록 (시설별 TBM 선택용). */
+export async function getAvacFacilities(contractorId: bigint) {
+  const contractor = await prisma.contractor.findUnique({
+    where: { id: contractorId },
+    select: { municipalityId: true },
+  });
+  if (!contractor) return [];
+  return prisma.wasteTreatmentFacility.findMany({
+    where: { municipalityId: contractor.municipalityId, active: true },
+    select: { id: true, name: true, type: true },
+    orderBy: { name: 'asc' },
   });
 }
 

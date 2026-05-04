@@ -16,6 +16,7 @@ const Body = z.object({
     .regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/, 'data URL 형식 필요')
     .max(500_000, '500KB 초과 — 더 짧게 서명해 주세요')
     .optional(),
+  facilityId: z.string().optional(), // AVAC: 시설별 TBM 서명 시 전달
 });
 
 export async function POST(req: Request) {
@@ -31,8 +32,14 @@ export async function POST(req: Request) {
   }
 
   const today = todayKstDate();
-  const tbm = await prisma.tbmSession.findUnique({
-    where: { contractorId_sessionDate: { contractorId: BigInt(session.contractorId), sessionDate: today } },
+  const facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
+
+  const tbm = await prisma.tbmSession.findFirst({
+    where: {
+      contractorId: BigInt(session.contractorId),
+      facilityId,
+      sessionDate: today,
+    },
   });
   if (!tbm) return NextResponse.json({ error: 'no_session_today' }, { status: 404 });
 
