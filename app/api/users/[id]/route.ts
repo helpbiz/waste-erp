@@ -43,6 +43,9 @@ const Patch = z.object({
     'SKILL_HIGH','SKILL_MID','SKILL_BEGINNER','LABORER',
   ]).nullable().optional(),
   primaryFacilityId: z.string().nullable().optional(),
+  /* contractor-org-master — Design Ref: §4.6 */
+  contractorPositionId: z.string().nullable().optional(),
+  rankId: z.string().nullable().optional(),
 });
 
 const normPhone = (p?: string | null) => (p == null ? p : p.replace(/-/g, ''));
@@ -214,6 +217,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   /* AVAC 보강 — 직급 */
   if (b.rank !== undefined) data.rank = b.rank;
+
+  /* contractor-org-master — 업체별 직책·직급 */
+  if (b.contractorPositionId !== undefined) {
+    data.contractorPositionId = b.contractorPositionId === null ? null : BigInt(b.contractorPositionId);
+  }
+  if (b.rankId !== undefined) {
+    data.rankId = b.rankId === null ? null : BigInt(b.rankId);
+  }
 
   /* AVAC 보강 — 주근무지 (시설) */
   if (b.primaryFacilityId !== undefined) {

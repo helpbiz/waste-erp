@@ -6,6 +6,7 @@ import SignaturePad from '@/components/SignaturePad';
 import ProfilePhotoUploader from '@/components/ProfilePhotoUploader';
 import ApprovalSignatureModal from '@/components/ApprovalSignatureModal';
 import { formatKoreanPhone } from '@/lib/phone';
+import OrgSettingsTab from './_org-settings-tab';
 
 const POSITION_CATEGORY_COLOR: Record<string, string> = {
   OFFICE: 'bg-blue-100 text-blue-700 border-blue-300',
@@ -55,6 +56,11 @@ export type UserRow = {
   primaryFacility: { id: string; name: string; type: string } | null;
   profilePhotoUrl: string | null;
   activeSignatureRef: string | null;
+  /* contractor-org-master — 업체별 직책·직급 */
+  contractorPositionId: string | null;
+  contractorRankId: string | null;
+  contractorPosition: { id: string; name: string; category: string } | null;
+  contractorRank: { id: string; name: string; level: number } | null;
 };
 
 /* AVAC 보강 — 직급 라벨 */
@@ -131,7 +137,7 @@ export default function UsersClient({
   positions: PositionRow[];
   departments: DepartmentRow[];
 }) {
-  const [tab, setTab] = useState<'register' | 'profile' | 'leave' | 'calendar' | 'report' | 'org'>('register');
+  const [tab, setTab] = useState<'register' | 'profile' | 'leave' | 'calendar' | 'report' | 'org' | 'org-settings'>('register');
   const [selectedId, setSelectedId] = useState<string | null>(rows[0]?.id ?? null);
   const [showCreate, setShowCreate] = useState(false);
   const [showGrant, setShowGrant] = useState(false);
@@ -166,6 +172,9 @@ export default function UsersClient({
         <TabButton active={tab === 'calendar'} onClick={() => setTab('calendar')}>휴가 캘린더</TabButton>
         <TabButton active={tab === 'report'} onClick={() => setTab('report')}>휴가 보고서</TabButton>
         <TabButton active={tab === 'org'} onClick={() => setTab('org')}>조직도</TabButton>
+        {(session.role === 'SUPER_ADMIN' || session.role === 'CONTRACTOR_ADMIN') && (
+          <TabButton active={tab === 'org-settings'} onClick={() => setTab('org-settings')}>조직 설정</TabButton>
+        )}
       </div>
 
       {tab === 'register' && (
@@ -212,6 +221,8 @@ export default function UsersClient({
       {tab === 'report' && <ReportTab />}
 
       {tab === 'org' && <OrgChartTab canManage={canManage} allUsers={rows} positions={positions} />}
+
+      {tab === 'org-settings' && <OrgSettingsTab />}
 
       {showCreate && canManage && (
         <CreateUserModal
@@ -689,7 +700,14 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
     password: '',
     positionCode: user.position?.code ?? '',
     departmentId: user.department?.id ?? '',
+    contractorPositionId: user.contractorPositionId ?? '',
+    contractorRankId: user.contractorRankId ?? '',
   });
+  const [orgOptions, setOrgOptions] = useState<{ positions: { id: string; name: string }[]; ranks: { id: string; name: string }[] }>({ positions: [], ranks: [] });
+  useEffect(() => {
+    fetch('/api/contractor/positions').then((r) => r.json()).then((d) => setOrgOptions((o) => ({ ...o, positions: d.positions ?? [] }))).catch(() => {});
+    fetch('/api/contractor/ranks').then((r) => r.json()).then((d) => setOrgOptions((o) => ({ ...o, ranks: d.ranks ?? [] }))).catch(() => {});
+  }, []);
   const [photo, setPhoto] = useState<string | null>(user.profilePhotoUrl);
   const [photoChanged, setPhotoChanged] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
@@ -703,6 +721,7 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
     const payload: Record<string, unknown> = {};
     Object.entries(form).forEach(([k, v]) => {
       if (k === 'password' && !v) return;
+      if (k === 'contractorRankId') { payload.rankId = v === '' ? null : v; return; }
       if (typeof v === 'string' && v === '') payload[k] = null;
       else payload[k] = v;
     });
@@ -787,6 +806,23 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
               className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50">
               <option value="">미지정</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </Field>
+        </Section>
+
+        <Section title="업체 직책·직급">
+          <Field label="직책">
+            <select value={form.contractorPositionId} onChange={(e) => setForm({ ...form, contractorPositionId: e.target.value })} disabled={!canManage}
+              className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50">
+              <option value="">미지정</option>
+              {orgOptions.positions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </Field>
+          <Field label="직급">
+            <select value={form.contractorRankId} onChange={(e) => setForm({ ...form, contractorRankId: e.target.value })} disabled={!canManage}
+              className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50">
+              <option value="">미지정</option>
+              {orgOptions.ranks.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
           </Field>
         </Section>

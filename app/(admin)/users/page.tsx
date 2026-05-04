@@ -22,6 +22,8 @@ export default async function UsersPage() {
         profilePhoto: { select: { contentRef: true } },
         activeSignature: { select: { signatureRef: true } },
         primaryFacility: { select: { id: true, name: true, type: true } },
+        contractorPosition: { select: { id: true, name: true, category: true } },
+        contractorRank: { select: { id: true, name: true, level: true } },
       },
       take: 200,
     }),
@@ -92,6 +94,14 @@ export default async function UsersPage() {
       rank: u.rank ?? null,
       primaryFacility: u.primaryFacility
         ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
+        : null,
+      contractorPositionId: u.contractorPositionId?.toString() ?? null,
+      contractorRankId: u.rankId?.toString() ?? null,
+      contractorPosition: u.contractorPosition
+        ? { id: u.contractorPosition.id.toString(), name: u.contractorPosition.name, category: u.contractorPosition.category }
+        : null,
+      contractorRank: u.contractorRank
+        ? { id: u.contractorRank.id.toString(), name: u.contractorRank.name, level: u.contractorRank.level }
         : null,
       profilePhotoUrl: u.profilePhoto?.contentRef ?? null,
       activeSignatureRef: u.activeSignature?.signatureRef ?? null,
