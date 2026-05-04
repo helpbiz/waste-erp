@@ -13,6 +13,7 @@ import {
   visibleAudiencesForViewer,
   type AudienceValue,
 } from '@/lib/announcement-audience';
+import { getFacilityOperatorScope } from '@/lib/features';
 import type { Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -127,11 +128,18 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 시설 담당자 체크 — POSTER_ROLES 아닌 WORKER도 담당 집하장 공지 작성 허용
+  let operatorFacilityId: bigint | null = null;
   if (!POSTER_ROLES.has(session.role)) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    const opScope = await getFacilityOperatorScope(session.userId);
+    if (!opScope.isFacilityOperator || !opScope.primaryFacilityId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    operatorFacilityId = opScope.primaryFacilityId;
   }
 
-  /* 회사별 기능 권한 — 공지사항 비활성 시 차단 (시스템·지자체 공지는 contractorId null 이므로 통과) */
+  /* 회사별 기능 권한 — 공지사항 비활성 시 차단 */
   if (session.contractorId) {
     const allowed = await hasFeature(session.contractorId, 'announcements');
     if (!allowed) {
@@ -145,17 +153,24 @@ export async function POST(req: Request) {
   }
   const b = parsed.data;
 
-  /* audience 정책 검증 — 작성자 role 에 허용된 값인지 강제
-     CONTRACTOR/INTERNAL: ADMIN/WORKER/ALL 만, MUNI: OWNER/ADMIN/ALL 만 */
-  if (!isAudienceAllowedFor(session.role, b.audience as AudienceValue)) {
+  /* 시설 담당자: 반드시 본인 집하장 한정 공지만 작성 */
+  if (operatorFacilityId) {
+    if (!b.facilityId || BigInt(b.facilityId) !== operatorFacilityId) {
+      return NextResponse.json({ error: 'operator_must_specify_own_facility' }, { status: 400 });
+    }
+  }
+
+  /* audience 정책 검증 (시설 담당자는 WORKER role → WORKER/ALL audience 허용) */
+  const effectiveRole = POSTER_ROLES.has(session.role) ? session.role : 'CONTRACTOR_ADMIN';
+  if (!isAudienceAllowedFor(effectiveRole, b.audience as AudienceValue)) {
     return NextResponse.json({ error: 'audience_not_allowed', audience: b.audience, role: session.role }, { status: 400 });
   }
 
-  /* MUNI_ADMIN 작성 시 contractorId 는 null (지자체 산하 회사 broadcast),
-     municipalityId 는 본인 지자체. CONTRACTOR/INTERNAL 은 본인 회사 한정. */
+  /* MUNI_ADMIN: contractorId null, 지자체 broadcast.
+     WORKER(시설담당자): 본인 회사 + 집하장 한정. */
   const contractorId = session.role === 'MUNI_ADMIN' ? null : (session.contractorId ? BigInt(session.contractorId) : null);
   const municipalityId = session.municipalityId ? BigInt(session.municipalityId) : null;
-  const facilityId = b.facilityId ? BigInt(b.facilityId) : null;
+  const facilityId = operatorFacilityId ?? (b.facilityId ? BigInt(b.facilityId) : null);
 
   const created = await prisma.announcement.create({
     data: {

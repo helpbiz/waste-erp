@@ -80,6 +80,8 @@ export async function GET(req: Request) {
       id: true, username: true, name: true, role: true, status: true,
       contractorId: true, municipalityId: true, phone: true, employeeNo: true,
       birthDate: true, hireDate: true, lastLogin: true, createdAt: true,
+      isFacilityOperator: true,
+      primaryFacility: { select: { id: true, name: true, type: true } },
     },
   });
 
@@ -98,6 +100,10 @@ export async function GET(req: Request) {
       hireDate: u.hireDate?.toISOString().slice(0, 10) ?? null,
       lastLogin: u.lastLogin?.toISOString() ?? null,
       createdAt: u.createdAt.toISOString(),
+      isFacilityOperator: u.isFacilityOperator,
+      primaryFacility: u.primaryFacility
+        ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
+        : null,
     })),
   });
 }

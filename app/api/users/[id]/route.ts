@@ -43,6 +43,7 @@ const Patch = z.object({
     'SKILL_HIGH','SKILL_MID','SKILL_BEGINNER','LABORER',
   ]).nullable().optional(),
   primaryFacilityId: z.string().nullable().optional(),
+  isFacilityOperator: z.boolean().optional(),
   /* contractor-org-master — Design Ref: §4.6 */
   contractorPositionId: z.string().nullable().optional(),
   rankId: z.string().nullable().optional(),
@@ -106,8 +107,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       department: u.department
         ? { id: u.department.id.toString(), name: u.department.name }
         : null,
-      /* AVAC 보강 — 직급·주근무지 */
+      /* AVAC 보강 — 직급·주근무지·시설담당자 */
       rank: u.rank,
+      isFacilityOperator: u.isFacilityOperator,
       primaryFacility: u.primaryFacility
         ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
         : null,
@@ -238,6 +240,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       data.primaryFacilityId = f.id;
     }
   }
+
+  if (b.isFacilityOperator !== undefined) data.isFacilityOperator = b.isFacilityOperator;
 
   /* 실제로 값이 바뀐 필드만 추적 — PII는 평문 비교 + 마스킹 저장 */
   const changes: Record<string, { from: unknown; to: unknown }> = {};

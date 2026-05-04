@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { writeAudit } from '@/lib/audit';
+import { getFacilityOperatorScope } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -93,14 +94,22 @@ function toOpsRow(r: {
 export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!['SUPER_ADMIN', 'CONTRACTOR_ADMIN'].includes(session.role)) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const isAdmin = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN'].includes(session.role);
+  let operatorFacilityId: bigint | null = null;
+
+  if (!isAdmin) {
+    const opScope = await getFacilityOperatorScope(session.userId);
+    if (!opScope.isFacilityOperator || !opScope.primaryFacilityId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    operatorFacilityId = opScope.primaryFacilityId;
   }
 
   const url = new URL(req.url);
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
-  const facilityId = url.searchParams.get('facilityId');
+  const facilityIdParam = url.searchParams.get('facilityId');
 
   if (!from || !to) return NextResponse.json({ error: 'from and to are required' }, { status: 400 });
 
@@ -111,18 +120,22 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: `기간은 최대 ${MAX_DAYS}일까지 조회 가능합니다` }, { status: 400 });
   }
 
-  const muniId = await resolveMunicipalityId(session);
-  if (muniId === null) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  // 시설 담당자: 본인 담당 집하장만 조회 가능
+  const effectiveFacilityId = operatorFacilityId
+    ? operatorFacilityId
+    : (facilityIdParam ? BigInt(facilityIdParam) : null);
 
-  const facilityWhere =
-    muniId === 'all'
-      ? facilityId ? { id: BigInt(facilityId) } : undefined
-      : { municipalityId: muniId, ...(facilityId ? { id: BigInt(facilityId) } : {}) };
+  let muniFilter: { municipalityId: bigint } | undefined;
+  if (isAdmin) {
+    const muniId = await resolveMunicipalityId(session);
+    if (muniId === null) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    if (muniId !== 'all') muniFilter = { municipalityId: muniId };
+  }
 
   const items = await prisma.facilityDailyOps.findMany({
     where: {
-      ...(facilityId ? { facilityId: BigInt(facilityId) } : {}),
-      ...(facilityWhere && muniId !== 'all' ? { facility: facilityWhere } : {}),
+      ...(effectiveFacilityId ? { facilityId: effectiveFacilityId } : {}),
+      ...(muniFilter ? { facility: muniFilter } : {}),
       opsDate: { gte: fromDate, lte: toDate },
     },
     include: { facility: { select: { name: true } } },
@@ -135,8 +148,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!['SUPER_ADMIN', 'CONTRACTOR_ADMIN'].includes(session.role)) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const isAdmin = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN'].includes(session.role);
+  let operatorFacilityId: bigint | null = null;
+
+  if (!isAdmin) {
+    const opScope = await getFacilityOperatorScope(session.userId);
+    if (!opScope.isFacilityOperator || !opScope.primaryFacilityId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    operatorFacilityId = opScope.primaryFacilityId;
   }
 
   const body = await req.json().catch(() => null);
@@ -148,7 +169,12 @@ export async function POST(req: Request) {
   const data = parsed.data;
   const facilityIdBig = BigInt(data.facilityId);
 
-  // Design Ref: §5 — CONTRACTOR_ADMIN 시설 접근 403
+  // 시설 담당자: 본인 담당 집하장만 기록 가능
+  if (operatorFacilityId && operatorFacilityId !== facilityIdBig) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // CONTRACTOR_ADMIN: municipality 범위 검증
   if (session.role === 'CONTRACTOR_ADMIN') {
     const muniId = await resolveMunicipalityId(session);
     if (muniId === null) return NextResponse.json({ error: 'forbidden' }, { status: 403 });

@@ -204,3 +204,18 @@ export async function setContractorFeature(params: {
     },
   });
 }
+
+/** 시설 담당자 권한 조회 — session userId로 DB에서 직접 읽어 반환. */
+export async function getFacilityOperatorScope(userId: string): Promise<{
+  isFacilityOperator: boolean;
+  primaryFacilityId: bigint | null;
+}> {
+  const user = await prisma.user.findUnique({
+    where: { id: BigInt(userId) },
+    select: { isFacilityOperator: true, primaryFacilityId: true },
+  });
+  return {
+    isFacilityOperator: user?.isFacilityOperator ?? false,
+    primaryFacilityId: user?.primaryFacilityId ?? null,
+  };
+}

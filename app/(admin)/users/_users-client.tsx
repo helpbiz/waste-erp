@@ -51,9 +51,10 @@ export type UserRow = {
   thisYearRemaining: number;
   position: { id: string; code: string; label: string; category: string } | null;
   department: { id: string; name: string } | null;
-  /* AVAC 보강 (Hot-fix 2026-05-02) — 직급·주근무지 */
+  /* AVAC 보강 (Hot-fix 2026-05-02) — 직급·주근무지·시설담당자 */
   rank: string | null;
   primaryFacility: { id: string; name: string; type: string } | null;
+  isFacilityOperator: boolean;
   profilePhotoUrl: string | null;
   activeSignatureRef: string | null;
   /* contractor-org-master — 업체별 직책·직급 */
@@ -387,7 +388,15 @@ function RegisterTab({
             )}
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-3 py-2 font-bold text-ink text-sm">{u.name}</td>
+                <td className="px-3 py-2 text-sm">
+                  <span className="font-bold text-ink">{u.name}</span>
+                  {u.isFacilityOperator && (
+                    <span className="ml-1.5 text-[0.625rem] font-extrabold px-1 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-300">시설담당</span>
+                  )}
+                  {u.primaryFacility && (
+                    <span className="ml-1 text-[0.625rem] text-slate-500">({u.primaryFacility.name})</span>
+                  )}
+                </td>
                 <td className="px-3 py-2 font-mono text-xs">{u.username}</td>
                 <td className="px-3 py-2"><StatusBadge status={u.status} /></td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -439,6 +448,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
     departmentId: user.department?.id ?? '',
     rank: user.rank ?? '',                                /* AVAC 보강 */
     primaryFacilityId: user.primaryFacility?.id ?? '',    /* AVAC 보강 */
+    isFacilityOperator: user.isFacilityOperator,          /* 시설 담당자 권한 */
     birthDate: user.birthDate ?? '',
     hireDate: user.hireDate ?? '',
     address: '',
@@ -508,6 +518,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
     if (form.departmentId !== (user.department?.id ?? '')) payload.departmentId = form.departmentId || null;
     if (form.rank !== (user.rank ?? '')) payload.rank = form.rank || null;
     if (form.primaryFacilityId !== (user.primaryFacility?.id ?? '')) payload.primaryFacilityId = form.primaryFacilityId || null;
+    if (form.isFacilityOperator !== user.isFacilityOperator) payload.isFacilityOperator = form.isFacilityOperator;
     if (form.birthDate !== (user.birthDate ?? '')) payload.birthDate = form.birthDate || null;
     if (form.hireDate !== (user.hireDate ?? '')) payload.hireDate = form.hireDate || null;
     if (detail) {
@@ -612,6 +623,30 @@ function EditUserModal({ user, positions, departments, onClose }: {
                 </option>
               ))}
             </select>
+          </Field>
+
+          {/* 시설 담당자 권한 — 주근무지 배치 시에만 의미 있음 */}
+          <Field label="시설 담당자 권한" colSpan={2}>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isFacilityOperator}
+                onClick={() => setForm({ ...form, isFacilityOperator: !form.isFacilityOperator })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isFacilityOperator ? 'bg-indigo-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isFacilityOperator ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-ink">
+                {form.isFacilityOperator
+                  ? <strong className="text-indigo-700">활성 — 담당 집하장 TBM 작성·운전기록 입력·공지 등록 가능</strong>
+                  : <span className="text-ink-muted">비활성 — 일반 직원 권한</span>
+                }
+              </span>
+            </label>
+            {form.isFacilityOperator && !form.primaryFacilityId && (
+              <p className="mt-1 text-xs text-amber-600 font-bold">⚠ 주근무지(시설)를 반드시 지정해야 합니다.</p>
+            )}
           </Field>
 
           <Field label="사번"><Input value={form.employeeNo} onChange={(v) => setForm({ ...form, employeeNo: v })} /></Field>

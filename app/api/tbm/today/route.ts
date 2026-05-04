@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { todayKstDate } from '@/lib/dates';
+import { getFacilityOperatorScope } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -81,8 +82,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!isManager(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
+
+  // 시설 담당자도 본인 집하장 TBM 작성 허용
+  if (!isManager(session.role)) {
+    const opScope = await getFacilityOperatorScope(session.userId);
+    if (!opScope.isFacilityOperator) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  }
 
   const parsed = PostBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -91,8 +99,14 @@ export async function POST(req: Request) {
 
   const today = todayKstDate();
   const contractorId = BigInt(session.contractorId);
-  const facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
   const department = parsed.data.department ?? null;
+
+  // 시설 담당자: 본인 집하장으로 강제 (다른 집하장 작성 차단)
+  let facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
+  if (!isManager(session.role)) {
+    const opScope = await getFacilityOperatorScope(session.userId);
+    if (opScope.primaryFacilityId) facilityId = opScope.primaryFacilityId;
+  }
 
   // upsert: findFirst + update or create (@@unique 제거로 Prisma upsert 불가)
   const existing = await prisma.tbmSession.findFirst({

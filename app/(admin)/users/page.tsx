@@ -92,6 +92,7 @@ export default async function UsersPage() {
         : null,
       /* AVAC 보강 (Hot-fix 2026-05-02) */
       rank: u.rank ?? null,
+      isFacilityOperator: u.isFacilityOperator,
       primaryFacility: u.primaryFacility
         ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
         : null,

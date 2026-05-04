@@ -352,6 +352,7 @@ model User {
   // 직급·시설배치 (Hot-fix 2026-05-02: AVAC 운영 보강)
   rank              String? @db.VarChar(30)              // 직급 enum: ENGINEER_HIGH/MID/BEGINNER, SKILL_HIGH/MID/BEGINNER, LABORER 등
   primaryFacilityId BigInt? @map("primary_facility_id")  // 주근무지 (AVAC 시설 등)
+  isFacilityOperator Boolean @default(false) @map("is_facility_operator") // 시설 담당자 — 담당 집하장 운전기록·TBM·공지 입력 권한
 
   // 업체별 직책·직급 (contractor-org-master: 전역 Position 병행)
   contractorPositionId BigInt? @map("contractor_position_id")
