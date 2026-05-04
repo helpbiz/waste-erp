@@ -64,22 +64,33 @@ export default function NocClient({ session }: { session: { name: string; role: 
     return () => clearInterval(t);
   }, []);
 
-  /* 사용자 / 시스템 / 민원 — 30초 폴링 */
+  /* 사용자 / 시스템 / 민원 — 30초 폴링.
+     Agent Team 합의 2026-05-02 — non-SUPER 도 /noc 접근 가능 → 403 응답 가드 처리. */
   useEffect(() => {
     let abort = false;
+    async function safeJson(url: string) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        const j = await r.json();
+        if (j && typeof j === 'object' && 'error' in j) return null;
+        return j;
+      } catch { return null; }
+    }
     async function fetchSlow() {
       try {
         const ymStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
         const today = new Date().toISOString().slice(0, 10);
         const [s, m, u] = await Promise.all([
-          fetch('/api/super-admin/system-stats').then((r) => r.json()),
-          fetch(`/api/reports/master-stats?from=${ymStart}&to=${today}`).then((r) => r.json()),
-          fetch('/api/super-admin/users-global?page=1&limit=10&lockedOnly=false').then((r) => r.json()),
+          safeJson('/api/super-admin/system-stats'),
+          safeJson(`/api/reports/master-stats?from=${ymStart}&to=${today}`),
+          safeJson('/api/super-admin/users-global?page=1&limit=10&lockedOnly=false'),
         ]);
         if (abort) return;
-        setSystemStats(s);
-        setMasterStats(m);
-        setGlobalUsers(u);
+        /* 응답 shape 검증 (없으면 null 유지 → Loading 표시) */
+        setSystemStats(s && s.db ? s : null);
+        setMasterStats(m && m.complaints ? m : null);
+        setGlobalUsers(u && Array.isArray(u.items) ? u : null);
         setLastUpdate(new Date());
       } catch {/* 무시 — stale 인디케이터가 표시 */}
     }

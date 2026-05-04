@@ -37,6 +37,12 @@ const Patch = z.object({
   profilePhoto: z.string().max(700_000).nullable().optional(),
   signature: z.string().max(280_000).nullable().optional(),
   consentPII: z.boolean().optional(),
+  /* AVAC 보강 (Hot-fix 2026-05-02) — 직급·주근무지 */
+  rank: z.enum([
+    'ENGINEER_MASTER','ENGINEER_SENIOR','ENGINEER_HIGH','ENGINEER_MID','ENGINEER_BEGINNER',
+    'SKILL_HIGH','SKILL_MID','SKILL_BEGINNER','LABORER',
+  ]).nullable().optional(),
+  primaryFacilityId: z.string().nullable().optional(),
 });
 
 const normPhone = (p?: string | null) => (p == null ? p : p.replace(/-/g, ''));
@@ -56,6 +62,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       department: true,
       profilePhoto: { select: { id: true, contentRef: true, mimeType: true, sizeBytes: true } },
       activeSignature: { include: { asset: { select: { contentRef: true, sizeBytes: true } } } },
+      primaryFacility: { select: { id: true, name: true, type: true } },
     },
   });
   if (!u) return NextResponse.json({ error: 'not_found' }, { status: 404 });
@@ -95,6 +102,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         : null,
       department: u.department
         ? { id: u.department.id.toString(), name: u.department.name }
+        : null,
+      /* AVAC 보강 — 직급·주근무지 */
+      rank: u.rank,
+      primaryFacility: u.primaryFacility
+        ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
         : null,
       profilePhotoUrl: u.profilePhoto?.contentRef ?? null,
       profilePhotoSize: u.profilePhoto?.sizeBytes ?? null,
@@ -197,6 +209,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       });
       if (!d) return NextResponse.json({ error: 'invalid_department' }, { status: 400 });
       data.departmentId = d.id;
+    }
+  }
+
+  /* AVAC 보강 — 직급 */
+  if (b.rank !== undefined) data.rank = b.rank;
+
+  /* AVAC 보강 — 주근무지 (시설) */
+  if (b.primaryFacilityId !== undefined) {
+    if (b.primaryFacilityId === null) data.primaryFacilityId = null;
+    else {
+      const f = await prisma.wasteTreatmentFacility.findFirst({
+        where: { id: BigInt(b.primaryFacilityId) },
+        select: { id: true, municipalityId: true, active: true },
+      });
+      if (!f || !f.active) return NextResponse.json({ error: 'invalid_facility' }, { status: 400 });
+      data.primaryFacilityId = f.id;
     }
   }
 

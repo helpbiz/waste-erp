@@ -15,7 +15,8 @@ export type FeatureKey =
   | 'costCalculation'
   | 'vehicleTracking'
   | 'attendanceGps'
-  | 'workerSuggestion';
+  | 'workerSuggestion'
+  | 'nocAccess';   // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -88,6 +89,16 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
     description: '익명 만족도·개선 의견 수집 → 경영 반영. userId 미저장(완전 익명).',
     group: '커뮤니케이션',
     defaultEnabled: true,
+  },
+  {
+    /* Agent Team 합의 2026-05-02 — security: 마스킹·14일 회전 / cto: 신청-승인 / be: scope 일원화 */
+    key: 'nocAccess',
+    label: '🖥 관제 화면 (NOC)',
+    description:
+      '회사·지자체 전용 풀스크린 관제 화면 (50" TV·Chromium kiosk). ' +
+      '활성화 시 ADMIN 들이 자기 회사 NOC 운영. 외부 노출 위험으로 SUPER_ADMIN 명시 승인 필요.',
+    group: '관제',
+    defaultEnabled: false,   // 기본 OFF — SUPER_ADMIN 승인 시만 활성화
   },
 ];
 

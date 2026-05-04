@@ -42,6 +42,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       vehicleTracking: false,
       attendanceGps: false,
       workerSuggestion: true,
+      nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
     },
   },
   {
@@ -60,6 +61,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       vehicleTracking: false,
       attendanceGps: true,
       workerSuggestion: true,
+      nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
     },
   },
   {
@@ -78,6 +80,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       vehicleTracking: true,
       attendanceGps: true,
       workerSuggestion: true,
+      nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
     },
   },
   {
@@ -96,6 +99,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       vehicleTracking: true,
       attendanceGps: true,
       workerSuggestion: true,
+      nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
     },
   },
 ];

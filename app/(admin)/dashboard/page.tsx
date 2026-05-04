@@ -1,49 +1,78 @@
 /**
  * 메인 대시보드 — 사용자 요청 2026-05-02:
- *  "관리자 대시보는 접수 현황만 보면 됨." → 민원 접수 현황 단일 포커스로 단순화.
- *
- *  이전 구성(KPI 4종 + 휴가/근태/차량/시스템알림)은 사이드바 각 메뉴
- *  (근태관리·차량관리·사용자관리·공지사항)에서 확인 가능하므로 dashboard 에서는 제거.
- *  유지: 민원 KPI 3종 + 최근 민원 목록.
+ *  - v1: "관리자 대시보드는 접수 현황만 보면 됨." → 민원 단일 포커스
+ *  - v2 (2026-05-02 확장): 시설 운영 KPI 추가 — AVAC 운영자가 한 화면에서 운영 현황 파악
  */
 import Link from 'next/link';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { complaintWhere, complaintTypeLabel, PENDING_STATUSES } from '@/lib/complaints';
 import { todayKstDate } from '@/lib/dates';
+import { contractorScopeWhere } from '@/lib/scopes';
+import { userScope } from '@/lib/users';
+import { FACILITY_TYPE_LABELS, type FacilityType } from '@/lib/facility';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = (await readSession())!;
   const cWhere = complaintWhere(session);
+  const aWhere = contractorScopeWhere(session);
+  const uWhere = userScope(session);
   const today = todayKstDate();
   const todayStart = new Date(`${today.toISOString().slice(0, 10)}T00:00:00+09:00`);
 
-  const [recentComplaints, pendingCount, overdueCount, todayReceivedCount, todayCompletedCount] = await Promise.all([
+  /* 가시 가능한 시설 — contractor 산하 municipality 의 active 시설 */
+  const facilityWhere: { active: boolean; municipalityId?: bigint } = { active: true };
+  if (session.contractorId) {
+    const c = await prisma.contractor.findUnique({
+      where: { id: BigInt(session.contractorId) },
+      select: { municipalityId: true },
+    });
+    if (c?.municipalityId) facilityWhere.municipalityId = c.municipalityId;
+  } else if (session.municipalityId) {
+    facilityWhere.municipalityId = BigInt(session.municipalityId);
+  }
+
+  const [
+    recentComplaints, pendingCount, overdueCount, todayReceivedCount, todayCompletedCount,
+    facilities, totalAssignedUsers, todayCheckIns, totalActiveWorkers,
+  ] = await Promise.all([
     prisma.complaint.findMany({
-      where: cWhere,
-      orderBy: { reportedAt: 'desc' },
-      take: 12,
+      where: cWhere, orderBy: { reportedAt: 'desc' }, take: 12,
       include: { assignee: { select: { name: true } } },
     }),
     prisma.complaint.count({ where: { ...cWhere, status: { in: [...PENDING_STATUSES] } } }),
     prisma.complaint.count({
-      where: {
-        ...cWhere,
-        status: { in: [...PENDING_STATUSES] },
-        dueDate: { lt: new Date() },
-      },
+      where: { ...cWhere, status: { in: [...PENDING_STATUSES] }, dueDate: { lt: new Date() } },
     }),
     prisma.complaint.count({ where: { ...cWhere, reportedAt: { gte: todayStart } } }),
-    prisma.complaint.count({
-      where: {
-        ...cWhere,
-        status: 'COMPLETED',
-        resolvedAt: { gte: todayStart },
+    prisma.complaint.count({ where: { ...cWhere, status: 'COMPLETED', resolvedAt: { gte: todayStart } } }),
+    /* 운영 KPI — 가시 시설 (contractor 의 지자체 산하) */
+    prisma.wasteTreatmentFacility.findMany({
+      where: facilityWhere,
+      orderBy: [{ type: 'asc' }, { name: 'asc' }],
+      include: {
+        primaryUsers: { where: uWhere, select: { id: true } },
+        attendances: {
+          where: { workDate: today, checkInTime: { not: null } },
+          select: { id: true },
+        },
       },
     }),
+    /* 본 contractor 산하 시설 배치된 user 수 */
+    prisma.user.count({ where: { ...uWhere, primaryFacilityId: { not: null } } }),
+    /* 오늘 출근 인원 (contractor 단위) */
+    prisma.attendanceRecord.count({
+      where: { ...aWhere, workDate: today, checkInTime: { not: null } },
+    }),
+    /* 활성 worker (전체 인원) */
+    prisma.user.count({ where: { ...uWhere, role: 'WORKER', status: 'ACTIVE' } }),
   ]);
+
+  const activeFacilityCount = facilities.length;
+  const attendanceRate = totalActiveWorkers > 0
+    ? Math.round((todayCheckIns / totalActiveWorkers) * 100) : 0;
 
   return (
     <div className="space-y-3.5 md:space-y-5">
@@ -75,6 +104,50 @@ export default async function DashboardPage() {
         />
       </section>
 
+      {/* KPI — 시설 운영 3종 (v2 신규) */}
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 md:gap-3.5">
+        <KpiCard
+          label="처리시설 가동"
+          value={String(activeFacilityCount)}
+          unit="개소"
+          sub={facilities.filter((f) => f.type === 'AVAC').length > 0
+            ? `🏭 자동집하시설 ${facilities.filter((f) => f.type === 'AVAC').length}개 포함`
+            : '운영 중'}
+          tone="info"
+          href="/super-admin?tab=facilities"
+        />
+        <KpiCard
+          label="시설 인원 배치"
+          value={String(totalAssignedUsers)}
+          unit="명"
+          sub={totalActiveWorkers > 0 ? `전체 활성 인원 ${totalActiveWorkers}명 중` : '인원 등록 필요'}
+          tone={totalAssignedUsers > 0 ? 'success' : 'warn'}
+          href="/users"
+        />
+        <KpiCard
+          label="오늘 출근"
+          value={`${todayCheckIns}/${totalActiveWorkers}`}
+          unit={`(${attendanceRate}%)`}
+          sub={attendanceRate >= 80 ? '정상 출근율' : attendanceRate >= 50 ? '보통' : '출근 저조'}
+          tone={attendanceRate >= 80 ? 'success' : attendanceRate >= 50 ? 'warn' : 'danger'}
+          href="/attendance"
+        />
+      </section>
+
+      {/* 시설별 운영 현황 — 패널 (v2 신규) */}
+      {activeFacilityCount > 0 && (
+        <section>
+          <Panel
+            title="시설별 운영 현황"
+            actionHref="/super-admin?tab=facilities"
+            actionLabel="시설관리 →"
+            iconPath="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          >
+            <FacilityList facilities={facilities} />
+          </Panel>
+        </section>
+      )}
+
       {/* 최근 민원 — 단독 패널 (full width) */}
       <section>
         <Panel
@@ -86,6 +159,61 @@ export default async function DashboardPage() {
           <ComplaintList items={recentComplaints} />
         </Panel>
       </section>
+    </div>
+  );
+}
+
+/* ─────────────── 시설 목록 (v2 신규) ─────────────── */
+
+type FacilityRow = {
+  id: bigint;
+  name: string;
+  type: string;
+  primaryUsers: { id: bigint }[];
+  attendances: { id: bigint }[];
+};
+
+function FacilityList({ facilities }: { facilities: FacilityRow[] }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      {facilities.map((f) => {
+        const isAvac = f.type === 'AVAC';
+        const userCount = f.primaryUsers.length;
+        const todayPresent = f.attendances.length;
+        const presentRate = userCount > 0 ? Math.round((todayPresent / userCount) * 100) : 0;
+        const typeLabel = FACILITY_TYPE_LABELS[f.type as FacilityType] ?? f.type;
+        return (
+          <div key={f.id.toString()}
+            className={`rounded-lg border p-3 flex items-center gap-3 ${
+              isAvac ? 'bg-cyan-50 border-cyan-200' : 'bg-surface border-line'
+            }`}
+          >
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl ${
+              isAvac ? 'bg-cyan-100' : 'bg-slate-100'
+            }`}>
+              {isAvac ? '🏭' : '♻️'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-extrabold text-ink truncate">{f.name}</div>
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">{typeLabel}</div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-muted">배치 / 출근</div>
+              <div className="text-sm font-black font-mono text-ink">
+                {userCount}<span className="text-ink-muted"> / </span>{todayPresent}
+                <span className={`ml-1.5 text-[0.625rem] ${
+                  presentRate >= 80 ? 'text-success'
+                    : presentRate >= 50 ? 'text-warn'
+                    : userCount === 0 ? 'text-ink-muted'
+                    : 'text-danger'
+                }`}>
+                  {userCount > 0 ? `(${presentRate}%)` : '(미배치)'}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

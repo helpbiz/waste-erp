@@ -41,6 +41,12 @@ const Create = z.object({
   profilePhoto: z.string().max(700_000).optional().nullable(),    // data URL ≤ ~500KB
   signature: z.string().max(280_000).optional().nullable(),       // data URL ≤ ~200KB
   consentPII: z.boolean().optional(),
+  /* AVAC 보강 (Hot-fix 2026-05-02) — 직급·주근무지 */
+  rank: z.enum([
+    'ENGINEER_MASTER','ENGINEER_SENIOR','ENGINEER_HIGH','ENGINEER_MID','ENGINEER_BEGINNER',
+    'SKILL_HIGH','SKILL_MID','SKILL_BEGINNER','LABORER',
+  ]).optional().nullable(),
+  primaryFacilityId: z.string().optional().nullable(),  // BigInt as string
 });
 
 const normPhone = (p?: string | null) => (p ? p.replace(/-/g, '') : null);
@@ -193,6 +199,8 @@ export async function POST(req: Request) {
       memo: b.memo ?? null,
       positionId,
       departmentId,
+      rank: b.rank ?? null,
+      primaryFacilityId: b.primaryFacilityId ? BigInt(b.primaryFacilityId) : null,
     },
   });
 

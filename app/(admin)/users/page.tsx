@@ -21,6 +21,7 @@ export default async function UsersPage() {
         department: true,
         profilePhoto: { select: { contentRef: true } },
         activeSignature: { select: { signatureRef: true } },
+        primaryFacility: { select: { id: true, name: true, type: true } },
       },
       take: 200,
     }),
@@ -86,6 +87,11 @@ export default async function UsersPage() {
         : null,
       department: u.department
         ? { id: u.department.id.toString(), name: u.department.name }
+        : null,
+      /* AVAC 보강 (Hot-fix 2026-05-02) */
+      rank: u.rank ?? null,
+      primaryFacility: u.primaryFacility
+        ? { id: u.primaryFacility.id.toString(), name: u.primaryFacility.name, type: u.primaryFacility.type }
         : null,
       profilePhotoUrl: u.profilePhoto?.contentRef ?? null,
       activeSignatureRef: u.activeSignature?.signatureRef ?? null,

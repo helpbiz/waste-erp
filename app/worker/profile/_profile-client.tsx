@@ -47,6 +47,34 @@ export default function ProfileClient({ user }: { user: UserData }) {
   });
   const [saving, setSaving] = useState(false);
 
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwDone, setPwDone] = useState(false);
+
+  async function changePassword() {
+    setPwError(null);
+    setPwDone(false);
+    if (!pw.current) { setPwError('현재 비밀번호를 입력하세요.'); return; }
+    if (pw.next.length < 6) { setPwError('새 비밀번호는 6자 이상이어야 합니다.'); return; }
+    if (pw.next !== pw.confirm) { setPwError('새 비밀번호가 일치하지 않습니다.'); return; }
+    setPwSaving(true);
+    const res = await fetch('/api/worker/password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ currentPassword: pw.current, newPassword: pw.next }),
+    });
+    setPwSaving(false);
+    if (res.ok) {
+      setPwDone(true);
+      setPw({ current: '', next: '', confirm: '' });
+    } else {
+      const body = await res.json().catch(() => ({}));
+      if (body.error === 'incorrect_password') setPwError('현재 비밀번호가 올바르지 않습니다.');
+      else setPwError('변경 실패: ' + (body.error ?? '알 수 없는 오류'));
+    }
+  }
+
   async function save() {
     if (photoChanged && photo && !consentPII) {
       alert('사진 등록 시 개인정보 동의가 필요합니다.');
@@ -181,6 +209,46 @@ export default function ProfileClient({ user }: { user: UserData }) {
         <Field label="계좌번호">
           <Input value={form.bankAccount} onChange={(v) => setForm({ ...form, bankAccount: v })} />
         </Field>
+      </Section>
+
+      {/* 비밀번호 변경 */}
+      <Section title="비밀번호 변경">
+        <Field label="현재 비밀번호">
+          <input
+            type="password"
+            value={pw.current}
+            onChange={(e) => { setPw({ ...pw, current: e.target.value }); setPwDone(false); setPwError(null); }}
+            placeholder="현재 비밀번호"
+            className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold"
+          />
+        </Field>
+        <Field label="새 비밀번호">
+          <input
+            type="password"
+            value={pw.next}
+            onChange={(e) => { setPw({ ...pw, next: e.target.value }); setPwDone(false); setPwError(null); }}
+            placeholder="6자 이상"
+            className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold"
+          />
+        </Field>
+        <Field label="새 비밀번호 확인">
+          <input
+            type="password"
+            value={pw.confirm}
+            onChange={(e) => { setPw({ ...pw, confirm: e.target.value }); setPwDone(false); setPwError(null); }}
+            placeholder="새 비밀번호 재입력"
+            className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold"
+          />
+        </Field>
+        {pwError && <p className="text-xs font-bold text-danger">{pwError}</p>}
+        {pwDone && <p className="text-xs font-bold text-emerald-600">비밀번호가 변경되었습니다.</p>}
+        <button
+          onClick={changePassword}
+          disabled={pwSaving}
+          className="w-full py-2.5 rounded-lg bg-slate-700 text-white text-sm font-extrabold active:scale-[0.99] transition disabled:opacity-50"
+        >
+          {pwSaving ? '변경 중…' : '비밀번호 변경'}
+        </button>
       </Section>
 
       <button onClick={save} disabled={saving}

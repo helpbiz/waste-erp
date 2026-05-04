@@ -27,10 +27,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const canPostAnnouncement = isInternal || session.role === 'MUNI_ADMIN';
 
   /* 회사별 기능 권한 — sidebar 메뉴 동적 필터링 (SUPER/MUNI 는 게이트 미적용) */
-  const [feLiveVehicles, feAnnouncements, feWorkerSuggestion] = await Promise.all([
+  const [feLiveVehicles, feAnnouncements, feWorkerSuggestion, feNocAccess] = await Promise.all([
     hasFeature(session.contractorId, 'vehicleTracking'),
     hasFeature(session.contractorId, 'announcements'),
     hasFeature(session.contractorId, 'workerSuggestion'),
+    hasFeature(session.contractorId, 'nocAccess'),  /* Agent Team 합의 2026-05-02 */
   ]);
   const feSkipForSuperOrMuni = !session.contractorId; /* SUPER/MUNI 는 모두 표시 */
 
@@ -41,6 +42,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       group: 'OVERVIEW',
       items: [
         { href: '/dashboard', label: '메인 대시보드' },
+        /* 풀스크린 관제 모드 — 회사 admin 의 메인 대시보드를 모니터용으로 표시.
+           SUPER_ADMIN 또는 nocAccess feature 활성 시 노출. */
+        ...(session.role === 'SUPER_ADMIN' || feSkipForSuperOrMuni || feNocAccess
+          ? [
+              { href: '/dashboard/wall', label: '🖥 관제 모드 (풀스크린)', newTab: true },
+              /* 회사 admin 자율 셋팅 — Phase 2A (2026-05-02) */
+              { href: '/dashboard/wall/settings', label: '🛠 관제 모드 설정' },
+            ]
+          : []),
+        /* SUPER_ADMIN 전용 글로벌 NOC */
+        ...(session.role === 'SUPER_ADMIN'
+          ? [{ href: '/noc', label: '🌐 글로벌 NOC', newTab: true }]
+          : []),
       ],
     },
     {

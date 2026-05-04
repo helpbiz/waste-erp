@@ -7,6 +7,7 @@ export const FACILITY_TYPES = [
   'OUTSOURCED',        // 위탁처리장
   'LANDFILL',          // 매립시설
   'RECYCLING_CENTER',  // 자원순환센터
+  'AVAC',              // 자동집하시설 (Automated Vacuum Collection) — 2026-05-02 추가
   'OTHER',             // 기타
 ] as const;
 
@@ -17,6 +18,7 @@ export const FACILITY_TYPE_LABELS: Record<FacilityType, string> = {
   OUTSOURCED: '위탁처리장',
   LANDFILL: '매립시설',
   RECYCLING_CENTER: '자원순환센터',
+  AVAC: '자동집하시설',
   OTHER: '기타',
 };
 

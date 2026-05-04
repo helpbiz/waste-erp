@@ -50,9 +50,27 @@ export type UserRow = {
   thisYearRemaining: number;
   position: { id: string; code: string; label: string; category: string } | null;
   department: { id: string; name: string } | null;
+  /* AVAC 보강 (Hot-fix 2026-05-02) — 직급·주근무지 */
+  rank: string | null;
+  primaryFacility: { id: string; name: string; type: string } | null;
   profilePhotoUrl: string | null;
   activeSignatureRef: string | null;
 };
+
+/* AVAC 보강 — 직급 라벨 */
+export const RANK_OPTIONS: { code: string; label: string; group: string }[] = [
+  { code: 'ENGINEER_MASTER',   label: '기술사',         group: '엔지니어링' },
+  { code: 'ENGINEER_SENIOR',   label: '특급기술자',     group: '엔지니어링' },
+  { code: 'ENGINEER_HIGH',     label: '고급기술자',     group: '엔지니어링' },
+  { code: 'ENGINEER_MID',      label: '중급기술자',     group: '엔지니어링' },
+  { code: 'ENGINEER_BEGINNER', label: '초급기술자',     group: '엔지니어링' },
+  { code: 'SKILL_HIGH',        label: '고급숙련기술자', group: '숙련' },
+  { code: 'SKILL_MID',         label: '중급숙련기술자', group: '숙련' },
+  { code: 'SKILL_BEGINNER',    label: '초급숙련기술자', group: '숙련' },
+  { code: 'LABORER',           label: '단순노무종사원', group: '단순노무' },
+];
+
+export type FacilityRow = { id: string; name: string; type: string };
 
 export type LeaveRow = {
   id: string;
@@ -408,6 +426,8 @@ function EditUserModal({ user, positions, departments, onClose }: {
     status: user.status as 'ACTIVE' | 'INACTIVE' | 'PENDING',
     positionCode: user.position?.code ?? '',
     departmentId: user.department?.id ?? '',
+    rank: user.rank ?? '',                                /* AVAC 보강 */
+    primaryFacilityId: user.primaryFacility?.id ?? '',    /* AVAC 보강 */
     birthDate: user.birthDate ?? '',
     hireDate: user.hireDate ?? '',
     address: '',
@@ -417,6 +437,20 @@ function EditUserModal({ user, positions, departments, onClose }: {
     emergencyPhone: '',
     password: '',
   });
+  const [facilities, setFacilities] = useState<FacilityRow[]>([]);
+
+  /* 본 contractor·munis 산하 active facility 목록 로드 */
+  useEffect(() => {
+    fetch('/api/super-admin/facilities?active=true')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => {
+        const items: FacilityRow[] = (j.items ?? []).map((f: { id: string; name: string; type: string }) => ({
+          id: f.id, name: f.name, type: f.type,
+        }));
+        setFacilities(items);
+      })
+      .catch(() => setFacilities([]));
+  }, []);
   const [photo, setPhoto] = useState<string | null>(user.profilePhotoUrl);
   const [photoChanged, setPhotoChanged] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
@@ -461,6 +495,8 @@ function EditUserModal({ user, positions, departments, onClose }: {
     if (form.status !== user.status) payload.status = form.status;
     if (form.positionCode !== (user.position?.code ?? '')) payload.positionCode = form.positionCode || null;
     if (form.departmentId !== (user.department?.id ?? '')) payload.departmentId = form.departmentId || null;
+    if (form.rank !== (user.rank ?? '')) payload.rank = form.rank || null;
+    if (form.primaryFacilityId !== (user.primaryFacility?.id ?? '')) payload.primaryFacilityId = form.primaryFacilityId || null;
     if (form.birthDate !== (user.birthDate ?? '')) payload.birthDate = form.birthDate || null;
     if (form.hireDate !== (user.hireDate ?? '')) payload.hireDate = form.hireDate || null;
     if (detail) {
@@ -530,6 +566,40 @@ function EditUserModal({ user, positions, departments, onClose }: {
               className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
               <option value="">미지정</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </Field>
+
+          {/* AVAC 보강 (Hot-fix 2026-05-02) — 직급 + 주근무지 시설 */}
+          <Field label="직급">
+            <select value={form.rank} onChange={(e) => setForm({ ...form, rank: e.target.value })}
+              className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
+              <option value="">미지정</option>
+              <optgroup label="엔지니어링">
+                {RANK_OPTIONS.filter((r) => r.group === '엔지니어링').map((r) => (
+                  <option key={r.code} value={r.code}>{r.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="숙련">
+                {RANK_OPTIONS.filter((r) => r.group === '숙련').map((r) => (
+                  <option key={r.code} value={r.code}>{r.label}</option>
+                ))}
+              </optgroup>
+              <optgroup label="단순노무">
+                {RANK_OPTIONS.filter((r) => r.group === '단순노무').map((r) => (
+                  <option key={r.code} value={r.code}>{r.label}</option>
+                ))}
+              </optgroup>
+            </select>
+          </Field>
+          <Field label="주근무지(시설)">
+            <select value={form.primaryFacilityId} onChange={(e) => setForm({ ...form, primaryFacilityId: e.target.value })}
+              className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
+              <option value="">미배치</option>
+              {facilities.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.type === 'AVAC' ? '🏭 ' : ''}{f.name}
+                </option>
+              ))}
             </select>
           </Field>
 
@@ -1467,7 +1537,7 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
   const byCat: Record<string, PositionRow[]> = { OFFICE: [], FIELD: [], OTHER: [] };
   for (const p of positions) (byCat[p.category] ?? byCat.OTHER).push(p);
 
-  const CAT_LABEL: Record<string, string> = { OFFICE: '사무직 (관리직)', FIELD: '현장직 (운전원/수거원/미화원)', OTHER: '기타 (간접인력)' };
+  const CAT_LABEL: Record<string, string> = { OFFICE: '사무직 (관리직)', FIELD: '현장직 (기술직/현장관리)', OTHER: '기타 (간접인력)' };
 
   return (
     <div className="bg-surface border border-line rounded-lg overflow-hidden">
@@ -2044,7 +2114,15 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
     contractorId: '', phone: '', employeeNo: '',
     birthDate: '', hireDate: '', address: '',
     positionCode: '', departmentId: '',
+    rank: '', primaryFacilityId: '',  /* AVAC 보강 */
   });
+  const [facilities, setFacilities] = useState<FacilityRow[]>([]);
+  useEffect(() => {
+    fetch('/api/super-admin/facilities?active=true')
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((j) => setFacilities((j.items ?? []).map((f: { id: string; name: string; type: string }) => ({ id: f.id, name: f.name, type: f.type }))))
+      .catch(() => setFacilities([]));
+  }, []);
   const [photo, setPhoto] = useState<string | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [consentPII, setConsentPII] = useState(false);
@@ -2101,6 +2179,38 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
             className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
             <option value="">미지정</option>
             {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </Field>
+
+        {/* AVAC 보강 (Hot-fix 2026-05-02) */}
+        <Field label="직급">
+          <select value={form.rank} onChange={(e) => setForm({ ...form, rank: e.target.value })}
+            className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
+            <option value="">미지정</option>
+            <optgroup label="엔지니어링">
+              {RANK_OPTIONS.filter((r) => r.group === '엔지니어링').map((r) => (
+                <option key={r.code} value={r.code}>{r.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="숙련">
+              {RANK_OPTIONS.filter((r) => r.group === '숙련').map((r) => (
+                <option key={r.code} value={r.code}>{r.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="단순노무">
+              {RANK_OPTIONS.filter((r) => r.group === '단순노무').map((r) => (
+                <option key={r.code} value={r.code}>{r.label}</option>
+              ))}
+            </optgroup>
+          </select>
+        </Field>
+        <Field label="주근무지(시설)">
+          <select value={form.primaryFacilityId} onChange={(e) => setForm({ ...form, primaryFacilityId: e.target.value })}
+            className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
+            <option value="">미배치</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>{f.type === 'AVAC' ? '🏭 ' : ''}{f.name}</option>
+            ))}
           </select>
         </Field>
 

@@ -347,6 +347,10 @@ model User {
   profilePhotoId    BigInt? @map("profile_photo_id")
   activeSignatureId BigInt? @unique @map("active_signature_id")
 
+  // 직급·시설배치 (Hot-fix 2026-05-02: AVAC 운영 보강)
+  rank              String? @db.VarChar(30)              // 직급 enum: ENGINEER_HIGH/MID/BEGINNER, SKILL_HIGH/MID/BEGINNER, LABORER 등
+  primaryFacilityId BigInt? @map("primary_facility_id")  // 주근무지 (AVAC 시설 등)
+
   // 개인정보 수집·이용 동의 (개인정보보호법 §15·22)
   privacyConsentAt      DateTime? @map("privacy_consent_at")
   privacyConsentVersion String?   @map("privacy_consent_version") @db.VarChar(20)
@@ -379,9 +383,11 @@ model User {
   tbmSignatures          TbmSignature[]          @relation("TbmSigner")
   healthRecord           HealthRecord?           @relation("HealthSubject")
   suggestionReplies      WorkerSuggestionReply[] @relation("SuggestionReplier")
+  primaryFacility        WasteTreatmentFacility? @relation("UserPrimaryFacility", fields: [primaryFacilityId], references: [id], onDelete: SetNull)
 
   @@index([contractorId])
   @@index([role])
+  @@index([primaryFacilityId])
   @@map("users")
 }
 
@@ -420,12 +426,14 @@ model AttendanceRecord {
   checkOutLng  Decimal?         @map("check_out_lng") @db.Decimal(11, 8)
   workType     WorkType         @default(NORMAL) @map("work_type")
   zoneId       BigInt?          @map("zone_id")
+  facilityId   BigInt?          @map("facility_id")  // P2 (Hot-fix 2026-05-02): 시설 단위 근태 집계
   status       AttendanceStatus @default(PENDING)
   createdAt    DateTime         @default(now()) @map("created_at")
 
   worker      User                   @relation(fields: [workerId], references: [id])
   contractor  Contractor             @relation(fields: [contractorId], references: [id])
   zone        CleaningZone?          @relation(fields: [zoneId], references: [id])
+  facility    WasteTreatmentFacility? @relation("AttendanceFacility", fields: [facilityId], references: [id], onDelete: SetNull)
   adjustments AttendanceAdjustment[]
 
   @@unique([workerId, workDate])
@@ -1006,6 +1014,8 @@ model WasteTreatmentFacility {
 
   municipality Municipality            @relation(fields: [municipalityId], references: [id])
   intakes      RecyclingCenterIntake[]
+  primaryUsers User[]                  @relation("UserPrimaryFacility")
+  attendances  AttendanceRecord[]      @relation("AttendanceFacility")
 
   @@unique([municipalityId, type, name])
   @@index([municipalityId, active])
