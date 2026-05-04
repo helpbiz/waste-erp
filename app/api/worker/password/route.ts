@@ -5,8 +5,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { readSession } from '@/lib/auth';
-import { verifyPassword, hashPassword } from '@/lib/auth';
+import { readSession, verifyPassword, hashPassword } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 

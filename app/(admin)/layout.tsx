@@ -112,6 +112,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       group: 'HELP',
       items: [
+        { href: '/profile', label: '🔑 비밀번호 변경' },
         {
           href: session.role === 'MUNI_ADMIN' ? '/manual/muni' : '/manual/contractor',
           label: '📘 사용 가이드',
