@@ -244,6 +244,8 @@ app/
 └── _sw-register.tsx                   # Phase 19 — SW 자동 갱신
 
 components/
+├── BottomSheet.tsx                    # Cycle #6 — 모바일 bottom sheet + 데스크탑 fallback
+├── FilterToggle.tsx                   # Cycle #6 — 모바일 collapsible filter
 ├── Field.tsx                          # Cycle #4 — 공용 Field
 ├── LocationPickerMap.tsx              # Phase 14 — admin·worker 공유
 ├── MultiPhotoUploader.tsx             # Phase 14·18 — 3MB·3장
@@ -299,12 +301,13 @@ docs/
 
 ## 📝 다음 단계 후보
 
-1. **/complaints 모바일 대응** — admin 첫 랜딩이지만 데스크탑 그대로 (Phase 17 조치 — mobile은 /dashboard로 redirect로 우회)
-2. **/super-admin 모바일 대응** — Cycle #2~4에서 검증 외
-3. **a11y moderate 임계값** — 점진 강화 다음 단계 (현재 critical+serious까지 완료)
-4. **Tailwind 의미 토큰** — slate scale → text-primary/muted (`a11y-serious-fix.report.md` Outstanding)
-5. **/safety 시각 mask 영역 확장** — 날씨 데이터 드리프트 방지 (`field-label-refactor.report.md` Outstanding)
-6. **users 페이지 Field 통합** — canvas/file 우회법 연구 후 (우선순위 낮음)
+1. ~~**/complaints 모바일 대응**~~ ✅ **Cycle #6 완료** — BottomSheet + FilterToggle 적용
+2. ~~**/super-admin 모바일 대응**~~ ✅ **Cycle #6 완료** — 4개 모달 BottomSheet 적용
+3. **다른 admin 페이지 BottomSheet 통합** (/users, /safety 등) — `bottom-sheet-rollout` PDCA
+4. **a11y moderate 임계값** — 점진 강화 다음 단계 (현재 critical+serious까지 완료)
+5. **Tailwind 의미 토큰** — slate scale → text-primary/muted (`a11y-serious-fix.report.md` Outstanding)
+6. **/safety 시각 mask 영역 확장** — 날씨 데이터 드리프트 방지 (`field-label-refactor.report.md` Outstanding)
+7. **users 페이지 Field 통합** — canvas/file 우회법 연구 후 (우선순위 낮음)
 
 ---
 
@@ -327,6 +330,7 @@ docs/
 | **#4** | 2026-04-27 | **field-label-refactor (94%)** — Field 통합 + 138 인스턴스 |
 | (단순) | 2026-04-27 | mobile-admin-landing — 모바일 admin → /dashboard redirect |
 | **#5** | 2026-04-28 | **pwa-mobile-ux-mastering (100%)** — viewport 잠금 + LogoutButton AAA + 4-role 통합 + AccessibleConfirmDialog ⭐ |
+| **#6** | 2026-04-28 | **mobile-admin-landings (100%)** — BottomSheet + FilterToggle 공용 컴포넌트 + /complaints·/super-admin 적용 ⭐ |
 
 ---
 
@@ -335,3 +339,4 @@ docs/
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 0.1 | 2026-04-27 | 개발_기록.md Phase 14·16~21·25 + 4 PDCA Reports + mobile-issues.md 통합 | 4365won@gmail.com |
+| 0.2 | 2026-04-28 | Cycle #6 mobile-admin-landings — BottomSheet/FilterToggle 신규 + 변경 이력 추가 | 4365won@gmail.com |
