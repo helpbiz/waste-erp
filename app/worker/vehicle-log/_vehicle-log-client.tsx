@@ -38,7 +38,7 @@ type BagWorkRow = {
   general: string;
   food: string;
   recycle: string;
-  disposalSiteId: string;
+  disposalSite: string; /* 수기 입력 또는 드롭다운 선택 — 자유 텍스트 */
 };
 
 type BagMachineWork = {
@@ -78,7 +78,7 @@ function defaultForm(lastEndMileage: number | null): FormState {
   const defaultInspection = Object.fromEntries(
     INSPECTION_ITEMS.map((i) => [i.key, i.opts[0]])
   ) as Record<InspectionKey, string>;
-  const emptyBagRow = (): BagWorkRow => ({ general: '', food: '', recycle: '', disposalSiteId: '' });
+  const emptyBagRow = (): BagWorkRow => ({ general: '', food: '', recycle: '', disposalSite: '' });
   return {
     logDate: today,
     prevMileage: lastEndMileage != null ? String(lastEndMileage) : '',
@@ -182,8 +182,7 @@ export default function VehicleLogClient({
         general: Number(row.general) || 0,
         food: Number(row.food) || 0,
         recycle: Number(row.recycle) || 0,
-        disposalSiteId: row.disposalSiteId || null,
-        disposalSiteName: disposalSites.find((s) => s.id === row.disposalSiteId)?.name ?? null,
+        disposalSite: row.disposalSite.trim() || null,
       })),
       bagMachineWork: Object.fromEntries(
         Object.entries(form.bagMachineWork).map(([k, v]) => [k, Number(v) || 0])
@@ -459,20 +458,14 @@ export default function VehicleLogClient({
                         className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
                     </td>
                     <td className="px-1 py-1 border border-line">
-                      {disposalSites.length === 0 ? (
-                        <div className="text-[0.625rem] text-ink-muted text-center px-1">관리자 설정 필요</div>
-                      ) : (
-                        <select
-                          value={form.bagWork[idx].disposalSiteId}
-                          onChange={(e) => setBagWorkRow(idx, 'disposalSiteId', e.target.value)}
-                          className="w-full px-1 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white"
-                        >
-                          <option value="">—</option>
-                          {disposalSites.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
-                      )}
+                      <input
+                        type="text"
+                        list="disposal-sites-list"
+                        value={form.bagWork[idx].disposalSite}
+                        onChange={(e) => setBagWorkRow(idx, 'disposalSite', e.target.value)}
+                        placeholder="직접 입력"
+                        className="w-full px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white min-w-[72px]"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -493,8 +486,14 @@ export default function VehicleLogClient({
               </tbody>
             </table>
           </div>
+          {/* 반입장소 자동완성 — 관리자 등록 목록을 datalist로 제공, 수기 입력 가능 */}
+          <datalist id="disposal-sites-list">
+            {disposalSites.map((s) => (
+              <option key={s.id} value={s.name} />
+            ))}
+          </datalist>
           <p className="mt-2 text-[0.625rem] text-ink-muted">
-            ※ 매회 처리 시 처리장 계근전표 기준으로 작성.
+            ※ 매회 처리 시 처리장 계근전표 기준으로 작성. 목록에 없으면 직접 입력하세요.
           </p>
         </Card>
 
