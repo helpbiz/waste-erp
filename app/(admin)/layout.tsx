@@ -96,6 +96,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ? [{ href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' }]
           : []),
         { href: '/reports', label: '통계/보고서' },
+        { href: '/print', label: '🖨 출력 센터' },
       ],
     },
     ...(isInternal
