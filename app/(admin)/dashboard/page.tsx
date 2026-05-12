@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { complaintWhere, complaintTypeLabel, PENDING_STATUSES } from '@/lib/complaints';
+import { safetyWhere } from '@/lib/safety';
+import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import { todayKstDate } from '@/lib/dates';
 import { contractorScopeWhere } from '@/lib/scopes';
 import { userScope } from '@/lib/users';
@@ -34,9 +36,20 @@ export default async function DashboardPage() {
     facilityWhere.municipalityId = BigInt(session.municipalityId);
   }
 
+  const vlWhere = vehicleLogWhere(session);
+  const sWhere = safetyWhere(session);
+  const leaveWhere = session.contractorId
+    ? { worker: { contractorId: BigInt(session.contractorId) } }
+    : {};
+
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
   const [
     recentComplaints, pendingCount, overdueCount, todayReceivedCount, todayCompletedCount,
     facilities, totalAssignedUsers, todayCheckIns, totalActiveWorkers,
+    pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyReports,
+    recentVehicleLogs,
   ] = await Promise.all([
     prisma.complaint.findMany({
       where: cWhere, orderBy: { reportedAt: 'desc' }, take: 12,
@@ -68,7 +81,66 @@ export default async function DashboardPage() {
     }),
     /* 활성 worker (전체 인원) */
     prisma.user.count({ where: { ...uWhere, role: 'WORKER', status: 'ACTIVE' } }),
+    /* 결재 대기 카운트 */
+    prisma.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['PENDING', 'IN_REVIEW'] } } }),
+    prisma.attendanceRecord.count({ where: { ...aWhere, status: 'PENDING' } }),
+    prisma.vehicleLog.count({ where: { ...vlWhere, status: 'SUBMITTED' } }),
+    prisma.safetyReport.count({ where: { ...sWhere, status: 'SUBMITTED' } }),
+    /* 최근 7일 차량일지 특이사항 */
+    prisma.vehicleLog.findMany({
+      where: { ...vlWhere, status: { in: ['SUBMITTED', 'APPROVED'] }, logDate: { gte: sevenDaysAgo }, routeDetail: { not: null } },
+      orderBy: { logDate: 'desc' },
+      take: 20,
+      select: {
+        id: true, logDate: true, routeDetail: true, status: true,
+        vehicle: { select: { vehicleNo: true } },
+        driver: { select: { name: true } },
+      },
+    }),
   ]);
+
+  /* 차량일지 특이사항 필터링 — JSON routeDetail에서 note 또는 이상/수리점검 항목 */
+  type VehicleLogAnomaly = {
+    id: string;
+    logDate: string;
+    vehicleNo: string;
+    driverName: string;
+    status: string;
+    note: string;
+    anomalyItems: string[];
+  };
+  const vehicleLogAnomalies: VehicleLogAnomaly[] = [];
+  for (const log of recentVehicleLogs) {
+    if (!log.routeDetail) continue;
+    try {
+      const extra = JSON.parse(log.routeDetail);
+      const anomalyItems: string[] = [];
+      if (extra.inspection) {
+        const labels: Record<string, string> = {
+          safetyBar: '안전멈춤Bar', handSwitch: '양손조작안전스위치', dashcam: '블랙박스',
+          turnSignal: '방향지시등', engineOil: '엔진오일', lubricant: '윤활제',
+          brake: '브레이크', tire: '타이어', headlight: '전조등', carWash: '세차여부',
+        };
+        for (const [k, v] of Object.entries(extra.inspection as Record<string, string>)) {
+          if (v === '이상' || v === '수리점검' || v === '아니오') {
+            anomalyItems.push(`${labels[k] ?? k}(${v})`);
+          }
+        }
+      }
+      const hasNote = typeof extra.note === 'string' && extra.note.trim().length > 0;
+      if (hasNote || anomalyItems.length > 0) {
+        vehicleLogAnomalies.push({
+          id: log.id.toString(),
+          logDate: log.logDate.toISOString().slice(0, 10),
+          vehicleNo: log.vehicle.vehicleNo,
+          driverName: log.driver.name,
+          status: log.status,
+          note: extra.note ?? '',
+          anomalyItems,
+        });
+      }
+    } catch { /* JSON parse 실패 시 skip */ }
+  }
 
   const activeFacilityCount = facilities.length;
   const attendanceRate = totalActiveWorkers > 0
@@ -76,8 +148,6 @@ export default async function DashboardPage() {
 
   /* 집하장별 실적 — AVAC 시설만, 최근 7일 합산 */
   const avacFacilityIds = facilities.filter((f) => f.type === 'AVAC').map((f) => f.id);
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
   const facilityOpsData = avacFacilityIds.length > 0
     ? await prisma.facilityDailyOps.groupBy({
@@ -123,6 +193,23 @@ export default async function DashboardPage() {
           href="/complaints?tab=COMPLETED"
         />
       </section>
+
+      {/* 결재 대기 현황 */}
+      {(pendingLeaves + pendingAttendance + pendingVehicleLogs + pendingSafetyReports) > 0 && (
+        <section>
+          <Panel
+            title="결재 대기"
+            iconPath="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <ApprovalItem label="휴가 신청" count={pendingLeaves} href="/users" tone="warn" />
+              <ApprovalItem label="근태 조정" count={pendingAttendance} href="/attendance" tone="info" />
+              <ApprovalItem label="운행일지" count={pendingVehicleLogs} href="/vehicles" tone="info" />
+              <ApprovalItem label="안전보고서" count={pendingSafetyReports} href="/safety" tone="danger" />
+            </div>
+          </Panel>
+        </section>
+      )}
 
       {/* KPI — 시설 운영 3종 (v2 신규) */}
       <section className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 md:gap-3.5">
@@ -185,18 +272,65 @@ export default async function DashboardPage() {
         </section>
       )}
 
+      {/* 차량일지 특이사항 패널 */}
+      {vehicleLogAnomalies.length > 0 && (
+        <section>
+          <Panel
+            title={`차량일지 특이사항 (최근 7일 · ${vehicleLogAnomalies.length}건)`}
+            actionHref="/vehicles"
+            actionLabel="전체보기 →"
+            iconPath="M8 17a1 1 0 01-1-1v-1a1 1 0 011-1h8a1 1 0 011 1v1a1 1 0 01-1 1H8zm-3-4V8a2 2 0 012-2h10a2 2 0 012 2v5H5zm1-6h12v5H6V7zm2 2h2v2H8V9zm5 0h2v2h-2V9z"
+          >
+            <VehicleLogAnomalyList items={vehicleLogAnomalies} />
+          </Panel>
+        </section>
+      )}
+
       {/* 최근 민원 — 단독 패널 (full width) */}
       <section>
         <Panel
           title="최근 민원 접수 현황"
           actionHref="/complaints"
           actionLabel="민원관리 →"
-          iconPath="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+          iconPath="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 002 2v6a2 2 0 002 2h2v4l.586-.586z"
         >
           <ComplaintList items={recentComplaints} />
         </Panel>
       </section>
     </div>
+  );
+}
+
+/* ─────────────── 결재 대기 아이템 ─────────────── */
+
+function ApprovalItem({
+  label, count, href, tone,
+}: {
+  label: string; count: number; href: string; tone: 'warn' | 'danger' | 'info';
+}) {
+  const toneMap = {
+    warn:   { bg: 'bg-amber-50 border-amber-200', num: 'text-amber-700', badge: 'bg-amber-100 text-amber-800 border-amber-300' },
+    danger: { bg: 'bg-red-50 border-red-200',     num: 'text-red-700',   badge: 'bg-red-100 text-red-800 border-red-300' },
+    info:   { bg: 'bg-blue-50 border-blue-200',   num: 'text-blue-700',  badge: 'bg-blue-100 text-blue-800 border-blue-300' },
+  } as const;
+  const t = toneMap[tone];
+  if (count === 0) {
+    return (
+      <div className="rounded-lg border border-line bg-surface p-3 text-center opacity-50">
+        <div className="text-[0.6875rem] font-extrabold text-ink-muted tracking-wide mb-1">{label}</div>
+        <div className="text-xl font-black font-mono text-ink-muted">0</div>
+        <div className="text-[0.625rem] font-bold text-ink-faint mt-0.5">대기 없음</div>
+      </div>
+    );
+  }
+  return (
+    <Link href={href} className={`rounded-lg border ${t.bg} p-3 text-center block hover:opacity-90 active:scale-[0.98] transition`}>
+      <div className="text-[0.6875rem] font-extrabold text-ink tracking-wide mb-1">{label}</div>
+      <div className={`text-2xl font-black font-mono ${t.num}`}>{count}</div>
+      <div className={`inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[0.625rem] font-extrabold border ${t.badge}`}>
+        결재 대기
+      </div>
+    </Link>
   );
 }
 
@@ -530,4 +664,60 @@ function formatTimestampKst(d: Date): string {
   const k = new Date(d.getTime() + 9 * 3600 * 1000);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${k.getUTCFullYear()}-${pad(k.getUTCMonth() + 1)}-${pad(k.getUTCDate())} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
+}
+
+/* ─────────────── 차량일지 특이사항 목록 ─────────────── */
+
+type VehicleLogAnomalyItem = {
+  id: string;
+  logDate: string;
+  vehicleNo: string;
+  driverName: string;
+  status: string;
+  note: string;
+  anomalyItems: string[];
+};
+
+function VehicleLogAnomalyList({ items }: { items: VehicleLogAnomalyItem[] }) {
+  const statusLabel: Record<string, string> = { SUBMITTED: '제출', APPROVED: '승인' };
+  if (items.length === 0) {
+    return <div className="py-6 text-center text-sm text-ink-muted font-semibold">최근 7일 특이사항 없음</div>;
+  }
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div key={item.id} className="flex items-start gap-3 py-2.5 border-b border-line last:border-b-0">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-600">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[0.8125rem] font-extrabold text-ink">{item.vehicleNo}</span>
+              <span className="text-[0.6875rem] font-mono text-ink-muted">{item.driverName}</span>
+              <span className="text-[0.6875rem] font-mono text-ink-faint">{item.logDate}</span>
+            </div>
+            {item.anomalyItems.length > 0 && (
+              <div className="mt-0.5 text-[0.6875rem] font-bold text-amber-700">
+                점검이상: {item.anomalyItems.join(' · ')}
+              </div>
+            )}
+            {item.note && (
+              <div className="mt-0.5 text-[0.6875rem] text-ink-muted font-semibold truncate">
+                {item.note}
+              </div>
+            )}
+          </div>
+          <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+            item.status === 'APPROVED'
+              ? 'bg-green-100 text-green-700 border-green-200'
+              : 'bg-amber-100 text-amber-800 border-amber-200'
+          }`}>
+            {statusLabel[item.status] ?? item.status}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }

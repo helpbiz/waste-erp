@@ -30,9 +30,6 @@ export default function AttendanceClient({
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
   const [editing, setEditing] = useState<Row | null>(null);
-  const [showPendingPanel, setShowPendingPanel] = useState(false);
-
-  const pendingRows = rows.filter((r) => r.status === 'PENDING');
 
   function changeDate(v: string) {
     setSelectedDate(v);
@@ -47,13 +44,15 @@ export default function AttendanceClient({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
+      <div>
         <h2 className="text-xl font-extrabold text-ink">근태관리</h2>
-        <input type="date" value={selectedDate} onChange={(e) => changeDate(e.target.value)}
-          aria-label="기준일"
-          className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
-        <button onClick={() => changeDate(new Date().toISOString().slice(0, 10))}
-          className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50">오늘</button>
+        <div className="flex items-center gap-2 mt-2">
+          <input type="date" value={selectedDate} onChange={(e) => changeDate(e.target.value)}
+            aria-label="기준일"
+            className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold w-[200px]" />
+          <button onClick={() => changeDate(new Date().toISOString().slice(0, 10))}
+            className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 shrink-0">오늘</button>
+        </div>
       </div>
 
       {/* 6 KPI — 결재 대기 클릭 시 승인/반려/조정 모달 (canManage 시만 활성) */}
@@ -68,7 +67,7 @@ export default function AttendanceClient({
           value={summary.pendingApproval}
           unit="건"
           tone="warning"
-          onClick={canManage && summary.pendingApproval > 0 ? () => setShowPendingPanel(true) : undefined}
+          onClick={canManage ? () => router.push('/approvals') : undefined}
         />
       </div>
 
@@ -144,16 +143,6 @@ export default function AttendanceClient({
         />
       )}
 
-      {/* 결재 대기 일괄 처리 모달 (사용자 요청 2026-04-28). COMPANY/MANAGER 가 승인/반려/조정 가능. */}
-      {showPendingPanel && (
-        <PendingApprovalModal
-          rows={pendingRows}
-          dateStr={selectedDate}
-          onClose={() => setShowPendingPanel(false)}
-          onAdjust={(r) => { setShowPendingPanel(false); setEditing(r); }}
-          onRefresh={() => router.refresh()}
-        />
-      )}
     </div>
   );
 }
@@ -367,9 +356,9 @@ function KpiCard({
   return <div className={baseCls}>{inner}</div>;
 }
 
-/* ─────────────── 결재 대기 일괄 처리 모달 ─────────────── */
+/* ─────────────── (PendingApprovalModal 제거 — 결재관리 페이지(/approvals)로 통합) ─────────────── */
 
-function PendingApprovalModal({
+function _PendingApprovalModal_REMOVED({
   rows, dateStr, onClose, onAdjust, onRefresh,
 }: {
   rows: Row[];

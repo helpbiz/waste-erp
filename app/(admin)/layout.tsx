@@ -1,9 +1,12 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
 import { canMutate } from '@/lib/rbac';
+import { canManageUsers } from '@/lib/users';
 import { prisma } from '@/lib/db';
 import { complaintWhere, PENDING_STATUSES } from '@/lib/complaints';
 import { safetyWhere } from '@/lib/safety';
+import { vehicleLogWhere } from '@/lib/vehicle-logs';
+import { contractorScopeWhere } from '@/lib/scopes';
 import { hasFeature } from '@/lib/features';
 import AdminShell from './_admin-shell';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -13,15 +16,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session) redirect('/login');
   if (session.role === 'WORKER') redirect('/worker'); // WORKER는 워커앱으로
 
-  /* 사이드바 뱃지: 미처리 민원 + 미검토 안전 보고 */
-  const [pendingComplaints, pendingSafety] = await Promise.all([
+  /* 사이드바 뱃지: 미처리 민원 + 미검토 안전 보고 + 미결재 */
+  const isManager = canManageUsers(session.role);
+  const aWhere = contractorScopeWhere(session);
+  const vlWhere = vehicleLogWhere(session);
+  const leaveWhere = session.contractorId
+    ? { worker: { contractorId: BigInt(session.contractorId) } }
+    : {};
+
+  const [pendingComplaints, pendingSafety, pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyApprovals] = await Promise.all([
     prisma.complaint.count({
       where: { ...complaintWhere(session), status: { in: [...PENDING_STATUSES] } },
     }),
     prisma.safetyReport.count({
       where: { ...safetyWhere(session), status: 'SUBMITTED' },
     }),
+    isManager ? prisma.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['PENDING', 'IN_REVIEW'] } } }) : Promise.resolve(0),
+    isManager ? prisma.attendanceRecord.count({ where: { ...aWhere, status: 'PENDING' } }) : Promise.resolve(0),
+    isManager ? prisma.vehicleLog.count({ where: { ...vlWhere, status: 'SUBMITTED' } }) : Promise.resolve(0),
+    isManager ? prisma.safetyReport.count({ where: { ...safetyWhere(session), status: 'SUBMITTED' } }) : Promise.resolve(0),
   ]);
+  const pendingApprovals = pendingLeaves + pendingAttendance + pendingVehicleLogs + pendingSafetyApprovals;
 
   const isInternal = session.role === 'SUPER_ADMIN' || session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN';
   const canPostAnnouncement = isInternal || session.role === 'MUNI_ADMIN';
@@ -72,7 +87,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       group: 'OPERATIONS',
       items: [
+        { href: '/approvals', label: '📋 결재관리', badge: pendingApprovals > 0 ? String(pendingApprovals) : undefined },
         { href: '/attendance', label: '근태관리' },
+        { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
         { href: '/vehicles', label: '차량관리' },
         { href: '/performance', label: '실적관리' },
         ...(feSkipForSuperOrMuni || feLiveVehicles
@@ -90,6 +107,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 ? [{ href: '/announcements', label: '📢 공지사항' }]
                 : []),
               { href: '/users', label: '사용자관리' },
+              { href: '/import', label: '📥 일괄 업로드' },
               { href: '/bulky-waste', label: '대형폐기물 설정' },
               ...(session.role === 'SUPER_ADMIN'
                 ? [{ href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' }]

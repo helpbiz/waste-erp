@@ -42,6 +42,30 @@ export async function POST(req: Request) {
   const today = todayKstDate();
   const workerId = BigInt(session.userId);
 
+  /* 출퇴근 제한 규칙 검증 (퇴근) */
+  if (session.contractorId) {
+    const contractorId = BigInt(session.contractorId);
+    const worker = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
+    const restrictions = await prisma.punchRestriction.findMany({
+      where: {
+        contractorId,
+        active: true,
+        OR: [{ departmentId: null }, { departmentId: worker?.departmentId ?? null }],
+      },
+    });
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const kstHHMM = `${String(kstNow.getUTCHours()).padStart(2, '0')}:${String(kstNow.getUTCMinutes()).padStart(2, '0')}`;
+    /* 퇴근은 장소 제한 없이 — 시간대 규칙만 적용 */
+    for (const r of restrictions) {
+      if (r.checkOutFrom && kstHHMM < r.checkOutFrom) {
+        return NextResponse.json({ error: 'punch_too_early', allowFrom: r.checkOutFrom, rule: r.name }, { status: 403 });
+      }
+      if (r.checkOutUntil && kstHHMM > r.checkOutUntil) {
+        return NextResponse.json({ error: 'punch_too_late', allowUntil: r.checkOutUntil, rule: r.name }, { status: 403 });
+      }
+    }
+  }
+
   const record = await prisma.attendanceRecord.findUnique({
     where: { workerId_workDate: { workerId, workDate: today } },
   });
@@ -77,3 +101,4 @@ export async function POST(req: Request) {
     },
   });
 }
+

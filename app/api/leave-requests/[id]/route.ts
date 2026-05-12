@@ -12,6 +12,7 @@ import { resolveApprovalSignature } from '@/lib/signatures';
 import { recordApproval } from '@/lib/approvals';
 import { resolveDelegationFor } from '@/lib/delegation';
 import { getApprovalPolicy, canApproveStage, DEFAULT_POLICY } from '@/lib/approval-policy';
+import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
@@ -65,11 +66,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const actorPositionCode = actor?.position?.code ?? null;
   const policyContractorId = target.worker.contractorId
     ?? (session.contractorId ? BigInt(session.contractorId) : null);
-  const policy = policyContractorId
+  const rawPolicy = policyContractorId
     ? await getApprovalPolicy(policyContractorId, 'leave_request')
     : { stage1: DEFAULT_POLICY.leave_request.stage1, stage2: DEFAULT_POLICY.leave_request.stage2 };
-  const canStage1 = canApproveStage(actorPositionCode, policy.stage1);
-  const canStage2 = canApproveStage(actorPositionCode, policy.stage2);
+  /* leaveApprovalSingleStage: 활성화 시 stage1 권한자가 stage2도 겸함 (관리자 단독 최종 결재) */
+  const singleStage = policyContractorId
+    ? await hasFeature(policyContractorId, 'leaveApprovalSingleStage')
+    : false;
+  const policy = singleStage
+    ? { stage1: rawPolicy.stage1, stage2: [...new Set([...rawPolicy.stage1, ...rawPolicy.stage2])] }
+    : rawPolicy;
+  /* 관리자 역할은 직책 미지정이어도 1·2차 결재 모두 허용 */
+  const isAdminRole = ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'SUPER_ADMIN'].includes(session.role);
+  const canStage1 = isAdminRole || canApproveStage(actorPositionCode, policy.stage1);
+  const canStage2 = isAdminRole || canApproveStage(actorPositionCode, policy.stage2);
   /* 호환: 'CEO' 직접 검사 (구 코드와 동일 동작 유지) */
   const isCEO = actorPositionCode === 'CEO';
 
@@ -115,17 +125,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ ok: true, status: 'REJECTED', approvalEventId: evId?.toString() ?? null });
   }
 
-  /* ───── APPROVE — 서명 필수 ───── */
-  if (!parsed.data.signature && !parsed.data.useStoredSignature) {
+  /* ───── APPROVE — 서명 (관리자 역할은 저장 서명 자동 시도, 없으면 서명 없이 처리) ───── */
+  const wantSig = parsed.data.signature || parsed.data.useStoredSignature;
+  if (!wantSig && !isAdminRole) {
     return NextResponse.json({ error: 'signature_required' }, { status: 400 });
   }
-  const sig = await resolveApprovalSignature({
+  const sigResult = await resolveApprovalSignature({
     actorId: BigInt(session.userId),
     dataUrl: parsed.data.signature ?? null,
-    useStoredSignature: parsed.data.useStoredSignature,
+    useStoredSignature: parsed.data.useStoredSignature ?? isAdminRole,
   });
-  if ('error' in sig) {
-    return NextResponse.json({ error: 'signature_' + sig.error }, { status: 400 });
+  const sig = 'error' in sigResult ? null : sigResult;
+  if (!sig && !isAdminRole) {
+    return NextResponse.json({ error: 'signature_' + (sigResult as { error: string }).error }, { status: 400 });
   }
 
   /* ───── APPROVE 단계 1: PENDING → IN_REVIEW ───── */
@@ -140,22 +152,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const ev = await recordApproval({
       actorId: BigInt(session.userId),
       delegatedFromId: delegation.delegatedFromId,
-      signatureId: sig.signatureId,
-      signatureRef: sig.signatureRef,
+      signatureId: sig?.signatureId ?? null,
+      signatureRef: sig?.signatureRef ?? null,
       resourceType: 'leave_request',
       resourceId: id.toString(),
       action: 'APPROVE',
       comment: parsed.data.comment ?? '1차 결재',
       ipAddress,
     });
-    /* CEO 등 stage2 권한자가 직접 1차 결재하는 경우 → 즉시 최종 단계로 진행 */
+    /* 관리자 역할 또는 stage2 권한자가 1차 결재 시 → 즉시 최종 단계로 진행 */
     if (canStage2) {
       return await finalizeApprove({
         target, sig, delegation, ev,
         actorId: BigInt(session.userId),
         actorRole: session.role,
         ipAddress,
-        comment: parsed.data.comment ?? '대표 직접 결재 (1차+최종)',
+        comment: parsed.data.comment ?? '관리자 직접 결재 (1차+최종)',
         firstEventId: ev.id,
       });
     }
@@ -175,7 +187,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         resourceType: 'leave_request',
         resourceId: id.toString(),
         ipAddress,
-        metadata: { approvalEventId: ev.id.toString(), signatureRef: sig.signatureRef } as object,
+        metadata: { approvalEventId: ev.id.toString(), signatureRef: sig?.signatureRef ?? null } as object,
       },
     });
     return NextResponse.json({
@@ -183,7 +195,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       status: 'IN_REVIEW',
       stage: 'first',
       approvalEventId: ev.id.toString(),
-      signatureRef: sig.signatureRef,
+      signatureRef: sig?.signatureRef ?? null,
     });
   }
 
@@ -199,12 +211,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const ev = await recordApproval({
       actorId: BigInt(session.userId),
       delegatedFromId: delegation.delegatedFromId,
-      signatureId: sig.signatureId,
-      signatureRef: sig.signatureRef,
+      signatureId: sig?.signatureId ?? null,
+      signatureRef: sig?.signatureRef ?? null,
       resourceType: 'leave_request',
       resourceId: id.toString(),
       action: 'APPROVE',
-      comment: parsed.data.comment ?? '대표 최종 결재',
+      comment: parsed.data.comment ?? '최종 결재',
       ipAddress,
     });
     return await finalizeApprove({
@@ -223,7 +235,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 /** 최종 결재 완료 — 잔여 차감 + LeaveRequest 상태 업데이트 + audit */
 async function finalizeApprove(params: {
   target: { id: bigint; workerId: bigint; requestType: string; startDate: Date; endDate: Date };
-  sig: { signatureId: bigint; signatureRef: string; dataUrl: string };
+  sig: { signatureId: bigint; signatureRef: string; dataUrl: string } | null;
   delegation: { delegatedFromId: bigint | null };
   ev: { id: bigint };
   actorId: bigint;
@@ -280,7 +292,7 @@ async function finalizeApprove(params: {
         type: target.requestType,
         days,
         approvalEventId: params.ev.id.toString(),
-        signatureRef: params.sig.signatureRef,
+        signatureRef: params.sig?.signatureRef ?? null,
         firstEventId: params.firstEventId?.toString() ?? null,
       } as object,
     },
@@ -292,7 +304,7 @@ async function finalizeApprove(params: {
     stage: 'final',
     days,
     approvalEventId: params.ev.id.toString(),
-    signatureRef: params.sig.signatureRef,
+    signatureRef: params.sig?.signatureRef ?? null,
   });
 }
 

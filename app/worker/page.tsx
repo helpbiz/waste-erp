@@ -79,6 +79,13 @@ export default async function WorkerHomePage() {
             />
           )}
           <MenuCard
+            href="/worker/vehicle-log"
+            color="bg-orange-600"
+            title="차량일지"
+            desc="주유 · 점검 · 정비"
+            iconPath="M8 17a1 1 0 01-1-1v-1a1 1 0 011-1h8a1 1 0 011 1v1a1 1 0 01-1 1H8zm-3-4V8a2 2 0 012-2h10a2 2 0 012 2v5H5zm1-6h12v5H6V7zm2 2h2v2H8V9zm5 0h2v2h-2V9z"
+          />
+          <MenuCard
             href="/worker/leave"
             color="bg-info"
             title="휴가 신청"

@@ -18,6 +18,7 @@
 import { usePathname } from 'next/navigation';
 import AnnouncementBanner from './AnnouncementBanner';
 import ComplaintBanner from './ComplaintBanner';
+import ApprovalBanner from './ApprovalBanner';
 import PushSubscriber from './PushSubscriber';
 
 export default function GlobalNotifications() {
@@ -28,6 +29,7 @@ export default function GlobalNotifications() {
     <>
       {!suppressAnnouncement && <AnnouncementBanner />}
       <ComplaintBanner />
+      <ApprovalBanner />
       <PushSubscriber />
     </>
   );

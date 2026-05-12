@@ -12,8 +12,9 @@ import { complaintWhere, canTransitionComplaint } from '@/lib/complaints';
 export const runtime = 'nodejs';
 
 const Body = z.object({
-  resolveNote: z.string().trim().min(2).max(2000),
-});
+  resolveNote: z.string().trim().max(2000).optional(),
+  note: z.string().trim().max(2000).optional(),  /* 워커 앱 호환 */
+}).transform((d) => ({ resolveNote: (d.resolveNote || d.note || '처리 완료').slice(0, 2000) }));
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await readSession();
