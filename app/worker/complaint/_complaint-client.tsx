@@ -501,11 +501,11 @@ function CompleteModal({
 
   const taggedName = coworkers.find((w) => w.id === taggedUserId)?.name ?? '';
 
-  async function capturePhoto() {
+  function openFilePicker(capture?: 'environment') {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
+    if (capture) input.capture = capture;
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -585,13 +585,22 @@ function CompleteModal({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={capturePhoto}
-                    className="w-full py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
-                  >
-                    📷 사진 촬영
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openFilePicker('environment')}
+                      className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
+                    >
+                      📷 카메라 촬영
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openFilePicker()}
+                      className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
+                    >
+                      🖼 앨범 선택
+                    </button>
+                  </div>
                 )}
               </div>
 

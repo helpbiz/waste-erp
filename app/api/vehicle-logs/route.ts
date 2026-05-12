@@ -98,10 +98,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'vehicle_retired' }, { status: 409 });
   }
 
-  if (b.startMileage != null && b.endMileage != null && b.endMileage < b.startMileage) {
-    return NextResponse.json({ error: 'invalid_mileage', message: '종료 주행거리는 시작보다 커야 합니다.' }, { status: 422 });
-  }
-
   const log = await prisma.vehicleLog.create({
     data: {
       vehicleId: vehicle.id,

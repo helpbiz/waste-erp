@@ -247,16 +247,15 @@ async function finalizeApprove(params: {
   const { target } = params;
   const days = leaveDays(target.requestType, target.startDate, target.endDate);
 
-  /* 연차/반차 잔여 차감 */
+  /* 연차/반차 잔여 차감 — 잔액 레코드 없으면 법정 기준(15일)으로 자동 생성 */
   if (ANNUAL_TYPES.has(target.requestType)) {
     const year = target.startDate.getFullYear();
-    const balance = await prisma.annualLeaveBalance.findUnique({
+    const balance = await prisma.annualLeaveBalance.upsert({
       where: { workerId_year: { workerId: target.workerId, year } },
+      create: { workerId: target.workerId, year, granted: 15, used: 0, carriedOver: 0 },
+      update: {},
     });
-    if (!balance) {
-      return NextResponse.json({ error: 'no_balance', year }, { status: 409 });
-    }
-    const remaining = Number(balance.granted.toString()) + Number(balance.carriedOver.toString()) - Number(balance.used.toString());
+    const remaining = Number(balance.granted) + Number(balance.carriedOver) - Number(balance.used);
     if (remaining < days) {
       return NextResponse.json({ error: 'insufficient_balance', remaining, required: days }, { status: 409 });
     }

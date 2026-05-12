@@ -179,7 +179,8 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       });
       if (!createRes.ok) {
         const d = await createRes.json().catch(() => ({}));
-        setResult({ ok: false, message: d.error ?? '저장 실패' });
+        const msg = translateVehicleLogError(d.error) ?? d.error ?? '저장 실패';
+        setResult({ ok: false, message: msg });
         return;
       }
       const { log } = await createRes.json();
@@ -342,6 +343,11 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
             {form.prevMileage && form.todayMileage && Number(form.todayMileage) >= Number(form.prevMileage) && (
               <div className="bg-accent/10 rounded-lg px-3 py-2 text-xs font-mono font-bold text-accent">
                 금일 운행거리: {(Number(form.todayMileage) - Number(form.prevMileage)).toLocaleString()} km
+              </div>
+            )}
+            {form.prevMileage && form.todayMileage && Number(form.todayMileage) < Number(form.prevMileage) && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs font-bold text-amber-800">
+                ⚠ 금일누적거리가 전일보다 작습니다. 계기판 리셋 또는 차량 변경 시 그대로 입력하세요.
               </div>
             )}
 
@@ -588,6 +594,16 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       )}
     </div>
   );
+}
+
+function translateVehicleLogError(code?: string): string | null {
+  switch (code) {
+    case 'invalid_vehicle': return '차량이 소속 업체에 등록되지 않았습니다.';
+    case 'vehicle_retired': return '폐차 처리된 차량입니다.';
+    case 'mileage_required': return '금일누적거리를 입력해 주세요.';
+    case 'unauthenticated': return '로그인이 만료되었습니다.';
+    default: return null;
+  }
 }
 
 /* ─── 이미지 리사이즈 헬퍼 ─── */
