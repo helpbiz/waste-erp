@@ -15,6 +15,7 @@ type Vehicle = {
 };
 
 type Coworker = { id: string; name: string };
+type DisposalSite = { id: string; name: string };
 
 const INSPECTION_ITEMS = [
   { key: 'safetyBar',    label: '안전멈춤Bar',       opts: ['양호', '이상', '수리점검'] },
@@ -31,6 +32,29 @@ const INSPECTION_ITEMS = [
 
 type InspectionKey = typeof INSPECTION_ITEMS[number]['key'];
 
+/* ─── 작업내역 타입 ─── */
+
+type BagWorkRow = {
+  general: string;
+  food: string;
+  recycle: string;
+  disposalSiteId: string;
+};
+
+type BagMachineWork = {
+  food_1L: string; food_2L: string; food_3L: string; food_5L: string; food_10L: string;
+  living_5L: string; living_10L: string; living_20L: string; living_30L: string; living_50L: string; living_75L: string;
+  reuse_10L: string; reuse_20L: string;
+  illegal_20: string;
+  special: string;
+  deadAnimal: string;
+};
+
+type LargeWasteWork = {
+  furniture: string; chair: string; sofa: string; bed: string; appliance: string;
+  extinguisher: string; household: string; other: string; illegalTotal: string;
+};
+
 type FormState = {
   logDate: string;
   prevMileage: string;
@@ -38,16 +62,14 @@ type FormState = {
   operationPeriod: string;
   fuelUsed: string;
   fuelCost: string;
-  ureaUsed: string;
-  ureaCost: string;
-  bags30L: string;
-  bags50L: string;
-  bags75L: string;
+  bagWork: [BagWorkRow, BagWorkRow, BagWorkRow];
+  bagMachineWork: BagMachineWork;
+  largeWasteWork: LargeWasteWork;
   inspection: Record<InspectionKey, string>;
   maintCompany: string;
   maintContent: string;
   maintCost: string;
-  receiptPhoto: string; /* base64 data URL */
+  receiptPhoto: string;
   note: string;
 };
 
@@ -56,6 +78,7 @@ function defaultForm(lastEndMileage: number | null): FormState {
   const defaultInspection = Object.fromEntries(
     INSPECTION_ITEMS.map((i) => [i.key, i.opts[0]])
   ) as Record<InspectionKey, string>;
+  const emptyBagRow = (): BagWorkRow => ({ general: '', food: '', recycle: '', disposalSiteId: '' });
   return {
     logDate: today,
     prevMileage: lastEndMileage != null ? String(lastEndMileage) : '',
@@ -63,11 +86,17 @@ function defaultForm(lastEndMileage: number | null): FormState {
     operationPeriod: '',
     fuelUsed: '',
     fuelCost: '',
-    ureaUsed: '',
-    ureaCost: '',
-    bags30L: '',
-    bags50L: '',
-    bags75L: '',
+    bagWork: [emptyBagRow(), emptyBagRow(), emptyBagRow()],
+    bagMachineWork: {
+      food_1L: '', food_2L: '', food_3L: '', food_5L: '', food_10L: '',
+      living_5L: '', living_10L: '', living_20L: '', living_30L: '', living_50L: '', living_75L: '',
+      reuse_10L: '', reuse_20L: '',
+      illegal_20: '', special: '', deadAnimal: '',
+    },
+    largeWasteWork: {
+      furniture: '', chair: '', sofa: '', bed: '', appliance: '',
+      extinguisher: '', household: '', other: '', illegalTotal: '',
+    },
     inspection: defaultInspection,
     maintCompany: '',
     maintContent: '',
@@ -82,6 +111,7 @@ function defaultForm(lastEndMileage: number | null): FormState {
 type Props = {
   vehicles: Vehicle[];
   coworkers: Coworker[];
+  disposalSites: DisposalSite[];
   defaultVehicleId: string | null;
   driverName: string;
   lastEndMileage: number | null;
@@ -89,7 +119,9 @@ type Props = {
 
 /* ─── 메인 컴포넌트 ─── */
 
-export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId, driverName, lastEndMileage }: Props) {
+export default function VehicleLogClient({
+  vehicles, coworkers, disposalSites, defaultVehicleId, driverName, lastEndMileage,
+}: Props) {
   const [vehicleId, setVehicleId] = useState(defaultVehicleId ?? '');
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
   const [selectedPassengerIds, setSelectedPassengerIds] = useState<string[]>([]);
@@ -109,6 +141,22 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
     setForm((p) => ({ ...p, inspection: { ...p.inspection, [key]: value } }));
   }
 
+  function setBagWorkRow(idx: number, field: keyof BagWorkRow, value: string) {
+    setForm((p) => {
+      const next = [...p.bagWork] as [BagWorkRow, BagWorkRow, BagWorkRow];
+      next[idx] = { ...next[idx], [field]: value };
+      return { ...p, bagWork: next };
+    });
+  }
+
+  function setBagMachine(field: keyof BagMachineWork, value: string) {
+    setForm((p) => ({ ...p, bagMachineWork: { ...p.bagMachineWork, [field]: value } }));
+  }
+
+  function setLargeWaste(field: keyof LargeWasteWork, value: string) {
+    setForm((p) => ({ ...p, largeWasteWork: { ...p.largeWasteWork, [field]: value } }));
+  }
+
   function togglePassenger(id: string) {
     setSelectedPassengerIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -118,26 +166,6 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
   const selectedPassengerNames = coworkers
     .filter((w) => selectedPassengerIds.includes(w.id))
     .map((w) => w.name);
-
-  /* 영수증 사진 캡처 → canvas 리사이즈 → base64 */
-  async function handleReceiptPhoto(file: File) {
-    return new Promise<string>((resolve, reject) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const MAX = 1024;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = reject;
-      img.src = url;
-    });
-  }
 
   async function submit() {
     if (!vehicleId) { alert('차량을 선택해 주세요.'); return; }
@@ -150,11 +178,19 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       passengers: selectedPassengerNames.join(', '),
       operationPeriod: form.operationPeriod,
       fuelCost: Number(form.fuelCost) || 0,
-      ureaUsed: Number(form.ureaUsed) || 0,
-      ureaCost: Number(form.ureaCost) || 0,
-      bags30L: Number(form.bags30L) || 0,
-      bags50L: Number(form.bags50L) || 0,
-      bags75L: Number(form.bags75L) || 0,
+      bagWork: form.bagWork.map((row) => ({
+        general: Number(row.general) || 0,
+        food: Number(row.food) || 0,
+        recycle: Number(row.recycle) || 0,
+        disposalSiteId: row.disposalSiteId || null,
+        disposalSiteName: disposalSites.find((s) => s.id === row.disposalSiteId)?.name ?? null,
+      })),
+      bagMachineWork: Object.fromEntries(
+        Object.entries(form.bagMachineWork).map(([k, v]) => [k, Number(v) || 0])
+      ),
+      largeWasteWork: Object.fromEntries(
+        Object.entries(form.largeWasteWork).map(([k, v]) => [k, Number(v) || 0])
+      ),
       inspection: form.inspection,
       maintenance: {
         company: form.maintCompany,
@@ -179,8 +215,7 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       });
       if (!createRes.ok) {
         const d = await createRes.json().catch(() => ({}));
-        const msg = translateVehicleLogError(d.error) ?? d.error ?? '저장 실패';
-        setResult({ ok: false, message: msg });
+        setResult({ ok: false, message: translateVehicleLogError(d.error) ?? d.error ?? '저장 실패' });
         return;
       }
       const { log } = await createRes.json();
@@ -188,7 +223,7 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       const submitRes = await fetch(`/api/vehicle-logs/${log.id}/submit`, { method: 'POST' });
       if (!submitRes.ok) {
         const d = await submitRes.json().catch(() => ({}));
-        setResult({ ok: false, message: d.error ?? '제출 실패' });
+        setResult({ ok: false, message: translateVehicleLogError(d.error) ?? d.error ?? '제출 실패' });
         return;
       }
 
@@ -213,7 +248,13 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
     );
   }
 
-  /* 탭바 높이(4rem=64px) + 버튼영역(~5rem) = pb-36 확보 */
+  /* 작업내역 A 합계 */
+  const bagTotals = {
+    general: form.bagWork.reduce((s, r) => s + (Number(r.general) || 0), 0),
+    food:    form.bagWork.reduce((s, r) => s + (Number(r.food) || 0), 0),
+    recycle: form.bagWork.reduce((s, r) => s + (Number(r.recycle) || 0), 0),
+  };
+
   return (
     <div className="pb-36">
       {/* 헤더 */}
@@ -233,20 +274,14 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                 {selectedVehicle.vehicleType} {selectedVehicle.vehicleTon && `· ${selectedVehicle.vehicleTon}t`} · {selectedVehicle.fuelType}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowVehiclePicker(true)}
-              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-extrabold border border-accent/30 active:scale-95"
-            >
+            <button type="button" onClick={() => setShowVehiclePicker(true)}
+              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-extrabold border border-accent/30 active:scale-95">
               차량 변경
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowVehiclePicker(true)}
-            className="w-full py-2.5 rounded-lg border-2 border-dashed border-accent text-accent text-sm font-bold"
-          >
+          <button type="button" onClick={() => setShowVehiclePicker(true)}
+            className="w-full py-2.5 rounded-lg border-2 border-dashed border-accent text-accent text-sm font-bold">
             차량 선택
           </button>
         )}
@@ -256,14 +291,11 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
       {showVehiclePicker && (
         <BottomSheet title="차량 선택" onClose={() => setShowVehiclePicker(false)}>
           {vehicles.map((v) => (
-            <button
-              key={v.id}
-              type="button"
+            <button key={v.id} type="button"
               onClick={() => { setVehicleId(v.id); setShowVehiclePicker(false); }}
               className={`w-full text-left px-4 py-3 rounded-xl border-2 transition active:scale-[0.99] ${
                 vehicleId === v.id ? 'border-accent bg-accent/5' : 'border-line bg-surface'
-              }`}
-            >
+              }`}>
               <div className="font-extrabold text-sm text-ink">{v.vehicleNo}</div>
               <div className="text-xs font-mono text-ink-muted mt-0.5">
                 {v.vehicleType} {v.vehicleTon && `${v.vehicleTon}t`} · {v.fuelType}
@@ -283,14 +315,10 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
             coworkers.map((w) => {
               const checked = selectedPassengerIds.includes(w.id);
               return (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => togglePassenger(w.id)}
+                <button key={w.id} type="button" onClick={() => togglePassenger(w.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition active:scale-[0.99] ${
                     checked ? 'border-accent bg-accent/5' : 'border-line bg-surface'
-                  }`}
-                >
+                  }`}>
                   <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
                     checked ? 'bg-accent border-accent' : 'border-line'
                   }`}>
@@ -305,11 +333,8 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
               );
             })
           )}
-          <button
-            type="button"
-            onClick={() => setShowPassengerPicker(false)}
-            className="w-full mt-2 py-3 rounded-xl bg-accent text-white font-extrabold text-sm active:scale-[0.99]"
-          >
+          <button type="button" onClick={() => setShowPassengerPicker(false)}
+            className="w-full mt-2 py-3 rounded-xl bg-accent text-white font-extrabold text-sm active:scale-[0.99]">
             확인 ({selectedPassengerIds.length}명 선택)
           </button>
         </BottomSheet>
@@ -351,13 +376,9 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
               </div>
             )}
 
-            {/* 동승자 — 직원 목록 멀티선택 */}
             <Field label="동승자">
-              <button
-                type="button"
-                onClick={() => setShowPassengerPicker(true)}
-                className={`${INPUT_CLS} text-left flex items-center justify-between gap-2 min-h-[44px]`}
-              >
+              <button type="button" onClick={() => setShowPassengerPicker(true)}
+                className={`${INPUT_CLS} text-left flex items-center justify-between gap-2 min-h-[44px]`}>
                 {selectedPassengerNames.length > 0 ? (
                   <div className="flex flex-wrap gap-1 flex-1">
                     {selectedPassengerNames.map((name) => (
@@ -384,8 +405,8 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
           </div>
         </Card>
 
-        {/* ── Card 2: 주유 / 요소수 ── */}
-        <Card title="주유 / 요소수">
+        {/* ── Card 2: 주유 ── */}
+        <Card title="주유">
           <div className="grid grid-cols-2 gap-3">
             <Field label="주유량 (ℓ)">
               <input type="number" inputMode="decimal" step="0.1" min="0"
@@ -397,46 +418,217 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                 value={form.fuelCost} onChange={(e) => setField('fuelCost', e.target.value)}
                 placeholder="0" className={INPUT_CLS} />
             </Field>
-            <Field label="요소수 (ℓ)">
-              <input type="number" inputMode="decimal" step="0.1" min="0"
-                value={form.ureaUsed} onChange={(e) => setField('ureaUsed', e.target.value)}
-                placeholder="0.0" className={INPUT_CLS} />
-            </Field>
-            <Field label="요소수금액 (원)">
-              <input type="number" inputMode="numeric" min="0"
-                value={form.ureaCost} onChange={(e) => setField('ureaCost', e.target.value)}
-                placeholder="0" className={INPUT_CLS} />
-            </Field>
           </div>
         </Card>
 
-        {/* ── Card 3: 공공봉투 사용 ── */}
-        <Card title="공공봉투 사용">
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="30ℓ (장)">
-              <input type="number" inputMode="numeric" min="0"
-                value={form.bags30L} onChange={(e) => setField('bags30L', e.target.value)}
-                placeholder="0" className={INPUT_CLS} />
-            </Field>
-            <Field label="50ℓ (장)">
-              <input type="number" inputMode="numeric" min="0"
-                value={form.bags50L} onChange={(e) => setField('bags50L', e.target.value)}
-                placeholder="0" className={INPUT_CLS} />
-            </Field>
-            <Field label="75ℓ (장)">
-              <input type="number" inputMode="numeric" min="0"
-                value={form.bags75L} onChange={(e) => setField('bags75L', e.target.value)}
-                placeholder="0" className={INPUT_CLS} />
-            </Field>
+        {/* ── Card A: 작업내역 — 중량제봉투 및 음식물용기, 재활·자원 ── */}
+        <Card title="작업내역 — 중량제봉투 및 음식물용기, 재활·자원 (단위: kg)">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse min-w-[340px]">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-left w-10">회차</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center">일반(kg)</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center">음식물(kg)</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center">재활·자원(kg)</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center min-w-[90px]">반입장소</th>
+                </tr>
+              </thead>
+              <tbody>
+                {([0, 1, 2] as const).map((idx) => (
+                  <tr key={idx} className="even:bg-slate-50">
+                    <td className="px-2 py-1.5 border border-line text-center font-extrabold text-ink-muted">
+                      {idx + 1}회
+                    </td>
+                    <td className="px-1 py-1 border border-line">
+                      <input type="number" inputMode="numeric" min="0" placeholder="0"
+                        value={form.bagWork[idx].general}
+                        onChange={(e) => setBagWorkRow(idx, 'general', e.target.value)}
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                    </td>
+                    <td className="px-1 py-1 border border-line">
+                      <input type="number" inputMode="numeric" min="0" placeholder="0"
+                        value={form.bagWork[idx].food}
+                        onChange={(e) => setBagWorkRow(idx, 'food', e.target.value)}
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                    </td>
+                    <td className="px-1 py-1 border border-line">
+                      <input type="number" inputMode="numeric" min="0" placeholder="0"
+                        value={form.bagWork[idx].recycle}
+                        onChange={(e) => setBagWorkRow(idx, 'recycle', e.target.value)}
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                    </td>
+                    <td className="px-1 py-1 border border-line">
+                      {disposalSites.length === 0 ? (
+                        <div className="text-[0.625rem] text-ink-muted text-center px-1">관리자 설정 필요</div>
+                      ) : (
+                        <select
+                          value={form.bagWork[idx].disposalSiteId}
+                          onChange={(e) => setBagWorkRow(idx, 'disposalSiteId', e.target.value)}
+                          className="w-full px-1 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white"
+                        >
+                          <option value="">—</option>
+                          {disposalSites.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {/* 합계행 */}
+                <tr className="bg-accent/10 font-extrabold">
+                  <td className="px-2 py-1.5 border border-line text-center text-xs text-accent">계</td>
+                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                    {bagTotals.general > 0 ? bagTotals.general : '—'}
+                  </td>
+                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                    {bagTotals.food > 0 ? bagTotals.food : '—'}
+                  </td>
+                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                    {bagTotals.recycle > 0 ? bagTotals.recycle : '—'}
+                  </td>
+                  <td className="border border-line" />
+                </tr>
+              </tbody>
+            </table>
           </div>
-          {(form.bags30L || form.bags50L || form.bags75L) && (
-            <div className="mt-2.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-800">
-              합계 {(Number(form.bags30L) || 0) + (Number(form.bags50L) || 0) + (Number(form.bags75L) || 0)} 장
+          <p className="mt-2 text-[0.625rem] text-ink-muted">
+            ※ 매회 처리 시 처리장 계근전표 기준으로 작성.
+          </p>
+        </Card>
+
+        {/* ── Card B: 작업내역 — 중량계 및 봉투 수거량 기계 ── */}
+        <Card title="작업내역 — 중량계 및 봉투 수거량 기계 (단위: L)">
+          <div className="space-y-3">
+            {/* 음식물 종량제 */}
+            <div>
+              <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">음식물 종량제</div>
+              <div className="overflow-x-auto">
+                <table className="text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      {['1L','2L','3L','5L','10L'].map((l) => (
+                        <th key={l} className="px-3 py-1.5 border border-line font-extrabold text-center min-w-[52px]">{l}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {(['food_1L','food_2L','food_3L','food_5L','food_10L'] as const).map((k) => (
+                        <td key={k} className="px-1 py-1 border border-line">
+                          <input type="number" inputMode="numeric" min="0" placeholder="0"
+                            value={form.bagMachineWork[k]}
+                            onChange={(e) => setBagMachine(k, e.target.value)}
+                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white min-w-[44px]" />
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
+
+            {/* 생활폐기물 종량제 */}
+            <div>
+              <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">생활폐기물 종량제</div>
+              <div className="overflow-x-auto">
+                <table className="text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      {['5L','10L','20L','30L','50L','75L'].map((l) => (
+                        <th key={l} className="px-3 py-1.5 border border-line font-extrabold text-center min-w-[52px]">{l}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {(['living_5L','living_10L','living_20L','living_30L','living_50L','living_75L'] as const).map((k) => (
+                        <td key={k} className="px-1 py-1 border border-line">
+                          <input type="number" inputMode="numeric" min="0" placeholder="0"
+                            value={form.bagMachineWork[k]}
+                            onChange={(e) => setBagMachine(k, e.target.value)}
+                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white min-w-[44px]" />
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 재사용 / 무단투기 / 비고 */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">재사용</div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(['reuse_10L','reuse_20L'] as const).map((k, i) => (
+                    <Field key={k} label={i === 0 ? '10L' : '20L'}>
+                      <input type="number" inputMode="numeric" min="0" placeholder="0"
+                        value={form.bagMachineWork[k]}
+                        onChange={(e) => setBagMachine(k, e.target.value)}
+                        className={INPUT_CLS} />
+                    </Field>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">무단투기</div>
+                <Field label="20기준">
+                  <input type="number" inputMode="numeric" min="0" placeholder="0"
+                    value={form.bagMachineWork.illegal_20}
+                    onChange={(e) => setBagMachine('illegal_20', e.target.value)}
+                    className={INPUT_CLS} />
+                </Field>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">비고</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="특수">
+                  <input type="number" inputMode="numeric" min="0" placeholder="0"
+                    value={form.bagMachineWork.special}
+                    onChange={(e) => setBagMachine('special', e.target.value)}
+                    className={INPUT_CLS} />
+                </Field>
+                <Field label="동물사채(마대)">
+                  <input type="number" inputMode="numeric" min="0" placeholder="0"
+                    value={form.bagMachineWork.deadAnimal}
+                    onChange={(e) => setBagMachine('deadAnimal', e.target.value)}
+                    className={INPUT_CLS} />
+                </Field>
+              </div>
+            </div>
+          </div>
         </Card>
 
-        {/* ── Card 4: 차량점검 — 원래 1열 레이아웃 ── */}
+        {/* ── Card C: 작업내역 — 대형폐기물 ── */}
+        <Card title="작업내역 — 대형폐기물 (단위: 점)">
+          <div className="grid grid-cols-4 gap-2">
+            {([
+              ['furniture', '가구류'], ['chair', '의자류'], ['sofa', '쇼파류'], ['bed', '침대류'],
+              ['appliance', '가전제품'], ['extinguisher', '소화기'], ['household', '생활용품'], ['other', '기타'],
+            ] as const).map(([k, label]) => (
+              <Field key={k} label={label}>
+                <input type="number" inputMode="numeric" min="0" placeholder="0"
+                  value={form.largeWasteWork[k]}
+                  onChange={(e) => setLargeWaste(k, e.target.value)}
+                  className={INPUT_CLS} />
+              </Field>
+            ))}
+          </div>
+          <div className="mt-3 bg-slate-50 rounded-lg px-3 py-2.5 flex items-center gap-2 border border-line">
+            <span className="text-xs font-extrabold text-ink flex-1">무단투기물 수거량 총합 (가구류 기준)</span>
+            <input type="number" inputMode="numeric" min="0" placeholder="0"
+              value={form.largeWasteWork.illegalTotal}
+              onChange={(e) => setLargeWaste('illegalTotal', e.target.value)}
+              className="w-20 px-2 py-1 rounded border-2 border-line text-center text-sm font-mono font-bold focus:outline-none focus:border-accent bg-white" />
+            <span className="text-xs font-bold text-ink-muted">점</span>
+          </div>
+        </Card>
+
+        {/* ── Card 4: 차량점검 ── */}
         <Card title="차량점검">
           <div className="space-y-2">
             {INSPECTION_ITEMS.map((item) => {
@@ -451,10 +643,7 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                   </span>
                   <div className="flex gap-1">
                     {item.opts.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setInspection(item.key, opt)}
+                      <button key={opt} type="button" onClick={() => setInspection(item.key, opt)}
                         className={`px-2.5 py-1 rounded-md text-[0.6875rem] font-extrabold transition active:scale-95 border ${
                           val === opt
                             ? opt === '양호' || opt === '예'
@@ -463,8 +652,7 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                               ? 'bg-amber-500 text-white border-amber-500'
                               : 'bg-red-600 text-white border-red-600'
                             : 'bg-surface text-ink-muted border-line hover:bg-surface-soft'
-                        }`}
-                      >
+                        }`}>
                         {opt}
                       </button>
                     ))}
@@ -507,27 +695,20 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                 placeholder="0" className={INPUT_CLS} />
             </Field>
 
-            {/* 영수증(거래명세표) 촬영 */}
             <Field label="영수증(거래명세표)">
               <div className="space-y-2">
                 {form.receiptPhoto ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={form.receiptPhoto} alt="영수증" className="w-full rounded-lg border border-line object-cover max-h-48" />
-                    <button
-                      type="button"
-                      onClick={() => setField('receiptPhoto', '')}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center font-bold active:scale-95"
-                    >
+                    <button type="button" onClick={() => setField('receiptPhoto', '')}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center font-bold active:scale-95">
                       ✕
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => receiptInputRef.current?.click()}
-                    className="w-full py-4 rounded-lg border-2 border-dashed border-line bg-surface-soft flex flex-col items-center gap-1.5 active:scale-[0.99] text-ink-muted"
-                  >
+                  <button type="button" onClick={() => receiptInputRef.current?.click()}
+                    className="w-full py-4 rounded-lg border-2 border-dashed border-line bg-surface-soft flex flex-col items-center gap-1.5 active:scale-[0.99] text-ink-muted">
                     <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -535,22 +716,15 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
                     <span className="text-xs font-bold">영수증 촬영</span>
                   </button>
                 )}
-                <input
-                  ref={receiptInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
+                <input ref={receiptInputRef} type="file" accept="image/*" capture="environment"
                   className="hidden"
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    try {
-                      const dataUrl = await handleReceiptPhoto(file);
-                      setField('receiptPhoto', dataUrl);
-                    } catch { /* 촬영 실패 무시 */ }
+                    try { setField('receiptPhoto', await handleReceiptPhoto(file)); }
+                    catch { /* 무시 */ }
                     e.target.value = '';
-                  }}
-                />
+                  }} />
               </div>
             </Field>
           </div>
@@ -576,18 +750,13 @@ export default function VehicleLogClient({ vehicles, coworkers, defaultVehicleId
         )}
       </div>
 
-      {/* Sticky 제출 버튼 — 탭바(h-16=4rem) 위에 띄우기 */}
+      {/* Sticky 제출 버튼 */}
       {!result?.ok && (
-        <div
-          className="fixed left-0 right-0 z-40 bg-surface border-t border-line px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
-          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
-        >
-          <button
-            type="button"
-            onClick={submit}
+        <div className="fixed left-0 right-0 z-40 bg-surface border-t border-line px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+          <button type="button" onClick={submit}
             disabled={submitting || !vehicleId || !form.todayMileage}
-            className="w-full py-3.5 rounded-xl bg-accent text-white text-base font-black shadow-card active:scale-[0.99] disabled:opacity-50 transition"
-          >
+            className="w-full py-3.5 rounded-xl bg-accent text-white text-base font-black shadow-card active:scale-[0.99] disabled:opacity-50 transition">
             {submitting ? '제출 중…' : '🚛 차량일지 제출'}
           </button>
         </div>
@@ -605,8 +774,6 @@ function translateVehicleLogError(code?: string): string | null {
     default: return null;
   }
 }
-
-/* ─── 이미지 리사이즈 헬퍼 ─── */
 
 async function handleReceiptPhoto(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -626,8 +793,6 @@ async function handleReceiptPhoto(file: File): Promise<string> {
     img.src = url;
   });
 }
-
-/* ─── 공용 UI ─── */
 
 const INPUT_CLS =
   'w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono focus:outline-none focus:border-accent bg-white';

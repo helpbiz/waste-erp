@@ -109,6 +109,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 : []),
               { href: '/users', label: '사용자관리' },
               { href: '/import', label: '📥 일괄 업로드' },
+              { href: '/settings/disposal-sites', label: '🏭 반입장소 설정' },
               { href: '/bulky-waste', label: '대형폐기물 설정' },
               ...(session.role === 'SUPER_ADMIN'
                 ? [{ href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' }]

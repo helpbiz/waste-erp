@@ -17,7 +17,7 @@ export default async function VehicleLogPage() {
     );
   }
 
-  const [vehicles, lastLog, assignedVehicle, coworkers] = await Promise.all([
+  const [vehicles, lastLog, assignedVehicle, coworkers, disposalSites] = await Promise.all([
     prisma.vehicle.findMany({
       where: { contractorId: BigInt(session.contractorId), status: { not: 'RETIRED' } },
       orderBy: { vehicleNo: 'asc' },
@@ -43,6 +43,12 @@ export default async function VehicleLogPage() {
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     }),
+    /* 반입장소 목록 */
+    prisma.disposalSite.findMany({
+      where: { contractorId: BigInt(session.contractorId), isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      select: { id: true, name: true },
+    }),
   ]);
 
   const defaultVehicleId =
@@ -62,6 +68,7 @@ export default async function VehicleLogPage() {
         totalMileage: v.totalMileage ?? null,
       }))}
       coworkers={coworkers.map((w) => ({ id: w.id.toString(), name: w.name }))}
+      disposalSites={disposalSites.map((s) => ({ id: s.id.toString(), name: s.name }))}
       defaultVehicleId={defaultVehicleId}
       driverName={session.name}
       lastEndMileage={lastLog?.endMileage ?? null}

@@ -236,6 +236,7 @@ model Contractor {
   contractorPositions ContractorPosition[]
   contractorRanks     ContractorRank[]
   vehicleGpsPositions VehicleGpsPosition[]
+  disposalSites       DisposalSite[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -1073,16 +1074,17 @@ model ReportTemplate {
 
 /// 실시간 차량조회 (GIS 연동) 설정 — contractor 단위
 model LiveTrackingConfig {
-  id           BigInt   @id @default(autoincrement())
-  contractorId BigInt   @unique @map("contractor_id")
-  gisProvider  String   @default("simulation") @map("gis_provider") @db.VarChar(20)
-  gisBaseUrl   String?  @map("gis_base_url") @db.VarChar(255)
-  apiKeyEnc    String?  @map("api_key_enc") @db.Text
-  embedUrl     String?  @map("embed_url") @db.VarChar(500)
-  refreshSec   Int      @default(5) @map("refresh_sec")
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             BigInt   @id @default(autoincrement())
+  contractorId   BigInt   @unique @map("contractor_id")
+  gisProvider    String   @default("simulation") @map("gis_provider") @db.VarChar(30)
+  gisBaseUrl     String?  @map("gis_base_url") @db.VarChar(255)
+  apiKeyEnc      String?  @map("api_key_enc") @db.Text
+  embedUrl       String?  @map("embed_url") @db.VarChar(500)
+  refreshSec     Int      @default(5) @map("refresh_sec")
+  active         Boolean  @default(true)
+  providerConfig Json?    @map("provider_config")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   contractor Contractor @relation(fields: [contractorId], references: [id])
 
@@ -1386,4 +1388,19 @@ model PunchRestriction {
   @@index([contractorId, active])
   @@index([contractorId, departmentId])
   @@map("punch_restrictions")
+}
+
+/// 반입장소 마스터 — CONTRACTOR_ADMIN이 사전 등록
+/// 차량일지 작업내역 카드에서 드롭다운으로 선택
+model DisposalSite {
+  id           BigInt  @id @default(autoincrement())
+  contractorId BigInt  @map("contractor_id")
+  name         String  @db.VarChar(50)
+  isActive     Boolean @default(true) @map("is_active")
+  sortOrder    Int     @default(0) @map("sort_order")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@unique([contractorId, name])
+  @@map("disposal_sites")
 }
