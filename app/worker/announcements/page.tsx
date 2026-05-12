@@ -93,6 +93,14 @@ export default function WorkerAnnouncementsPage() {
               {isOpen && (
                 <div className="px-4 pb-3 border-t border-current/20">
                   <pre className="text-sm whitespace-pre-wrap leading-relaxed mt-2 text-current font-sans">{a.body}</pre>
+                  {/민원 #\d+/.test(a.body) && (
+                    <Link
+                      href="/worker/complaint"
+                      className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent text-white text-xs font-extrabold active:scale-95"
+                    >
+                      📥 내 민원 탭에서 확인
+                    </Link>
+                  )}
                   <div className="mt-2 text-[0.625rem] font-mono text-current/50">작성자: {a.authorName}</div>
                   {a.expiresAt && (
                     <div className="text-[0.625rem] font-mono text-current/50">만료: {fmt(a.expiresAt)}</div>

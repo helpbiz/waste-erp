@@ -436,6 +436,7 @@ export default function ComplaintsClient({
 
 function EditComplaintModal({ row, onClose, onSaved }: { row: Row; onClose: () => void; onSaved: () => void }) {
   const [type, setType] = useState(row.type);
+  const [status, setStatus] = useState(row.status);
   const [description, setDescription] = useState(row.description ?? '');
   const [address, setAddress] = useState(row.locationAddress ?? '');
   const [photo, setPhoto] = useState<string | null>(null);
@@ -448,6 +449,7 @@ function EditComplaintModal({ row, onClose, onSaved }: { row: Row; onClose: () =
     setError(null);
     const body: Record<string, unknown> = {};
     if (type !== row.type) body.type = type;
+    if (status !== row.status) body.status = status;
     if (description !== (row.description ?? '')) body.description = description || null;
     if (address !== (row.locationAddress ?? '')) body.locationAddress = address || null;
     if (photoChanged) body.requestImage = photo;
@@ -478,6 +480,17 @@ function EditComplaintModal({ row, onClose, onSaved }: { row: Row; onClose: () =
             <option value="ILLEGAL_DUMP">무단 투기</option>
             <option value="ODOR_NOISE">악취·소음</option>
             <option value="OTHER">기타</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-extrabold text-ink mb-1">처리 상태</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface">
+            <option value="RECEIVED">수거대기</option>
+            <option value="ASSIGNED">보류</option>
+            <option value="IN_PROGRESS">처리중</option>
+            <option value="COMPLETED">수거완료</option>
+            <option value="REJECTED">반려</option>
           </select>
         </div>
         <div>

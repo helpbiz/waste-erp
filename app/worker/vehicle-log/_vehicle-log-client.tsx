@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 /* ─── 타입 ─── */
@@ -128,6 +128,7 @@ type Props = {
 export default function VehicleLogClient({
   vehicles, coworkers, disposalSites, defaultVehicleId, driverName, lastEndMileage, showFuel, showUrea,
 }: Props) {
+  const [tab, setTab] = useState<'write' | 'history'>('write');
   const [vehicleId, setVehicleId] = useState(defaultVehicleId ?? '');
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
   const [selectedPassengerIds, setSelectedPassengerIds] = useState<string[]>([]);
@@ -266,8 +267,26 @@ export default function VehicleLogClient({
       {/* 헤더 */}
       <div className="px-4 pt-4 pb-2 flex items-center gap-3">
         <Link href="/worker" className="text-accent text-2xl font-extrabold">←</Link>
-        <h1 className="text-xl font-black text-ink tracking-tight">차량일지 작성</h1>
+        <h1 className="text-xl font-black text-ink tracking-tight">차량일지</h1>
       </div>
+
+      {/* 탭 — 작성 / 내역 확인 */}
+      <div className="px-4 pb-3">
+        <div className="flex gap-1 bg-surface border border-line rounded-xl p-1.5 shadow-card">
+          <button onClick={() => setTab('write')}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${tab === 'write' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'}`}>
+            ✏ 작성
+          </button>
+          <button onClick={() => setTab('history')}
+            className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${tab === 'history' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface-soft'}`}>
+            📋 내역 확인
+          </button>
+        </div>
+      </div>
+
+      {tab === 'history' && <HistoryPanel />}
+
+      {tab === 'write' && <>
 
       {/* 차량 선택 */}
       <div className="mx-4 mb-3 bg-surface border-2 border-accent rounded-xl p-3">
@@ -785,8 +804,130 @@ export default function VehicleLogClient({
           </button>
         </div>
       )}
+
+      </>}
     </div>
   );
+}
+
+/* ─── 내역 확인 패널 (#7-A) ─── */
+
+type LogItem = {
+  id: string;
+  logDate: string;
+  status: string;
+  vehicle: { no: string; type: string; ton: string | null };
+  startMileage: number | null;
+  endMileage: number | null;
+  mileageDelta: number | null;
+  fuelUsed: number | null;
+  routeDetail: string | null;
+};
+
+const LOG_STATUS_LABEL: Record<string, string> = {
+  DRAFT: '임시저장', SUBMITTED: '제출완료', APPROVED: '승인완료', REJECTED: '반려',
+};
+const LOG_STATUS_COLOR: Record<string, string> = {
+  DRAFT: 'bg-slate-100 text-slate-700 border-slate-300',
+  SUBMITTED: 'bg-amber-100 text-amber-800 border-amber-300',
+  APPROVED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+  REJECTED: 'bg-rose-100 text-rose-800 border-rose-300',
+};
+
+function HistoryPanel() {
+  const [items, setItems] = useState<LogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/vehicle-logs?limit=30')
+      .then((r) => r.json())
+      .then((d) => setItems(d.items ?? []))
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="px-4 space-y-3">
+      <p className="text-xs font-bold text-ink-muted px-1">최근 30건 · 본인 제출 내역</p>
+      {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+      {!loading && items.length === 0 && (
+        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-slate-500 font-bold">
+          제출한 차량일지가 없습니다.
+        </div>
+      )}
+      {items.map((log) => {
+        const detail = parseRouteDetail(log.routeDetail);
+        const isOpen = expanded === log.id;
+        return (
+          <article key={log.id} className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
+            <button
+              type="button"
+              className="w-full px-4 py-3 flex items-center gap-3 text-left active:bg-surface-soft"
+              onClick={() => setExpanded(isOpen ? null : log.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-black text-ink">{log.logDate}</span>
+                  <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${LOG_STATUS_COLOR[log.status] ?? 'bg-slate-100 text-slate-700 border-slate-300'}`}>
+                    {LOG_STATUS_LABEL[log.status] ?? log.status}
+                  </span>
+                </div>
+                <div className="text-xs font-mono text-ink-muted mt-0.5">
+                  {log.vehicle.no} · {log.vehicle.type}{log.vehicle.ton ? ` ${log.vehicle.ton}t` : ''}
+                  {log.mileageDelta != null && ` · ${log.mileageDelta.toLocaleString()}km`}
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                className={`flex-shrink-0 text-ink-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isOpen && (
+              <div className="px-4 pb-4 border-t border-line space-y-2 text-xs">
+                <div className="pt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
+                  {log.startMileage != null && <span>시작거리: {log.startMileage.toLocaleString()}km</span>}
+                  {log.endMileage != null && <span>종료거리: {log.endMileage.toLocaleString()}km</span>}
+                  {log.fuelUsed != null && <span>주유량: {log.fuelUsed}L</span>}
+                  {typeof detail.passengers === 'string' && detail.passengers && <span>동승: {detail.passengers}</span>}
+                  {typeof detail.note === 'string' && detail.note && <span className="col-span-2">특이사항: {detail.note}</span>}
+                </div>
+                {Array.isArray(detail.bagWork) && (
+                  <div className="bg-slate-50 rounded-lg px-3 py-2">
+                    <div className="font-extrabold text-ink mb-1">작업내역 A (kg)</div>
+                    {(detail.bagWork as Record<string, string>[]).map((row, i) => (
+                      <div key={i} className="text-[0.6875rem] font-mono">
+                        {`${i + 1}회차 | 일반 ${row.general ?? 0} · 음식 ${row.food ?? 0} · 재활 ${row.recycle ?? 0} · 반입: ${row.disposalSite ?? '-'}`}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {detail.largeWasteWork != null && typeof detail.largeWasteWork === 'object' &&
+                  Object.values(detail.largeWasteWork as Record<string, string>).some((v) => Number(v) > 0) && (
+                  <div className="bg-slate-50 rounded-lg px-3 py-2">
+                    <div className="font-extrabold text-ink mb-1">작업내역 C — 대형폐기물</div>
+                    <div className="font-mono text-[0.6875rem]">
+                      {Object.entries(detail.largeWasteWork as Record<string, string>)
+                        .filter(([, v]) => Number(v) > 0)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function parseRouteDetail(raw: string | null): Record<string, unknown> {
+  if (!raw) return {};
+  try { return JSON.parse(raw) as Record<string, unknown>; }
+  catch { return {}; }
 }
 
 function translateVehicleLogError(code?: string): string | null {

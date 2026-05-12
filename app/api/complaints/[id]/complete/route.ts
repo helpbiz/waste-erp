@@ -39,7 +39,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const id = BigInt(params.id);
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session) },
-    select: { id: true, status: true, assignedTo: true, locationAddress: true, contractorId: true },
+    select: {
+      id: true, status: true, assignedTo: true, contractorId: true,
+      type: true, locationAddress: true, complainantPhone: true, requestImage: true,
+      assignee: { select: { name: true } },
+    },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (!canTransitionComplaint(session, target)) {
@@ -81,11 +85,27 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       select: { name: true },
     });
     if (taggedUser) {
-      const addr = target.locationAddress ? ` (${target.locationAddress})` : '';
+      const TYPE_KO: Record<string, string> = {
+        PICKUP_MISS: '수거 미비', ILLEGAL_DUMP: '불법투기',
+        ODOR_NOISE: '악취/소음', BULKY_WASTE: '대형폐기물', OTHER: '기타',
+      };
+      const typeLabel = TYPE_KO[target.type] ?? target.type;
+      const hasPhoto = !!requestImage || !!target.requestImage;
+      const lines = [
+        `■ 민원 유형: ${typeLabel}`,
+        target.locationAddress ? `■ 위치: ${target.locationAddress}` : null,
+        target.complainantPhone ? `■ 민원인 연락처: ${target.complainantPhone}` : null,
+        target.assignee?.name ? `■ 처리 담당자: ${target.assignee.name}` : null,
+        `■ 처리 내용: ${resolveNote}`,
+        hasPhoto ? `■ 사진: 📷 첨부됨` : null,
+        '',
+        `🔗 민원 #${id} — 내 민원 탭에서 상세 확인`,
+      ].filter((l) => l !== null);
+
       await prisma.announcement.create({
         data: {
-          title: `[민원 완료] ${taggedUser.name}님께 알림`,
-          body: `민원${addr}이 완료 처리되었습니다.\n\n처리 내용: ${resolveNote}`,
+          title: `[민원 완료] ${typeLabel} — ${target.locationAddress?.slice(0, 30) ?? `#${id}`}`,
+          body: lines.join('\n'),
           severity: 'INFO',
           audience: 'WORKER',
           contractorId: target.contractorId,

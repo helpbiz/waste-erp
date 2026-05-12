@@ -203,6 +203,10 @@ export async function GET(req: Request) {
       zoneName: c.zone?.zoneName ?? null,
       dueDate: c.dueDate?.toISOString() ?? null,
       isOverdue: isOverdue({ dueDate: c.dueDate, status: c.status }),
+      complainantPhone: c.complainantPhone,
+      requestImage: c.requestImage,
+      resolveNote: c.resolveNote,
+      resolvedAt: c.resolvedAt?.toISOString() ?? null,
     })),
   });
 }

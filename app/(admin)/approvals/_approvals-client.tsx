@@ -12,6 +12,7 @@ type ApprovalItem = {
   departmentName: string | null;
   summary: string;
   detail: string | null;
+  routeDetail?: string | null;
   status: string;
   createdAt: string;
 };
@@ -52,16 +53,18 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 /* 개인별 결재 모달에서 어떤 action을 할 수 있는지 */
-function getActions(item: ApprovalItem): { approve: boolean; reject: boolean } {
+function getActions(item: ApprovalItem): { approve: boolean; reject: boolean; unapprove: boolean } {
   if (item.kind === 'leave' && (item.status === 'PENDING' || item.status === 'IN_REVIEW'))
-    return { approve: true, reject: true };
+    return { approve: true, reject: true, unapprove: false };
   if (item.kind === 'attendance' && item.status === 'PENDING')
-    return { approve: true, reject: true };
+    return { approve: true, reject: true, unapprove: false };
   if (item.kind === 'vehicleLog' && item.status === 'SUBMITTED')
-    return { approve: true, reject: true };
+    return { approve: true, reject: true, unapprove: false };
+  if (item.kind === 'vehicleLog' && item.status === 'APPROVED')
+    return { approve: false, reject: false, unapprove: true };
   if (item.kind === 'safety' && item.status === 'SUBMITTED')
-    return { approve: true, reject: false };
-  return { approve: false, reject: false };
+    return { approve: true, reject: false, unapprove: false };
+  return { approve: false, reject: false, unapprove: false };
 }
 
 export default function ApprovalsClient({ role }: { role: string }) {
@@ -298,6 +301,20 @@ function ApprovalDetailModal({
     }
   }
 
+  async function unapprove() {
+    if (!confirm('승인을 취소하고 제출 상태로 되돌립니다.\n주행거리 누적분도 역산됩니다. 계속하시겠습니까?')) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/vehicle-logs/${item.id}/unapprove`, { method: 'POST' });
+      if (res.ok) { onDone(); return; }
+      const d = await res.json().catch(() => ({}));
+      setError(d?.message ?? d?.error ?? '승인 취소에 실패했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onClose}>
       <div
@@ -324,6 +341,13 @@ function ApprovalDetailModal({
               </div>
             )}
             <DetailRow label="상태" value={STATUS_LABEL[item.status] ?? item.status} />
+          </dl>
+
+          {item.kind === 'vehicleLog' && item.routeDetail && (
+            <VehicleLogRouteDetail raw={item.routeDetail} />
+          )}
+
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
             <DetailRow label="신청일시" value={fmtKst(item.createdAt)} />
           </dl>
 
@@ -394,7 +418,16 @@ function ApprovalDetailModal({
               {busy ? '처리 중…' : isSafety ? '검토 완료' : '승인'}
             </button>
           )}
-          {!actions.approve && !actions.reject && (
+          {actions.unapprove && (
+            <button
+              onClick={unapprove}
+              disabled={busy}
+              className="px-4 py-2 rounded-md border-2 border-warn text-warn text-sm font-extrabold hover:bg-amber-50 disabled:opacity-50"
+            >
+              {busy ? '처리 중…' : '승인 취소'}
+            </button>
+          )}
+          {!actions.approve && !actions.reject && !actions.unapprove && (
             <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold">닫기</button>
           )}
         </footer>
@@ -417,4 +450,93 @@ function fmtKst(iso: string): string {
   const k = new Date(d.getTime() + 9 * 3600_000);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${k.getUTCFullYear()}-${pad(k.getUTCMonth() + 1)}-${pad(k.getUTCDate())} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
+}
+
+function VehicleLogRouteDetail({ raw }: { raw: string }) {
+  let d: Record<string, unknown> = {};
+  try { d = JSON.parse(raw) as Record<string, unknown>; } catch { return null; }
+
+  const passengers = typeof d.passengers === 'string' ? d.passengers : null;
+  const fuelUsed = d.fuelUsed != null ? String(d.fuelUsed) : null;
+  const note = typeof d.note === 'string' ? d.note : null;
+  const hasReceipt = !!d.receiptPhoto;
+  const bagWork = Array.isArray(d.bagWork) ? (d.bagWork as Record<string, string>[]) : null;
+  const bagMachineWork = d.bagMachineWork && typeof d.bagMachineWork === 'object' ? (d.bagMachineWork as Record<string, string>) : null;
+  const largeWasteWork = d.largeWasteWork && typeof d.largeWasteWork === 'object' ? (d.largeWasteWork as Record<string, string>) : null;
+  const inspection = d.inspection && typeof d.inspection === 'object' ? (d.inspection as Record<string, string>) : null;
+
+  return (
+    <div className="space-y-3 text-xs">
+      {(passengers || note || fuelUsed || hasReceipt) && (
+        <div className="bg-slate-50 rounded-lg px-3 py-2.5 space-y-1 border border-line">
+          <div className="font-extrabold text-ink mb-1">운행 정보</div>
+          {passengers && <div className="font-mono">동승자: {passengers}</div>}
+          {fuelUsed && <div className="font-mono">주유량: {fuelUsed}L</div>}
+          {hasReceipt && <div className="font-mono text-slate-500">영수증: 첨부됨</div>}
+          {note && <div className="font-mono whitespace-pre-wrap">특이사항: {note}</div>}
+        </div>
+      )}
+
+      {bagWork && bagWork.length > 0 && (
+        <div className="bg-blue-50 rounded-lg px-3 py-2.5 border border-blue-200">
+          <div className="font-extrabold text-blue-900 mb-1.5">작업내역 A — 중량제봉투·음식물·재활 (kg)</div>
+          <table className="w-full border-collapse">
+            <thead><tr className="text-blue-700">
+              <th className="text-left pr-2 pb-1 font-extrabold">회차</th>
+              <th className="pr-2 pb-1 font-extrabold">일반</th>
+              <th className="pr-2 pb-1 font-extrabold">음식물</th>
+              <th className="pr-2 pb-1 font-extrabold">재활용</th>
+              <th className="text-left pb-1 font-extrabold">반입장소</th>
+            </tr></thead>
+            <tbody>
+              {bagWork.map((row, i) => (
+                <tr key={i} className="font-mono">
+                  <td className="pr-2 py-0.5 text-blue-700">{i + 1}회</td>
+                  <td className="pr-2 py-0.5 text-center">{row.general || '—'}</td>
+                  <td className="pr-2 py-0.5 text-center">{row.food || '—'}</td>
+                  <td className="pr-2 py-0.5 text-center">{row.recycle || '—'}</td>
+                  <td className="py-0.5">{row.disposalSite || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {bagMachineWork && Object.values(bagMachineWork).some((v) => Number(v) > 0) && (
+        <div className="bg-green-50 rounded-lg px-3 py-2.5 border border-green-200">
+          <div className="font-extrabold text-green-900 mb-1.5">작업내역 B — 중량계·봉투 수거 (L)</div>
+          <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
+            {Object.entries(bagMachineWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
+              <span key={k}>{k}: {v}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {largeWasteWork && Object.values(largeWasteWork).some((v) => Number(v) > 0) && (
+        <div className="bg-amber-50 rounded-lg px-3 py-2.5 border border-amber-200">
+          <div className="font-extrabold text-amber-900 mb-1.5">작업내역 C — 대형폐기물 (점)</div>
+          <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
+            {Object.entries(largeWasteWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
+              <span key={k}>{k}: {v}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {inspection && (
+        <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-line">
+          <div className="font-extrabold text-ink mb-1.5">차량 점검</div>
+          <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
+            {Object.entries(inspection).map(([k, v]) => (
+              <span key={k} className={v === '이상' ? 'text-danger font-bold' : v === '수리점검' ? 'text-warn font-bold' : ''}>
+                {k}: {v}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

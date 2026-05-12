@@ -123,7 +123,12 @@ export async function GET(req: Request) {
       personName: r.driver.name,
       departmentName: null,
       summary: `운행일지 — ${r.vehicle.vehicleNo} · ${r.logDate.toISOString().slice(0, 10)}`,
-      detail: r.tripCount != null ? `${r.tripCount}회 운행` : null,
+      detail: [
+        r.tripCount != null ? `${r.tripCount}회 운행` : null,
+        r.startMileage != null && r.endMileage != null ? `주행 ${r.endMileage - r.startMileage}km` : null,
+        r.fuelUsed != null ? `주유 ${r.fuelUsed}L` : null,
+      ].filter(Boolean).join(' · ') || null,
+      routeDetail: r.routeDetail ?? null,
       status: r.status,
       createdAt: r.logDate.toISOString(),
     })),

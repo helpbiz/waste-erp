@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
@@ -59,6 +59,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
   const router = useRouter();
   const toast = useToast();
   const [type, setType] = useState<Type | null>(null);
+  const [locationMode, setLocationMode] = useState<'map' | 'text'>('map');
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
@@ -213,60 +214,98 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
         </div>
       </Section>
 
-      <Section label="발생 위치 (지도에서 핀 클릭·드래그로 보정)">
-        {/* 지도는 항상 표시 — GPS 미확인 시 기본 좌표(서울시청) + 사용자가 핀 드래그로 지정 */}
-        <div className="mb-2 relative">
-          <LocationPickerMap
-            lat={gps.kind === 'ready' ? gps.lat : DEFAULT_LAT}
-            lng={gps.kind === 'ready' ? gps.lng : DEFAULT_LNG}
-            onChange={onMapPinChange}
-            height={200}
-          />
-          {gps.kind !== 'ready' && (
-            <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-xs font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
-              {gps.kind === 'acquiring' && '📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)'}
-              {gps.kind === 'error' && `⚠️ ${gps.message} — 지도에서 핀을 드래그해 위치 지정`}
-              {gps.kind === 'idle' && '핀을 드래그해 발생 위치를 지정하세요'}
-            </div>
-          )}
-        </div>
-
-        {/* GPS 상태 + 좌표 + 재시도 */}
-        <div className="bg-surface-alt rounded-lg border border-line px-3 py-2 flex items-center gap-2 mb-2">
-          <svg
-            width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-            className={gps.kind === 'ready' ? 'text-success' : gps.kind === 'error' ? 'text-danger' : 'text-warn'}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-            <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div className="flex-1 text-xs">
-            {gps.kind === 'ready' && (
-              <span className="font-mono font-bold text-ink">
-                {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
-              </span>
-            )}
-            {gps.kind === 'acquiring' && '위치 확인 중…'}
-            {gps.kind === 'error' && <span className="text-danger font-bold">{gps.message}</span>}
-            {gps.kind === 'idle' && '위치 확인 대기'}
-          </div>
+      <Section label="발생 위치">
+        {/* 위치 입력 방식 전환 */}
+        <div className="flex gap-1 bg-surface-soft border border-line rounded-lg p-1 mb-3">
           <button
             type="button"
-            onClick={requestGps}
-            className="text-xs font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
+            onClick={() => { setLocationMode('map'); requestGps(); }}
+            className={`flex-1 py-1.5 rounded text-xs font-extrabold transition ${locationMode === 'map' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
           >
-            🎯 내 위치
+            🗺 지도 선택
+          </button>
+          <button
+            type="button"
+            onClick={() => { setLocationMode('text'); setGps({ kind: 'idle' }); setAddress(''); }}
+            className={`flex-1 py-1.5 rounded text-xs font-extrabold transition ${locationMode === 'text' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
+          >
+            ✏ 주소 직접 입력
           </button>
         </div>
 
-        {/* 주소 (역지오코딩 자동 입력 / 수정 가능) */}
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
-        />
+        {locationMode === 'map' && (
+          <>
+            {/* 지도 — GPS 미확인 시 기본 좌표(서울시청) */}
+            <div className="mb-2 relative">
+              <LocationPickerMap
+                lat={gps.kind === 'ready' ? gps.lat : DEFAULT_LAT}
+                lng={gps.kind === 'ready' ? gps.lng : DEFAULT_LNG}
+                onChange={onMapPinChange}
+                height={200}
+              />
+              {gps.kind !== 'ready' && (
+                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-xs font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+                  {gps.kind === 'acquiring' && '📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)'}
+                  {gps.kind === 'error' && `⚠️ ${gps.message} — 지도에서 핀을 드래그해 위치 지정`}
+                  {gps.kind === 'idle' && '핀을 드래그해 발생 위치를 지정하세요'}
+                </div>
+              )}
+            </div>
+
+            {/* GPS 상태 + 좌표 + 재시도 */}
+            <div className="bg-surface-alt rounded-lg border border-line px-3 py-2 flex items-center gap-2 mb-2">
+              <svg
+                width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                className={gps.kind === 'ready' ? 'text-success' : gps.kind === 'error' ? 'text-danger' : 'text-warn'}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <div className="flex-1 text-xs">
+                {gps.kind === 'ready' && (
+                  <span className="font-mono font-bold text-ink">
+                    {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
+                  </span>
+                )}
+                {gps.kind === 'acquiring' && '위치 확인 중…'}
+                {gps.kind === 'error' && <span className="text-danger font-bold">{gps.message}</span>}
+                {gps.kind === 'idle' && '위치 확인 대기'}
+              </div>
+              <button
+                type="button"
+                onClick={requestGps}
+                className="text-xs font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
+              >
+                🎯 내 위치
+              </button>
+            </div>
+
+            {/* 주소 (역지오코딩 자동 입력 / 수정 가능) */}
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
+              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+            />
+          </>
+        )}
+
+        {locationMode === 'text' && (
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="예: 서울시 용산구 한강대로 1길 23"
+              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              autoFocus
+            />
+            <p className="text-[0.625rem] text-slate-500 font-mono px-1">
+              도로명 또는 지번 주소를 직접 입력하세요. 좌표는 자동으로 조회됩니다.
+            </p>
+          </div>
+        )}
       </Section>
 
       <Section label="신고 내용 (선택)">
@@ -323,6 +362,11 @@ type InboxComplaint = {
   zoneName: string | null;
   dueDate: string | null;
   isOverdue: boolean;
+  complainantPhone: string | null;
+  requestImage: string | null;
+  resolveNote: string | null;
+  resolvedAt: string | null;
+  assignee: { id: string; name: string } | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -416,8 +460,28 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
               {c.description && (
                 <div className="text-xs text-slate-700 mt-1.5 line-clamp-3 whitespace-pre-wrap">{c.description}</div>
               )}
+              {c.complainantPhone && (
+                <div className="text-xs text-slate-700 mt-1">📞 {c.complainantPhone}</div>
+              )}
+              {c.assignee && (
+                <div className="text-xs text-slate-600 mt-1">담당: <span className="font-bold">{c.assignee.name}</span></div>
+              )}
+              {parseImages(c.requestImage).length > 0 && (
+                <div className="flex gap-1.5 mt-2 overflow-x-auto">
+                  {parseImages(c.requestImage).map((src, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={src} alt={`민원사진${i + 1}`} className="h-16 w-16 object-cover rounded-md border border-line flex-shrink-0" />
+                  ))}
+                </div>
+              )}
+              {c.resolveNote && (
+                <div className="mt-2 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 whitespace-pre-wrap">
+                  ✓ {c.resolveNote}
+                </div>
+              )}
               <div className="text-[0.625rem] font-mono text-slate-500 mt-2">
                 접수: {new Date(c.reportedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                {c.resolvedAt && ` · 완료: ${new Date(c.resolvedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
                 {c.dueDate && ` · 마감: ${new Date(c.dueDate).toLocaleDateString('ko-KR')}`}
                 {c.zoneName && ` · ${c.zoneName}`}
               </div>
@@ -498,22 +562,18 @@ function CompleteModal({
   const [taggedUserId, setTaggedUserId] = useState('');
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const albumInputRef = useRef<HTMLInputElement>(null);
 
   const taggedName = coworkers.find((w) => w.id === taggedUserId)?.name ?? '';
 
-  function openFilePicker(capture?: 'environment') {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    if (capture) input.capture = capture;
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => setPhotoData(e.target?.result as string ?? null);
-      reader.readAsDataURL(file);
-    };
-    input.click();
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoData(ev.target?.result as string ?? null);
+    reader.readAsDataURL(file);
+    e.target.value = '';
   }
 
   async function submit() {
@@ -586,16 +646,18 @@ function CompleteModal({
                   </div>
                 ) : (
                   <div className="flex gap-2">
+                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="sr-only" aria-hidden />
+                    <input ref={albumInputRef} type="file" accept="image/*" onChange={handleFileChange} className="sr-only" aria-hidden />
                     <button
                       type="button"
-                      onClick={() => openFilePicker('environment')}
+                      onClick={() => cameraInputRef.current?.click()}
                       className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
                     >
                       📷 카메라 촬영
                     </button>
                     <button
                       type="button"
-                      onClick={() => openFilePicker()}
+                      onClick={() => albumInputRef.current?.click()}
                       className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
                     >
                       🖼 앨범 선택
@@ -641,6 +703,15 @@ function CompleteModal({
       </div>
     </div>
   );
+}
+
+function parseImages(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as string[];
+  } catch { /* not JSON — single data URL */ }
+  return [raw];
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {

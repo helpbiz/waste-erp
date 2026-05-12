@@ -15,6 +15,7 @@ export const runtime = 'nodejs';
 
 const Patch = z.object({
   type: z.enum(['PICKUP_MISS', 'ILLEGAL_DUMP', 'ODOR_NOISE', 'BULKY_WASTE', 'OTHER']).optional(),
+  status: z.enum(['RECEIVED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED']).optional(),
   description: z.string().max(2000).nullable().optional(),
   locationAddress: z.string().max(255).nullable().optional(),
   locationLat: z.number().min(-90).max(90).nullable().optional(),
@@ -45,6 +46,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const b = parsed.data;
   const data: Record<string, unknown> = {};
   if (b.type !== undefined) data.type = b.type;
+  if (b.status !== undefined) data.status = b.status;
   if (b.description !== undefined) data.description = b.description;
   if (b.locationAddress !== undefined) data.locationAddress = b.locationAddress;
   if (b.locationLat !== undefined) data.locationLat = roundCoord(b.locationLat);
