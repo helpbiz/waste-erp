@@ -7,7 +7,11 @@ import SafetyClient, { type Row } from './_safety-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SafetyPage() {
+export default async function SafetyPage({
+  searchParams,
+}: {
+  searchParams?: { tab?: string };
+}) {
   const session = (await readSession())!;
   const today = todayKstDate();
 
@@ -98,10 +102,13 @@ export default async function SafetyPage() {
     ? { region: contractorInfo.garageAddress }
     : undefined;
 
+  const defaultTab = searchParams?.tab === 'DAILY' ? 'DAILY' : 'ALL';
+
   return (
     <SafetyClient
       rows={rows}
       isManager={isSafetyManager(session.role)}
+      defaultTab={defaultTab as 'DAILY' | 'ALL'}
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
       weather={await fetchWeatherCached(weatherLocation)}

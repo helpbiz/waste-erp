@@ -65,24 +65,24 @@ export default function PrintHubPage() {
         </Card>
 
         {/* 2. 처리실적 */}
-        <Card title="📊 일일 처리실적 일보" desc="일자별 처리실적 PDF 다운로드">
+        <Card title="📊 일일 처리실적 일보" desc="일자별 처리실적 출력">
           <div>
             <Label>날짜</Label>
             <input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-line bg-white text-sm font-mono font-bold" />
           </div>
-          <a href={`/api/reports/daily-treatment/pdf?date=${pDate}`} target="_blank" rel="noopener"
+          <a href={`/print/daily-treatment?date=${pDate}`} target="_blank" rel="noopener"
             className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-rose-600 text-white hover:bg-rose-700 transition-colors">
-            📄 PDF 다운로드
+            🖨 출력 화면 열기
           </a>
         </Card>
 
         {/* 3. 안전관리 */}
         <Card title="⛑ 안전관리 보고서" desc="TBM·안전 보고서 화면 인쇄">
-          <p className="text-xs text-ink-muted flex-1">안전관리 페이지의 인쇄 버튼을 사용하거나, 아래에서 바로 이동하세요.</p>
-          <Link href="/safety"
+          <p className="text-xs text-ink-muted flex-1">안전관리 페이지의 일별 보기 탭에서 인쇄합니다.</p>
+          <Link href="/safety?tab=DAILY"
             className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-amber-500 text-white hover:bg-amber-600 transition-colors">
-            🖨 안전관리 페이지로 이동
+            🖨 일별 보기로 바로 이동
           </Link>
         </Card>
 
@@ -115,7 +115,7 @@ export default function PrintHubPage() {
         </Card>
 
         {/* 5. 민원관리 */}
-        <Card title="📋 민원 대장" desc="기간·상태별 민원 목록 출력">
+        <Card title="📋 민원 대장" desc="기간·상태별 민원 목록 출력 / Excel">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>시작일</Label>
@@ -140,11 +140,17 @@ export default function PrintHubPage() {
               <option value="REJECTED">반려</option>
             </select>
           </div>
-          <a href={`/print/complaints?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}`}
-            target="_blank" rel="noopener"
-            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-            🖨 출력 화면 열기
-          </a>
+          <div className="flex gap-2">
+            <a href={`/print/complaints?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}`}
+              target="_blank" rel="noopener"
+              className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+              🖨 출력
+            </a>
+            <a href={`/api/complaints/export?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}&format=xlsx`}
+              className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+              ⬇ Excel
+            </a>
+          </div>
         </Card>
 
         {/* 6. 출퇴근 월별 */}

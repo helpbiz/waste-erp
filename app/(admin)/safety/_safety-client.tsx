@@ -57,6 +57,7 @@ export default function SafetyClient({
   alertWorkers,
   meName,
   meSignatureUrl,
+  defaultTab = 'ALL',
 }: {
   rows: Row[];
   isManager: boolean;
@@ -67,9 +68,10 @@ export default function SafetyClient({
   alertWorkers: WorkerOpt[];
   meName: string | null;
   meSignatureUrl: string | null;
+  defaultTab?: Tab;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('ALL');
+  const [tab, setTab] = useState<Tab>(defaultTab);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<Row | null>(null);
