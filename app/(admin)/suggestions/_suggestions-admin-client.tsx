@@ -160,7 +160,7 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
       ) : (
         <div className="space-y-2">
           {filtered.map((it) => (
-            <AdminCard key={it.id} item={it} canMutate={canMutate} onChanged={load} />
+            <AdminCard key={it.id} item={it} canMutate={canMutate} onChanged={load} onReplied={() => setFilterStatus('ALL')} />
           ))}
         </div>
       )}
@@ -199,7 +199,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
-function AdminCard({ item, canMutate, onChanged }: { item: Item; canMutate: boolean; onChanged: () => void }) {
+function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canMutate: boolean; onChanged: () => void; onReplied: () => void }) {
   const toast = useToast();
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
@@ -230,6 +230,7 @@ function AdminCard({ item, canMutate, onChanged }: { item: Item; canMutate: bool
       if (!r.ok) { toast.error('답변 등록 실패'); return; }
       toast.success('답변이 등록되었습니다');
       setReply('');
+      onReplied();
       onChanged();
     } finally { setBusy(false); }
   }

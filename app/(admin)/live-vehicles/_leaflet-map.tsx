@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
@@ -140,6 +140,9 @@ export default function LeafletMap({
             weight: 2,
           }}
         >
+          <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={false}>
+            <span className="font-extrabold text-xs">{v.label}</span>
+          </Tooltip>
           <Popup>
             <div className="font-extrabold">{v.label}</div>
             {v.speed != null && <div>속도: {v.speed} km/h</div>}

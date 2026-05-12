@@ -1606,9 +1606,11 @@ function KCard({ label, value, unit, tone = 'default' }: { label: string; value:
 
 /* ─────────────  탭 3: GIS API 설정 (실시간 차량조회에서 이관)  ───────────── */
 function GisConfigTab() {
+  const [targetCid, setTargetCid] = useState<string>('');
+  const [loadStatus, setLoadStatus] = useState<'idle' | 'loading' | 'found' | 'empty'>('idle');
   const [config, setConfig] = useState<{
     gisProvider: string; gisBaseUrl: string | null; hasApiKey: boolean;
-    embedUrl: string | null; refreshSec: number; active: boolean;
+    embedUrl: string | null; refreshSec: number; active: boolean; updatedAt?: string;
   } | null>(null);
   const [form, setForm] = useState({
     gisProvider: 'simulation', gisBaseUrl: '', apiKey: '', embedUrl: '',
@@ -1616,21 +1618,33 @@ function GisConfigTab() {
   });
   const [saving, setSaving] = useState(false);
   const [probing, setProbing] = useState(false);
-  const [probeResult, setProbeResult] = useState<{ ok: boolean; url: string; status: number; response: unknown; error: string | null; tip: string } | null>(null);
-  const [selectedContractorId, setSelectedContractorId] = useState<string>('');
+  const [probeResult, setProbeResult] = useState<{
+    ok: boolean; tip: string; error: string | null;
+    /* etrace */
+    provider?: string; lastSeqResponse?: unknown; positionsResponse?: unknown;
+    /* generic */
+    url?: string; status?: number; response?: unknown;
+  } | null>(null);
 
-  useEffect(() => {
-    fetch('/api/live-tracking/config').then((r) => r.json()).then((d) => {
+  function loadConfig(cid: string) {
+    if (!cid.trim()) return;
+    setLoadStatus('loading');
+    const qs = `?contractorId=${encodeURIComponent(cid.trim())}`;
+    fetch(`/api/live-tracking/config${qs}`).then((r) => r.json()).then((d) => {
       const c = d.config;
-      setConfig(c);
-      if (c) {
-        setForm({
-          gisProvider: c.gisProvider, gisBaseUrl: c.gisBaseUrl ?? '', apiKey: '',
-          embedUrl: c.embedUrl ?? '', refreshSec: c.refreshSec, active: c.active,
-        });
-      }
-    });
-  }, []);
+      setConfig(c ?? null);
+      setLoadStatus(c ? 'found' : 'empty');
+      setForm({
+        gisProvider: c?.gisProvider ?? 'simulation',
+        gisBaseUrl: c?.gisBaseUrl ?? '',
+        apiKey: '',
+        embedUrl: c?.embedUrl ?? '',
+        refreshSec: c?.refreshSec ?? 5,
+        active: c?.active ?? true,
+      });
+      setProbeResult(null);
+    }).catch(() => setLoadStatus('idle'));
+  }
 
   async function save() {
     setSaving(true);
@@ -1641,6 +1655,7 @@ function GisConfigTab() {
       refreshSec: form.refreshSec, active: form.active,
     };
     if (form.apiKey) payload.apiKey = form.apiKey;
+    if (targetCid) payload.contractorId = targetCid;
     const res = await fetch('/api/live-tracking/config', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
     });
@@ -1654,7 +1669,7 @@ function GisConfigTab() {
     const res = await fetch('/api/live-tracking/probe', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(selectedContractorId ? { contractorId: selectedContractorId } : {}),
+      body: JSON.stringify(targetCid ? { contractorId: targetCid } : {}),
     });
     const d = await res.json();
     setProbing(false);
@@ -1664,14 +1679,37 @@ function GisConfigTab() {
   return (
     <div className="bg-surface border border-line rounded-lg p-5 max-w-[640px] space-y-3">
       <div className="text-sm font-extrabold text-ink mb-1">⚙ GIS API 설정 (실시간 차량조회 연동)</div>
-      <div className="text-[0.6875rem] font-mono text-slate-600 bg-slate-50 rounded p-2 mb-2">
-        💡 본 설정은 <code>/live-vehicles</code> 페이지의 GIS provider/embed에 적용됩니다 (전사 단일 설정).
+
+      {/* 업체 선택 */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 space-y-2">
+        <div className="text-[0.6875rem] font-mono font-extrabold text-slate-600">위탁업체 ContractorId</div>
+        <div className="flex gap-2">
+          <input
+            value={targetCid}
+            onChange={(e) => setTargetCid(e.target.value)}
+            placeholder="예: 4 (대서환경)"
+            className="flex-1 px-3 py-1.5 rounded border border-line text-sm font-mono"
+          />
+          <button type="button" onClick={() => loadConfig(targetCid)}
+            disabled={loadStatus === 'loading'}
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-50 shrink-0">
+            {loadStatus === 'loading' ? '조회 중…' : '불러오기'}
+          </button>
+        </div>
+        {loadStatus === 'found' && config && <div className="text-[0.625rem] text-emerald-700 font-mono">✓ 설정 로드됨 (최종 수정: {config.updatedAt ?? '-'})</div>}
+        {loadStatus === 'empty' && <div className="text-[0.625rem] text-slate-400 font-mono">설정 없음 — 저장 시 신규 생성</div>}
       </div>
+
       <Field label="GIS Provider">
-        <select value={form.gisProvider} onChange={(e) => setForm({ ...form, gisProvider: e.target.value })}
+        <select value={form.gisProvider} onChange={(e) => {
+          const p = e.target.value;
+          const baseUrl = p === 'etrace' && !form.gisBaseUrl ? 'http://ems25.etrace.co.kr/intf/' : form.gisBaseUrl;
+          setForm({ ...form, gisProvider: p, gisBaseUrl: baseUrl });
+        }}
           className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
           <option value="simulation">simulation (시안 시뮬)</option>
           <option value="local">local (GPS 단말 직접 수신)</option>
+          <option value="etrace">etrace (ETRACE GPS 관제)</option>
           <option value="helpbiz">helpbiz (gis.helpbiz.kr)</option>
           <option value="naver">naver maps</option>
           <option value="kakao">kakao mobility</option>
@@ -1691,10 +1729,20 @@ function GisConfigTab() {
         </div>
       )}
 
+      {form.gisProvider === 'etrace' && (
+        <div className="bg-blue-50 border border-blue-300 rounded-lg px-4 py-3 space-y-1.5 text-[0.6875rem] font-mono">
+          <div className="font-extrabold text-blue-900">🛰 ETRACE GPS 관제 연동</div>
+          <div className="text-blue-800">이트레이스 SEQ 기반 Pull 방식 — 서버가 주기적으로 위치를 조회합니다.</div>
+          <div className="text-blue-800">Base URL: <code className="bg-white px-1 rounded">http://ems25.etrace.co.kr/intf/</code></div>
+          <div className="text-blue-700">아래 <strong>API Key</strong> 항목에 이트레이스에서 발급받은 키를 입력하세요.</div>
+          <div className="text-blue-700">차량 등록 시 <strong>차량번호(번호판)</strong>가 이트레이스의 VEH_PLATES와 일치해야 합니다.</div>
+        </div>
+      )}
+
       {form.gisProvider !== 'local' && (
         <Field label="GIS Base URL (API)">
           <input value={form.gisBaseUrl} onChange={(e) => setForm({ ...form, gisBaseUrl: e.target.value })}
-            placeholder="https://gis.helpbiz.kr/api"
+            placeholder={form.gisProvider === 'etrace' ? 'http://ems25.etrace.co.kr/intf/' : 'https://gis.helpbiz.kr/api'}
             className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono" />
         </Field>
       )}
@@ -1731,31 +1779,48 @@ function GisConfigTab() {
       {form.gisProvider !== 'simulation' && form.gisProvider !== 'local' && (
         <div className="border-t border-line pt-4 space-y-2">
           <div className="text-xs font-extrabold text-ink">🔍 외부 GPS API 응답 테스트</div>
-          <div className="text-[0.6875rem] text-slate-500">저장 후 아래에서 실제 API를 호출해 응답 JSON을 확인합니다.</div>
+          <div className="text-[0.6875rem] text-slate-500">저장 후 위 ContractorId 기준으로 실제 API를 호출해 응답 JSON을 확인합니다.</div>
           <div className="flex gap-2 items-center">
-            <input
-              value={selectedContractorId}
-              onChange={(e) => setSelectedContractorId(e.target.value)}
-              placeholder="ContractorId (예: 4 — 대서환경)"
-              className="flex-1 px-3 py-1.5 rounded border border-line text-sm font-mono"
-            />
-            <button onClick={probe} disabled={probing}
+            <button onClick={probe} disabled={probing || !targetCid}
               className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0">
               {probing ? '조회 중…' : 'API 테스트'}
             </button>
+            {!targetCid && <span className="text-[0.6875rem] text-slate-400">위에서 ContractorId를 입력하세요</span>}
           </div>
           {probeResult && (
             <div className={`rounded-lg border p-3 space-y-2 text-[0.6875rem] font-mono ${probeResult.ok ? 'bg-emerald-50 border-emerald-300' : 'bg-red-50 border-red-300'}`}>
-              <div className="font-extrabold">{probeResult.ok ? '✅ 성공' : '❌ 실패'} — HTTP {probeResult.status}</div>
+              <div className="font-extrabold">{probeResult.ok ? '✅ 성공' : '❌ 실패'}{probeResult.status ? ` — HTTP ${probeResult.status}` : ''}</div>
               <div className="text-slate-600 break-all">URL: {probeResult.url}</div>
               {probeResult.error && <div className="text-red-700">오류: {probeResult.error}</div>}
-              {probeResult.response !== null && (
-                <div>
-                  <div className="font-extrabold text-slate-700 mb-1">응답 JSON:</div>
-                  <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
-                    {JSON.stringify(probeResult.response, null, 2)}
-                  </pre>
-                </div>
+              {probeResult.url && <div className="text-slate-600 break-all">URL: {probeResult.url}</div>}
+              {probeResult.provider === 'etrace' ? (
+                <>
+                  {probeResult.lastSeqResponse !== undefined && (
+                    <div>
+                      <div className="font-extrabold text-slate-700 mb-1">pos_last_seq.jsp 응답:</div>
+                      <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-40 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
+                        {JSON.stringify(probeResult.lastSeqResponse, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                  {probeResult.positionsResponse !== undefined && (
+                    <div>
+                      <div className="font-extrabold text-slate-700 mb-1">pos_json.jsp 응답 (최초 1건):</div>
+                      <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
+                        {JSON.stringify(probeResult.positionsResponse, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                probeResult.response !== undefined && (
+                  <div>
+                    <div className="font-extrabold text-slate-700 mb-1">응답 JSON:</div>
+                    <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
+                      {JSON.stringify(probeResult.response, null, 2)}
+                    </pre>
+                  </div>
+                )
               )}
               <div className="text-blue-700 font-semibold">{probeResult.tip}</div>
             </div>

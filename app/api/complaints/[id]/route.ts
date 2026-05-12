@@ -67,3 +67,27 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const id = BigInt(params.id);
+  const target = await prisma.complaint.findFirst({
+    where: { id, ...complaintWhere(session) },
+    select: { id: true, status: true, assignedTo: true },
+  });
+  if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (!canTransitionComplaint(session, target)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  await prisma.complaint.delete({ where: { id } });
+  await writeAudit(req, session, {
+    action: 'COMPLAINT_DELETE',
+    resourceType: 'complaint',
+    resourceId: id.toString(),
+    metadata: {},
+  });
+  return NextResponse.json({ ok: true });
+}

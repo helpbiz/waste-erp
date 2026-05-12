@@ -77,6 +77,18 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
   /* 베이스 타일 */
   const [baseTile, setBaseTile] = useState<'osm' | 'osm-hot' | 'cartodb-light' | 'cartodb-dark' | 'esri-sat' | 'esri-topo' | 'opentopomap'>('osm');
 
+  /* SUPER_ADMIN: 조회할 업체 ID */
+  const [superAdminCid, setSuperAdminCid] = useState('');
+  const [contractorList, setContractorList] = useState<Array<{ id: string; companyName: string }>>([]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    fetch('/api/contractors')
+      .then((r) => r.json())
+      .then((d) => setContractorList(d.items ?? []))
+      .catch(() => null);
+  }, [isSuperAdmin]);
+
   async function loadHeatmap() {
     const r = await fetch(`/api/live-tracking/heatmap?from=${heatFrom}&to=${heatTo}`);
     if (r.ok) {
@@ -120,12 +132,19 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
     'opentopomap': '🗻 OpenTopoMap',
   };
 
-  async function load() {
-    const r = await fetch('/api/live-tracking/positions');
+  function positionsUrl(cid?: string) {
+    const id = cid ?? superAdminCid;
+    return isSuperAdmin && id ? `/api/live-tracking/positions?contractorId=${id}` : '/api/live-tracking/positions';
+  }
+
+  async function load(cid?: string) {
+    const r = await fetch(positionsUrl(cid));
     if (r.ok) setData(await r.json());
   }
-  async function loadConfig() {
-    const r = await fetch('/api/live-tracking/config');
+  async function loadConfig(cid?: string) {
+    const id = cid ?? superAdminCid;
+    const qs = isSuperAdmin && id ? `?contractorId=${id}` : '';
+    const r = await fetch(`/api/live-tracking/config${qs}`);
     if (r.ok) {
       const d = await r.json();
       setConfig(d.config);
@@ -140,10 +159,10 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
   useEffect(() => {
     if (timer.current) clearInterval(timer.current);
     if (data) {
-      timer.current = setInterval(load, (data.refreshSec ?? 5) * 1000);
+      timer.current = setInterval(() => load(), (data.refreshSec ?? 5) * 1000);
     }
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [data?.refreshSec]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data?.refreshSec, superAdminCid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const movingCount = data?.vehicles.filter((v) => v.operationalStatus === 'MOVING').length ?? 0;
   const stoppedCount = data?.vehicles.filter((v) => v.operationalStatus === 'STOP').length ?? 0;
@@ -152,6 +171,28 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
 
   return (
     <div className="space-y-4">
+      {isSuperAdmin && (
+        <div className="bg-purple-50 border border-purple-300 rounded-lg px-4 py-2 flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-extrabold text-purple-800">슈퍼관리자 — 업체 선택:</span>
+          <select
+            value={superAdminCid}
+            onChange={(e) => setSuperAdminCid(e.target.value)}
+            className="px-3 py-1 rounded border-2 border-purple-300 text-xs font-bold w-56 bg-white"
+          >
+            <option value="">— 전체 —</option>
+            {contractorList.map((c) => (
+              <option key={c.id} value={c.id}>{c.companyName}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => { load(superAdminCid); loadConfig(superAdminCid); }}
+            className="px-3 py-1 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
+          >
+            조회
+          </button>
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">실시간 차량조회</h2>
         <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-600 text-white animate-pulse">● LIVE</span>
@@ -161,7 +202,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
         </span>
         <div className="ml-auto flex items-center gap-2">
           {/* 사용자 요청 2026-04-29: 즉시 갱신 버튼 앞 🔄 아이콘 제거 */}
-          <button onClick={load}
+          <button type="button" onClick={() => load()}
             className="px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50">
             즉시 갱신
           </button>
@@ -307,7 +348,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
             </select>
             <span className="text-[0.625rem] font-mono text-slate-600 ml-auto">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
           </div>
-          <div className="bg-surface border border-line rounded-lg overflow-hidden" style={{ height: 600 }}>
+          <div className="bg-surface border border-line rounded-lg overflow-hidden" style={{ height: 600, position: 'relative', zIndex: 0 }}>
             <LeafletMap
               mode="vehicles"
               center={data.center}

@@ -92,7 +92,7 @@ export default function AccessibleConfirmDialog({
       aria-labelledby="acd-title"
       aria-describedby={message ? 'acd-msg' : undefined}
       onKeyDown={handleKey}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
     >
       {/* Backdrop */}
       <button

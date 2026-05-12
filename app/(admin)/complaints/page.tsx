@@ -36,6 +36,8 @@ export default async function ComplaintsPage() {
     zoneName: c.zone?.zoneName ?? null,
     resolveNote: c.resolveNote,
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
+    complainantPhone: c.complainantPhone ?? null,
+    requestImage: c.requestImage ?? null,
   }));
 
   /* 매니저는 담당자 dropdown 위해 worker 목록 prefetch */

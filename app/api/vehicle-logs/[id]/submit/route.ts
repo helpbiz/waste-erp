@@ -14,7 +14,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const id = BigInt(params.id);
   const log = await prisma.vehicleLog.findUnique({ where: { id } });
   if (!log) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (log.driverId.toString() !== session.userId) {
+  if (!log.driverId || log.driverId.toString() !== session.userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (log.status !== 'DRAFT') {

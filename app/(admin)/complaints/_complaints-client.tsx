@@ -21,6 +21,7 @@ const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap')
 });
 
 export type Worker = { id: string; name: string };
+export type WorkerRef = { id: string; name: string };
 export type ContractorOpt = { id: string; name: string };
 
 export type Row = {
@@ -40,6 +41,8 @@ export type Row = {
   zoneName: string | null;
   resolveNote: string | null;
   resolvedAt: string | null;
+  complainantPhone: string | null;
+  requestImage: string | null;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -74,16 +77,13 @@ export default function ComplaintsClient({
   const [openRejectId, setOpenRejectId] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<Row | null>(null);
   const [openCreate, setOpenCreate] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const isManager = role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
   const isMuni = role === 'MUNI_ADMIN';
   const canCreate = isManager || isMuni;
   const needsContractorPicker = role === 'SUPER_ADMIN' || role === 'MUNI_ADMIN';
-  /* 사용자 요청 2026-05-01: 매니저 시점에선 [처리시작/완료/수정/반려] 기본 숨김.
-     [담당배정] 만 유지. 비상시엔 ?manager-mode=true URL 로 진입 시 활성. */
-  const managerMode = typeof window !== 'undefined'
-    && new URLSearchParams(window.location.search).get('manager-mode') === 'true';
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return items;
@@ -266,13 +266,30 @@ export default function ComplaintsClient({
                   )}
                   {c.zoneName && <span>구역: {c.zoneName}</span>}
                 </div>
+                {c.complainantPhone && (
+                  <div className="mt-1.5 text-[0.6875rem] font-mono font-bold text-ink-muted">
+                    📞 {c.complainantPhone}
+                  </div>
+                )}
                 {c.resolveNote && (
                   <div className="mt-2.5 px-3 py-2 bg-surface-alt rounded-md text-xs text-ink-muted font-semibold border-l-4 border-l-success">
                     <strong className="text-ink">처리 메모:</strong> {c.resolveNote}
                   </div>
                 )}
-                {/* 사용자 요청 2026-05-02: 내비 길안내·도착 확인은 워커 앱(기동반)에서만.
-                   admin 화면은 접수·배정·완료 흐름만 보여 깔끔히. */}
+                {c.requestImage && (() => {
+                  let imgs: string[] = [];
+                  try { imgs = JSON.parse(c.requestImage); if (!Array.isArray(imgs)) imgs = [c.requestImage]; }
+                  catch { imgs = [c.requestImage]; }
+                  return (
+                    <div className="flex gap-1.5 mt-2.5 flex-wrap">
+                      {imgs.map((src, i) => (
+                        <a key={i} href={src} target="_blank" rel="noopener noreferrer">
+                          <img src={src} alt={`현장사진 ${i + 1}`} className="w-16 h-16 object-cover rounded-md border border-line hover:opacity-80 transition" />
+                        </a>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -288,10 +305,8 @@ export default function ComplaintsClient({
                     {c.assignee ? '담당 변경' : '담당 배정'}
                   </button>
                 )}
-                {/* 처리시작/완료/수정/반려 — 워커 본인 또는 비상시 (?manager-mode=true) 만.
-                    민원관리는 모니터링 + [담당배정] 중심으로 단순화. */}
                 {(c.status === 'RECEIVED' || c.status === 'ASSIGNED') &&
-                  (c.assignee?.id === userId || (isManager && managerMode)) && (
+                  (c.assignee?.id === userId || isManager) && (
                     <button
                       onClick={() => call(`/api/complaints/${c.id}/start`)}
                       disabled={busy}
@@ -300,7 +315,7 @@ export default function ComplaintsClient({
                       처리 시작
                     </button>
                   )}
-                {(c.assignee?.id === userId || (isManager && managerMode)) && (
+                {(c.assignee?.id === userId || isManager) && (
                   <button
                     onClick={() => { setOpenCompleteId(c.id); setOpenAssignId(null); setOpenRejectId(null); }}
                     disabled={busy}
@@ -309,7 +324,7 @@ export default function ComplaintsClient({
                     처리 완료
                   </button>
                 )}
-                {isManager && managerMode && (
+                {isManager && (
                   <button
                     onClick={() => setEditTarget(c)}
                     disabled={busy}
@@ -318,13 +333,22 @@ export default function ComplaintsClient({
                     수정
                   </button>
                 )}
-                {isManager && managerMode && (
+                {isManager && (
                   <button
                     onClick={() => { setOpenRejectId(c.id); setOpenAssignId(null); setOpenCompleteId(null); }}
                     disabled={busy}
-                    className="ml-auto px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-danger text-danger text-sm sm:text-xs font-extrabold hover:bg-danger hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
+                    className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-danger text-danger text-sm sm:text-xs font-extrabold hover:bg-danger hover:text-white transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
                   >
                     반려
+                  </button>
+                )}
+                {isManager && (
+                  <button
+                    onClick={() => setDeleteTarget(c.id)}
+                    disabled={busy}
+                    className="ml-auto px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md border-2 border-slate-400 text-slate-500 text-sm sm:text-xs font-extrabold hover:bg-slate-100 transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
+                  >
+                    삭제
                   </button>
                 )}
               </div>
@@ -342,11 +366,8 @@ export default function ComplaintsClient({
               />
             )}
             {openCompleteId === c.id && (
-              <NoteForm
-                label="처리 완료 메모"
-                placeholder="처리 내용 / 사진 첨부 위치 등 (최소 2자)"
-                buttonLabel="완료 처리"
-                buttonClass="bg-success hover:bg-green-700"
+              <CompleteNoteForm
+                workers={workers}
                 onCancel={() => setOpenCompleteId(null)}
                 onSubmit={async (note) => {
                   const ok = await call(`/api/complaints/${c.id}/complete`, { resolveNote: note });
@@ -377,6 +398,33 @@ export default function ComplaintsClient({
           onClose={() => setEditTarget(null)}
           onSaved={() => { setEditTarget(null); router.refresh(); }}
         />
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 space-y-4">
+            <div className="text-base font-extrabold text-ink">민원 삭제 확인</div>
+            <div className="text-sm text-ink-muted">이 민원(#{deleteTarget})을 삭제하면 복구할 수 없습니다. 계속하시겠습니까?</div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md border border-line text-sm font-bold">취소</button>
+              <button
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true); setError(null);
+                  try {
+                    const res = await fetch(`/api/complaints/${deleteTarget}`, { method: 'DELETE' });
+                    if (res.ok) { setDeleteTarget(null); router.refresh(); }
+                    else setError((await res.json().catch(() => ({}))).error ?? '삭제 실패');
+                  } catch { setError('네트워크 오류'); }
+                  finally { setBusy(false); }
+                }}
+                className="px-4 py-2 rounded-md bg-danger text-white text-sm font-extrabold disabled:opacity-50"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -589,6 +637,59 @@ function NoteForm({
   );
 }
 
+function CompleteNoteForm({
+  workers,
+  onSubmit,
+  onCancel,
+}: {
+  workers: Worker[];
+  onSubmit: (note: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [note, setNote] = useState('');
+  const [taggedWorker, setTaggedWorker] = useState('');
+  const builtNote = taggedWorker
+    ? `${note.trim()} → @${workers.find((w) => w.id === taggedWorker)?.name ?? taggedWorker} 알림`
+    : note.trim();
+  return (
+    <div className="px-5 py-4 bg-surface-soft border-t border-line space-y-3">
+      <div className="text-xs font-extrabold text-ink">처리 완료 메모</div>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="처리 내용을 기록해 주세요 (최소 2자)"
+        rows={2}
+        className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold bg-surface focus:outline-none focus:border-accent resize-none"
+      />
+      {workers.length > 0 && (
+        <div>
+          <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">담당자 태그 (선택 — 알림 대상)</label>
+          <select
+            value={taggedWorker}
+            onChange={(e) => setTaggedWorker(e.target.value)}
+            className="w-full px-3 py-1.5 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
+          >
+            <option value="">— 태그 없음 —</option>
+            {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSubmit(builtNote)}
+          disabled={note.trim().length < 2}
+          className="px-4 py-2 rounded-md text-white text-sm font-extrabold transition active:scale-95 disabled:opacity-50 bg-success hover:bg-green-700"
+        >
+          완료 처리
+        </button>
+        <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-ink text-sm font-bold hover:bg-surface active:scale-95">
+          취소
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function fmt(iso: string) {
   const k = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -631,6 +732,7 @@ function CreateComplaintModal({
   const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [addressOnly, setAddressOnly] = useState(false);
 
   function pickGps() {
     if (!('geolocation' in navigator)) {
@@ -685,8 +787,11 @@ function CreateComplaintModal({
     reverseGeocode(lat, lng);
   }
 
-  /* 모달 오픈 시 자동 GPS/GIS 트리거 */
-  useEffect(() => { pickGps(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  /* 모달 오픈 시 자동 GPS/GIS 트리거 — 지도 모드에서만 */
+  useEffect(() => {
+    if (!addressOnly) pickGps();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addressOnly]);
 
   async function save() {
     if (!type) { setError('민원 유형을 선택해 주세요.'); return; }
@@ -737,60 +842,81 @@ function CreateComplaintModal({
           </div>
 
           <div>
-            <label className="block text-xs font-extrabold text-ink mb-2">
-              발생 위치
-              <span className="ml-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">(지도에서 핀 클릭·드래그로 보정)</span>
-            </label>
-
-            {/* 지도 — 항상 표시 (GPS 미확인 시 기본 좌표) */}
-            <div className="mb-2 relative">
-              <LocationPickerMap
-                lat={gps?.lat ?? 37.5665}
-                lng={gps?.lng ?? 126.9780}
-                onChange={onMapPinChange}
-                height={220}
-              />
-              {!gps && (
-                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[0.6875rem] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
-                  📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)
-                </div>
-              )}
-            </div>
-
-            {/* GPS 상태 + 좌표 + 재확인 버튼 */}
-            <div className="bg-surface-alt rounded-lg border border-line px-3 py-2 flex items-center gap-2 mb-2">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} className={gps ? 'text-success' : 'text-warn'}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div className="flex-1 text-[0.6875rem]">
-                {gps ? (
-                  <span className="font-mono font-bold text-ink">
-                    {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
-                    {geocoding && <span className="ml-2 text-accent animate-pulse">주소 조회 중…</span>}
-                  </span>
-                ) : (
-                  <span className="text-ink-muted">위치 자동 확인 중…</span>
-                )}
-                {gpsErr && <div className="text-[0.625rem] font-bold text-amber-700 mt-0.5">{gpsErr}</div>}
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-extrabold text-ink">
+                발생 위치
+                {!addressOnly && <span className="ml-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">(지도에서 핀 클릭·드래그로 보정)</span>}
+              </label>
               <button
                 type="button"
-                onClick={pickGps}
-                disabled={acquiring}
-                className="text-[0.625rem] font-extrabold px-2.5 py-1 rounded-md border border-line hover:bg-surface text-ink"
+                onClick={() => setAddressOnly((v) => !v)}
+                className="text-[0.625rem] font-extrabold px-2.5 py-1 rounded-md border border-line hover:bg-surface-soft text-ink"
               >
-                {acquiring ? '확인 중…' : '🎯 내 위치'}
+                {addressOnly ? '🗺️ 지도 모드' : '⌨️ 주소만 입력'}
               </button>
             </div>
 
-            {/* 주소 (역지오코딩으로 자동 채워짐 / 수정 가능) */}
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
-            />
+            {addressOnly ? (
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="상세 주소를 직접 입력하세요 (전화·카톡 민원 등)"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                autoFocus
+              />
+            ) : (
+              <>
+                {/* 지도 — 항상 표시 (GPS 미확인 시 기본 좌표) */}
+                <div className="mb-2 relative">
+                  <LocationPickerMap
+                    lat={gps?.lat ?? 37.5665}
+                    lng={gps?.lng ?? 126.9780}
+                    onChange={onMapPinChange}
+                    height={220}
+                  />
+                  {!gps && (
+                    <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-[0.6875rem] font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+                      📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)
+                    </div>
+                  )}
+                </div>
+
+                {/* GPS 상태 + 좌표 + 재확인 버튼 */}
+                <div className="bg-surface-alt rounded-lg border border-line px-3 py-2 flex items-center gap-2 mb-2">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} className={gps ? 'text-success' : 'text-warn'}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                    <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div className="flex-1 text-[0.6875rem]">
+                    {gps ? (
+                      <span className="font-mono font-bold text-ink">
+                        {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
+                        {geocoding && <span className="ml-2 text-accent animate-pulse">주소 조회 중…</span>}
+                      </span>
+                    ) : (
+                      <span className="text-ink-muted">위치 자동 확인 중…</span>
+                    )}
+                    {gpsErr && <div className="text-[0.625rem] font-bold text-amber-700 mt-0.5">{gpsErr}</div>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={pickGps}
+                    disabled={acquiring}
+                    className="text-[0.625rem] font-extrabold px-2.5 py-1 rounded-md border border-line hover:bg-surface text-ink"
+                  >
+                    {acquiring ? '확인 중…' : '🎯 내 위치'}
+                  </button>
+                </div>
+
+                {/* 주소 (역지오코딩으로 자동 채워짐 / 수정 가능) */}
+                <input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
+                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                />
+              </>
+            )}
           </div>
 
           <div>

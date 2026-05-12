@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VEHICLE_TYPE_OPTIONS, VEHICLE_TYPE_LABEL, type VehicleTypeKey } from '@/lib/vehicle-types';
 
@@ -61,6 +61,7 @@ export default function VehiclesClient({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<VehicleRow | 'NEW' | null>(null);
   const [retireFor, setRetireFor] = useState<VehicleRow | null>(null);
@@ -226,7 +227,7 @@ export default function VehiclesClient({
         <table className="w-full min-w-[640px] text-[0.8125rem]">
           <thead>
             <tr>
-              {['차량', '기사', '주행거리', '연료', '수거량', '회', '상태', '액션'].map((h) => (
+              {['차량', '기사', '주행거리', '연료', '수거량', '회', '상태', '상세', '액션'].map((h) => (
                 <th key={h} className="text-left px-3 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
                   {h}
                 </th>
@@ -236,7 +237,7 @@ export default function VehiclesClient({
           <tbody>
             {logs.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-ink-muted font-bold">
+                <td colSpan={9} className="px-3 py-8 text-center text-ink-muted font-bold">
                   오늘 작성된 운행일지가 없습니다.
                 </td>
               </tr>
@@ -244,7 +245,8 @@ export default function VehiclesClient({
             {logs.map((l, i) => {
               const km = l.startMileage != null && l.endMileage != null ? l.endMileage - l.startMileage : null;
               return (
-                <tr key={l.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
+                <React.Fragment key={l.id}>
+                <tr className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                   <td className="px-3 py-2.5 border-b border-line">
                     <div className="font-mono font-extrabold text-ink">{l.vehicleNo}</div>
                     <div className="text-[0.625rem] font-bold text-ink-muted">{TYPE_LABEL[l.vehicleType] ?? l.vehicleType} {l.vehicleTon}</div>
@@ -264,6 +266,14 @@ export default function VehiclesClient({
                   </td>
                   <td className="px-3 py-2.5 border-b border-line">
                     <LogStatusChip status={l.status} />
+                  </td>
+                  <td className="px-3 py-2.5 border-b border-line">
+                    <button
+                      onClick={() => setExpandedLogId(expandedLogId === l.id ? null : l.id)}
+                      className="px-2 py-1 rounded text-[0.6875rem] font-extrabold border border-line hover:bg-surface-soft"
+                    >
+                      {expandedLogId === l.id ? '접기' : '상세'}
+                    </button>
                   </td>
                   <td className="px-3 py-2.5 border-b border-line">
                     {isManager && l.status === 'SUBMITTED' && (
@@ -292,6 +302,14 @@ export default function VehiclesClient({
                     )}
                   </td>
                 </tr>
+                {expandedLogId === l.id && (
+                  <tr className="bg-slate-50">
+                    <td colSpan={9} className="px-4 py-3 border-b border-line">
+                      <VehicleLogDetail routeDetail={l.routeDetail} startMileage={l.startMileage} endMileage={l.endMileage} />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -772,6 +790,102 @@ function DeleteVehicleModal({
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+type LogDetail = {
+  passengers?: string;
+  operationPeriod?: string;
+  fuelCost?: number;
+  ureaUsed?: number;
+  ureaCost?: number;
+  bags30L?: number;
+  bags50L?: number;
+  bags75L?: number;
+  inspection?: Record<string, string>;
+  maintenance?: { company?: string; content?: string; cost?: number };
+  note?: string;
+};
+
+function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDetail: string | null; startMileage: number | null; endMileage: number | null }) {
+  let detail: LogDetail | null = null;
+  if (routeDetail) {
+    try { detail = JSON.parse(routeDetail) as LogDetail; } catch { /* plain text */ }
+  }
+
+  if (!detail && !routeDetail) {
+    return <div className="text-xs text-ink-muted">상세 정보 없음</div>;
+  }
+
+  const inspection = detail?.inspection;
+  const maint = detail?.maintenance;
+
+  return (
+    <div className="text-xs space-y-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {startMileage != null && endMileage != null && (
+          <div className="bg-white border border-line rounded px-2 py-1.5">
+            <div className="text-[0.625rem] font-bold text-ink-muted">주행거리</div>
+            <div className="font-extrabold">{(endMileage - startMileage).toLocaleString()} km</div>
+            <div className="text-[0.625rem] text-ink-muted">{startMileage.toLocaleString()} → {endMileage.toLocaleString()}</div>
+          </div>
+        )}
+        {detail?.passengers ? (
+          <div className="bg-white border border-line rounded px-2 py-1.5">
+            <div className="text-[0.625rem] font-bold text-ink-muted">동승 수거원</div>
+            <div className="font-semibold">{detail.passengers}</div>
+          </div>
+        ) : null}
+        {detail?.operationPeriod ? (
+          <div className="bg-white border border-line rounded px-2 py-1.5">
+            <div className="text-[0.625rem] font-bold text-ink-muted">운행시간</div>
+            <div className="font-semibold">{detail.operationPeriod}</div>
+          </div>
+        ) : null}
+        {(detail?.bags30L || detail?.bags50L || detail?.bags75L) ? (
+          <div className="bg-white border border-line rounded px-2 py-1.5">
+            <div className="text-[0.625rem] font-bold text-ink-muted">봉투수량</div>
+            <div className="font-semibold">30L: {detail.bags30L ?? 0} · 50L: {detail.bags50L ?? 0} · 75L: {detail.bags75L ?? 0}</div>
+          </div>
+        ) : null}
+        {detail?.fuelCost != null && detail.fuelCost > 0 ? (
+          <div className="bg-white border border-line rounded px-2 py-1.5">
+            <div className="text-[0.625rem] font-bold text-ink-muted">연료비</div>
+            <div className="font-semibold">{detail.fuelCost.toLocaleString()} 원</div>
+          </div>
+        ) : null}
+      </div>
+      {inspection && Object.keys(inspection).length > 0 && (
+        <div>
+          <div className="text-[0.625rem] font-extrabold text-ink-muted mb-1">점검항목</div>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(inspection).map(([key, val]) => (
+              <span key={key} className={`px-1.5 py-0.5 rounded text-[0.625rem] font-bold border ${
+                val === '양호' || val === '예' ? 'bg-green-50 border-green-300 text-green-800' :
+                val === '이상' ? 'bg-red-50 border-red-300 text-red-700' :
+                'bg-amber-50 border-amber-300 text-amber-800'
+              }`}>
+                {key}: {val}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {maint && (maint.company || maint.content) && (
+        <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+          <div className="text-[0.625rem] font-extrabold text-amber-900 mb-0.5">정비 이력</div>
+          {maint.company ? <div className="text-ink">업체: {maint.company}</div> : null}
+          {maint.content ? <div className="text-ink">내용: {maint.content}</div> : null}
+          {maint.cost ? <div className="text-ink">비용: {maint.cost.toLocaleString()} 원</div> : null}
+        </div>
+      )}
+      {detail?.note ? (
+        <div className="text-ink-muted italic">메모: {detail.note}</div>
+      ) : null}
+      {!detail && routeDetail ? (
+        <pre className="text-[0.6875rem] font-mono whitespace-pre-wrap break-all text-ink-muted">{routeDetail}</pre>
+      ) : null}
     </div>
   );
 }

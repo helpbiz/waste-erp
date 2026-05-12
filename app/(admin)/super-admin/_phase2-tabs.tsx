@@ -36,10 +36,19 @@ export function UsersGlobalTab() {
   const [role, setRole] = useState('');
   const [status, setStatus] = useState('');
   const [lockedOnly, setLockedOnly] = useState(false);
+  const [contractorId, setContractorId] = useState('');
+  const [contractors, setContractors] = useState<Array<{ id: string; companyName: string }>>([]);
   const [page, setPage] = useState(1);
   const [resetResult, setResetResult] = useState<{ username: string; tempPassword: string } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ username: string; tempPassword: string; role: string; name: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/contractors')
+      .then((r) => r.json())
+      .then((d) => setContractors(d.items ?? []))
+      .catch(() => null);
+  }, []);
 
   function load() {
     setLoading(true);
@@ -48,13 +57,14 @@ export function UsersGlobalTab() {
     if (role) p.set('role', role);
     if (status) p.set('status', status);
     if (lockedOnly) p.set('lockedOnly', 'true');
+    if (contractorId) p.set('contractorId', contractorId);
     p.set('page', String(page));
     fetch(`/api/super-admin/users-global?${p}`)
       .then((r) => r.json())
       .then((d) => { setItems(d.items ?? []); setTotal(d.total ?? 0); })
       .finally(() => setLoading(false));
   }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page, role, status, lockedOnly]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page, role, status, lockedOnly, contractorId]);
 
   async function toggleLock(u: GlobalUser) {
     const action = u.isLocked ? 'unlock' : 'lock';
@@ -100,6 +110,10 @@ export function UsersGlobalTab() {
           <option value="ACTIVE">활성</option>
           <option value="INACTIVE">비활성</option>
           <option value="PENDING">대기</option>
+        </select>
+        <select value={contractorId} onChange={(e) => { setContractorId(e.target.value); setPage(1); }} className="px-2 py-1.5 rounded border border-line text-sm">
+          <option value="">위탁업체 전체</option>
+          {contractors.map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
         </select>
         <label className="flex items-center gap-1 text-xs font-bold">
           <input type="checkbox" checked={lockedOnly} onChange={(e) => { setLockedOnly(e.target.checked); setPage(1); }} />

@@ -19,6 +19,7 @@ export async function GET(req: Request) {
   const role = url.searchParams.get('role');
   const status = url.searchParams.get('status');
   const lockedOnly = url.searchParams.get('lockedOnly') === 'true';
+  const contractorIdParam = url.searchParams.get('contractorId');
   const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));
   const limit = Math.min(100, Number(url.searchParams.get('limit') ?? 50));
 
@@ -38,6 +39,9 @@ export async function GET(req: Request) {
   }
   if (lockedOnly) {
     where.lockedUntil = { gt: new Date() };
+  }
+  if (contractorIdParam && /^\d+$/.test(contractorIdParam)) {
+    where.contractorId = BigInt(contractorIdParam);
   }
 
   const [items, total] = await Promise.all([

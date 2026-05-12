@@ -321,10 +321,24 @@ function RegisterTab({
   });
 
   async function disable(id: string) {
-    if (!confirm('해당 사용자를 비활성화하시겠습니까?')) return;
+    if (!confirm('해당 사용자를 비활성화(삭제)하시겠습니까?')) return;
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
     if (res.ok) router.refresh();
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  async function bulkDisableWorkers() {
+    const workerCount = filtered.filter((r) => r.role === 'WORKER' && r.status === 'ACTIVE').length;
+    if (workerCount === 0) { alert('비활성화할 활성 근로자가 없습니다.'); return; }
+    if (!confirm(`현재 조건의 활성 근로자 ${workerCount}명을 전원 비활성화(삭제)합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+    const workers = filtered.filter((r) => r.role === 'WORKER' && r.status === 'ACTIVE');
+    let failed = 0;
+    for (const w of workers) {
+      const res = await fetch(`/api/users/${w.id}`, { method: 'DELETE' });
+      if (!res.ok) failed++;
+    }
+    router.refresh();
+    if (failed > 0) alert(`${failed}명 처리 실패`);
   }
 
   return (
@@ -362,9 +376,17 @@ function RegisterTab({
           </>
         )}
         {canManage && (
-          <button onClick={onAdd} className="ml-auto px-4 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
-            + 신규 사용자
-          </button>
+          <>
+            <button
+              onClick={bulkDisableWorkers}
+              className="px-3 py-1.5 rounded-md text-xs font-extrabold bg-rose-100 text-rose-700 border border-rose-300 hover:bg-rose-200"
+            >
+              근로자 전체 삭제
+            </button>
+            <button onClick={onAdd} className="ml-auto px-4 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
+              + 신규 사용자
+            </button>
+          </>
         )}
       </div>
 
@@ -404,8 +426,8 @@ function RegisterTab({
                     <button onClick={() => setEditTarget(u)} className="text-xs font-bold text-accent hover:underline mr-2">수정</button>
                   )}
                   <button onClick={() => onSelectProfile(u.id)} className="text-xs font-bold text-slate-600 hover:underline mr-2">상세</button>
-                  {canManage && u.status === 'ACTIVE' && u.id !== currentUserId && (
-                    <button onClick={() => disable(u.id)} className="text-xs font-bold text-red-600 hover:underline">비활성화</button>
+                  {canManage && u.id !== currentUserId && (
+                    <button onClick={() => disable(u.id)} className="text-xs font-bold text-red-600 hover:underline">삭제</button>
                   )}
                 </td>
               </tr>

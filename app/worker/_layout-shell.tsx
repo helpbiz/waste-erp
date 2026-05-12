@@ -48,6 +48,7 @@ export function WorkerLayoutShell({ user, children }: Props) {
               <TabLink href="/worker/complaint" label="민원" icon="camera" />
               <TabLink href="/worker/safety" label="안전" icon="shield" />
               <TabLink href="/worker/performance" label="실적" icon="chart" />
+              <TabLink href="/worker/announcements" label="공지" icon="bell" />
             </div>
           </nav>
         </div>
