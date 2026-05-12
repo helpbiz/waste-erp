@@ -1615,6 +1615,9 @@ function GisConfigTab() {
     refreshSec: 5, active: true,
   });
   const [saving, setSaving] = useState(false);
+  const [probing, setProbing] = useState(false);
+  const [probeResult, setProbeResult] = useState<{ ok: boolean; url: string; status: number; response: unknown; error: string | null; tip: string } | null>(null);
+  const [selectedContractorId, setSelectedContractorId] = useState<string>('');
 
   useEffect(() => {
     fetch('/api/live-tracking/config').then((r) => r.json()).then((d) => {
@@ -1644,6 +1647,18 @@ function GisConfigTab() {
     setSaving(false);
     if (res.ok) alert('저장됨');
     else alert('실패: ' + (await res.json().catch(() => ({}))).error);
+  }
+
+  async function probe() {
+    setProbing(true); setProbeResult(null);
+    const res = await fetch('/api/live-tracking/probe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(selectedContractorId ? { contractorId: selectedContractorId } : {}),
+    });
+    const d = await res.json();
+    setProbing(false);
+    setProbeResult(d);
   }
 
   return (
@@ -1711,6 +1726,42 @@ function GisConfigTab() {
           닫기
         </a>
       </div>
+
+      {/* API 응답 테스트 (응답 형식 파악용) */}
+      {form.gisProvider !== 'simulation' && form.gisProvider !== 'local' && (
+        <div className="border-t border-line pt-4 space-y-2">
+          <div className="text-xs font-extrabold text-ink">🔍 외부 GPS API 응답 테스트</div>
+          <div className="text-[0.6875rem] text-slate-500">저장 후 아래에서 실제 API를 호출해 응답 JSON을 확인합니다.</div>
+          <div className="flex gap-2 items-center">
+            <input
+              value={selectedContractorId}
+              onChange={(e) => setSelectedContractorId(e.target.value)}
+              placeholder="ContractorId (예: 4 — 대서환경)"
+              className="flex-1 px-3 py-1.5 rounded border border-line text-sm font-mono"
+            />
+            <button onClick={probe} disabled={probing}
+              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0">
+              {probing ? '조회 중…' : 'API 테스트'}
+            </button>
+          </div>
+          {probeResult && (
+            <div className={`rounded-lg border p-3 space-y-2 text-[0.6875rem] font-mono ${probeResult.ok ? 'bg-emerald-50 border-emerald-300' : 'bg-red-50 border-red-300'}`}>
+              <div className="font-extrabold">{probeResult.ok ? '✅ 성공' : '❌ 실패'} — HTTP {probeResult.status}</div>
+              <div className="text-slate-600 break-all">URL: {probeResult.url}</div>
+              {probeResult.error && <div className="text-red-700">오류: {probeResult.error}</div>}
+              {probeResult.response !== null && (
+                <div>
+                  <div className="font-extrabold text-slate-700 mb-1">응답 JSON:</div>
+                  <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
+                    {JSON.stringify(probeResult.response, null, 2)}
+                  </pre>
+                </div>
+              )}
+              <div className="text-blue-700 font-semibold">{probeResult.tip}</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
