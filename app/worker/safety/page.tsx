@@ -42,6 +42,18 @@ export default async function SafetyWorkerPage() {
 
   const tbmSigned = !!tbm?.signatures.some((s) => s.workerId.toString() === session.userId);
 
+  let tbmContentText: string | null = tbm?.content ?? null;
+  let tbmPhotoDataUrl: string | null = null;
+  if (tbm?.content) {
+    try {
+      const p = JSON.parse(tbm.content);
+      if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
+        tbmContentText = p.text ?? null;
+        tbmPhotoDataUrl = p.photoDataUrl ?? null;
+      }
+    } catch {}
+  }
+
   return (
     <SafetyWorkerClient
       checklistDef={[...DAILY_CHECKLIST_ITEMS]}
@@ -49,7 +61,7 @@ export default async function SafetyWorkerPage() {
       submittedAt={todayChecklist?.createdAt.toISOString() ?? null}
       allChecked={todayChecklist?.allChecked ?? false}
       tbm={tbm
-        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbm.content, signed: tbmSigned, signCount: tbm.signatures.length }
+        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, signed: tbmSigned, signCount: tbm.signatures.length }
         : null
       }
       weather={weather}

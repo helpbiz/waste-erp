@@ -175,6 +175,20 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
         </div>
       </div>
 
+      {/* GPS 단말 직접수신 모드 안내 */}
+      {data?.provider === 'local' && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 text-xs font-semibold text-emerald-900 space-y-1">
+          <div className="font-extrabold">📡 GPS 단말 직접 수신 모드 (local)</div>
+          <div>GPS 단말이 아래 엔드포인트로 위치를 Push합니다.</div>
+          <div className="bg-white border border-emerald-200 rounded px-3 py-2 font-mono text-[0.6875rem] break-all">
+            POST {typeof window !== 'undefined' ? window.location.origin : ''}/api/live-tracking/gps-ingest?contractorId=<em>CONTRACTOR_ID</em>
+          </div>
+          <div>헤더: <code className="bg-white px-1 rounded">Authorization: Bearer &lt;인제스트토큰&gt;</code></div>
+          <div>바디: <code className="bg-white px-1 rounded">{'{ "vehicleNo":"12가3456", "lat":37.49, "lng":127.04, "speed":30, "heading":90 }'}</code></div>
+          <div className="text-emerald-700">인제스트 토큰은 GIS 설정 페이지에서 API 키로 입력하세요.</div>
+        </div>
+      )}
+
       {/* 4 KPI */}
       <div className="grid grid-cols-4 gap-3">
         <KCard label="운행 중" value={movingCount} unit="대" tone="success" />

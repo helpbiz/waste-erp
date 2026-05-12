@@ -53,7 +53,40 @@ export async function GET() {
   });
 
   const now = Math.floor(Date.now() / 1000);
+
+  /* local 프로바이더: DB에서 실제 GPS 좌표 조회 */
+  let gpsPositionMap = new Map<string, { lat: number; lng: number; speed: number | null; heading: number | null; updatedAt: Date }>();
+  if (provider === 'local') {
+    const gpsRows = await prisma.vehicleGpsPosition.findMany({
+      where: { contractorId },
+      select: { vehicleId: true, lat: true, lng: true, speed: true, heading: true, updatedAt: true },
+    });
+    gpsPositionMap = new Map(gpsRows.map((r) => [r.vehicleId.toString(), {
+      lat: Number(r.lat), lng: Number(r.lng),
+      speed: r.speed, heading: r.heading, updatedAt: r.updatedAt,
+    }]));
+  }
+
   const positions = vehicles.map((v) => {
+    if (provider === 'local') {
+      const gps = gpsPositionMap.get(v.id.toString());
+      const speed = gps?.speed ?? 0;
+      const opStatus = v.status === 'MAINTENANCE' ? 'MAINTENANCE' : speed === 0 ? 'IDLE' : speed < 5 ? 'STOP' : 'MOVING';
+      return {
+        vehicleId: v.id.toString(),
+        vehicleNo: v.vehicleNo,
+        vehicleType: v.vehicleType,
+        vehicleStatus: v.status,
+        driverName: v.driver?.name ?? null,
+        lat: gps?.lat ?? CENTER.lat,
+        lng: gps?.lng ?? CENTER.lng,
+        speed,
+        heading: gps?.heading ?? 0,
+        operationalStatus: opStatus,
+        updatedAt: gps?.updatedAt.toISOString() ?? null,
+        noData: !gps,
+      };
+    }
     const pos = simulatePosition(v.id, now);
     return {
       vehicleId: v.id.toString(),
@@ -77,6 +110,8 @@ export async function GET() {
     vehicles: positions,
     note: provider === 'simulation'
       ? '시안 모드 — 30초 슬롯 기반 시뮬 GPS'
+      : provider === 'local'
+      ? 'GPS 단말 직접 수신 모드 (POST /api/live-tracking/gps-ingest)'
       : `외부 GIS provider: ${provider} (Phase 2 실 API 프록시)`,
   });
 }

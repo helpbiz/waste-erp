@@ -16,8 +16,9 @@ export type FeatureKey =
   | 'vehicleTracking'
   | 'attendanceGps'
   | 'workerSuggestion'
-  | 'nocAccess'   // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
-  | 'avac';       // 자동집하시설(AVAC) 전용 모듈 — 시설별 TBM·시설운전기록·실적 3시트
+  | 'nocAccess'               // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
+  | 'avac'                    // 자동집하시설(AVAC) 전용 모듈 — 시설별 TBM·시설운전기록·실적 3시트
+  | 'leaveApprovalSingleStage'; // 휴가 결재 1단계(관리자 단독 최종 결재) — 대표 최종 결재 생략
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -109,6 +110,15 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
       '자동집하시설 관리 위탁업체 전용. 비-AVAC 업체에는 이 탭들이 미노출.',
     group: '시설운영',
     defaultEnabled: false,   // 기본 OFF — 해당 업체에만 슈퍼관리자가 수동 활성화
+  },
+  {
+    key: 'leaveApprovalSingleStage',
+    label: '휴가 결재 단계 간소화',
+    description:
+      '활성화 시 관리자(1차 결재권자)가 최종 결재까지 단독 처리 가능 — 대표 최종 결재 단계 생략. ' +
+      '소규모 업체나 대표가 결재 위임한 경우 사용.',
+    group: '근태',
+    defaultEnabled: false,
   },
 ];
 

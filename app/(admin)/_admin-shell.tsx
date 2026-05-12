@@ -157,14 +157,6 @@ function SidebarBody({
         />
       </div>
 
-      {/* P1: 사이드바 메타 정보 — text-slate-{500,600} 은 sidebar(#1e3a5f) 위에서 3-4:1 (AAA fail).
-              text-slate-{300,400} 으로 상향, 9-10px → 12px. */}
-      <div className="px-5 py-3 border-b border-white/10 bg-white/5 border-l-[3px] border-l-cyan-400">
-        <div className="text-xs font-bold text-slate-300 tracking-widest">현재 권한</div>
-        <div className="text-white text-base font-extrabold mt-1 font-mono">{session.role}</div>
-        <div className="text-slate-200 text-sm font-semibold mt-1">{session.name}</div>
-      </div>
-
       <nav className="flex-1 py-3 text-sm overflow-y-auto">
         {groups.map((g) => (
           <div key={g.group}>
@@ -185,8 +177,7 @@ function SidebarBody({
                       : 'text-slate-200 hover:bg-white/5 hover:text-white border-l-transparent'
                   }`}
                 >
-                  <span className="flex-1">{it.label}</span>
-                  {it.newTab && <span aria-hidden className="text-[0.625rem] opacity-60">↗</span>}
+                  <span className="flex-1 truncate">{it.label}</span>
                   {it.badge && (
                     <span className="text-[0.6875rem] font-mono font-extrabold px-2 py-0.5 rounded-full bg-red-600 text-white">
                       {it.badge}

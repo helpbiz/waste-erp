@@ -13,7 +13,7 @@ import { encryptField } from '@/lib/crypto';
 export const runtime = 'nodejs';
 
 const Body = z.object({
-  gisProvider: z.enum(['simulation', 'helpbiz', 'naver', 'kakao']).optional(),
+  gisProvider: z.enum(['simulation', 'helpbiz', 'naver', 'kakao', 'local']).optional(),
   gisBaseUrl: z.string().max(255).nullable().optional(),
   apiKey: z.string().max(200).nullable().optional(),
   embedUrl: z.string().max(500).nullable().optional(),

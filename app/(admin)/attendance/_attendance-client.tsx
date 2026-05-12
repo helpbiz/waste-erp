@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AccessibleConfirmDialog from '@/components/ui/AccessibleConfirmDialog';
 
@@ -19,13 +19,16 @@ type Row = {
   workType: string | null; zoneName: string | null; status: string | null;
 };
 
+type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
+
 export default function AttendanceClient({
-  date, rows, summary, canManage,
+  date, rows, summary, canManage, selfRecord,
 }: {
   date: string;
   rows: Row[];
   summary: { total: number; checkedIn: number; checkedOut: number; notCheckedIn: number; earlyLeave: number; pendingApproval: number };
   canManage: boolean;
+  selfRecord?: SelfRecord;
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -44,6 +47,7 @@ export default function AttendanceClient({
 
   return (
     <div className="space-y-5">
+      {selfRecord !== undefined && <AdminPunchWidget selfRecord={selfRecord} onSuccess={() => router.refresh()} />}
       <div>
         <h2 className="text-xl font-extrabold text-ink">근태관리</h2>
         <div className="flex items-center gap-2 mt-2">
@@ -528,5 +532,77 @@ function _PendingApprovalModal_REMOVED({
         </div>
       )}
     </>
+  );
+}
+
+/* ─────────────── 관리자 본인 출퇴근 위젯 ─────────────── */
+
+function AdminPunchWidget({ selfRecord, onSuccess }: { selfRecord: SelfRecord; onSuccess: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function fmtTime(iso: string | null) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  const punchAction = useCallback(async (endpoint: string) => {
+    setBusy(true); setError(null);
+    try {
+      let body: Record<string, number> = {};
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => { body = { lat: pos.coords.latitude, lng: pos.coords.longitude }; resolve(); },
+            () => resolve(),
+            { timeout: 5000 }
+          );
+        });
+      }
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data?.error ?? '처리 실패');
+      else onSuccess();
+    } catch { setError('네트워크 오류'); }
+    finally { setBusy(false); }
+  }, [onSuccess]);
+
+  const checkInTime = fmtTime(selfRecord?.checkInTime ?? null);
+  const checkOutTime = fmtTime(selfRecord?.checkOutTime ?? null);
+
+  return (
+    <div className="bg-surface border border-line rounded-xl px-4 py-3 shadow-card flex flex-wrap items-center gap-3">
+      <div className="text-sm font-extrabold text-ink shrink-0">관리자 본인 출퇴근</div>
+      <div className="flex items-center gap-2 text-sm font-mono font-bold">
+        <span className="text-slate-500">출근</span>
+        <span className={checkInTime ? 'text-emerald-700' : 'text-amber-600'}>{checkInTime ?? '—'}</span>
+        <span className="text-slate-400 mx-1">·</span>
+        <span className="text-slate-500">퇴근</span>
+        <span className={checkOutTime ? 'text-accent' : 'text-slate-500'}>{checkOutTime ?? '—'}</span>
+      </div>
+      <div className="flex gap-2 ml-auto">
+        {!selfRecord?.checkInTime && (
+          <button onClick={() => punchAction('/api/attendance/check-in')} disabled={busy}
+            className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50 active:scale-95 transition">
+            {busy ? '처리 중…' : '출근'}
+          </button>
+        )}
+        {selfRecord?.checkInTime && !selfRecord?.checkOutTime && (
+          <button onClick={() => punchAction('/api/attendance/check-out')} disabled={busy}
+            className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50 active:scale-95 transition">
+            {busy ? '처리 중…' : '퇴근'}
+          </button>
+        )}
+        {selfRecord?.checkInTime && selfRecord?.checkOutTime && (
+          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold border border-slate-300">퇴근 완료</span>
+        )}
+      </div>
+      {error && <div className="w-full text-xs font-bold text-red-700">{error}</div>}
+    </div>
   );
 }

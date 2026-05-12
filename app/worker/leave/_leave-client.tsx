@@ -23,7 +23,7 @@ const LEAVE_STATUS_LABEL: Record<string, string> = {
   APPROVED: '결재 완료',
   REJECTED: '반려',
 };
-const PRIMARY_TYPES = ['ANNUAL', 'ANNUAL_HALF', 'SPECIAL', 'MATERNITY', 'FAMILY_CARE', 'MENSTRUAL', 'OFFICIAL'];
+const PRIMARY_TYPES = ['ANNUAL', 'ANNUAL_HALF', 'SPECIAL', 'MATERNITY', 'FAMILY_CARE', 'MENSTRUAL', 'OFFICIAL', 'SICK', 'OTHER'];
 
 type LeaveRequest = {
   id: string;
@@ -44,7 +44,7 @@ type Balance = {
 };
 
 export default function LeaveClient({
-  year, hireDate, recommend, balance, requests, workerId,
+  year, hireDate, recommend, balance, requests, workerId, singleStageApproval,
 }: {
   year: number;
   hireDate: string | null;
@@ -52,6 +52,7 @@ export default function LeaveClient({
   balance: Balance | null;
   requests: LeaveRequest[];
   workerId: string;
+  singleStageApproval?: boolean;
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
@@ -161,15 +162,16 @@ export default function LeaveClient({
       </div>
 
       {showCreate && (
-        <CreateLeaveModal workerId={workerId} balance={balance} onClose={() => setShowCreate(false)} />
+        <CreateLeaveModal workerId={workerId} balance={balance} singleStageApproval={singleStageApproval} onClose={() => setShowCreate(false)} />
       )}
     </div>
   );
 }
 
-function CreateLeaveModal({ workerId, balance, onClose }: {
+function CreateLeaveModal({ workerId, balance, singleStageApproval, onClose }: {
   workerId: string;
   balance: Balance | null;
+  singleStageApproval?: boolean;
   onClose: () => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -258,7 +260,9 @@ function CreateLeaveModal({ workerId, balance, onClose }: {
           </Field>
 
           <div className="text-xs font-mono text-slate-600 px-2 py-1 bg-slate-50 rounded">
-            ℹ 결재 흐름: 신청 → 1차 결재 (관리자) → <strong className="text-accent">대표 최종 결재</strong> → 완료
+            {singleStageApproval
+              ? 'ℹ 결재 흐름: 신청 → 관리자 결재 → 완료'
+              : 'ℹ 결재 흐름: 신청 → 1차 결재 (관리자) → 대표 최종 결재 → 완료'}
           </div>
         </div>
 

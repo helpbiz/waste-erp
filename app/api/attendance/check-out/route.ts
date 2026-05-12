@@ -10,40 +10,51 @@ import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
+const ADMIN_ROLES = ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] as const;
+function isAdminRole(role: string): boolean {
+  return ADMIN_ROLES.includes(role as typeof ADMIN_ROLES[number]);
+}
+
 const Body = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (session.role !== 'WORKER') return NextResponse.json({ error: 'workers_only' }, { status: 403 });
+  if (session.role !== 'WORKER' && !isAdminRole(session.role)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'invalid_request', issues: parsed.error.flatten().fieldErrors },
       { status: 400 }
     );
   }
-  /* P0-residual: PIPA — GPS 라운딩 */
-  const rawLat = roundCoord(parsed.data.lat) as number;
-  const rawLng = roundCoord(parsed.data.lng) as number;
-  if (!isInsideKorea(rawLat, rawLng)) {
-    return NextResponse.json({ error: 'gps_out_of_range' }, { status: 422 });
-  }
 
-  /* 회사별 기능 권한 — attendanceGps OFF 면 좌표 저장 skip */
-  const gpsOn = session.contractorId ? await hasFeature(session.contractorId, 'attendanceGps') : false;
-  const lat: number | null = gpsOn ? rawLat : null;
-  const lng: number | null = gpsOn ? rawLng : null;
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  if (parsed.data.lat !== undefined && parsed.data.lng !== undefined) {
+    /* P0-residual: PIPA — GPS 라운딩 */
+    const rawLat = roundCoord(parsed.data.lat) as number;
+    const rawLng = roundCoord(parsed.data.lng) as number;
+    if (!isInsideKorea(rawLat, rawLng)) {
+      return NextResponse.json({ error: 'gps_out_of_range' }, { status: 422 });
+    }
+    const gpsOn = session.contractorId ? await hasFeature(session.contractorId, 'attendanceGps') : false;
+    lat = gpsOn ? rawLat : null;
+    lng = gpsOn ? rawLng : null;
+  }
 
   const today = todayKstDate();
   const workerId = BigInt(session.userId);
 
-  /* 출퇴근 제한 규칙 검증 (퇴근) */
-  if (session.contractorId) {
+  /* 출퇴근 제한 규칙 — 관리자는 제외 */
+  if (!isAdminRole(session.role) && session.contractorId) {
     const contractorId = BigInt(session.contractorId);
     const worker = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
     const restrictions = await prisma.punchRestriction.findMany({

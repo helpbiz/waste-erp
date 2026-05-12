@@ -10,9 +10,15 @@ import { hasFeature } from '@/lib/features';
 
 export const runtime = 'nodejs';
 
+const ADMIN_ROLES = ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] as const;
+type AdminRole = typeof ADMIN_ROLES[number];
+function isAdminRole(role: string): role is AdminRole {
+  return ADMIN_ROLES.includes(role as AdminRole);
+}
+
 const Body = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
   zoneId: z.union([z.string(), z.number()]).optional(),
 });
 
@@ -21,16 +27,15 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   }
-  if (session.role !== 'WORKER') {
-    /* 관리자가 대신 등록하는 케이스는 별도 엔드포인트(추후 /admin/check-in)에서 처리 */
-    return NextResponse.json({ error: 'workers_only' }, { status: 403 });
+  if (session.role !== 'WORKER' && !isAdminRole(session.role)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (!session.contractorId) {
     return NextResponse.json({ error: 'no_contractor_assigned' }, { status: 400 });
   }
 
   const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
+  const parsed = Body.safeParse(json ?? {});
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'invalid_request', issues: parsed.error.flatten().fieldErrors },
@@ -38,21 +43,63 @@ export async function POST(req: Request) {
     );
   }
 
-  /* P0-residual: PIPA — GPS 좌표는 ~10m 격자 라운딩 후 저장 */
-  const rawLat = roundCoord(parsed.data.lat) as number;
-  const rawLng = roundCoord(parsed.data.lng) as number;
   const { zoneId } = parsed.data;
-  if (!isInsideKorea(rawLat, rawLng)) {
-    return NextResponse.json(
-      { error: 'gps_out_of_range', message: '국내 위경도 박스 밖의 좌표입니다.' },
-      { status: 422 }
-    );
-  }
+  let lat: number | null = null;
+  let lng: number | null = null;
 
-  /* 회사별 기능 권한 — attendanceGps OFF 면 좌표 저장 skip (체크인 자체는 허용) */
-  const gpsOn = await hasFeature(session.contractorId, 'attendanceGps');
-  const lat: number | null = gpsOn ? rawLat : null;
-  const lng: number | null = gpsOn ? rawLng : null;
+  /* GPS 검증 — 관리자는 좌표 없이도 출근 허용 */
+  if (parsed.data.lat !== undefined && parsed.data.lng !== undefined) {
+    const rawLat = roundCoord(parsed.data.lat) as number;
+    const rawLng = roundCoord(parsed.data.lng) as number;
+    if (!isInsideKorea(rawLat, rawLng)) {
+      return NextResponse.json(
+        { error: 'gps_out_of_range', message: '국내 위경도 박스 밖의 좌표입니다.' },
+        { status: 422 }
+      );
+    }
+    const gpsOn = await hasFeature(session.contractorId, 'attendanceGps');
+    lat = gpsOn ? rawLat : null;
+    lng = gpsOn ? rawLng : null;
+
+    /* 출퇴근 제한 규칙 — 관리자는 적용 제외 */
+    if (!isAdminRole(session.role)) {
+      const contractorId = BigInt(session.contractorId);
+      const workerId = BigInt(session.userId);
+      const worker = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
+      const restrictions = await prisma.punchRestriction.findMany({
+        where: {
+          contractorId,
+          active: true,
+          OR: [{ departmentId: null }, { departmentId: worker?.departmentId ?? null }],
+        },
+      });
+      const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      const kstHHMM = `${String(kstNow.getUTCHours()).padStart(2, '0')}:${String(kstNow.getUTCMinutes()).padStart(2, '0')}`;
+      for (const r of restrictions) {
+        if (r.checkInFrom && kstHHMM < r.checkInFrom) {
+          return NextResponse.json({ error: 'punch_too_early', allowFrom: r.checkInFrom, rule: r.name }, { status: 403 });
+        }
+        if (r.checkInUntil && kstHHMM > r.checkInUntil) {
+          return NextResponse.json({ error: 'punch_too_late', allowUntil: r.checkInUntil, rule: r.name }, { status: 403 });
+        }
+        if (r.requireLocation && r.lat != null && r.lng != null && r.radiusMeters) {
+          const dist = haversineM(rawLat, rawLng, Number(r.lat), Number(r.lng));
+          if (dist > r.radiusMeters) {
+            return NextResponse.json({
+              error: 'outside_allowed_location',
+              rule: r.name,
+              location: r.locationLabel ?? '지정 장소',
+              distanceM: Math.round(dist),
+              allowedRadiusM: r.radiusMeters,
+            }, { status: 403 });
+          }
+        }
+      }
+    }
+  } else if (!isAdminRole(session.role)) {
+    /* 워커는 GPS 필수 */
+    return NextResponse.json({ error: 'gps_required' }, { status: 400 });
+  }
 
   const today = todayKstDate();
   const workerId = BigInt(session.userId);
@@ -105,4 +152,14 @@ export async function POST(req: Request) {
       status: record.status,
     },
   });
+}
+
+function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6_371_000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

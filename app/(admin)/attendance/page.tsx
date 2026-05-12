@@ -62,5 +62,23 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
     pendingApproval: rows.filter((r) => r.status === 'PENDING').length,
   };
 
-  return <AttendanceClient date={dateStr} rows={rows} summary={summary} canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'} />;
+  const adminSelfRecord = (session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN')
+    ? await prisma.attendanceRecord.findUnique({
+        where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: new Date(dateStr) } },
+      })
+    : null;
+
+  return (
+    <AttendanceClient
+      date={dateStr}
+      rows={rows}
+      summary={summary}
+      canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
+      selfRecord={adminSelfRecord ? {
+        recordId: adminSelfRecord.id.toString(),
+        checkInTime: adminSelfRecord.checkInTime?.toISOString() ?? null,
+        checkOutTime: adminSelfRecord.checkOutTime?.toISOString() ?? null,
+      } : null}
+    />
+  );
 }

@@ -3,6 +3,7 @@
  *  - 차량번호 변경은 중복 검사
  *  - status 변경(ACTIVE↔MAINTENANCE)도 여기서 처리
  *  - RETIRED로의 변경은 별도 endpoint (/retire)
+ * DELETE /api/vehicles/[id]  — 차량 삭제 (매니저, 진행 중 운행일지 없을 때만)
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -141,4 +142,44 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       status: updated.status,
     },
   });
+}
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  if (!isVehicleLogManager(session.role)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  const id = BigInt(params.id);
+  const target = await prisma.vehicle.findFirst({ where: { id, ...vehicleWhere(session) } });
+  if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  /* 진행 중(DRAFT/SUBMITTED) 운행일지가 있으면 삭제 불가 */
+  const activeLog = await prisma.vehicleLog.findFirst({
+    where: { vehicleId: id, status: { in: ['DRAFT', 'SUBMITTED'] } },
+    select: { id: true },
+  });
+  if (activeLog) {
+    return NextResponse.json(
+      { error: 'has_active_logs', message: '진행 중인 운행일지가 있어 삭제할 수 없습니다. 먼저 운행일지를 처리하세요.' },
+      { status: 409 }
+    );
+  }
+
+  await prisma.vehicle.delete({ where: { id } });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: BigInt(session.userId),
+      actorRole: session.role,
+      action: 'VEHICLE_DELETE',
+      resourceType: 'vehicle',
+      resourceId: id.toString(),
+      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+      metadata: { vehicleNo: target.vehicleNo } as object,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
 }

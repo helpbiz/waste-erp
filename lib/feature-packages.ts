@@ -44,6 +44,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       workerSuggestion: true,
       nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
       avac: false,       /* 자동집하시설 전용 — 해당 업체에만 개별 활성화 */
+      leaveApprovalSingleStage: false,
     },
   },
   {
@@ -64,6 +65,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       workerSuggestion: true,
       nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
       avac: false,
+      leaveApprovalSingleStage: false,
     },
   },
   {
@@ -84,6 +86,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       workerSuggestion: true,
       nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
       avac: false,
+      leaveApprovalSingleStage: false,
     },
   },
   {
@@ -104,6 +107,7 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       workerSuggestion: true,
       nocAccess: false,  /* SUPER_ADMIN 명시 승인 필요 — 패키지 기본 OFF */
       avac: false,
+      leaveApprovalSingleStage: false,
     },
   },
 ];

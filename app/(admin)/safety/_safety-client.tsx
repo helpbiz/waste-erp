@@ -7,7 +7,8 @@ import type { WeatherSnapshot } from '@/lib/weather';
 import WeatherAlertCard, { type WorkerOpt } from './_weather-alert';
 
 type TbmInfo = {
-  id: string; topic: string; content: string | null; signCount: number; createdBy: string;
+  id: string; topic: string; content: string | null; photoDataUrl: string | null;
+  department: string | null; signCount: number; createdBy: string;
   signedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
   unsignedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
 };
@@ -77,6 +78,8 @@ export default function SafetyClient({
   const [tbmEdit, setTbmEdit] = useState(false);
   const [tbmTopic, setTbmTopic] = useState(tbm?.topic ?? '');
   const [tbmContent, setTbmContent] = useState(tbm?.content ?? '');
+  const [tbmDept, setTbmDept] = useState(tbm?.department ?? '');
+  const [tbmPhoto, setTbmPhoto] = useState<string | null>(tbm?.photoDataUrl ?? null);
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return rows;
@@ -123,7 +126,12 @@ export default function SafetyClient({
       const res = await fetch('/api/tbm/today', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: tbmTopic.trim(), content: tbmContent.trim() || undefined }),
+        body: JSON.stringify({
+          topic: tbmTopic.trim(),
+          content: tbmContent.trim() || undefined,
+          department: tbmDept.trim() || undefined,
+          photoDataUrl: tbmPhoto || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -192,9 +200,13 @@ export default function SafetyClient({
           editing={tbmEdit}
           topic={tbmTopic}
           content={tbmContent}
+          dept={tbmDept}
+          photo={tbmPhoto}
           onTopicChange={setTbmTopic}
           onContentChange={setTbmContent}
-          onEdit={() => { setTbmEdit(true); setTbmTopic(tbm?.topic ?? ''); setTbmContent(tbm?.content ?? ''); }}
+          onDeptChange={setTbmDept}
+          onPhotoChange={setTbmPhoto}
+          onEdit={() => { setTbmEdit(true); setTbmTopic(tbm?.topic ?? ''); setTbmContent(tbm?.content ?? ''); setTbmDept(tbm?.department ?? ''); setTbmPhoto(tbm?.photoDataUrl ?? null); }}
           onCancel={() => setTbmEdit(false)}
           onSave={saveTbm}
           busy={busy}
@@ -558,20 +570,43 @@ function WeatherWidget({ w }: { w: WeatherSnapshot }) {
 }
 
 function TbmWidget({
-  tbm, isManager, editing, topic, content, onTopicChange, onContentChange, onEdit, onCancel, onSave, busy,
+  tbm, isManager, editing, topic, content, dept, photo,
+  onTopicChange, onContentChange, onDeptChange, onPhotoChange, onEdit, onCancel, onSave, busy,
 }: {
   tbm: TbmInfo | null;
   isManager: boolean;
   editing: boolean;
   topic: string;
   content: string;
+  dept: string;
+  photo: string | null;
   onTopicChange: (s: string) => void;
   onContentChange: (s: string) => void;
+  onDeptChange: (s: string) => void;
+  onPhotoChange: (s: string | null) => void;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
   busy: boolean;
 }) {
+  async function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      onPhotoChange(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = url;
+  }
+
   return (
     <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
       <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between">
@@ -582,7 +617,17 @@ function TbmWidget({
         {editing ? (
           <div className="space-y-2">
             <input value={topic} onChange={(e) => onTopicChange(e.target.value)} placeholder="오늘의 안전 주제 (예: 폭염 대비 수분 섭취)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
-            <textarea rows={3} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="상세 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <input value={dept} onChange={(e) => onDeptChange(e.target.value)} placeholder="팀명 (선택, 예: 1팀)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
+            <textarea rows={3} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="간략 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <div className="flex items-center gap-2">
+              <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md border-2 border-dashed border-line cursor-pointer hover:border-accent transition">
+                <span className="text-xs font-bold text-ink-muted">📷 TBM 사진</span>
+                {photo && <span className="text-[0.625rem] text-success font-bold">사진 선택됨</span>}
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoFile} />
+              </label>
+              {photo && <button onClick={() => onPhotoChange(null)} className="px-2 py-1.5 text-[0.625rem] font-bold text-danger border border-danger rounded hover:bg-red-50">삭제</button>}
+            </div>
+            {photo && <img src={photo} alt="TBM 사진 미리보기" className="w-full rounded-md max-h-40 object-cover border border-line" />}
             <div className="flex gap-2">
               <button onClick={onSave} disabled={busy || topic.trim().length < 2} className="flex-1 px-3 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
                 {busy ? '저장 중…' : '저장'}
@@ -592,8 +637,12 @@ function TbmWidget({
           </div>
         ) : tbm ? (
           <div>
-            <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
+              {tbm.department && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-slate-100 text-ink-muted border">{tbm.department}</span>}
+            </div>
             {tbm.content && <p className="text-xs font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
+            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-cover border border-line" />}
             <div className="flex items-center justify-between mt-2.5">
               <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
               {isManager && <button onClick={onEdit} className="text-xs font-extrabold text-accent hover:underline">수정</button>}

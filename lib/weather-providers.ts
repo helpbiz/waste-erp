@@ -66,10 +66,10 @@ function mapOpenWeatherCondition(id: number): WeatherCondition {
   return 'CLEAR';
 }
 
-async function fetchOpenWeather(): Promise<WeatherSnapshot> {
+async function fetchOpenWeather(overrideLat?: number, overrideLng?: number): Promise<WeatherSnapshot> {
   const apiKey = process.env.OPENWEATHER_API_KEY!;
-  const lat = Number(process.env.WEATHER_LAT ?? 37.4979);
-  const lng = Number(process.env.WEATHER_LNG ?? 127.0276);
+  const lat = overrideLat ?? Number(process.env.WEATHER_LAT ?? 37.4979);
+  const lng = overrideLng ?? Number(process.env.WEATHER_LNG ?? 127.0276);
   const region = process.env.WEATHER_REGION ?? '서울특별시 강남구';
 
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric&lang=kr`;
@@ -129,9 +129,9 @@ function mapWmoCode(code: number): WeatherCondition {
   return 'CLOUDY';
 }
 
-async function fetchOpenMeteo(): Promise<WeatherSnapshot> {
-  const lat = Number(process.env.WEATHER_LAT ?? 37.4979);
-  const lng = Number(process.env.WEATHER_LNG ?? 127.0276);
+async function fetchOpenMeteo(overrideLat?: number, overrideLng?: number): Promise<WeatherSnapshot> {
+  const lat = overrideLat ?? Number(process.env.WEATHER_LAT ?? 37.4979);
+  const lng = overrideLng ?? Number(process.env.WEATHER_LNG ?? 127.0276);
   const region = process.env.WEATHER_REGION ?? '서울특별시 강남구';
 
   const wxUrl =
@@ -267,7 +267,7 @@ async function fetchKmaItems(
   return items;
 }
 
-async function fetchKma(): Promise<WeatherSnapshot> {
+async function fetchKma(_overrideLat?: number, _overrideLng?: number): Promise<WeatherSnapshot> {
   const apiKey = process.env.KMA_API_KEY;
   if (!apiKey) throw new Error('KMA_API_KEY not set');
   const nx = process.env.KMA_GRID_NX ?? '61';
@@ -334,9 +334,20 @@ async function fetchKma(): Promise<WeatherSnapshot> {
 }
 
 /** Provider 선택 + 5분 캐시 + 폴백 */
-export async function fetchWeatherCached(): Promise<WeatherSnapshot & { provider: string; cacheHit: boolean }> {
+export type WeatherLocation = {
+  lat?: number;
+  lng?: number;
+  region?: string;
+};
+
+export async function fetchWeatherCached(location?: WeatherLocation): Promise<WeatherSnapshot & { provider: string; cacheHit: boolean }> {
   const provider = (process.env.WEATHER_PROVIDER ?? 'mock').toLowerCase();
-  const cached = cache.get(provider);
+  /* 위치가 주어진 경우 캐시 키를 위치 기반으로 분리 (1km 격자 반올림) */
+  const locKey = location?.lat != null && location?.lng != null
+    ? `${Math.round(location.lat * 10) / 10},${Math.round(location.lng * 10) / 10}`
+    : 'default';
+  const cacheKey = `${provider}:${locKey}`;
+  const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
     return { ...cached.data, provider, cacheHit: true };
   }
@@ -345,12 +356,12 @@ export async function fetchWeatherCached(): Promise<WeatherSnapshot & { provider
   let usedProvider = provider;
   try {
     if (provider === 'open-meteo' || provider === 'openmeteo') {
-      data = await fetchOpenMeteo();
+      data = await fetchOpenMeteo(location?.lat, location?.lng);
       usedProvider = 'open-meteo';
     } else if (provider === 'openweather' && process.env.OPENWEATHER_API_KEY) {
-      data = await fetchOpenWeather();
+      data = await fetchOpenWeather(location?.lat, location?.lng);
     } else if (provider === 'kma' && process.env.KMA_API_KEY) {
-      data = await fetchKma();
+      data = await fetchKma(location?.lat, location?.lng);
     } else {
       data = getMockWeather();
       usedProvider = 'mock';
@@ -361,6 +372,11 @@ export async function fetchWeatherCached(): Promise<WeatherSnapshot & { provider
     usedProvider = `${provider}-fallback`;
   }
 
-  cache.set(provider, { ts: Date.now(), data });
+  /* 위치 기반 region 레이블 덮어쓰기 */
+  if (location?.region) {
+    data = { ...data, region: location.region };
+  }
+
+  cache.set(cacheKey, { ts: Date.now(), data });
   return { ...data, provider: usedProvider, cacheHit: false };
 }

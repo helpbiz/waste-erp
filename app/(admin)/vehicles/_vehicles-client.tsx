@@ -64,6 +64,7 @@ export default function VehiclesClient({
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<VehicleRow | 'NEW' | null>(null);
   const [retireFor, setRetireFor] = useState<VehicleRow | null>(null);
+  const [deleteFor, setDeleteFor] = useState<VehicleRow | null>(null);
 
   const running = vehicles.filter((v) => v.status === 'ACTIVE' && v.logStatus).length;
   const maintenance = vehicles.filter((v) => v.status === 'MAINTENANCE').length;
@@ -71,12 +72,13 @@ export default function VehiclesClient({
   const totalWaste = logs.reduce((sum, l) => sum + (l.wasteWeightKg ?? 0), 0);
   const submittedCount = logs.filter((l) => l.status === 'SUBMITTED').length;
 
-  async function call(path: string, body?: object) {
+  async function call(path: string, body?: object, method?: string) {
     setBusy(true);
     setError(null);
     try {
+      const m = method ?? (body !== undefined ? 'POST' : 'DELETE');
       const res = await fetch(path, {
-        method: 'POST',
+        method: m,
         headers: body ? { 'Content-Type': 'application/json' } : {},
         body: body ? JSON.stringify(body) : undefined,
       });
@@ -338,6 +340,7 @@ export default function VehiclesClient({
               setBusy(false);
             }
           }}
+          onDelete={editing !== 'NEW' ? () => { setEditing(null); setDeleteFor(editing); } : undefined}
           busy={busy}
         />
       )}
@@ -349,6 +352,17 @@ export default function VehiclesClient({
           onSubmit={async (reason) => {
             const ok = await call(`/api/vehicles/${retireFor.id}/retire`, { reason });
             if (ok) setRetireFor(null);
+          }}
+        />
+      )}
+
+      {deleteFor && (
+        <DeleteVehicleModal
+          vehicle={deleteFor}
+          onCancel={() => setDeleteFor(null)}
+          onSubmit={async () => {
+            const ok = await call(`/api/vehicles/${deleteFor.id}`, undefined);
+            if (ok) setDeleteFor(null);
           }}
         />
       )}
@@ -418,12 +432,14 @@ function VehicleFormModal({
   workers,
   onCancel,
   onSubmit,
+  onDelete,
   busy,
 }: {
   initial: VehicleRow | null;
   workers: WorkerOpt[];
   onCancel: () => void;
   onSubmit: (body: Partial<VehicleFormPayload>) => Promise<boolean>;
+  onDelete?: () => void;
   busy: boolean;
 }) {
   const isEdit = !!initial;
@@ -616,6 +632,15 @@ function VehicleFormModal({
           {hasDuplicateCrew && (
             <span className="text-xs font-extrabold text-danger mr-auto">⚠ 운전자/동승자 1/2는 모두 다른 사람이어야 합니다</span>
           )}
+          {isEdit && onDelete && (
+            <button
+              onClick={onDelete}
+              disabled={busy}
+              className="px-4 py-2 rounded-md border border-danger text-danger text-sm font-extrabold hover:bg-danger hover:text-white disabled:opacity-50 mr-auto"
+            >
+              삭제
+            </button>
+          )}
           <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface">취소</button>
           <button onClick={handleSave} disabled={!canSubmit} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
             {busy ? '저장 중…' : isEdit ? '저장' : '등록'}
@@ -686,8 +711,69 @@ function translateError(code?: string): string | null {
     case 'no_contractor': return '소속 위탁업체가 지정되지 않았습니다.';
     case 'not_found': return '차량을 찾을 수 없습니다.';
     case 'already_retired': return '이미 폐차 처리된 차량입니다.';
+    case 'has_active_logs': return '진행 중인 운행일지가 있어 삭제할 수 없습니다.';
     default: return null;
   }
+}
+
+function DeleteVehicleModal({
+  vehicle,
+  onCancel,
+  onSubmit,
+}: {
+  vehicle: VehicleRow;
+  onCancel: () => void;
+  onSubmit: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(translateError(data?.error) ?? data?.message ?? '삭제 실패');
+        return;
+      }
+      await onSubmit();
+    } catch {
+      setError('네트워크 오류');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onCancel}>
+      <div className="w-full max-w-[440px] bg-surface rounded-xl shadow-modal" onClick={(e) => e.stopPropagation()}>
+        <header className="px-5 py-4 bg-red-50 border-b-2 border-danger">
+          <h3 className="text-base font-extrabold text-danger">⚠ 차량 삭제</h3>
+          <div className="text-[0.6875rem] font-mono font-bold text-danger mt-0.5">{vehicle.vehicleNo} · {vehicle.vehicleType}</div>
+        </header>
+        <div className="p-5">
+          <p className="text-xs font-semibold text-ink mb-3 leading-relaxed">
+            차량과 관련된 모든 데이터(운행일지 등)가 영구 삭제됩니다. 진행 중인 운행일지가 있으면 삭제할 수 없습니다.
+          </p>
+          {error && (
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-800 mb-2">{error}</div>
+          )}
+        </div>
+        <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
+          <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface">취소</button>
+          <button
+            onClick={handleDelete}
+            disabled={busy}
+            className="px-4 py-2 rounded-md bg-danger text-white text-sm font-extrabold hover:bg-red-700 disabled:opacity-50"
+          >
+            {busy ? '삭제 중…' : '삭제'}
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
 }
 
 function RejectModal({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (reason: string) => Promise<void> }) {

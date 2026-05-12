@@ -216,24 +216,26 @@ model Contractor {
   adminDongs         AdminDong[]
   users              User[]
   departments        Department[]
+  punchRestrictions  PunchRestriction[]
   approvalPolicies   ApprovalPolicy[]
   bulkyWasteConfig   BulkyWasteConfig?
   liveTrackingConfig LiveTrackingConfig?
   wasteRecords       WasteTreatmentRecord[]
   recyclingIntakes   RecyclingCenterIntake[]
   attendances        AttendanceRecord[]
-  vehicles           Vehicle[]
-  costCalcs          CostCalculation[]
-  complaints         Complaint[]
-  safetyReports      SafetyReport[]
-  tbmSessions        TbmSession[]
-  healthRecords      HealthRecord[]
+  vehicles            Vehicle[]
+  costCalcs           CostCalculation[]
+  complaints          Complaint[]
+  safetyReports       SafetyReport[]
+  tbmSessions         TbmSession[]
+  healthRecords       HealthRecord[]
   // treatmentFacilities 는 Municipality 로 이관됨 — Contractor 는 muni 산하 facility 를 자동 사용
-  reportTemplates    ReportTemplate[]
-  features           ContractorFeature[]
+  reportTemplates     ReportTemplate[]
+  features            ContractorFeature[]
   workerSuggestions   WorkerSuggestion[]
   contractorPositions ContractorPosition[]
   contractorRanks     ContractorRank[]
+  vehicleGpsPositions VehicleGpsPosition[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -396,6 +398,7 @@ model User {
   contractorRank         ContractorRank?         @relation("UserContractorRank", fields: [rankId], references: [id])
   contractorPositionsCreated ContractorPosition[] @relation("ContractorPositionCreator")
   contractorRanksCreated     ContractorRank[]     @relation("ContractorRankCreator")
+  punchRestrictionsCreated   PunchRestriction[]   @relation("PunchRestrictionCreator")
 
   @@index([contractorId])
   @@index([role])
@@ -546,12 +549,13 @@ model Vehicle {
   initialMileage     Int?      @map("initial_mileage") // 등록 시 odometer
   totalMileage       Int?      @map("total_mileage") // 자동 갱신 = initial + sum approved logs
 
-  contractor Contractor              @relation(fields: [contractorId], references: [id])
-  driver     User?                   @relation("VehicleDriver", fields: [driverId], references: [id])
-  passenger1 User?                   @relation("VehiclePassenger1", fields: [passenger1Id], references: [id])
-  passenger2 User?                   @relation("VehiclePassenger2", fields: [passenger2Id], references: [id])
-  logs       VehicleLog[]
-  intakes    RecyclingCenterIntake[] @relation("VehicleIntake")
+  contractor  Contractor              @relation(fields: [contractorId], references: [id])
+  driver      User?                   @relation("VehicleDriver", fields: [driverId], references: [id])
+  passenger1  User?                   @relation("VehiclePassenger1", fields: [passenger1Id], references: [id])
+  passenger2  User?                   @relation("VehiclePassenger2", fields: [passenger2Id], references: [id])
+  logs        VehicleLog[]
+  intakes     RecyclingCenterIntake[] @relation("VehicleIntake")
+  gpsPosition VehicleGpsPosition?
 
   @@unique([contractorId, vehicleNo])
   @@index([driverId])
@@ -853,6 +857,7 @@ model Department {
   head              User?              @relation("DepartmentHead", fields: [headUserId], references: [id])
   users             User[]
   workerSuggestions WorkerSuggestion[]
+  punchRestrictions PunchRestriction[]
 
   @@unique([contractorId, parentId, name])
   @@index([contractorId])
@@ -1082,6 +1087,25 @@ model LiveTrackingConfig {
   contractor Contractor @relation(fields: [contractorId], references: [id])
 
   @@map("live_tracking_configs")
+}
+
+/// GPS 단말 또는 외부 시스템이 Push하는 차량 실시간 위치 — gisProvider='local' 시 사용
+model VehicleGpsPosition {
+  id           BigInt   @id @default(autoincrement())
+  vehicleId    BigInt   @unique @map("vehicle_id")
+  contractorId BigInt   @map("contractor_id")
+  lat          Decimal  @db.Decimal(10, 7)
+  lng          Decimal  @db.Decimal(10, 7)
+  speed        Int?     // km/h
+  heading      Int?     // 0-360 deg
+  source       String?  @db.VarChar(50)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id])
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+
+  @@index([contractorId])
+  @@map("vehicle_gps_positions")
 }
 
 /// 지자체 관리자 접근 정책 — 슈퍼관리자가 지자체별로 화면·보고서 권한 지정
@@ -1323,4 +1347,43 @@ model ContractorRank {
   @@unique([contractorId, name])
   @@index([contractorId, active])
   @@map("contractor_ranks")
+}
+
+/// 출퇴근 제한 규칙 — 부서별 지정 장소(GPS 반경) + 허용 시간대
+/// departmentId = null → 해당 contractor 전체 적용
+model PunchRestriction {
+  id             BigInt   @id @default(autoincrement())
+  contractorId   BigInt   @map("contractor_id")
+  departmentId   BigInt?  @map("department_id")
+  name           String   @db.VarChar(80)
+  /// 허용 출근 시작 (HH:MM, KST)
+  checkInFrom    String?  @map("check_in_from") @db.VarChar(5)
+  /// 허용 출근 종료 (HH:MM, KST)
+  checkInUntil   String?  @map("check_in_until") @db.VarChar(5)
+  /// 허용 퇴근 시작 (HH:MM, KST)
+  checkOutFrom   String?  @map("check_out_from") @db.VarChar(5)
+  /// 허용 퇴근 종료 (HH:MM, KST)
+  checkOutUntil  String?  @map("check_out_until") @db.VarChar(5)
+  /// 위치 제한 사용 여부
+  requireLocation Boolean @default(false) @map("require_location")
+  /// 허용 GPS 중심 위도
+  lat            Decimal? @db.Decimal(10, 7)
+  /// 허용 GPS 중심 경도
+  lng            Decimal? @db.Decimal(11, 7)
+  /// 허용 반경 (미터)
+  radiusMeters   Int?     @map("radius_meters")
+  /// 위치 이름/설명 (예: "차고지", "사무소 앞")
+  locationLabel  String?  @map("location_label") @db.VarChar(100)
+  active         Boolean  @default(true)
+  createdBy      BigInt?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  contractor Contractor  @relation(fields: [contractorId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creator    User?       @relation("PunchRestrictionCreator", fields: [createdBy], references: [id])
+
+  @@index([contractorId, active])
+  @@index([contractorId, departmentId])
+  @@map("punch_restrictions")
 }

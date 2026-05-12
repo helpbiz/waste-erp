@@ -9,7 +9,7 @@ import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 
 type ChecklistDef = { key: string; label: string };
 type ItemState = ChecklistDef & { ok: boolean };
-type TbmInfo = { id: string; topic: string; content: string | null; signed: boolean; signCount: number };
+type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; signed: boolean; signCount: number };
 export type FacilityOption = { id: string; name: string };
 
 const ICONS: Record<string, string> = {
@@ -77,6 +77,7 @@ export default function SafetyWorkerClient({
           id: data.session.id,
           topic: data.session.topic,
           content: data.session.content,
+          photoDataUrl: data.session.photoDataUrl ?? null,
           signed: data.signed,
           signCount: data.session.signCount,
         });
@@ -350,6 +351,7 @@ export default function SafetyWorkerClient({
           <div className="p-4">
             <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
             {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
+            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="w-full rounded-lg max-h-52 object-cover border border-line mb-3" />}
             {!tbm.signed && !tbmShowPad && (
               /* P1: CTA 14px → 16px (text-base) min-h-14 */
               <button

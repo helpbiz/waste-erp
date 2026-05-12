@@ -1,6 +1,7 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { leaveRemaining, recommendedAnnualLeaveDays } from '@/lib/users';
+import { hasFeature } from '@/lib/features';
 import LeaveClient from './_leave-client';
 
 export const dynamic = 'force-dynamic';
@@ -10,14 +11,15 @@ export default async function WorkerLeavePage() {
   const workerId = BigInt(session.userId);
   const year = new Date().getFullYear();
 
-  const [me, balance, requests] = await Promise.all([
-    prisma.user.findUnique({ where: { id: workerId }, select: { hireDate: true, name: true } }),
+  const [me, balance, requests, singleStageApproval] = await Promise.all([
+    prisma.user.findUnique({ where: { id: workerId }, select: { hireDate: true, name: true, contractorId: true } }),
     prisma.annualLeaveBalance.findUnique({ where: { workerId_year: { workerId, year } } }),
     prisma.leaveRequest.findMany({
       where: { workerId },
       orderBy: [{ status: 'asc' }, { startDate: 'desc' }],
       take: 30,
     }),
+    session.contractorId ? hasFeature(session.contractorId, 'leaveApprovalSingleStage') : Promise.resolve(false),
   ]);
   const recommend = recommendedAnnualLeaveDays(me?.hireDate ?? null);
 
@@ -47,6 +49,7 @@ export default async function WorkerLeavePage() {
         createdAt: r.createdAt.toISOString(),
       }))}
       workerId={session.userId}
+      singleStageApproval={singleStageApproval}
     />
   );
 }

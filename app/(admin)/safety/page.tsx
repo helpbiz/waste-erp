@@ -81,25 +81,57 @@ export default async function SafetyPage() {
     reviewer: r.reviewer?.name ?? null,
   }));
 
+  /* 거래처(위탁업체) 주소/좌표로 지역 날씨 적용 */
+  const contractorInfo = session.contractorId
+    ? await prisma.contractor.findUnique({
+        where: { id: BigInt(session.contractorId) },
+        select: { garageAddress: true, garageLat: true, garageLng: true },
+      })
+    : null;
+  const weatherLocation = contractorInfo?.garageLat && contractorInfo?.garageLng
+    ? {
+        lat: Number(contractorInfo.garageLat),
+        lng: Number(contractorInfo.garageLng),
+        region: contractorInfo.garageAddress ?? undefined,
+      }
+    : contractorInfo?.garageAddress
+    ? { region: contractorInfo.garageAddress }
+    : undefined;
+
   return (
     <SafetyClient
       rows={rows}
       isManager={isSafetyManager(session.role)}
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
-      weather={await fetchWeatherCached()}
+      weather={await fetchWeatherCached(weatherLocation)}
       tbm={tbm
-        ? {
-            id: tbm.id.toString(),
-            topic: tbm.topic,
-            content: tbm.content,
-            signCount: tbm.signatures.length,
-            createdBy: tbm.creator.name,
-            signedWorkers: tbm.signatures.map((s) => ({ id: s.worker.id.toString(), name: s.worker.name, employeeNo: s.worker.employeeNo })),
-            unsignedWorkers: workersList
-              .filter((w) => !tbm.signatures.find((s) => s.worker.id === w.id))
-              .map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: null })),
-          }
+        ? (() => {
+            let contentText: string | null = tbm.content;
+            let photoDataUrl: string | null = null;
+            if (tbm.content) {
+              try {
+                const p = JSON.parse(tbm.content);
+                if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
+                  contentText = p.text ?? null;
+                  photoDataUrl = p.photoDataUrl ?? null;
+                }
+              } catch {}
+            }
+            return {
+              id: tbm.id.toString(),
+              topic: tbm.topic,
+              content: contentText,
+              photoDataUrl,
+              department: tbm.department ?? null,
+              signCount: tbm.signatures.length,
+              createdBy: tbm.creator.name,
+              signedWorkers: tbm.signatures.map((s) => ({ id: s.worker.id.toString(), name: s.worker.name, employeeNo: s.worker.employeeNo })),
+              unsignedWorkers: workersList
+                .filter((w) => !tbm.signatures.find((s) => s.worker.id === w.id))
+                .map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: null })),
+            };
+          })()
         : null
       }
       alertWorkers={workersList.map((w) => ({ id: w.id.toString(), name: w.name }))}

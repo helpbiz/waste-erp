@@ -88,7 +88,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
       const data = await res.json();
       if (!res.ok) {
         hapticError();
-        toast.error(translate(data?.error) ?? '서버 오류가 발생했습니다.');
+        toast.error(translate(data?.error, data) ?? '서버 오류가 발생했습니다.');
         return;
       }
       hapticSuccess();
@@ -245,7 +245,7 @@ function workedDuration(s: { checkInTime: string | null; checkOutTime: string | 
   return `${h}시간 ${m}분`;
 }
 
-function translate(code?: string): string | null {
+function translate(code?: string, data?: Record<string, unknown>): string | null {
   switch (code) {
     case 'gps_out_of_range': return 'GPS 좌표가 국내 범위를 벗어났습니다.';
     case 'already_checked_in': return '이미 출근 등록되어 있습니다.';
@@ -255,6 +255,9 @@ function translate(code?: string): string | null {
     case 'workers_only': return '근로자 계정만 출퇴근을 등록할 수 있습니다.';
     case 'unauthenticated': return '로그인이 만료되었습니다.';
     case 'invalid_request': return '요청 형식이 올바르지 않습니다.';
+    case 'punch_too_early': return `출근 가능 시간이 아닙니다. ${data?.allowFrom ?? ''} 이후에 시도해 주세요. (규칙: ${data?.rule ?? ''})`;
+    case 'punch_too_late': return `출퇴근 허용 시간이 지났습니다. ${data?.allowUntil ?? ''} 이전에 등록해 주세요. (규칙: ${data?.rule ?? ''})`;
+    case 'outside_allowed_location': return `지정 장소(${data?.location ?? ''})에서만 등록 가능합니다. 현재 위치가 ${data?.distanceM ?? '?'}m 이탈되어 있습니다.`;
     default: return null;
   }
 }

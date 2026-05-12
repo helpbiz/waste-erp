@@ -18,7 +18,19 @@ const PostBody = z.object({
   content: z.string().trim().max(2000).optional(),
   facilityId: z.string().optional(),
   department: z.string().max(50).optional(),
+  photoDataUrl: z.string().max(3_000_000).optional(),
 });
+
+function parseTbmContent(raw: string | null): { text: string | null; photoDataUrl: string | null } {
+  if (!raw) return { text: null, photoDataUrl: null };
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
+      return { text: p.text ?? null, photoDataUrl: p.photoDataUrl ?? null };
+    }
+  } catch {}
+  return { text: raw, photoDataUrl: null };
+}
 
 function isManager(role: string): boolean {
   return role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
@@ -56,13 +68,15 @@ export async function GET(req: Request) {
     where: { role: 'WORKER', status: 'ACTIVE', contractorId: BigInt(session.contractorId) },
   });
 
+  const parsed = parseTbmContent(tbm?.content ?? null);
   return NextResponse.json({
     session: tbm
       ? {
           id: tbm.id.toString(),
           sessionDate: tbm.sessionDate.toISOString().slice(0, 10),
           topic: tbm.topic,
-          content: tbm.content,
+          content: parsed.text,
+          photoDataUrl: parsed.photoDataUrl,
           createdBy: tbm.creator.name,
           signCount: tbm.signatures.length,
           totalWorkers,
@@ -101,6 +115,15 @@ export async function POST(req: Request) {
   const contractorId = BigInt(session.contractorId);
   const department = parsed.data.department ?? null;
 
+  /* 사진 또는 텍스트가 있으면 JSON으로 묶어 content 필드에 저장 */
+  let contentToStore: string | null = null;
+  if (parsed.data.content || parsed.data.photoDataUrl) {
+    contentToStore = JSON.stringify({
+      text: parsed.data.content ?? null,
+      photoDataUrl: parsed.data.photoDataUrl ?? null,
+    });
+  }
+
   // 시설 담당자: 본인 집하장으로 강제 (다른 집하장 작성 차단)
   let facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
   if (!isManager(session.role)) {
@@ -116,7 +139,7 @@ export async function POST(req: Request) {
   const tbm = existing
     ? await prisma.tbmSession.update({
         where: { id: existing.id },
-        data: { topic: parsed.data.topic, content: parsed.data.content ?? null },
+        data: { topic: parsed.data.topic, content: contentToStore },
       })
     : await prisma.tbmSession.create({
         data: {
@@ -125,7 +148,7 @@ export async function POST(req: Request) {
           department,
           sessionDate: today,
           topic: parsed.data.topic,
-          content: parsed.data.content ?? null,
+          content: contentToStore,
           createdBy: BigInt(session.userId),
         },
       });
