@@ -1656,19 +1656,36 @@ function GisConfigTab() {
         <select value={form.gisProvider} onChange={(e) => setForm({ ...form, gisProvider: e.target.value })}
           className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
           <option value="simulation">simulation (시안 시뮬)</option>
+          <option value="local">local (GPS 단말 직접 수신)</option>
           <option value="helpbiz">helpbiz (gis.helpbiz.kr)</option>
           <option value="naver">naver maps</option>
           <option value="kakao">kakao mobility</option>
         </select>
       </Field>
-      <Field label="GIS Base URL (API)">
-        <input value={form.gisBaseUrl} onChange={(e) => setForm({ ...form, gisBaseUrl: e.target.value })}
-          placeholder="https://gis.helpbiz.kr/api"
-          className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono" />
-      </Field>
-      <Field label="API Key (저장 시 AES-256 암호화)">
+
+      {form.gisProvider === 'local' && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 space-y-1.5 text-[0.6875rem] font-mono">
+          <div className="font-extrabold text-emerald-900">📡 GPS 단말 직접 수신 모드</div>
+          <div className="text-emerald-800">GPS 단말이 아래 엔드포인트로 위치를 Push합니다.</div>
+          <div className="bg-white border border-emerald-200 rounded px-2 py-1 break-all">
+            POST /api/live-tracking/gps-ingest?contractorId=<em>CONTRACTOR_ID</em>
+          </div>
+          <div className="text-emerald-700">아래 <strong>인제스트 토큰</strong> 항목에 임의 토큰을 입력 후 저장하세요.</div>
+          <div className="text-emerald-700">단말 요청 헤더: <code className="bg-white px-1 rounded">Authorization: Bearer &lt;토큰&gt;</code></div>
+          <div className="text-emerald-700">바디: <code className="bg-white px-1 rounded">{'{"vehicleNo":"12가3456","lat":37.49,"lng":127.03,"speed":30,"heading":90}'}</code></div>
+        </div>
+      )}
+
+      {form.gisProvider !== 'local' && (
+        <Field label="GIS Base URL (API)">
+          <input value={form.gisBaseUrl} onChange={(e) => setForm({ ...form, gisBaseUrl: e.target.value })}
+            placeholder="https://gis.helpbiz.kr/api"
+            className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono" />
+        </Field>
+      )}
+      <Field label={form.gisProvider === 'local' ? '인제스트 토큰 (저장 시 AES-256 암호화)' : 'API Key (저장 시 AES-256 암호화)'}>
         <input type="password" value={form.apiKey} onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-          placeholder={config?.hasApiKey ? '••••••• (저장됨, 변경 시만 입력)' : 'API Key'}
+          placeholder={config?.hasApiKey ? '••••••• (저장됨, 변경 시만 입력)' : form.gisProvider === 'local' ? '임의 토큰 입력 (예: 랜덤 32자)' : 'API Key'}
           className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono" />
       </Field>
       <Field label="Embed URL (외부 GIS 화면 직접 삽입 — 선택)">
