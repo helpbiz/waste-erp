@@ -294,7 +294,7 @@ export default function ComplaintsClient({
             </div>
 
             {/* 액션 영역 */}
-            {!isMuni && (c.status !== 'COMPLETED' && c.status !== 'REJECTED') && (
+            {!isMuni && (
               <div className="px-5 py-3 bg-surface-soft border-t border-line flex flex-wrap gap-2">
                 {isManager && (
                   <button
@@ -315,15 +315,16 @@ export default function ComplaintsClient({
                       처리 시작
                     </button>
                   )}
-                {(c.assignee?.id === userId || isManager) && (
-                  <button
-                    onClick={() => { setOpenCompleteId(c.id); setOpenAssignId(null); setOpenRejectId(null); }}
-                    disabled={busy}
-                    className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md bg-success text-white text-sm sm:text-xs font-extrabold hover:bg-green-700 transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
-                  >
-                    처리 완료
-                  </button>
-                )}
+                {c.status !== 'COMPLETED' && c.status !== 'REJECTED' &&
+                  (c.assignee?.id === userId || isManager) && (
+                    <button
+                      onClick={() => { setOpenCompleteId(c.id); setOpenAssignId(null); setOpenRejectId(null); }}
+                      disabled={busy}
+                      className="px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-md bg-success text-white text-sm sm:text-xs font-extrabold hover:bg-green-700 transition active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-0"
+                    >
+                      처리 완료
+                    </button>
+                  )}
                 {isManager && (
                   <button
                     onClick={() => setEditTarget(c)}
@@ -333,7 +334,7 @@ export default function ComplaintsClient({
                     수정
                   </button>
                 )}
-                {isManager && (
+                {c.status !== 'COMPLETED' && c.status !== 'REJECTED' && isManager && (
                   <button
                     onClick={() => { setOpenRejectId(c.id); setOpenAssignId(null); setOpenCompleteId(null); }}
                     disabled={busy}
@@ -369,8 +370,11 @@ export default function ComplaintsClient({
               <CompleteNoteForm
                 workers={workers}
                 onCancel={() => setOpenCompleteId(null)}
-                onSubmit={async (note) => {
-                  const ok = await call(`/api/complaints/${c.id}/complete`, { resolveNote: note });
+                onSubmit={async (note, taggedUserId) => {
+                  const ok = await call(`/api/complaints/${c.id}/complete`, {
+                    resolveNote: note,
+                    taggedUserId: taggedUserId || undefined,
+                  });
                   if (ok) setOpenCompleteId(null);
                 }}
               />
@@ -643,14 +647,14 @@ function CompleteNoteForm({
   onCancel,
 }: {
   workers: Worker[];
-  onSubmit: (note: string) => Promise<void>;
+  onSubmit: (note: string, taggedUserId: string) => Promise<void>;
   onCancel: () => void;
 }) {
   const [note, setNote] = useState('');
   const [taggedWorker, setTaggedWorker] = useState('');
-  const builtNote = taggedWorker
-    ? `${note.trim()} → @${workers.find((w) => w.id === taggedWorker)?.name ?? taggedWorker} 알림`
-    : note.trim();
+  const taggedName = workers.find((w) => w.id === taggedWorker)?.name ?? '';
+  const displayNote = taggedName ? `${note.trim()} → @${taggedName} 알림` : note.trim();
+
   return (
     <div className="px-5 py-4 bg-surface-soft border-t border-line space-y-3">
       <div className="text-xs font-extrabold text-ink">처리 완료 메모</div>
@@ -663,7 +667,9 @@ function CompleteNoteForm({
       />
       {workers.length > 0 && (
         <div>
-          <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">담당자 태그 (선택 — 알림 대상)</label>
+          <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">
+            담당자 태그 (선택 — 태그 시 해당 워커에게 개인 알림 발송)
+          </label>
           <select
             value={taggedWorker}
             onChange={(e) => setTaggedWorker(e.target.value)}
@@ -672,11 +678,16 @@ function CompleteNoteForm({
             <option value="">— 태그 없음 —</option>
             {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
+          {taggedWorker && (
+            <p className="text-[0.6875rem] text-accent mt-1">
+              ✓ {taggedName}님의 공지사항에 알림이 전송됩니다.
+            </p>
+          )}
         </div>
       )}
       <div className="flex gap-2">
         <button
-          onClick={() => onSubmit(builtNote)}
+          onClick={() => onSubmit(displayNote, taggedWorker)}
           disabled={note.trim().length < 2}
           className="px-4 py-2 rounded-md text-white text-sm font-extrabold transition active:scale-95 disabled:opacity-50 bg-success hover:bg-green-700"
         >

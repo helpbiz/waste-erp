@@ -37,7 +37,7 @@ const TYPES: { id: Type; label: string; color: string }[] = [
   { id: 'OTHER',        label: '기타',     color: 'bg-slate-100 text-ink-muted border-slate-200' },
 ];
 
-export default function ComplaintClient() {
+export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: string; name: string }[] }) {
   /* 사용자 요청 2026-05-02: 탭 구조 — 내 민원 처리 + 신규 등록.
      기본은 'register' (지도 즉시 가시); inbox 활성건이 있으면 뱃지 표시. */
   const [tab, setTab] = useState<'inbox' | 'register'>('register');
@@ -181,7 +181,7 @@ export default function ComplaintClient() {
         </button>
       </div>
 
-      {tab === 'inbox' && <InboxPanel />}
+      {tab === 'inbox' && <InboxPanel coworkers={coworkers} />}
 
       {tab === 'register' && (
       <>
@@ -332,7 +332,7 @@ const TYPE_LABEL: Record<string, string> = {
   PICKUP_MISS: '수거미비', ILLEGAL_DUMP: '불법투기', ODOR_NOISE: '악취/소음', BULKY_WASTE: '대형폐기물', OTHER: '기타',
 };
 
-function InboxPanel() {
+function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string }[] }) {
   const toast = useToast();
   const [items, setItems] = useState<InboxComplaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -465,6 +465,7 @@ function InboxPanel() {
       {completeModal && (
         <CompleteModal
           {...completeModal}
+          coworkers={coworkers}
           onClose={() => setCompleteModal(null)}
           onDone={() => { setCompleteModal(null); load(); }}
         />
@@ -483,21 +484,57 @@ function FilterBtn({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function CompleteModal({ id, mode, onClose, onDone }: { id: string; mode: 'complete' | 'reject'; onClose: () => void; onDone: () => void }) {
+function CompleteModal({
+  id, mode, coworkers, onClose, onDone,
+}: {
+  id: string;
+  mode: 'complete' | 'reject';
+  coworkers: { id: string; name: string }[];
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const toast = useToast();
   const [note, setNote] = useState('');
+  const [taggedUserId, setTaggedUserId] = useState('');
+  const [photoData, setPhotoData] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const taggedName = coworkers.find((w) => w.id === taggedUserId)?.name ?? '';
+
+  async function capturePhoto() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => setPhotoData(e.target?.result as string ?? null);
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
   async function submit() {
-    if (mode === 'reject' && !note.trim()) {
-      toast.error('반려 사유 필수');
+    if (mode === 'reject' && note.trim().length < 2) {
+      toast.error('반려 사유를 2자 이상 입력하세요');
       return;
     }
     setBusy(true);
-    const r = await fetch(`/api/complaints/${id}/${mode === 'complete' ? 'complete' : 'reject'}`, {
+    const displayNote = taggedName
+      ? `${note.trim()} → @${taggedName} 알림`
+      : note.trim();
+    const body: Record<string, unknown> = { note: displayNote };
+    if (mode === 'complete') {
+      if (taggedUserId) body.taggedUserId = taggedUserId;
+      if (photoData) body.requestImage = photoData;
+    }
+    const endpoint = mode === 'complete' ? 'complete' : 'reject';
+    const r = await fetch(`/api/complaints/${id}/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ note: note.trim() }),
+      body: JSON.stringify(body),
     });
     setBusy(false);
     if (r.ok) {
@@ -511,23 +548,78 @@ function CompleteModal({ id, mode, onClose, onDone }: { id: string; mode: 'compl
 
   return (
     <div className="fixed inset-0 z-50 bg-black/55 flex items-end sm:items-center justify-center p-3">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-[480px] w-full">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-[480px] w-full max-h-[90vh] overflow-y-auto">
         <div className="px-5 py-3 border-b border-line">
           <h2 className="text-base font-black text-ink">
             {mode === 'complete' ? '✓ 처리 완료' : '✕ 반려'} (#{id})
           </h2>
         </div>
-        <div className="px-5 py-4 space-y-2">
-          <div className="text-xs font-extrabold text-ink mb-1">
-            {mode === 'complete' ? '처리 내용 (선택)' : '반려 사유 (필수)'}
+        <div className="px-5 py-4 space-y-3">
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">
+              {mode === 'complete' ? '처리 내용 (선택)' : '반려 사유 (필수)'}
+            </div>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              placeholder={mode === 'complete' ? '예: 청소 완료' : '예: 중복 신고, 관할 외 위치'}
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent"
+            />
           </div>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={4}
-            placeholder={mode === 'complete' ? '예: 청소 완료, 사진 첨부' : '예: 중복 신고, 관할 외 위치'}
-            className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent"
-          />
+
+          {mode === 'complete' && (
+            <>
+              {/* 완료 사진 */}
+              <div>
+                <div className="text-xs font-extrabold text-ink mb-1">완료 사진 (선택)</div>
+                {photoData ? (
+                  <div className="relative w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoData} alt="완료 사진" className="w-full max-h-40 object-cover rounded-lg border border-line" />
+                    <button
+                      onClick={() => setPhotoData(null)}
+                      className="absolute top-1 right-1 bg-black/50 text-white text-xs rounded-full px-2 py-0.5"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="w-full py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
+                  >
+                    📷 사진 촬영
+                  </button>
+                )}
+              </div>
+
+              {/* 담당자 태그 */}
+              {coworkers.length > 0 && (
+                <div>
+                  <div className="text-xs font-extrabold text-ink mb-1">
+                    담당자 태그 (선택 — 알림 발송)
+                  </div>
+                  <select
+                    value={taggedUserId}
+                    onChange={(e) => setTaggedUserId(e.target.value)}
+                    className="w-full px-3 py-2 rounded border-2 border-line text-sm font-bold focus:outline-none focus:border-accent"
+                  >
+                    <option value="">— 태그 없음 —</option>
+                    {coworkers.map((w) => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                  {taggedName && (
+                    <p className="text-[0.6875rem] text-accent mt-1">
+                      ✓ {taggedName}님의 공지사항에 알림이 전송됩니다.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
           <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold">취소</button>

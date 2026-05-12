@@ -21,9 +21,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'invalid_transition', from: log.status, to: 'SUBMITTED' }, { status: 409 });
   }
 
-  /* 필수 필드 보장 */
-  if (log.startMileage == null || log.endMileage == null) {
-    return NextResponse.json({ error: 'mileage_required' }, { status: 422 });
+  /* 필수 필드 보장 — endMileage(금일누적거리)만 필수, startMileage는 선택 */
+  if (log.endMileage == null) {
+    return NextResponse.json({ error: 'mileage_required', field: 'endMileage' }, { status: 422 });
   }
 
   const updated = await prisma.vehicleLog.update({

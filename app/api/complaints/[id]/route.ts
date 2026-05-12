@@ -38,10 +38,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!canTransitionComplaint(session, target)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
-  if (target.status === 'COMPLETED' || target.status === 'REJECTED') {
-    return NextResponse.json({ error: 'invalid_state', current: target.status }, { status: 409 });
-  }
-
   const parsed = Patch.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
