@@ -18,7 +18,9 @@ export type FeatureKey =
   | 'workerSuggestion'
   | 'nocAccess'               // NOC per-tenant 풀스크린 관제 화면 (Agent Team 합의 2026-05-02)
   | 'avac'                    // 자동집하시설(AVAC) 전용 모듈 — 시설별 TBM·시설운전기록·실적 3시트
-  | 'leaveApprovalSingleStage'; // 휴가 결재 1단계(관리자 단독 최종 결재) — 대표 최종 결재 생략
+  | 'leaveApprovalSingleStage'  // 휴가 결재 1단계(관리자 단독 최종 결재) — 대표 최종 결재 생략
+  | 'vehicleLogFuel'            // 차량일지 주유 카드 표시 여부
+  | 'vehicleLogUrea';           // 차량일지 요소수 필드 표시 여부 (주유 카드 안)
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -118,6 +120,20 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
       '활성화 시 관리자(1차 결재권자)가 최종 결재까지 단독 처리 가능 — 대표 최종 결재 단계 생략. ' +
       '소규모 업체나 대표가 결재 위임한 경우 사용.',
     group: '근태',
+    defaultEnabled: false,
+  },
+  {
+    key: 'vehicleLogFuel',
+    label: '차량일지 — 주유 카드',
+    description: '차량일지 폼에 주유량·주유금액 입력 카드를 표시합니다. 주유 관리가 필요 없는 업체는 OFF.',
+    group: '차량',
+    defaultEnabled: true,
+  },
+  {
+    key: 'vehicleLogUrea',
+    label: '차량일지 — 요소수 필드',
+    description: '주유 카드 안에 요소수(L)·요소수금액(원) 필드를 추가합니다. 경유 차량이 있는 업체만 ON.',
+    group: '차량',
     defaultEnabled: false,
   },
 ];

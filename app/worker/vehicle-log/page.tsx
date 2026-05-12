@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { hasFeature } from '@/lib/features';
 import VehicleLogClient from './_vehicle-log-client';
 
 export const dynamic = 'force-dynamic';
@@ -17,9 +18,10 @@ export default async function VehicleLogPage() {
     );
   }
 
-  const [vehicles, lastLog, assignedVehicle, coworkers, disposalSites] = await Promise.all([
+  const cId = BigInt(session.contractorId);
+  const [vehicles, lastLog, assignedVehicle, coworkers, disposalSites, showFuel, showUrea] = await Promise.all([
     prisma.vehicle.findMany({
-      where: { contractorId: BigInt(session.contractorId), status: { not: 'RETIRED' } },
+      where: { contractorId: cId, status: { not: 'RETIRED' } },
       orderBy: { vehicleNo: 'asc' },
       select: { id: true, vehicleNo: true, vehicleType: true, vehicleTon: true, fuelType: true, totalMileage: true },
     }),
@@ -35,7 +37,7 @@ export default async function VehicleLogPage() {
     /* 동승자 후보 — 같은 업체 활성 워커 (본인 제외) */
     prisma.user.findMany({
       where: {
-        contractorId: BigInt(session.contractorId),
+        contractorId: cId,
         role: 'WORKER',
         status: 'ACTIVE',
         id: { not: BigInt(session.userId) },
@@ -45,10 +47,13 @@ export default async function VehicleLogPage() {
     }),
     /* 반입장소 목록 */
     prisma.disposalSite.findMany({
-      where: { contractorId: BigInt(session.contractorId), isActive: true },
+      where: { contractorId: cId, isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: { id: true, name: true },
     }),
+    /* 업체별 기능 권한 */
+    hasFeature(cId, 'vehicleLogFuel'),
+    hasFeature(cId, 'vehicleLogUrea'),
   ]);
 
   const defaultVehicleId =
@@ -72,6 +77,8 @@ export default async function VehicleLogPage() {
       defaultVehicleId={defaultVehicleId}
       driverName={session.name}
       lastEndMileage={lastLog?.endMileage ?? null}
+      showFuel={showFuel}
+      showUrea={showUrea}
     />
   );
 }

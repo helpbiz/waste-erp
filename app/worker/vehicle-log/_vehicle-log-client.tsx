@@ -62,6 +62,8 @@ type FormState = {
   operationPeriod: string;
   fuelUsed: string;
   fuelCost: string;
+  ureaUsed: string;
+  ureaCost: string;
   bagWork: [BagWorkRow, BagWorkRow, BagWorkRow];
   bagMachineWork: BagMachineWork;
   largeWasteWork: LargeWasteWork;
@@ -86,6 +88,8 @@ function defaultForm(lastEndMileage: number | null): FormState {
     operationPeriod: '',
     fuelUsed: '',
     fuelCost: '',
+    ureaUsed: '',
+    ureaCost: '',
     bagWork: [emptyBagRow(), emptyBagRow(), emptyBagRow()],
     bagMachineWork: {
       food_1L: '', food_2L: '', food_3L: '', food_5L: '', food_10L: '',
@@ -115,12 +119,14 @@ type Props = {
   defaultVehicleId: string | null;
   driverName: string;
   lastEndMileage: number | null;
+  showFuel: boolean;
+  showUrea: boolean;
 };
 
 /* ─── 메인 컴포넌트 ─── */
 
 export default function VehicleLogClient({
-  vehicles, coworkers, disposalSites, defaultVehicleId, driverName, lastEndMileage,
+  vehicles, coworkers, disposalSites, defaultVehicleId, driverName, lastEndMileage, showFuel, showUrea,
 }: Props) {
   const [vehicleId, setVehicleId] = useState(defaultVehicleId ?? '');
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
@@ -178,6 +184,7 @@ export default function VehicleLogClient({
       passengers: selectedPassengerNames.join(', '),
       operationPeriod: form.operationPeriod,
       fuelCost: Number(form.fuelCost) || 0,
+      ...(showUrea && { ureaUsed: Number(form.ureaUsed) || 0, ureaCost: Number(form.ureaCost) || 0 }),
       bagWork: form.bagWork.map((row) => ({
         general: Number(row.general) || 0,
         food: Number(row.food) || 0,
@@ -404,21 +411,39 @@ export default function VehicleLogClient({
           </div>
         </Card>
 
-        {/* ── Card 2: 주유 ── */}
-        <Card title="주유">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="주유량 (ℓ)">
-              <input type="number" inputMode="decimal" step="0.1" min="0"
-                value={form.fuelUsed} onChange={(e) => setField('fuelUsed', e.target.value)}
-                placeholder="0.0" className={INPUT_CLS} />
-            </Field>
-            <Field label="주유금액 (원)">
-              <input type="number" inputMode="numeric" min="0"
-                value={form.fuelCost} onChange={(e) => setField('fuelCost', e.target.value)}
-                placeholder="0" className={INPUT_CLS} />
-            </Field>
-          </div>
-        </Card>
+        {/* ── Card 2: 주유 (업체 기능 플래그로 표시 여부 결정) ── */}
+        {showFuel && (
+          <Card title={showUrea ? '주유 / 요소수' : '주유'}>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="주유량 (ℓ)">
+                  <input type="number" inputMode="decimal" step="0.1" min="0"
+                    value={form.fuelUsed} onChange={(e) => setField('fuelUsed', e.target.value)}
+                    placeholder="0.0" className={INPUT_CLS} />
+                </Field>
+                <Field label="주유금액 (원)">
+                  <input type="number" inputMode="numeric" min="0"
+                    value={form.fuelCost} onChange={(e) => setField('fuelCost', e.target.value)}
+                    placeholder="0" className={INPUT_CLS} />
+                </Field>
+              </div>
+              {showUrea && (
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line">
+                  <Field label="요소수 (ℓ)">
+                    <input type="number" inputMode="decimal" step="0.1" min="0"
+                      value={form.ureaUsed} onChange={(e) => setField('ureaUsed', e.target.value)}
+                      placeholder="0.0" className={INPUT_CLS} />
+                  </Field>
+                  <Field label="요소수금액 (원)">
+                    <input type="number" inputMode="numeric" min="0"
+                      value={form.ureaCost} onChange={(e) => setField('ureaCost', e.target.value)}
+                      placeholder="0" className={INPUT_CLS} />
+                  </Field>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* ── Card A: 작업내역 — 중량제봉투 및 음식물용기, 재활·자원 ── */}
         <Card title="작업내역 — 중량제봉투 및 음식물용기, 재활·자원 (단위: kg)">
