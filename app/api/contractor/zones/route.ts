@@ -19,7 +19,6 @@ const ALLOWED = new Set(['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'SUPER_ADMIN']);
 const PostBody = z.object({
   zoneName: z.string().trim().min(1).max(100),
   zoneCode: z.string().trim().min(1).max(20),
-  zoneType: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'BULKY', 'STREET_CLEANING']),
   areaKm2: z.number().positive().nullable().optional(),
 });
 
@@ -36,7 +35,7 @@ export async function GET() {
     include: {
       adminDongs: {
         orderBy: { dongName: 'asc' },
-        select: { id: true, dongName: true, dongCode: true, population: true, householdCount: true },
+        select: { id: true, dongName: true, dongCode: true, population: true, householdCount: true, areaKm2: true },
       },
     },
   });
@@ -46,7 +45,6 @@ export async function GET() {
       id: z.id.toString(),
       zoneName: z.zoneName,
       zoneCode: z.zoneCode,
-      zoneType: z.zoneType,
       areaKm2: z.areaKm2 ? Number(z.areaKm2) : null,
       dongs: z.adminDongs.map((d) => ({
         id: d.id.toString(),
@@ -54,6 +52,7 @@ export async function GET() {
         dongCode: d.dongCode,
         population: d.population,
         householdCount: d.householdCount,
+        areaKm2: d.areaKm2 ? Number(d.areaKm2) : null,
       })),
     })),
   });
@@ -81,7 +80,6 @@ export async function POST(req: Request) {
       contractorId: BigInt(contractorId),
       zoneName: b.zoneName,
       zoneCode: b.zoneCode,
-      zoneType: b.zoneType,
       areaKm2: b.areaKm2 ?? null,
     },
   });

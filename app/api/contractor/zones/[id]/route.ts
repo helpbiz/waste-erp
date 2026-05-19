@@ -12,7 +12,6 @@ const ALLOWED = new Set(['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'SUPER_ADMIN']);
 const PatchBody = z.object({
   zoneName: z.string().trim().min(1).max(100).optional(),
   zoneCode: z.string().trim().min(1).max(20).optional(),
-  zoneType: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'BULKY', 'STREET_CLEANING']).optional(),
   areaKm2: z.number().positive().nullable().optional(),
 });
 
@@ -47,7 +46,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     data: {
       ...(b.zoneName !== undefined ? { zoneName: b.zoneName } : {}),
       ...(b.zoneCode !== undefined ? { zoneCode: b.zoneCode } : {}),
-      ...(b.zoneType !== undefined ? { zoneType: b.zoneType } : {}),
       ...(b.areaKm2 !== undefined ? { areaKm2: b.areaKm2 } : {}),
     },
   });

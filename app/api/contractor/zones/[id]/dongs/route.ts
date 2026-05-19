@@ -13,6 +13,7 @@ const PostBody = z.object({
   dongCode: z.string().trim().min(1).max(20),
   population: z.number().int().nonnegative().nullable().optional(),
   householdCount: z.number().int().nonnegative().nullable().optional(),
+  areaKm2: z.number().positive().nullable().optional(),
 });
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -45,6 +46,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       dongCode: b.dongCode,
       population: b.population ?? null,
       householdCount: b.householdCount ?? null,
+      areaKm2: b.areaKm2 ?? null,
     },
   });
 

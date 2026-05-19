@@ -283,7 +283,7 @@ model CleaningZone {
   contractorId BigInt   @map("contractor_id")
   zoneName     String   @map("zone_name") @db.VarChar(100)
   zoneCode     String   @map("zone_code") @db.VarChar(20)
-  zoneType     ZoneType @map("zone_type")
+  zoneType     ZoneType @default(GENERAL) @map("zone_type")
   areaKm2      Decimal? @map("area_km2") @db.Decimal(10, 4)
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -302,10 +302,11 @@ model AdminDong {
   municipalityId BigInt @map("municipality_id")
   contractorId   BigInt @map("contractor_id")
   zoneId         BigInt @map("zone_id")
-  dongName       String @map("dong_name") @db.VarChar(50)
-  dongCode       String @map("dong_code") @db.VarChar(20)
+  dongName       String   @map("dong_name") @db.VarChar(50)
+  dongCode       String   @map("dong_code") @db.VarChar(20)
   population     Int?
-  householdCount Int?   @map("household_count")
+  householdCount Int?     @map("household_count")
+  areaKm2        Decimal? @map("area_km2") @db.Decimal(10, 4)
 
   municipality Municipality @relation(fields: [municipalityId], references: [id])
   contractor   Contractor   @relation(fields: [contractorId], references: [id])
