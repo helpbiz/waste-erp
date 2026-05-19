@@ -11,7 +11,7 @@ import { readSession } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export type DongLookupItem = {
-  dongCode: string;
+  dongCode: string | null;  // admin_dongs 없으면 null (dong_annual_stats fallback)
   dongName: string;
   population: number | null;
   areaKm2: number | null;
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'municipality_not_found' }, { status: 404 });
   }
 
-  let data: { dong_code: string; dong_name: string; population: number | null; area_km2: number | null }[];
+  let data: { dong_code: string | null; dong_name: string; population: number | null; area_km2: number | null }[];
   try {
     const res = await fetch(`${COST_API_URL}/api/municipalities/${municipalityCode}/admin-dongs`, {
       signal: AbortSignal.timeout(5000),

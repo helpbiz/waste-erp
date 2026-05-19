@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
-type DongLookup = { dongCode: string; dongName: string; population: number | null; areaKm2: number | null };
+type DongLookup = { dongCode: string | null; dongName: string; population: number | null; areaKm2: number | null };
 type Dong = { id: string; dongName: string; dongCode: string; population: number | null; householdCount: number | null; areaKm2: number | null };
 type Zone = { id: string; zoneName: string; zoneCode: string; areaKm2: number | null; dongs: Dong[] };
 
@@ -61,7 +61,7 @@ export default function ZonesPage() {
 
   /* 검색 필터 */
   const filteredDongs = lookupDongs.filter((d) =>
-    d.dongName.includes(dongSearch) || d.dongCode.includes(dongSearch)
+    d.dongName.includes(dongSearch) || (d.dongCode ?? '').includes(dongSearch)
   );
 
   async function addZone() {
@@ -124,7 +124,7 @@ export default function ZonesPage() {
   function selectDong(d: DongLookup) {
     setSelectedDong(d);
     setNewDongName(d.dongName);
-    setNewDongCode(d.dongCode);
+    setNewDongCode(d.dongCode ?? '');
     setDongSearch('');
   }
 
@@ -380,21 +380,39 @@ export default function ZonesPage() {
                     <>
                       {selectedDong ? (
                         /* 선택된 행정동 확인 카드 */
-                        <div className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border-2 border-accent">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-extrabold text-ink">{selectedDong.dongName}</div>
-                            <div className="text-xs text-ink-muted font-mono mt-0.5">
-                              {selectedDong.dongCode}
-                              {selectedDong.population != null ? ` · 인구 ${selectedDong.population.toLocaleString()}명` : ''}
-                              {selectedDong.areaKm2 != null ? ` · ${selectedDong.areaKm2.toFixed(4)} km²` : ''}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border-2 border-accent">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-extrabold text-ink">{selectedDong.dongName}</div>
+                              <div className="text-xs text-ink-muted mt-0.5">
+                                {selectedDong.population != null ? `인구 ${selectedDong.population.toLocaleString()}명` : ''}
+                                {selectedDong.areaKm2 != null ? ` · ${selectedDong.areaKm2.toFixed(4)} km²` : ''}
+                              </div>
                             </div>
+                            <button
+                              onClick={clearDongSelection}
+                              className="text-xs text-slate-500 hover:text-red-600 font-bold flex-shrink-0"
+                            >
+                              변경
+                            </button>
                           </div>
-                          <button
-                            onClick={clearDongSelection}
-                            className="text-xs text-slate-500 hover:text-red-600 font-bold flex-shrink-0"
-                          >
-                            변경
-                          </button>
+                          {/* dong_code 없으면 수동 입력 */}
+                          {!selectedDong.dongCode && (
+                            <div>
+                              <label className="text-xs font-bold text-amber-700 block mb-1">
+                                ⚠ 행정동코드 직접 입력 *
+                                <span className="font-normal text-ink-muted ml-1">(행안부 10자리 코드 — 예: 1171010100)</span>
+                              </label>
+                              <input
+                                autoFocus
+                                value={newDongCode}
+                                onChange={(e) => setNewDongCode(e.target.value)}
+                                placeholder="1171010100"
+                                maxLength={20}
+                                className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 text-sm focus:outline-none focus:border-amber-500"
+                              />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         /* 행정동 검색 드롭다운 */
