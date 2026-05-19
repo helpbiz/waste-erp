@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
+type GarageItem = {
+  id: string;
+  name: string | null;
+  address: string;
+};
+
 type ContractorInfo = {
   id: string;
   companyName: string;
@@ -39,10 +45,20 @@ export default function ContractorInfoSettingsPage() {
     garageAddress: '',
   });
 
+  // 차고지
+  const [garages, setGarages] = useState<GarageItem[]>([]);
+  const [newGarageName, setNewGarageName] = useState('');
+  const [newGarageAddress, setNewGarageAddress] = useState('');
+  const [garageAdding, setGarageAdding] = useState(false);
+  const [garageError, setGarageError] = useState<string | null>(null);
+
   async function load() {
     setLoading(true);
-    const r = await fetch('/api/contractor/info');
-    const j = await r.json();
+    const [infoRes, garagesRes] = await Promise.all([
+      fetch('/api/contractor/info'),
+      fetch('/api/contractor/garages'),
+    ]);
+    const j = await infoRes.json();
     const c: ContractorInfo = j.contractor;
     if (c) {
       setInfo(c);
@@ -53,10 +69,46 @@ export default function ContractorInfoSettingsPage() {
         garageAddress: c.garageAddress ?? '',
       });
     }
+    if (garagesRes.ok) {
+      const gj = await garagesRes.json();
+      setGarages(gj.garages ?? []);
+    }
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
+
+  async function addGarage() {
+    if (!newGarageAddress.trim()) return;
+    setGarageAdding(true);
+    setGarageError(null);
+    const r = await fetch('/api/contractor/garages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newGarageName.trim() || undefined,
+        address: newGarageAddress.trim(),
+      }),
+    });
+    setGarageAdding(false);
+    if (r.ok) {
+      setNewGarageName('');
+      setNewGarageAddress('');
+      const gj = await fetch('/api/contractor/garages').then((x) => x.json());
+      setGarages(gj.garages ?? []);
+    } else {
+      const j = await r.json().catch(() => ({}));
+      setGarageError(j.error ?? '추가 실패');
+    }
+  }
+
+  async function deleteGarage(id: string) {
+    if (!confirm('이 차고지를 삭제하시겠습니까?')) return;
+    const r = await fetch(`/api/contractor/garages/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      setGarages((prev) => prev.filter((g) => g.id !== id));
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -216,6 +268,72 @@ export default function ContractorInfoSettingsPage() {
             className="px-6 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50"
           >
             {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+      </div>
+
+      {/* 차고지 관리 */}
+      <div className="bg-surface border border-line rounded-xl p-5 space-y-4">
+        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">차고지 관리</div>
+
+        {/* 목록 */}
+        {garages.length === 0 ? (
+          <p className="text-sm text-ink-muted py-2">등록된 차고지가 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {garages.map((g) => (
+              <li
+                key={g.id}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-surface-soft border border-line"
+              >
+                <span className="text-base">🏚</span>
+                <div className="flex-1 min-w-0">
+                  {g.name && (
+                    <div className="text-xs font-bold text-ink-muted truncate">{g.name}</div>
+                  )}
+                  <div className="text-sm font-bold text-ink truncate">{g.address}</div>
+                </div>
+                <button
+                  onClick={() => deleteGarage(g.id)}
+                  className="shrink-0 text-xs text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50 transition"
+                >
+                  삭제
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* 추가 폼 */}
+        <div className="space-y-2 pt-1">
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              value={newGarageName}
+              onChange={(e) => setNewGarageName(e.target.value)}
+              placeholder="이름 (선택) — 예: 본사 차고지"
+              maxLength={50}
+              className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+            />
+            <input
+              type="text"
+              value={newGarageAddress}
+              onChange={(e) => setNewGarageAddress(e.target.value)}
+              placeholder="주소 (필수) — 예: 서울시 종로구 세종로 1"
+              maxLength={255}
+              onKeyDown={(e) => { if (e.key === 'Enter') addGarage(); }}
+              className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
+          {garageError && (
+            <p className="text-xs text-red-600 font-bold">{garageError}</p>
+          )}
+          <button
+            onClick={addGarage}
+            disabled={garageAdding || !newGarageAddress.trim()}
+            className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-40 transition"
+          >
+            {garageAdding ? '추가 중…' : '+ 차고지 추가'}
           </button>
         </div>
       </div>

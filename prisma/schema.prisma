@@ -237,6 +237,7 @@ model Contractor {
   contractorRanks     ContractorRank[]
   vehicleGpsPositions VehicleGpsPosition[]
   disposalSites       DisposalSite[]
+  garages             Garage[]
   payslipRecords      PayslipRecord[]      @relation("ContractorPayslips")
 
   @@index([municipalityId])
@@ -1430,6 +1431,19 @@ model PayslipRecord {
 
 /// 반입장소 마스터 — CONTRACTOR_ADMIN이 사전 등록
 /// 차량일지 작업내역 카드에서 드롭다운으로 선택
+model Garage {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  name         String?  @db.VarChar(50)
+  address      String   @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@index([contractorId])
+  @@map("garages")
+}
+
 model DisposalSite {
   id           BigInt  @id @default(autoincrement())
   contractorId BigInt  @map("contractor_id")
