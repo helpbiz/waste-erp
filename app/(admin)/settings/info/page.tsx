@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AddressSearchInput } from '@/components/AddressSearchInput';
 
 type GarageItem = {
   id: string;
@@ -238,14 +239,11 @@ export default function ContractorInfoSettingsPage() {
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-bold text-ink-muted mb-1">차고지 주소</label>
-            <input
-              type="text"
+            <label className="block text-xs font-bold text-ink-muted mb-1">차고지 주소 (대표)</label>
+            <AddressSearchInput
               value={form.garageAddress}
-              onChange={(e) => setForm({ ...form, garageAddress: e.target.value })}
-              placeholder="예: 서울시 종로구 세종로 1"
-              maxLength={255}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+              onChange={(v) => setForm({ ...form, garageAddress: v })}
+              placeholder="주소 검색 또는 직접 입력"
             />
           </div>
         </div>
@@ -306,25 +304,19 @@ export default function ContractorInfoSettingsPage() {
 
         {/* 추가 폼 */}
         <div className="space-y-2 pt-1">
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={newGarageName}
-              onChange={(e) => setNewGarageName(e.target.value)}
-              placeholder="이름 (선택) — 예: 본사 차고지"
-              maxLength={50}
-              className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
-            />
-            <input
-              type="text"
-              value={newGarageAddress}
-              onChange={(e) => setNewGarageAddress(e.target.value)}
-              placeholder="주소 (필수) — 예: 서울시 종로구 세종로 1"
-              maxLength={255}
-              onKeyDown={(e) => { if (e.key === 'Enter') addGarage(); }}
-              className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
-            />
-          </div>
+          <input
+            type="text"
+            value={newGarageName}
+            onChange={(e) => setNewGarageName(e.target.value)}
+            placeholder="이름 (선택) — 예: 본사 차고지"
+            maxLength={50}
+            className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+          />
+          <AddressSearchInput
+            value={newGarageAddress}
+            onChange={setNewGarageAddress}
+            placeholder="주소 검색 또는 직접 입력 (필수)"
+          />
           {garageError && (
             <p className="text-xs text-red-600 font-bold">{garageError}</p>
           )}
