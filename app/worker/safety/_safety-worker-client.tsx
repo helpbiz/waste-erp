@@ -8,8 +8,8 @@ import { useToast } from '@/components/ui/Toast';
 import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 
 type ChecklistDef = { key: string; label: string };
-type ItemState = ChecklistDef & { ok: boolean };
-type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; signed: boolean; signCount: number };
+type ItemState = ChecklistDef & { ok: boolean; reason: string };
+type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; leader: string | null; location: string | null; hazards: string | null; signed: boolean; signCount: number };
 export type FacilityOption = { id: string; name: string };
 
 const ICONS: Record<string, string> = {
@@ -28,7 +28,10 @@ export default function SafetyWorkerClient({
   isAvac = false,
   facilities = [],
   isFacilityOperator = false,
+  isTbmManager = false,
   operatorFacility = null,
+  hasNearMiss = true,
+  hasIncident = true,
 }: {
   checklistDef: ChecklistDef[];
   submitted: boolean;
@@ -40,11 +43,14 @@ export default function SafetyWorkerClient({
   isAvac?: boolean;
   facilities?: FacilityOption[];
   isFacilityOperator?: boolean;
+  isTbmManager?: boolean;
   operatorFacility?: FacilityOption | null;
+  hasNearMiss?: boolean;
+  hasIncident?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [items, setItems] = useState<ItemState[]>(checklistDef.map((d) => ({ ...d, ok: false })));
+  const [items, setItems] = useState<ItemState[]>(checklistDef.map((d) => ({ ...d, ok: false, reason: '' })));
   const [busy, setBusy] = useState(false);
   const [reportType, setReportType] = useState<'NEAR_MISS' | 'INCIDENT' | null>(null);
   const [severity, setSeverity] = useState<'MINOR' | 'INJURY' | 'SEVERE' | 'FATAL'>('MINOR');
@@ -63,7 +69,7 @@ export default function SafetyWorkerClient({
   const [avacTbmLoading, setAvacTbmLoading] = useState(false);
   const [avacNotices, setAvacNotices] = useState<{ id: string; title: string; body: string; severity: string; pinned: boolean }[]>([]);
 
-  const tbm = isAvac ? avacTbm : tbmProp;
+  const tbm = (isAvac || (isFacilityOperator && operatorFacility)) ? avacTbm : tbmProp;
 
   async function loadAvacTbm(facilityId: string) {
     setAvacTbmLoading(true);
@@ -78,6 +84,9 @@ export default function SafetyWorkerClient({
           topic: data.session.topic,
           content: data.session.content,
           photoDataUrl: data.session.photoDataUrl ?? null,
+          leader: data.session.leader ?? null,
+          location: data.session.location ?? null,
+          hazards: data.session.hazards ?? null,
           signed: data.signed,
           signCount: data.session.signCount,
         });
@@ -102,22 +111,32 @@ export default function SafetyWorkerClient({
     loadAvacNotices(fId);
   }
 
-  // 시설 담당자: TBM 작성 폼 상태
+  // 시설 담당자 / TBM 매니저: TBM 작성 폼 상태
   const [opTbmTopic, setOpTbmTopic] = useState('');
   const [opTbmContent, setOpTbmContent] = useState('');
+  const [opTbmLeader, setOpTbmLeader] = useState('');
+  const [opTbmLocation, setOpTbmLocation] = useState('');
+  const [opTbmHazards, setOpTbmHazards] = useState('');
   const [opTbmSaving, setOpTbmSaving] = useState(false);
 
-  async function saveTbm() {
-    if (!operatorFacility || !opTbmTopic.trim()) return;
+  async function saveTbm(facilityId?: string) {
+    if (!opTbmTopic.trim()) return;
     setOpTbmSaving(true);
     try {
+      const body: Record<string, unknown> = { topic: opTbmTopic.trim() };
+      if (opTbmContent.trim()) body.content = opTbmContent.trim();
+      if (opTbmLeader.trim()) body.leader = opTbmLeader.trim();
+      if (opTbmLocation.trim()) body.location = opTbmLocation.trim();
+      if (opTbmHazards.trim()) body.hazards = opTbmHazards.trim();
+      if (facilityId) body.facilityId = facilityId;
       const res = await fetch('/api/tbm/today', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ topic: opTbmTopic.trim(), content: opTbmContent.trim() || undefined, facilityId: operatorFacility.id }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         setOpTbmTopic(''); setOpTbmContent('');
+        setOpTbmLeader(''); setOpTbmLocation(''); setOpTbmHazards('');
         router.refresh();
       } else {
         alert('TBM 저장 실패');
@@ -135,10 +154,24 @@ export default function SafetyWorkerClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 비AVAC 시설담당자: 담당 시설 TBM·공지 자동 로드
+  useEffect(() => {
+    if (!isAvac && isFacilityOperator && operatorFacility) {
+      loadAvacTbm(operatorFacility.id);
+      loadAvacNotices(operatorFacility.id);
+      setSelectedFacilityId(operatorFacility.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const checkedCount = items.filter((i) => i.ok).length;
 
   function toggle(key: string) {
-    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ok: !i.ok } : i)));
+    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ok: !i.ok, reason: i.ok ? i.reason : '' } : i)));
+  }
+
+  function setReason(key: string, reason: string) {
+    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, reason } : i)));
   }
 
   async function submitChecklist() {
@@ -346,12 +379,23 @@ export default function SafetyWorkerClient({
               <div className="text-base font-extrabold text-ink">오늘 TBM (안전교육)</div>
               <div className="text-sm font-semibold text-ink-mid mt-0.5">{tbm.signCount}명 서명 완료</div>
             </div>
+            <a href="/worker/safety/tbm-history"
+              className="text-xs font-bold text-accent hover:underline">
+              📋 나의 TBM이력 보기
+            </a>
             {tbm.signed && <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border-2 border-green-300">✓ 서명 완료</span>}
           </header>
           <div className="p-4">
             <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
+            {(tbm.leader || tbm.location || tbm.hazards) && (
+              <div className="bg-slate-50 border border-line rounded-lg px-3 py-2 mb-3 space-y-1 text-sm">
+                {tbm.leader && <div><span className="font-extrabold text-ink-muted">리더:</span> <span className="font-semibold text-ink">{tbm.leader}</span></div>}
+                {tbm.location && <div><span className="font-extrabold text-ink-muted">장소:</span> <span className="font-semibold text-ink">{tbm.location}</span></div>}
+                {tbm.hazards && <div><span className="font-extrabold text-ink-muted">위험요인:</span> <span className="font-semibold text-ink">{tbm.hazards}</span></div>}
+              </div>
+            )}
             {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
-            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="w-full rounded-lg max-h-52 object-cover border border-line mb-3" />}
+            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="w-full rounded-lg max-h-52 object-contain bg-slate-50 border border-line mb-3" />}
             {!tbm.signed && !tbmShowPad && (
               /* P1: CTA 14px → 16px (text-base) min-h-14 */
               <button
@@ -427,17 +471,37 @@ export default function SafetyWorkerClient({
         )}
         <div className="divide-y divide-line">
           {items.map((item) => (
-            <label key={item.key} className={`flex items-center gap-3 px-4 py-3 cursor-pointer ${submitted ? 'opacity-60 pointer-events-none' : 'active:bg-surface-soft'}`}>
-              <span className="text-2xl">{ICONS[item.key] ?? '✓'}</span>
-              <span className="flex-1 text-sm font-bold text-ink">{item.label}</span>
-              <input
-                type="checkbox"
-                checked={item.ok}
-                onChange={() => toggle(item.key)}
-                disabled={submitted}
-                className="w-5 h-5 rounded accent-success"
-              />
-            </label>
+            <div key={item.key} className={submitted ? 'opacity-60' : ''}>
+              <label className={`flex items-center gap-3 px-4 py-3 cursor-pointer ${submitted ? 'pointer-events-none' : 'active:bg-surface-soft'}`}>
+                <span className="text-2xl">{ICONS[item.key] ?? '✓'}</span>
+                <span className="flex-1 text-sm font-bold text-ink">{item.label}</span>
+                <input
+                  type="checkbox"
+                  checked={item.ok}
+                  onChange={() => toggle(item.key)}
+                  disabled={submitted}
+                  className="w-5 h-5 rounded accent-success"
+                />
+              </label>
+              {/* 미체크 시 사유 입력 */}
+              {!item.ok && !submitted && (
+                <div className="px-4 pb-3">
+                  <input
+                    type="text"
+                    value={item.reason}
+                    onChange={(e) => setReason(item.key, e.target.value)}
+                    placeholder={`${item.label} 이상 사유 입력 (예: 파손 확인)`}
+                    className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 bg-amber-50 text-sm font-semibold focus:outline-none focus:border-warn text-ink"
+                  />
+                </div>
+              )}
+              {/* 제출 완료 후 사유 표시 */}
+              {!item.ok && submitted && item.reason && (
+                <div className="px-4 pb-3 text-xs text-warn font-semibold">
+                  사유: {item.reason}
+                </div>
+              )}
+            </div>
           ))}
         </div>
         {!submitted && (
@@ -454,12 +518,14 @@ export default function SafetyWorkerClient({
       </section>
 
       {/* 아차사고 / 재해 신고 */}
+      {(hasNearMiss || hasIncident) && (
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
         <header className="px-4 py-3 bg-surface-soft border-b-2 border-line">
           <div className="text-base font-extrabold text-ink">아차사고 / 재해 보고</div>
           <div className="text-sm font-semibold text-ink-mid mt-1">위험 상황을 발견했나요? 즉시 보고해 주세요.</div>
         </header>
         <div className="p-4 grid grid-cols-2 gap-2">
+          {hasNearMiss && (
           <button
             onClick={() => { setReportType('NEAR_MISS');   }}
             className="min-h-14 px-3 py-3 rounded-lg border-2 border-dashed border-warn text-warn text-base font-extrabold active:scale-[0.98] hover:bg-amber-50 transition text-center leading-tight"
@@ -467,6 +533,8 @@ export default function SafetyWorkerClient({
             <div>⚠️ 아차사고</div>
             <div className="underline underline-offset-2 decoration-2 text-sm font-bold mt-1">(위험요소)</div>
           </button>
+          )}
+          {hasIncident && (
           <button
             onClick={() => { setReportType('INCIDENT');   }}
             className="min-h-14 px-3 py-3 rounded-lg border-2 border-dashed border-danger text-danger text-base font-extrabold active:scale-[0.98] hover:bg-red-50 transition text-center leading-tight"
@@ -474,6 +542,7 @@ export default function SafetyWorkerClient({
             <div>🚨 재해발생</div>
             <div className="underline underline-offset-2 decoration-2 text-sm font-bold mt-1">(사고)</div>
           </button>
+          )}
         </div>
         {reportType && (
           <div className="px-4 pb-4 space-y-3 border-t border-line pt-4">
@@ -510,6 +579,7 @@ export default function SafetyWorkerClient({
           </div>
         )}
       </section>
+      )}
 
       {/* 119 자동 SOS */}
       <section className="bg-red-50 border-2 border-danger rounded-xl px-4 py-4">
@@ -561,6 +631,36 @@ export default function SafetyWorkerClient({
                   className="border border-line rounded px-3 py-2 text-sm"
                 />
               </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold text-ink-muted">리더 (선택)</span>
+                  <input
+                    value={opTbmLeader}
+                    onChange={(e) => setOpTbmLeader(e.target.value)}
+                    placeholder="교육 진행자 이름"
+                    className="border border-line rounded px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold text-ink-muted">장소 (선택)</span>
+                  <input
+                    value={opTbmLocation}
+                    onChange={(e) => setOpTbmLocation(e.target.value)}
+                    placeholder="교육 장소"
+                    className="border border-line rounded px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-extrabold text-ink-muted">위험요인 (선택)</span>
+                <textarea
+                  value={opTbmHazards}
+                  onChange={(e) => setOpTbmHazards(e.target.value)}
+                  rows={2}
+                  placeholder="오늘 작업 중 주의할 위험요인을 입력하세요"
+                  className="border border-line rounded px-3 py-2 text-sm resize-none"
+                />
+              </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-extrabold text-ink-muted">내용 (선택)</span>
                 <textarea
@@ -573,7 +673,7 @@ export default function SafetyWorkerClient({
               </label>
               <button
                 type="button"
-                onClick={saveTbm}
+                onClick={() => saveTbm(operatorFacility.id)}
                 disabled={opTbmSaving || !opTbmTopic.trim()}
                 className="w-full py-3 rounded-lg bg-indigo-600 text-white text-sm font-extrabold disabled:opacity-50 active:scale-[0.98]"
               >
@@ -583,6 +683,75 @@ export default function SafetyWorkerClient({
           </section>
 
         </>
+      )}
+
+      {/* ── TBM 매니저 전용 섹션 (시설담당자 아닌 경우) ── */}
+      {isTbmManager && !isFacilityOperator && (
+        <section className="bg-surface rounded-xl border-2 border-cyan-300 shadow-card overflow-hidden">
+          <header className="px-4 py-3 bg-cyan-50 border-b-2 border-cyan-200">
+            <div className="text-base font-extrabold text-cyan-800">📋 TBM 작성 (TBM 담당자)</div>
+            <div className="text-xs text-cyan-600 mt-0.5">오늘의 안전교육(TBM)을 직접 등록합니다</div>
+          </header>
+          <div className="p-4 space-y-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold text-ink-muted">주제 *</span>
+              <input
+                value={opTbmTopic}
+                onChange={(e) => setOpTbmTopic(e.target.value)}
+                placeholder="오늘의 안전 주제를 입력하세요"
+                className="border border-line rounded px-3 py-2 text-sm"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-extrabold text-ink-muted">리더 (선택)</span>
+                <input
+                  value={opTbmLeader}
+                  onChange={(e) => setOpTbmLeader(e.target.value)}
+                  placeholder="교육 진행자 이름"
+                  className="border border-line rounded px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-extrabold text-ink-muted">장소 (선택)</span>
+                <input
+                  value={opTbmLocation}
+                  onChange={(e) => setOpTbmLocation(e.target.value)}
+                  placeholder="교육 장소"
+                  className="border border-line rounded px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold text-ink-muted">위험요인 (선택)</span>
+              <textarea
+                value={opTbmHazards}
+                onChange={(e) => setOpTbmHazards(e.target.value)}
+                rows={2}
+                placeholder="오늘 작업 중 주의할 위험요인을 입력하세요"
+                className="border border-line rounded px-3 py-2 text-sm resize-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-extrabold text-ink-muted">내용 (선택)</span>
+              <textarea
+                value={opTbmContent}
+                onChange={(e) => setOpTbmContent(e.target.value)}
+                rows={3}
+                placeholder="상세 교육 내용 또는 주의사항"
+                className="border border-line rounded px-3 py-2 text-sm resize-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => saveTbm()}
+              disabled={opTbmSaving || !opTbmTopic.trim()}
+              className="w-full py-3 rounded-lg bg-cyan-600 text-white text-sm font-extrabold disabled:opacity-50 active:scale-[0.98]"
+            >
+              {opTbmSaving ? '저장 중…' : 'TBM 등록'}
+            </button>
+          </div>
+        </section>
       )}
 
       {/* 비상연락처 */}

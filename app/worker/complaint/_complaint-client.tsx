@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import MultiPhotoUploader from '@/components/MultiPhotoUploader';
@@ -66,6 +66,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
   const [gps, setGps] = useState<GpsState>({ kind: 'idle' });
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [assigneeId, setAssigneeId] = useState<string>('');
 
   useEffect(() => {
     requestGps();
@@ -123,6 +124,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
         body.locationLng = gps.lng;
       }
       if (photos.length > 0) body.requestImages = photos;
+      if (assigneeId) body.assigneeId = assigneeId;
       const res = await fetch('/api/complaints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,6 +143,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
       setDescription('');
       setPhone('');
       setPhotos([]);
+      setAssigneeId('');
       router.refresh();
     } catch {
       hapticError();
@@ -334,6 +337,21 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
         <MultiPhotoUploader onChange={setPhotos} max={3} />
       </Section>
 
+      {coworkers.length > 0 && (
+        <Section label="담당자 지정 (선택 — 미선택 시 자동 배정)">
+          <select
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold bg-white focus:outline-none focus:border-accent"
+          >
+            <option value="">— 자동 배정 —</option>
+            {coworkers.map((w) => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        </Section>
+      )}
+
       <button
         type="button"
         onClick={submit}
@@ -383,6 +401,7 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
   const [filter, setFilter] = useState<'active' | 'completed' | 'all'>('active');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [completeModal, setCompleteModal] = useState<{ id: string; mode: 'complete' | 'reject' } | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -469,8 +488,10 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
               {parseImages(c.requestImage).length > 0 && (
                 <div className="flex gap-1.5 mt-2 overflow-x-auto">
                   {parseImages(c.requestImage).map((src, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={i} src={src} alt={`민원사진${i + 1}`} className="h-16 w-16 object-cover rounded-md border border-line flex-shrink-0" />
+                    <button key={i} onClick={() => setLightboxSrc(src)} className="flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`민원사진${i + 1}`} className="h-16 w-16 object-cover rounded-md border border-line" />
+                    </button>
                   ))}
                 </div>
               )}
@@ -534,6 +555,26 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
           onDone={() => { setCompleteModal(null); load(); }}
         />
       )}
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center px-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 text-white text-3xl font-bold leading-none"
+            aria-label="닫기"
+          >&times;</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="사진 크게 보기"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -560,21 +601,10 @@ function CompleteModal({
   const toast = useToast();
   const [note, setNote] = useState('');
   const [taggedUserId, setTaggedUserId] = useState('');
-  const [photoData, setPhotoData] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const albumInputRef = useRef<HTMLInputElement>(null);
 
   const taggedName = coworkers.find((w) => w.id === taggedUserId)?.name ?? '';
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setPhotoData(ev.target?.result as string ?? null);
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }
 
   async function submit() {
     if (mode === 'reject' && note.trim().length < 2) {
@@ -588,7 +618,7 @@ function CompleteModal({
     const body: Record<string, unknown> = { note: displayNote };
     if (mode === 'complete') {
       if (taggedUserId) body.taggedUserId = taggedUserId;
-      if (photoData) body.requestImage = photoData;
+      if (photos.length > 0) body.requestImages = photos;
     }
     const endpoint = mode === 'complete' ? 'complete' : 'reject';
     const r = await fetch(`/api/complaints/${id}/${endpoint}`, {
@@ -630,40 +660,10 @@ function CompleteModal({
 
           {mode === 'complete' && (
             <>
-              {/* 완료 사진 */}
+              {/* 완료 사진 최대 3장 */}
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">완료 사진 (선택)</div>
-                {photoData ? (
-                  <div className="relative w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photoData} alt="완료 사진" className="w-full max-h-40 object-cover rounded-lg border border-line" />
-                    <button
-                      onClick={() => setPhotoData(null)}
-                      className="absolute top-1 right-1 bg-black/50 text-white text-xs rounded-full px-2 py-0.5"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="sr-only" aria-hidden />
-                    <input ref={albumInputRef} type="file" accept="image/*" onChange={handleFileChange} className="sr-only" aria-hidden />
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
-                    >
-                      📷 카메라 촬영
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => albumInputRef.current?.click()}
-                      className="flex-1 py-3 rounded-lg border-2 border-dashed border-line text-sm font-bold text-ink-muted hover:border-accent hover:text-accent transition"
-                    >
-                      🖼 앨범 선택
-                    </button>
-                  </div>
-                )}
+                <div className="text-xs font-extrabold text-ink mb-1">완료 사진 (선택, 최대 3장)</div>
+                <MultiPhotoUploader onChange={setPhotos} max={3} />
               </div>
 
               {/* 담당자 태그 */}

@@ -23,6 +23,7 @@ const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap')
 export type Worker = { id: string; name: string };
 export type WorkerRef = { id: string; name: string };
 export type ContractorOpt = { id: string; name: string };
+export type ZoneOpt = { id: string; name: string };
 
 export type Row = {
   id: string;
@@ -38,6 +39,7 @@ export type Row = {
   overdue: boolean;
   reporter: { id: string; name: string };
   assignee: { id: string; name: string } | null;
+  zoneId: string | null;
   zoneName: string | null;
   resolveNote: string | null;
   resolvedAt: string | null;
@@ -61,16 +63,19 @@ export default function ComplaintsClient({
   items,
   workers,
   contractorOpts,
+  zoneOpts = [],
 }: {
   role: string;
   userId: string;
   items: Row[];
   workers: Worker[];
   contractorOpts: ContractorOpt[];
+  zoneOpts?: ZoneOpt[];
 }) {
   const router = useRouter();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('ALL');
+  const [zoneFilter, setZoneFilter] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [openAssignId, setOpenAssignId] = useState<string | null>(null);
   const [openCompleteId, setOpenCompleteId] = useState<string | null>(null);
@@ -79,6 +84,7 @@ export default function ComplaintsClient({
   const [openCreate, setOpenCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const isManager = role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
   const isMuni = role === 'MUNI_ADMIN';
@@ -86,11 +92,13 @@ export default function ComplaintsClient({
   const needsContractorPicker = role === 'SUPER_ADMIN' || role === 'MUNI_ADMIN';
 
   const filtered = useMemo(() => {
-    if (tab === 'ALL') return items;
-    if (tab === 'PENDING') return items.filter((i) => ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS'].includes(i.status));
-    if (tab === 'OVERDUE') return items.filter((i) => i.overdue);
-    return items.filter((i) => i.status === tab);
-  }, [items, tab]);
+    let base = items;
+    if (zoneFilter) base = base.filter((i) => i.zoneId === zoneFilter);
+    if (tab === 'ALL') return base;
+    if (tab === 'PENDING') return base.filter((i) => ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS'].includes(i.status));
+    if (tab === 'OVERDUE') return base.filter((i) => i.overdue);
+    return base.filter((i) => i.status === tab);
+  }, [items, tab, zoneFilter]);
 
   const counts = useMemo(() => ({
     ALL: items.length,
@@ -162,6 +170,28 @@ export default function ComplaintsClient({
           )}
         </div>
       </header>
+
+      {/* MUNI_ADMIN 구역 필터 */}
+      {zoneOpts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-ink-muted whitespace-nowrap">구역 필터:</label>
+          <select
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border-2 border-line text-sm bg-white focus:outline-none focus:border-accent"
+          >
+            <option value="">전체 구역</option>
+            {zoneOpts.map((z) => (
+              <option key={z.id} value={z.id}>{z.name}</option>
+            ))}
+          </select>
+          {zoneFilter && (
+            <button onClick={() => setZoneFilter('')} className="text-xs font-bold text-accent hover:underline">
+              초기화
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 탭 — 모바일에서는 FilterToggle로 collapsible */}
       <FilterToggle
@@ -283,9 +313,9 @@ export default function ComplaintsClient({
                   return (
                     <div className="flex gap-1.5 mt-2.5 flex-wrap">
                       {imgs.map((src, i) => (
-                        <a key={i} href={src} target="_blank" rel="noopener noreferrer">
+                        <button key={i} onClick={() => setLightboxSrc(src)}>
                           <img src={src} alt={`현장사진 ${i + 1}`} className="w-16 h-16 object-cover rounded-md border border-line hover:opacity-80 transition" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   );
@@ -428,6 +458,26 @@ export default function ComplaintsClient({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center px-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 text-white text-3xl font-bold leading-none"
+            aria-label="닫기"
+          >&times;</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="사진 크게 보기"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

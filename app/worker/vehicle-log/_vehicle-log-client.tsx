@@ -39,6 +39,7 @@ type BagWorkRow = {
   food: string;
   recycle: string;
   disposalSite: string; /* 수기 입력 또는 드롭다운 선택 — 자유 텍스트 */
+  note: string; /* 비고 */
 };
 
 type BagMachineWork = {
@@ -55,11 +56,13 @@ type LargeWasteWork = {
   extinguisher: string; household: string; other: string; illegalTotal: string;
 };
 
+type OperationRow = { startTime: string; endTime: string; zone: string; note: string };
+
 type FormState = {
   logDate: string;
   prevMileage: string;
   todayMileage: string;
-  operationPeriod: string;
+  operationRows: OperationRow[];
   fuelUsed: string;
   fuelCost: string;
   ureaUsed: string;
@@ -80,12 +83,12 @@ function defaultForm(lastEndMileage: number | null): FormState {
   const defaultInspection = Object.fromEntries(
     INSPECTION_ITEMS.map((i) => [i.key, i.opts[0]])
   ) as Record<InspectionKey, string>;
-  const emptyBagRow = (): BagWorkRow => ({ general: '', food: '', recycle: '', disposalSite: '' });
+  const emptyBagRow = (): BagWorkRow => ({ general: '', food: '', recycle: '', disposalSite: '', note: '' });
   return {
     logDate: today,
     prevMileage: lastEndMileage != null ? String(lastEndMileage) : '',
     todayMileage: '',
-    operationPeriod: '',
+    operationRows: Array.from({ length: 6 }, () => ({ startTime: '', endTime: '', zone: '', note: '' })),
     fuelUsed: '',
     fuelCost: '',
     ureaUsed: '',
@@ -164,6 +167,13 @@ export default function VehicleLogClient({
     setForm((p) => ({ ...p, largeWasteWork: { ...p.largeWasteWork, [field]: value } }));
   }
 
+  function setOperationRow(idx: number, field: keyof OperationRow, value: string) {
+    setForm((p) => {
+      const rows = p.operationRows.map((r, i) => i === idx ? { ...r, [field]: value } : r);
+      return { ...p, operationRows: rows };
+    });
+  }
+
   function togglePassenger(id: string) {
     setSelectedPassengerIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -183,7 +193,7 @@ export default function VehicleLogClient({
 
     const routeDetail = JSON.stringify({
       passengers: selectedPassengerNames.join(', '),
-      operationPeriod: form.operationPeriod,
+      operationRows: form.operationRows.filter((r) => r.startTime || r.endTime || r.zone || r.note),
       fuelCost: Number(form.fuelCost) || 0,
       ...(showUrea && { ureaUsed: Number(form.ureaUsed) || 0, ureaCost: Number(form.ureaCost) || 0 }),
       bagWork: form.bagWork.map((row) => ({
@@ -191,6 +201,7 @@ export default function VehicleLogClient({
         food: Number(row.food) || 0,
         recycle: Number(row.recycle) || 0,
         disposalSite: row.disposalSite.trim() || null,
+        note: row.note.trim() || null,
       })),
       bagMachineWork: Object.fromEntries(
         Object.entries(form.bagMachineWork).map(([k, v]) => [k, Number(v) || 0])
@@ -421,12 +432,50 @@ export default function VehicleLogClient({
               </button>
             </Field>
 
-            <Field label="운행기간 / GPS 정차지점">
-              <textarea value={form.operationPeriod}
-                onChange={(e) => setField('operationPeriod', e.target.value)}
-                placeholder="예: 09:00~18:00 / 1번 정류장 → 시청 → 환경사업소"
-                rows={2} className={`${INPUT_CLS} resize-none`} />
-            </Field>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-mono font-extrabold text-slate-600">차량운행내역 (6회차)</span>
+              <div className="overflow-x-auto -mx-1">
+                <table className="w-full text-xs border-collapse min-w-[420px]">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-8">회차</th>
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">시작시간</th>
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">종료시간</th>
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center">작업구간</th>
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[80px]">비고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {form.operationRows.map((row, i) => (
+                      <tr key={i}>
+                        <td className="border border-slate-300 px-1 py-0.5 text-center font-bold">{i + 1}회</td>
+                        <td className="border border-slate-300 p-0.5">
+                          <input type="time" value={row.startTime}
+                            onChange={(e) => setOperationRow(i, 'startTime', e.target.value)}
+                            className="w-full px-1 py-1 text-xs font-mono border-0 focus:outline-none bg-transparent" />
+                        </td>
+                        <td className="border border-slate-300 p-0.5">
+                          <input type="time" value={row.endTime}
+                            onChange={(e) => setOperationRow(i, 'endTime', e.target.value)}
+                            className="w-full px-1 py-1 text-xs font-mono border-0 focus:outline-none bg-transparent" />
+                        </td>
+                        <td className="border border-slate-300 p-0.5">
+                          <input type="text" value={row.zone}
+                            onChange={(e) => setOperationRow(i, 'zone', e.target.value)}
+                            placeholder="구간/경로"
+                            className="w-full px-1 py-1 text-xs border-0 focus:outline-none bg-transparent" />
+                        </td>
+                        <td className="border border-slate-300 p-0.5">
+                          <input type="text" value={row.note}
+                            onChange={(e) => setOperationRow(i, 'note', e.target.value)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:outline-none bg-transparent" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -475,6 +524,7 @@ export default function VehicleLogClient({
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">음식물(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">재활·자원(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center min-w-[90px]">반입장소</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center min-w-[80px]">비고</th>
                 </tr>
               </thead>
               <tbody>
@@ -511,6 +561,15 @@ export default function VehicleLogClient({
                         className="w-full px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white min-w-[72px]"
                       />
                     </td>
+                    <td className="px-1 py-1 border border-line">
+                      <input
+                        type="text"
+                        value={form.bagWork[idx].note}
+                        onChange={(e) => setBagWorkRow(idx, 'note', e.target.value)}
+                        placeholder="비고"
+                        className="w-full px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white min-w-[64px]"
+                      />
+                    </td>
                   </tr>
                 ))}
                 {/* 합계행 */}
@@ -526,6 +585,7 @@ export default function VehicleLogClient({
                     {bagTotals.recycle > 0 ? bagTotals.recycle : '—'}
                   </td>
                   <td className="border border-line" />
+                <td className="border border-line" />
                 </tr>
               </tbody>
             </table>
@@ -848,14 +908,15 @@ function HistoryPanel() {
   }, []);
 
   return (
-    <div className="px-4 space-y-3">
-      <p className="text-xs font-bold text-ink-muted px-1">최근 30건 · 본인 제출 내역</p>
+    <div className="px-4">
+      <p className="text-xs font-bold text-ink-muted px-1 mb-3">최근 30건 · 본인 제출 내역</p>
       {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
       {!loading && items.length === 0 && (
         <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-slate-500 font-bold">
           제출한 차량일지가 없습니다.
         </div>
       )}
+      <div className="space-y-3 overflow-y-auto max-h-[calc(100dvh-180px)]">
       {items.map((log) => {
         const detail = parseRouteDetail(log.routeDetail);
         const isOpen = expanded === log.id;
@@ -891,6 +952,16 @@ function HistoryPanel() {
                   {log.endMileage != null && <span>종료거리: {log.endMileage.toLocaleString()}km</span>}
                   {log.fuelUsed != null && <span>주유량: {log.fuelUsed}L</span>}
                   {typeof detail.passengers === 'string' && detail.passengers && <span>동승: {detail.passengers}</span>}
+                  {Array.isArray(detail.operationRows) && (detail.operationRows as OperationRow[]).some((r) => r.startTime || r.zone) && (
+                    <div className="col-span-2">
+                      {(detail.operationRows as OperationRow[]).filter((r) => r.startTime || r.zone).map((r, i) => (
+                        <div key={i} className="font-mono">{i + 1}회: {r.startTime}{r.endTime ? `–${r.endTime}` : ''}{r.zone ? ` ${r.zone}` : ''}{r.note ? ` (${r.note})` : ''}</div>
+                      ))}
+                    </div>
+                  )}
+                  {!Array.isArray(detail.operationRows) && typeof detail.operationPeriod === 'string' && detail.operationPeriod && (
+                    <span className="col-span-2">운행기간/경로: {detail.operationPeriod}</span>
+                  )}
                   {typeof detail.note === 'string' && detail.note && <span className="col-span-2">특이사항: {detail.note}</span>}
                 </div>
                 {Array.isArray(detail.bagWork) && (
@@ -898,7 +969,7 @@ function HistoryPanel() {
                     <div className="font-extrabold text-ink mb-1">작업내역 A (kg)</div>
                     {(detail.bagWork as Record<string, string>[]).map((row, i) => (
                       <div key={i} className="text-[0.6875rem] font-mono">
-                        {`${i + 1}회차 | 일반 ${row.general ?? 0} · 음식 ${row.food ?? 0} · 재활 ${row.recycle ?? 0} · 반입: ${row.disposalSite ?? '-'}`}
+                        {`${i + 1}회차 | 일반 ${row.general ?? 0} · 음식 ${row.food ?? 0} · 재활 ${row.recycle ?? 0} · 반입: ${row.disposalSite ?? '-'}${row.note ? ` · 비고: ${row.note}` : ''}`}
                       </div>
                     ))}
                   </div>
@@ -920,6 +991,7 @@ function HistoryPanel() {
           </article>
         );
       })}
+      </div>
     </div>
   );
 }

@@ -43,6 +43,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: --dns-result-order=ipv4first
       DATABASE_URL: postgresql://${POSTGRES_USER:-cleanerp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cleanerp_prod}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET env required}
       NOC_ISSUE_SECRET: ${NOC_ISSUE_SECRET:-}
@@ -66,6 +67,7 @@ services:
       PPAEGI_API_BASE: ${PPAEGI_API_BASE:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-}
       # Let's Encrypt HTTP-01 ACME challenge (middleware에서 직접 처리)
+      ACME_THUMBPRINT: ${ACME_THUMBPRINT:-}
       ACME_CHALLENGE_TOKEN: ${ACME_CHALLENGE_TOKEN:-}
       ACME_CHALLENGE_RESPONSE: ${ACME_CHALLENGE_RESPONSE:-}
       ACME_CHALLENGES: ${ACME_CHALLENGES:-}

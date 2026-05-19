@@ -17,12 +17,21 @@ export default async function WorkerHomePage() {
   /* RAPID 직책만 추천경로 카드 노출 */
   const userInfo = await prisma.user.findUnique({
     where: { id: BigInt(session.userId) },
-    select: { position: { select: { code: true } } },
+    select: {
+      position: { select: { code: true } },
+      isComplaintManager: true,
+      isNoticeManager: true,
+      isPayrollManager: true,
+    },
   });
   const isRapid = userInfo?.position?.code === 'RAPID';
+  const isComplaintMgr = userInfo?.isComplaintManager === true;
+  const isNoticeMgr = userInfo?.isNoticeManager === true;
+  const isPayrollMgr = userInfo?.isPayrollManager === true;
 
   /* 익명 건의함 — 회사 기능 권한 게이트 */
   const suggestionEnabled = await hasFeature(session.contractorId, 'workerSuggestion');
+  const payslipEnabled    = await hasFeature(session.contractorId, 'payslip');
 
   const checkedIn = !!me?.checkInTime;
   const checkedOut = !!me?.checkOutTime;
@@ -99,6 +108,15 @@ export default async function WorkerHomePage() {
             desc="사진 · 서명 · 로그아웃"
             iconPath="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
           />
+          {payslipEnabled && (
+            <MenuCard
+              href="/worker/payslip"
+              color="bg-green-700"
+              title="급여명세"
+              desc="월별 급여명세 · 인쇄"
+              iconPath="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+            />
+          )}
           {suggestionEnabled && (
             <MenuCard
               href="/worker/suggestion"
@@ -108,6 +126,13 @@ export default async function WorkerHomePage() {
               iconPath="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
             />
           )}
+          <MenuCard
+            href="/worker/health"
+            color="bg-rose-600"
+            title="건강검진"
+            desc="검진결과 직접 입력"
+            iconPath="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          />
           {/* 📘 사용법 — /manual/worker 새 탭 (PWA 셸 유지) */}
           <MenuCard
             href="/manual/worker"
@@ -119,6 +144,42 @@ export default async function WorkerHomePage() {
           />
         </div>
       </section>
+
+      {/* 관리자 기능 바로가기 — 특수 권한 부여 근로자 전용 */}
+      {(isComplaintMgr || isNoticeMgr || isPayrollMgr) && (
+        <section>
+          <div className="px-1 mb-1.5 text-[0.6875rem] font-extrabold text-ink tracking-widest">관리자 기능</div>
+          <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(120px,1fr))]">
+            {isComplaintMgr && (
+              <MenuCard
+                href="/complaints"
+                color="bg-orange-600"
+                title="민원관리"
+                desc="조회·수정·담당자 배정"
+                iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            )}
+            {isNoticeMgr && (
+              <MenuCard
+                href="/announcements"
+                color="bg-emerald-600"
+                title="공지사항"
+                desc="작성·수정·삭제"
+                iconPath="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+              />
+            )}
+            {isPayrollMgr && (
+              <MenuCard
+                href="/payroll"
+                color="bg-purple-600"
+                title="급여관리"
+                desc="근태마감·명세서 발송"
+                iconPath="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 안내 카드 — 추가 다운 */}
       <div className="bg-amber-50 border border-amber-300 rounded-lg px-2.5 py-1.5 text-[0.6875rem] text-amber-900 font-semibold leading-relaxed flex items-start gap-1.5">

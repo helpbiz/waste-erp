@@ -9,8 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function AttendancePage({ searchParams }: { searchParams: { date?: string } }) {
   const session = (await readSession())!;
-  const dateStr = searchParams.date ?? todayKstDate().toISOString().slice(0, 10);
-  const date = new Date(dateStr);
+  const rawDate = searchParams.date ?? '';
+  const dateStr = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : todayKstDate().toISOString().slice(0, 10);
+  const date = new Date(dateStr + 'T00:00:00');
 
   /* 가시범위 — 사용자 진단 2026-04-29: MUNI_ADMIN 은 본인 지자체 산하만, contractorId=null 폴백 금지 */
   const recordScope = contractorScopeWhere(session);
@@ -64,7 +65,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
 
   const adminSelfRecord = (session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN')
     ? await prisma.attendanceRecord.findUnique({
-        where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: new Date(dateStr) } },
+        where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: new Date(dateStr + 'T00:00:00') } },
       })
     : null;
 

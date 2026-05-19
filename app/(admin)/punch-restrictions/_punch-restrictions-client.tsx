@@ -17,7 +17,9 @@ export type RestrictionRow = {
   lng: number | null;
   radiusMeters: number | null;
   locationLabel: string | null;
+  allowedDays: number[] | null;
   active: boolean;
+  sortOrder: number;
 };
 
 export type DeptOpt = { id: string; name: string };
@@ -33,6 +35,35 @@ export default function PunchRestrictionsClient({
   const [editing, setEditing] = useState<RestrictionRow | 'NEW' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localRows, setLocalRows] = useState<RestrictionRow[]>(() =>
+    [...rows].sort((a, b) => a.sortOrder - b.sortOrder)
+  );
+
+  async function moveRow(idx: number, dir: -1 | 1) {
+    const target = idx + dir;
+    if (target < 0 || target >= localRows.length) return;
+    const next = [...localRows];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    // assign new sortOrder values (0-based index)
+    const updated = next.map((r, i) => ({ ...r, sortOrder: i }));
+    setLocalRows(updated);
+    setBusy(true);
+    try {
+      await Promise.all([
+        fetch(`/api/punch-restrictions/${updated[idx].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sortOrder: updated[idx].sortOrder }),
+        }),
+        fetch(`/api/punch-restrictions/${updated[target].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sortOrder: updated[target].sortOrder }),
+        }),
+      ]);
+    } catch { setError('순번 변경 실패'); }
+    finally { setBusy(false); }
+  }
 
   async function toggleActive(r: RestrictionRow) {
     setBusy(true);
@@ -74,27 +105,46 @@ export default function PunchRestrictionsClient({
         <div className="bg-red-50 border border-red-300 rounded-md px-4 py-2.5 text-sm font-bold text-red-700">{error}</div>
       )}
 
-      {rows.length === 0 ? (
+      {localRows.length === 0 ? (
         <div className="bg-surface border border-line rounded-xl p-10 text-center text-sm font-bold text-ink-muted">
           등록된 출퇴근 제한 규칙이 없습니다.
         </div>
       ) : (
         <div className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[700px] text-sm">
             <thead className="bg-surface-soft text-[0.6875rem] font-mono font-extrabold text-ink uppercase tracking-wider">
               <tr>
+                <th className="px-3 py-2.5 text-left w-16">순번</th>
                 <th className="px-4 py-2.5 text-left">규칙명</th>
                 <th className="px-4 py-2.5 text-left">대상 부서</th>
                 <th className="px-4 py-2.5 text-left">출근 허용</th>
                 <th className="px-4 py-2.5 text-left">퇴근 허용</th>
-                <th className="px-4 py-2.5 text-left">위치 제한 <span className="text-amber-600">(출근만)</span></th>
+                <th className="px-4 py-2.5 text-left">위치 제한</th>
+                <th className="px-4 py-2.5 text-left">적용 요일</th>
                 <th className="px-4 py-2.5 text-left">상태</th>
                 <th className="px-4 py-2.5 text-left">액션</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {rows.map((r) => (
+              {localRows.map((r, idx) => (
                 <tr key={r.id} className={r.active ? '' : 'opacity-50'}>
+                  <td className="px-3 py-2.5">
+                    <div className="flex flex-col gap-0.5 items-center">
+                      <button
+                        onClick={() => moveRow(idx, -1)}
+                        disabled={busy || idx === 0}
+                        className="text-[0.6rem] font-extrabold text-ink-muted hover:text-accent disabled:opacity-30 leading-none px-1"
+                        title="위로"
+                      >▲</button>
+                      <span className="text-[0.6875rem] font-mono font-bold text-ink-muted">{idx + 1}</span>
+                      <button
+                        onClick={() => moveRow(idx, 1)}
+                        disabled={busy || idx === localRows.length - 1}
+                        className="text-[0.6rem] font-extrabold text-ink-muted hover:text-accent disabled:opacity-30 leading-none px-1"
+                        title="아래로"
+                      >▼</button>
+                    </div>
+                  </td>
                   <td className="px-4 py-2.5 font-extrabold text-ink">{r.name}</td>
                   <td className="px-4 py-2.5 text-ink-muted font-bold">{r.departmentName ?? '전체'}</td>
                   <td className="px-4 py-2.5 font-mono font-bold text-ink">
@@ -111,6 +161,11 @@ export default function PunchRestrictionsClient({
                     {r.requireLocation && r.lat != null
                       ? <span className="text-xs font-bold text-accent">{r.locationLabel ?? '지정 좌표'} ({r.radiusMeters}m)</span>
                       : <span className="text-ink-faint text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-2.5 font-bold text-xs text-ink">
+                    {r.allowedDays && r.allowedDays.length > 0
+                      ? r.allowedDays.map((d) => ['월','화','수','목','금','토','일'][d]).join('')
+                      : <span className="text-ink-faint">매일</span>}
                   </td>
                   <td className="px-4 py-2.5">
                     <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border ${r.active ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-slate-100 text-slate-500 border-slate-300'}`}>
@@ -154,7 +209,12 @@ export default function PunchRestrictionsClient({
           initial={editing === 'NEW' ? null : editing}
           departments={departments}
           onCancel={() => setEditing(null)}
-          onSaved={() => { setEditing(null); router.refresh(); }}
+          onSaved={() => {
+            setEditing(null);
+            router.refresh();
+            // Reset local order after save to stay in sync
+            setLocalRows((prev) => [...prev]);
+          }}
         />
       )}
     </div>
@@ -184,6 +244,7 @@ function RestrictionFormModal({
   const [lng, setLng] = useState(initial?.lng != null ? String(initial.lng) : '');
   const [radius, setRadius] = useState(initial?.radiusMeters != null ? String(initial.radiusMeters) : '200');
   const [locationLabel, setLocationLabel] = useState(initial?.locationLabel ?? '');
+  const [allowedDays, setAllowedDays] = useState<number[]>(initial?.allowedDays ?? []);
   const [active, setActive] = useState(initial?.active ?? true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,6 +265,7 @@ function RestrictionFormModal({
       lng: requireLocation && lng ? Number(lng) : null,
       radiusMeters: requireLocation && radius ? Number(radius) : null,
       locationLabel: requireLocation && locationLabel ? locationLabel : null,
+      allowedDays: allowedDays.length > 0 ? allowedDays : null,
       active,
     };
     const res = await fetch(
@@ -261,12 +323,36 @@ function RestrictionFormModal({
             </Field>
           </div>
 
+          <div className="space-y-2">
+            <span className="block text-[0.6875rem] font-extrabold text-ink tracking-wide">적용 요일 (비워두면 매일 적용)</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {([['월','0'],['화','1'],['수','2'],['목','3'],['금','4'],['토','5'],['일','6']] as [string,string][]).map(([label, val]) => {
+                const dayNum = Number(val);
+                const checked = allowedDays.includes(dayNum);
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setAllowedDays(checked ? allowedDays.filter((d) => d !== dayNum) : [...allowedDays, dayNum].sort((a, b) => a - b))}
+                    className={`w-9 h-9 rounded-full text-xs font-extrabold border-2 transition-colors ${checked ? 'bg-accent text-white border-accent' : 'bg-surface text-ink-muted border-line hover:border-accent'} ${(dayNum === 5 || dayNum === 6) ? 'text-red-500' : ''}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <button type="button" onClick={() => setAllowedDays([])} className="px-2 py-1 text-[0.625rem] font-bold text-ink-muted border border-line rounded hover:bg-slate-50">초기화</button>
+            </div>
+            {allowedDays.length > 0 && (
+              <p className="text-[0.625rem] font-mono text-ink-muted">선택된 요일만 적용됩니다</p>
+            )}
+          </div>
+
           <div className="border border-line rounded-lg p-4 space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={requireLocation} onChange={(e) => setRequireLocation(e.target.checked)}
                 className="w-4 h-4 rounded border-2 border-line accent-accent" />
               <span className="text-sm font-extrabold text-ink">지정 장소 제한 사용</span>
-              <span className="text-xs font-bold text-amber-600 ml-1">(출근만 적용 — 퇴근은 장소 무관)</span>
+              <span className="text-xs font-bold text-slate-500 ml-1">(출근·퇴근 모두 적용)</span>
             </label>
             {requireLocation && (
               <>

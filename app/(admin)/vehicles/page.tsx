@@ -6,9 +6,16 @@ import VehiclesClient, { type LogRow, type VehicleRow } from './_vehicles-client
 
 export const dynamic = 'force-dynamic';
 
-export default async function VehiclesPage() {
+export default async function VehiclesPage({ searchParams }: { searchParams: { date?: string } }) {
   const session = (await readSession())!;
   const today = todayKstDate();
+
+  /* 날짜 파라미터 처리 — 없으면 오늘 */
+  const rawDate = searchParams.date;
+  const selectedDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+    ? new Date(rawDate)
+    : today;
+  const selectedDateStr = selectedDate.toISOString().slice(0, 10);
 
   const [vehicles, logs, workers] = await Promise.all([
     prisma.vehicle.findMany({
@@ -22,7 +29,7 @@ export default async function VehiclesPage() {
       },
     }),
     prisma.vehicleLog.findMany({
-      where: { logDate: today, ...vehicleLogWhere(session) },
+      where: { logDate: selectedDate, ...vehicleLogWhere(session) },
       orderBy: [{ status: 'asc' }, { id: 'desc' }],
       include: {
         vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true } },
@@ -86,6 +93,7 @@ export default async function VehiclesPage() {
       workers={workers.map((w) => ({ id: w.id.toString(), name: w.name }))}
       isManager={isVehicleLogManager(session.role)}
       todayLabel={today.toISOString().slice(0, 10)}
+      selectedDate={selectedDateStr}
     />
   );
 }

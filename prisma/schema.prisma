@@ -237,6 +237,7 @@ model Contractor {
   contractorRanks     ContractorRank[]
   vehicleGpsPositions VehicleGpsPosition[]
   disposalSites       DisposalSite[]
+  payslipRecords      PayslipRecord[]      @relation("ContractorPayslips")
 
   @@index([municipalityId])
   @@map("contractors")
@@ -356,6 +357,10 @@ model User {
   rank              String? @db.VarChar(30)              // 직급 enum: ENGINEER_HIGH/MID/BEGINNER, SKILL_HIGH/MID/BEGINNER, LABORER 등
   primaryFacilityId BigInt? @map("primary_facility_id")  // 주근무지 (AVAC 시설 등)
   isFacilityOperator Boolean @default(false) @map("is_facility_operator") // 시설 담당자 — 담당 집하장 운전기록·TBM·공지 입력 권한
+  isNoticeManager    Boolean @default(false) @map("is_notice_manager") // 공지 작성 권한 — 업체 관리자가 지정 (최대 2명 권고)
+  isTbmManager       Boolean @default(false) @map("is_tbm_manager")    // TBM 작성 권한 — 업체 관리자가 지정 (최대 2명 권고)
+  isComplaintManager Boolean @default(false) @map("is_complaint_manager") // 민원 관리자 권한 — 전체 민원 조회·배정 권한
+  isPayrollManager   Boolean @default(false) @map("is_payroll_manager")   // 급여대장·명세서 관리 권한 — 업체 관리자가 지정
 
   // 업체별 직책·직급 (contractor-org-master: 전역 Position 병행)
   contractorPositionId BigInt? @map("contractor_position_id")
@@ -400,6 +405,8 @@ model User {
   contractorPositionsCreated ContractorPosition[] @relation("ContractorPositionCreator")
   contractorRanksCreated     ContractorRank[]     @relation("ContractorRankCreator")
   punchRestrictionsCreated   PunchRestriction[]   @relation("PunchRestrictionCreator")
+  payslips                   PayslipRecord[]      @relation("WorkerPayslips")
+  payslipsCreated            PayslipRecord[]      @relation("PayslipCreator")
 
   @@index([contractorId])
   @@index([role])
@@ -576,6 +583,7 @@ model VehicleLog {
   tripCount     Int?             @map("trip_count")
   routeDetail   String?          @map("route_detail") @db.Text
   status        VehicleLogStatus @default(DRAFT)
+  updatedAt     DateTime         @updatedAt @map("updated_at")
 
   vehicle Vehicle       @relation(fields: [vehicleId], references: [id])
   driver  User          @relation(fields: [driverId], references: [id])
@@ -1204,6 +1212,7 @@ model Announcement {
   @@index([audience, publishedAt])
   @@index([contractorId, publishedAt])
   @@index([facilityId, publishedAt])
+  attachmentUrls String?  @map("attachment_urls")   // JSON 배열 — base64 data URLs (최대 3장)
   @@index([targetUserId])
   @@map("announcements")
 }
@@ -1376,6 +1385,9 @@ model PunchRestriction {
   radiusMeters   Int?     @map("radius_meters")
   /// 위치 이름/설명 (예: "차고지", "사무소 앞")
   locationLabel  String?  @map("location_label") @db.VarChar(100)
+  /// 적용 요일 (JSON 배열, 0=월~6=일, null=매일)
+  allowedDays    String?  @map("allowed_days") @db.Text
+  sortOrder      Int      @default(0) @map("sort_order")
   active         Boolean  @default(true)
   createdBy      BigInt?  @map("created_by")
   createdAt      DateTime @default(now()) @map("created_at")
@@ -1388,6 +1400,31 @@ model PunchRestriction {
   @@index([contractorId, active])
   @@index([contractorId, departmentId])
   @@map("punch_restrictions")
+}
+
+/// 급여명세서 레코드 — 월별 근로자별 급여 내역.
+/// data JSON 구조: { earnings: {항목명: 금액}, deductions: {항목명: 금액}, totals: {지급합계, 공제합계, 실수령액} }
+/// 컬럼 설정(템플릿)은 ContractorFeature(featureKey='payslip').config JSON에 저장.
+model PayslipRecord {
+  id           BigInt    @id @default(autoincrement())
+  contractorId BigInt    @map("contractor_id")
+  workerId     BigInt    @map("worker_id")
+  yearMonth    String    @db.VarChar(7)    // "2026-05"
+  data         Json                        // { employeeNo, earnings, deductions, totals }
+  isPublished  Boolean   @default(false)   @map("is_published")
+  publishedAt  DateTime?                   @map("published_at")
+  createdBy    BigInt    @map("created_by")
+  createdAt    DateTime  @default(now())   @map("created_at")
+  updatedAt    DateTime  @updatedAt        @map("updated_at")
+
+  contractor Contractor @relation("ContractorPayslips", fields: [contractorId], references: [id], onDelete: Cascade)
+  worker     User       @relation("WorkerPayslips",     fields: [workerId],     references: [id], onDelete: Cascade)
+  creator    User       @relation("PayslipCreator",     fields: [createdBy],    references: [id])
+
+  @@unique([contractorId, workerId, yearMonth])
+  @@index([contractorId, yearMonth])
+  @@index([workerId, isPublished])
+  @@map("payslip_records")
 }
 
 /// 반입장소 마스터 — CONTRACTOR_ADMIN이 사전 등록

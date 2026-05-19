@@ -7,6 +7,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { decryptField } from '@/lib/crypto';
+import { fetchEtracePositions } from '@/lib/gps-adapters/etrace';
 
 export const runtime = 'nodejs';
 
@@ -28,21 +30,28 @@ function simulatePosition(vehicleId: bigint, seedTime: number): { lat: number; l
   return { lat, lng, speed, heading, status };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  /* SUPER_ADMIN/MUNI_ADMIN(contractorId=null) — center 포함한 빈 응답 (클라이언트 throw 방지) */
-  if (!session.contractorId) {
+
+  /* SUPER_ADMIN: ?contractorId=<id> 로 특정 업체 조회 가능 */
+  const url = new URL(req.url);
+  const cidParam = url.searchParams.get('contractorId');
+  const contractorIdResolved = cidParam && session.role === 'SUPER_ADMIN'
+    ? (() => { try { return BigInt(cidParam); } catch { return null; } })()
+    : session.contractorId ? BigInt(session.contractorId) : null;
+
+  if (!contractorIdResolved) {
     return NextResponse.json({
       provider: 'simulation',
       refreshSec: 5,
       center: CENTER,
       vehicles: [],
-      note: '위탁업체에 소속되지 않은 계정 — 표시할 차량 없음',
+      note: '위탁업체에 소속되지 않은 계정 — ?contractorId=<id> 쿼리 필요',
     });
   }
 
-  const contractorId = BigInt(session.contractorId);
+  const contractorId = contractorIdResolved;
   const config = await prisma.liveTrackingConfig.findUnique({ where: { contractorId } });
   const provider = config?.gisProvider ?? 'simulation';
 
@@ -67,6 +76,36 @@ export async function GET() {
     }]));
   }
 
+  /* etrace 프로바이더: ETRACE API Pull */
+  let etracePositionMap = new Map<string, { lat: number; lng: number; speed: number; heading: number; gpsTime: string | null; location: string | null }>();
+  if (provider === 'etrace' && config?.apiKeyEnc && config.gisBaseUrl) {
+    try {
+      const apiKey = await decryptField(config.apiKeyEnc);
+      if (apiKey) {
+        const pc = config.providerConfig as Record<string, unknown> | null;
+        const lastSeq = pc?.lastSeq != null ? Number(pc.lastSeq) : null;
+        const result = await fetchEtracePositions({
+          baseUrl: config.gisBaseUrl,
+          apiKey,
+          lastSeq,
+          contractorId: contractorId.toString(),
+          throttleMs: (config.refreshSec ?? 5) * 1000,
+        });
+        etracePositionMap = result.positions as unknown as typeof etracePositionMap;
+
+        /* lastSeq 갱신 (변경된 경우만) */
+        if (result.newLastSeq !== lastSeq) {
+          await prisma.liveTrackingConfig.update({
+            where: { contractorId },
+            data: { providerConfig: { ...(pc ?? {}), lastSeq: result.newLastSeq } },
+          });
+        }
+      }
+    } catch (e) {
+      console.error('[etrace] positions fetch error', e instanceof Error ? e.message : e);
+    }
+  }
+
   const positions = vehicles.map((v) => {
     if (provider === 'local') {
       const gps = gpsPositionMap.get(v.id.toString());
@@ -84,6 +123,26 @@ export async function GET() {
         heading: gps?.heading ?? 0,
         operationalStatus: opStatus,
         updatedAt: gps?.updatedAt.toISOString() ?? null,
+        noData: !gps,
+      };
+    }
+    if (provider === 'etrace') {
+      const gps = etracePositionMap.get(v.vehicleNo);
+      const speed = gps?.speed ?? 0;
+      const opStatus = v.status === 'MAINTENANCE' ? 'MAINTENANCE' : speed === 0 ? 'IDLE' : speed < 5 ? 'STOP' : 'MOVING';
+      return {
+        vehicleId: v.id.toString(),
+        vehicleNo: v.vehicleNo,
+        vehicleType: v.vehicleType,
+        vehicleStatus: v.status,
+        driverName: v.driver?.name ?? null,
+        lat: gps?.lat ?? CENTER.lat,
+        lng: gps?.lng ?? CENTER.lng,
+        speed,
+        heading: gps?.heading ?? 0,
+        operationalStatus: opStatus,
+        updatedAt: gps?.gpsTime ?? null,
+        location: gps?.location ?? null,
         noData: !gps,
       };
     }
@@ -112,6 +171,8 @@ export async function GET() {
       ? '시안 모드 — 30초 슬롯 기반 시뮬 GPS'
       : provider === 'local'
       ? 'GPS 단말 직접 수신 모드 (POST /api/live-tracking/gps-ingest)'
-      : `외부 GIS provider: ${provider} (Phase 2 실 API 프록시)`,
+      : provider === 'etrace'
+      ? 'ETRACE 실시간 GPS (SEQ 기반 Pull)'
+      : `외부 GIS provider: ${provider}`,
   });
 }

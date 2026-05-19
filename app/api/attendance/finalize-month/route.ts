@@ -25,9 +25,12 @@ const Body = z.object({
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!isAttendanceManager(session.role)) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  let allowed = isAttendanceManager(session.role);
+  if (!allowed && session.role === 'WORKER') {
+    const flag = await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isPayrollManager: true } });
+    allowed = flag?.isPayrollManager === true;
   }
+  if (!allowed) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

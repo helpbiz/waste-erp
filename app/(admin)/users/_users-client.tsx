@@ -55,6 +55,10 @@ export type UserRow = {
   rank: string | null;
   primaryFacility: { id: string; name: string; type: string } | null;
   isFacilityOperator: boolean;
+  isNoticeManager: boolean;
+  isTbmManager: boolean;
+  isComplaintManager: boolean;
+  isPayrollManager: boolean;
   profilePhotoUrl: string | null;
   activeSignatureRef: string | null;
   /* contractor-org-master — 업체별 직책·직급 */
@@ -471,6 +475,10 @@ function EditUserModal({ user, positions, departments, onClose }: {
     rank: user.rank ?? '',                                /* AVAC 보강 */
     primaryFacilityId: user.primaryFacility?.id ?? '',    /* AVAC 보강 */
     isFacilityOperator: user.isFacilityOperator,          /* 시설 담당자 권한 */
+    isNoticeManager: user.isNoticeManager,                /* 공지 작성 권한 */
+    isTbmManager: user.isTbmManager,                     /* TBM 작성 권한 */
+    isComplaintManager: user.isComplaintManager,          /* 민원 관리자 권한 */
+    isPayrollManager: user.isPayrollManager,              /* 급여관리 권한 */
     birthDate: user.birthDate ?? '',
     hireDate: user.hireDate ?? '',
     address: '',
@@ -541,6 +549,10 @@ function EditUserModal({ user, positions, departments, onClose }: {
     if (form.rank !== (user.rank ?? '')) payload.rank = form.rank || null;
     if (form.primaryFacilityId !== (user.primaryFacility?.id ?? '')) payload.primaryFacilityId = form.primaryFacilityId || null;
     if (form.isFacilityOperator !== user.isFacilityOperator) payload.isFacilityOperator = form.isFacilityOperator;
+    if (form.isNoticeManager !== user.isNoticeManager) payload.isNoticeManager = form.isNoticeManager;
+    if (form.isTbmManager !== user.isTbmManager) payload.isTbmManager = form.isTbmManager;
+    if (form.isComplaintManager !== user.isComplaintManager) payload.isComplaintManager = form.isComplaintManager;
+    if (form.isPayrollManager !== user.isPayrollManager) payload.isPayrollManager = form.isPayrollManager;
     if (form.birthDate !== (user.birthDate ?? '')) payload.birthDate = form.birthDate || null;
     if (form.hireDate !== (user.hireDate ?? '')) payload.hireDate = form.hireDate || null;
     if (detail) {
@@ -669,6 +681,89 @@ function EditUserModal({ user, positions, departments, onClose }: {
             {form.isFacilityOperator && !form.primaryFacilityId && (
               <p className="mt-1 text-xs text-amber-600 font-bold">⚠ 주근무지(시설)를 반드시 지정해야 합니다.</p>
             )}
+          </Field>
+
+          {/* 공지 작성 권한 */}
+          <Field label="공지 작성 권한" colSpan={2}>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isNoticeManager}
+                onClick={() => setForm({ ...form, isNoticeManager: !form.isNoticeManager })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isNoticeManager ? 'bg-emerald-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isNoticeManager ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-ink">
+                {form.isNoticeManager
+                  ? <strong className="text-emerald-700">활성 — 공지사항 작성·수정·삭제 가능 (최대 2명 권고)</strong>
+                  : <span className="text-ink-muted">비활성 — 공지 작성 불가</span>
+                }
+              </span>
+            </label>
+          </Field>
+
+          {/* TBM 작성 권한 */}
+          <Field label="TBM 작성 권한" colSpan={2}>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isTbmManager}
+                onClick={() => setForm({ ...form, isTbmManager: !form.isTbmManager })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isTbmManager ? 'bg-teal-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isTbmManager ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-ink">
+                {form.isTbmManager
+                  ? <strong className="text-teal-700">활성 — TBM 작성·수정 가능 (최대 2명 권고)</strong>
+                  : <span className="text-ink-muted">비활성 — TBM 작성 불가</span>
+                }
+              </span>
+            </label>
+          </Field>
+
+          <Field label="민원 관리자 권한">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isComplaintManager}
+                onClick={() => setForm({ ...form, isComplaintManager: !form.isComplaintManager })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isComplaintManager ? 'bg-orange-500' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isComplaintManager ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-ink">
+                {form.isComplaintManager
+                  ? <strong className="text-orange-700">활성 — 전체 민원 조회·배정 가능</strong>
+                  : <span className="text-ink-muted">비활성 — 본인 민원만 조회</span>
+                }
+              </span>
+            </label>
+          </Field>
+
+          {/* 급여관리 권한 */}
+          <Field label="급여관리 권한">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.isPayrollManager}
+                onClick={() => setForm({ ...form, isPayrollManager: !form.isPayrollManager })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isPayrollManager ? 'bg-purple-600' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isPayrollManager ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+              <span className="text-sm text-ink">
+                {form.isPayrollManager
+                  ? <strong className="text-purple-700">활성 — 급여대장 마감·명세서 업로드·발송 가능</strong>
+                  : <span className="text-ink-muted">비활성 — 급여관리 불가</span>
+                }
+              </span>
+            </label>
           </Field>
 
           <Field label="사번"><Input value={form.employeeNo} onChange={(v) => setForm({ ...form, employeeNo: v })} /></Field>

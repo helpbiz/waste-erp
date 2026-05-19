@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { todayKstDate } from '@/lib/dates';
 import { DAILY_CHECKLIST_ITEMS } from '@/lib/safety';
 import { fetchWeatherCached } from '@/lib/weather-providers';
-import { isAvacContractor, getAvacFacilities } from '@/lib/features';
+import { isAvacContractor, getAvacFacilities, hasFeature } from '@/lib/features';
 import SafetyWorkerClient from './_safety-worker-client';
 import type { FacilityOption } from './_safety-worker-client';
 
@@ -14,7 +14,23 @@ export default async function SafetyWorkerPage() {
   const today = todayKstDate();
   const contractorBigId = session.contractorId ? BigInt(session.contractorId) : null;
 
-  const isAvac = contractorBigId ? await isAvacContractor(contractorBigId) : false;
+  const [isAvac, hasNearMiss, hasIncident] = await Promise.all([
+    contractorBigId ? isAvacContractor(contractorBigId) : Promise.resolve(false),
+    contractorBigId ? hasFeature(contractorBigId, 'safetyNearMiss') : Promise.resolve(true),
+    contractorBigId ? hasFeature(contractorBigId, 'safetyIncident') : Promise.resolve(true),
+  ]);
+
+  const contractorInfo = contractorBigId
+    ? await prisma.contractor.findUnique({
+        where: { id: contractorBigId },
+        select: { garageAddress: true, garageLat: true, garageLng: true },
+      })
+    : null;
+  const weatherLocation = contractorInfo?.garageLat && contractorInfo?.garageLng
+    ? { lat: Number(contractorInfo.garageLat), lng: Number(contractorInfo.garageLng), region: contractorInfo.garageAddress ?? undefined }
+    : contractorInfo?.garageAddress
+    ? { region: contractorInfo.garageAddress }
+    : undefined;
 
   const [todayChecklist, tbm, weather, me, facilities, userDetail] = await Promise.all([
     prisma.safetyReport.findFirst({
@@ -26,7 +42,7 @@ export default async function SafetyWorkerPage() {
           include: { signatures: true },
         })
       : Promise.resolve(null),
-    fetchWeatherCached(),
+    fetchWeatherCached(weatherLocation),
     prisma.user.findUnique({
       where: { id: BigInt(session.userId) },
       select: { emergencyContact: true, emergencyPhone: true },
@@ -36,7 +52,7 @@ export default async function SafetyWorkerPage() {
       : Promise.resolve([] as { id: bigint; name: string; type: string }[]),
     prisma.user.findUnique({
       where: { id: BigInt(session.userId) },
-      select: { isFacilityOperator: true, primaryFacilityId: true, primaryFacility: { select: { id: true, name: true } } },
+      select: { isFacilityOperator: true, primaryFacilityId: true, primaryFacility: { select: { id: true, name: true } }, isTbmManager: true },
     }),
   ]);
 
@@ -44,12 +60,18 @@ export default async function SafetyWorkerPage() {
 
   let tbmContentText: string | null = tbm?.content ?? null;
   let tbmPhotoDataUrl: string | null = null;
+  let tbmLeader: string | null = null;
+  let tbmLocation: string | null = null;
+  let tbmHazards: string | null = null;
   if (tbm?.content) {
     try {
       const p = JSON.parse(tbm.content);
       if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
         tbmContentText = p.text ?? null;
         tbmPhotoDataUrl = p.photoDataUrl ?? null;
+        tbmLeader = p.leader ?? null;
+        tbmLocation = p.location ?? null;
+        tbmHazards = p.hazards ?? null;
       }
     } catch {}
   }
@@ -61,7 +83,7 @@ export default async function SafetyWorkerPage() {
       submittedAt={todayChecklist?.createdAt.toISOString() ?? null}
       allChecked={todayChecklist?.allChecked ?? false}
       tbm={tbm
-        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, signed: tbmSigned, signCount: tbm.signatures.length }
+        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, leader: tbmLeader, location: tbmLocation, hazards: tbmHazards, signed: tbmSigned, signCount: tbm.signatures.length }
         : null
       }
       weather={weather}
@@ -69,9 +91,12 @@ export default async function SafetyWorkerPage() {
       isAvac={isAvac}
       facilities={facilities.map((f): FacilityOption => ({ id: f.id.toString(), name: f.name }))}
       isFacilityOperator={userDetail?.isFacilityOperator ?? false}
+      isTbmManager={userDetail?.isTbmManager ?? false}
       operatorFacility={userDetail?.primaryFacility
         ? { id: userDetail.primaryFacility.id.toString(), name: userDetail.primaryFacility.name }
         : null}
+      hasNearMiss={hasNearMiss}
+      hasIncident={hasIncident}
     />
   );
 }

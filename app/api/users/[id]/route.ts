@@ -44,6 +44,10 @@ const Patch = z.object({
   ]).nullable().optional(),
   primaryFacilityId: z.string().nullable().optional(),
   isFacilityOperator: z.boolean().optional(),
+  isNoticeManager: z.boolean().optional(),
+  isTbmManager: z.boolean().optional(),
+  isComplaintManager: z.boolean().optional(),
+  isPayrollManager: z.boolean().optional(),
   /* contractor-org-master — Design Ref: §4.6 */
   contractorPositionId: z.string().nullable().optional(),
   rankId: z.string().nullable().optional(),
@@ -242,6 +246,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   if (b.isFacilityOperator !== undefined) data.isFacilityOperator = b.isFacilityOperator;
+  if (b.isNoticeManager !== undefined) data.isNoticeManager = b.isNoticeManager;
+  if (b.isTbmManager !== undefined) data.isTbmManager = b.isTbmManager;
+  if (b.isComplaintManager !== undefined) data.isComplaintManager = b.isComplaintManager;
+  if (b.isPayrollManager !== undefined) data.isPayrollManager = b.isPayrollManager;
 
   /* 실제로 값이 바뀐 필드만 추적 — PII는 평문 비교 + 마스킹 저장 */
   const changes: Record<string, { from: unknown; to: unknown }> = {};

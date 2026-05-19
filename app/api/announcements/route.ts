@@ -31,6 +31,7 @@ const Body = z.object({
   pinned: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
   facilityId: z.string().optional(), // AVAC: 집하장별 공지
+  attachmentUrls: z.array(z.string().max(2_000_000)).max(3).nullable().optional(),
 });
 
 export async function GET(req: Request) {
@@ -121,6 +122,10 @@ export async function GET(req: Request) {
       contractorId: a.contractorId?.toString() ?? null,
       municipalityId: a.municipalityId?.toString() ?? null,
       facilityId: a.facilityId?.toString() ?? null,
+      attachmentUrls: (() => {
+        if (!a.attachmentUrls) return null;
+        try { return JSON.parse(a.attachmentUrls) as string[]; } catch { return null; }
+      })(),
     })),
   });
 }
@@ -184,6 +189,7 @@ export async function POST(req: Request) {
       contractorId,
       municipalityId,
       facilityId,
+      attachmentUrls: b.attachmentUrls?.length ? JSON.stringify(b.attachmentUrls) : null,
     },
   });
 

@@ -11,7 +11,7 @@
 import { useRef, useState } from 'react';
 
 const MAX_DIM = 1024;
-const TARGET_KB = 3000; // 사진 1장당 3MB 한도 (모바일 카메라 직촬 여유)
+const TARGET_KB = 1400; // API z.string().max(2_000_000) 기준 ≈ 1,465KB 실데이터 한도
 
 export default function MultiPhotoUploader({
   initial,

@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { roundCoord } from '@/lib/geo';
-import { complaintWhere, canTransitionComplaint } from '@/lib/complaints';
+import { complaintWhere, canTransitionComplaint, isComplaintManager } from '@/lib/complaints';
 import { writeAudit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
@@ -30,13 +30,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const id = BigInt(params.id);
   const target = await prisma.complaint.findFirst({
-    where: { id, ...complaintWhere(session) },
+    where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (!canTransitionComplaint(session, target)) {
+  if (!canTransitionComplaint(session, target, workerIsManager)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   const parsed = Patch.safeParse(await req.json().catch(() => null));
@@ -70,13 +74,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const id = BigInt(params.id);
   const target = await prisma.complaint.findFirst({
-    where: { id, ...complaintWhere(session) },
+    where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (!canTransitionComplaint(session, target)) {
+  if (!canTransitionComplaint(session, target, workerIsManager)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 

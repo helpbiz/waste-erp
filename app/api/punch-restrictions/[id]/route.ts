@@ -24,7 +24,9 @@ const Patch = z.object({
   lng: z.number().min(-180).max(180).optional().nullable(),
   radiusMeters: z.number().int().min(10).max(50000).optional().nullable(),
   locationLabel: z.string().max(100).optional().nullable(),
+  allowedDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
   active: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -57,7 +59,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(b.lng !== undefined && { lng: b.lng }),
       ...(b.radiusMeters !== undefined && { radiusMeters: b.radiusMeters }),
       ...(b.locationLabel !== undefined && { locationLabel: b.locationLabel }),
+      ...(b.allowedDays !== undefined && { allowedDays: b.allowedDays ? JSON.stringify(b.allowedDays) : null }),
       ...(b.active !== undefined && { active: b.active }),
+      ...(b.sortOrder !== undefined && { sortOrder: b.sortOrder }),
     },
   });
 

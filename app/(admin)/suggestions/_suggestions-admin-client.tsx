@@ -203,6 +203,7 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
   const toast = useToast();
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   async function changeStatus(s: Status) {
     setBusy(true);
@@ -256,7 +257,9 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
       {item.photos.length > 0 && (
         <div className="flex gap-1.5 mt-2">
           {item.photos.map((p, i) => (
-            <img key={i} src={p} alt="" className="w-20 h-20 rounded-md object-cover border border-line" />
+            <button key={i} onClick={() => setLightboxSrc(p)}>
+              <img src={p} alt="" className="w-20 h-20 rounded-md object-cover border border-line" />
+            </button>
           ))}
         </div>
       )}
@@ -300,6 +303,13 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
               답변 등록
             </button>
           </div>
+        </div>
+      )}
+
+      {lightboxSrc && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center px-4" onClick={() => setLightboxSrc(null)}>
+          <button onClick={() => setLightboxSrc(null)} className="absolute top-4 right-4 text-white text-3xl font-bold">&times;</button>
+          <img src={lightboxSrc} alt="사진 크게 보기" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </article>

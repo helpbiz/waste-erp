@@ -8,24 +8,31 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
-import { complaintWhere, canTransitionComplaint } from '@/lib/complaints';
+import { complaintWhere, canTransitionComplaint, isComplaintManager } from '@/lib/complaints';
 
 export const runtime = 'nodejs';
 
 const Body = z.object({
   resolveNote: z.string().trim().max(2000).optional(),
-  note: z.string().trim().max(2000).optional(),          /* 워커 앱 호환 */
-  requestImage: z.string().max(2_000_000).optional(),    /* 완료 사진 */
-  taggedUserId: z.string().optional(),                   /* 담당자 태그 (userId 문자열) */
+  note: z.string().trim().max(2000).optional(),
+  requestImage: z.string().max(2_000_000).optional(),
+  requestImages: z.array(z.string().max(2_000_000)).max(3).optional(),
+  taggedUserId: z.string().optional(),
 }).transform((d) => ({
   resolveNote: (d.resolveNote || d.note || '처리 완료').slice(0, 2000),
-  requestImage: d.requestImage ?? null,
+  requestImage: d.requestImages?.length
+    ? JSON.stringify(d.requestImages)
+    : (d.requestImage ?? null),
   taggedUserId: d.taggedUserId ?? null,
 }));
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -38,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const id = BigInt(params.id);
   const target = await prisma.complaint.findFirst({
-    where: { id, ...complaintWhere(session) },
+    where: { id, ...complaintWhere(session, workerIsManager) },
     select: {
       id: true, status: true, assignedTo: true, contractorId: true,
       type: true, locationAddress: true, complainantPhone: true, requestImage: true,
@@ -46,7 +53,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (!canTransitionComplaint(session, target)) {
+  if (!canTransitionComplaint(session, target, workerIsManager)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (target.status === 'COMPLETED' || target.status === 'REJECTED') {

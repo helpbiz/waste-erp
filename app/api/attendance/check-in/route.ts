@@ -75,7 +75,12 @@ export async function POST(req: Request) {
       });
       const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
       const kstHHMM = `${String(kstNow.getUTCHours()).padStart(2, '0')}:${String(kstNow.getUTCMinutes()).padStart(2, '0')}`;
+      const kstDayOfWeek = (kstNow.getUTCDay() + 6) % 7; // 0=월 ~ 5=토, 6=일
       for (const r of restrictions) {
+        if (r.allowedDays) {
+          const days: number[] = JSON.parse(r.allowedDays);
+          if (!days.includes(kstDayOfWeek)) continue;
+        }
         if (r.checkInFrom && kstHHMM < r.checkInFrom) {
           return NextResponse.json({ error: 'punch_too_early', allowFrom: r.checkInFrom, rule: r.name }, { status: 403 });
         }
@@ -126,7 +131,7 @@ export async function POST(req: Request) {
       checkInLat: lat,
       checkInLng: lng,
       workType: 'NORMAL',
-      zoneId: zoneId !== undefined ? BigInt(zoneId) : null,
+      zoneId: (zoneId !== undefined && zoneId !== '') ? BigInt(zoneId) : null,
       status: 'PENDING',
     },
     update: {

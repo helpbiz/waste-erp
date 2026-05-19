@@ -64,7 +64,7 @@ type Aggregate = {
   } | null;
 };
 
-type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'facility-ops' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features';
+type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'facility-ops' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features' | 'data-reset';
 
 export default function SuperAdminClient() {
   const [tab, setTab] = useState<SuperTab>(() => {
@@ -132,6 +132,7 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'org-tree'} onClick={() => setTab('org-tree')}>🌲 조직 트리</Tab>
         <Tab active={tab === 'contractor-trash'} onClick={() => setTab('contractor-trash')}>🗑 위탁업체 삭제·복구</Tab>
         <Tab active={tab === 'features'} onClick={() => setTab('features')}>🎛 회사별 기능 권한</Tab>
+        <Tab active={tab === 'data-reset'} onClick={() => setTab('data-reset')}>🗑️ 테스트 데이터 초기화</Tab>
       </div>
 
       {tab === 'munis' && <MunicipalitiesTab />}
@@ -147,6 +148,7 @@ export default function SuperAdminClient() {
       {tab === 'org-tree' && <OrgTreeTab />}
       {tab === 'contractor-trash' && <ContractorTrashTab />}
       {tab === 'features' && <ContractorFeaturesTab />}
+      {tab === 'data-reset' && <DataResetTab />}
     </div>
   );
 }
@@ -2739,6 +2741,107 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
         </button>
       </div>
       <p className="text-xs text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 14개 컬럼</p>
+    </div>
+  );
+}
+
+/* ─────────────  테스트 데이터 초기화  ───────────── */
+function DataResetTab() {
+  const [contractors, setContractors] = useState<{ id: string; companyName: string }[]>([]);
+  const [contractorId, setContractorId] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<Record<string, number> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/contractors')
+      .then((r) => r.json())
+      .then((d) => setContractors(d.items ?? []))
+      .catch(() => {});
+  }, []);
+
+  async function doReset() {
+    if (!contractorId) { setError('위탁업체를 선택하세요.'); return; }
+    if (confirm !== 'RESET') { setError('확인 문구를 정확히 입력하세요.'); return; }
+    setBusy(true); setError(null); setResult(null);
+    const res = await fetch('/api/admin/contractor-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractorId, confirm: 'RESET' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) { setError(data.error ?? '초기화 실패'); return; }
+    setResult(data.deleted);
+    setConfirm('');
+  }
+
+  return (
+    <div className="space-y-5 max-w-xl">
+      <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 space-y-1">
+        <div className="text-base font-extrabold text-red-700">⚠ 테스트 데이터 영구 삭제</div>
+        <p className="text-sm text-red-600 font-semibold">
+          아래 데이터가 복구 불가능하게 삭제됩니다. 정식 도입 전 테스트 데이터 정리 전용입니다.
+        </p>
+        <ul className="text-xs text-red-600 font-bold list-disc ml-4 space-y-0.5">
+          <li>근태 기록 (출근/퇴근)</li>
+          <li>차량 운행일지</li>
+          <li>민원 접수 이력</li>
+          <li>안전보건 보고서</li>
+          <li>휴가 신청 내역</li>
+          <li>급여명세서 레코드</li>
+          <li>공지사항</li>
+          <li>감사 로그</li>
+        </ul>
+        <p className="text-xs font-extrabold text-emerald-700 mt-2">
+          ✓ 보존: 인원등록(사용자), 차량등록, 출퇴근제한설정, 부서·구역 설정
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <label className="block">
+          <span className="text-xs font-extrabold text-ink block mb-1">대상 위탁업체 *</span>
+          <select value={contractorId} onChange={(e) => setContractorId(e.target.value)}
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-red-400">
+            <option value="">— 회사 선택 —</option>
+            {contractors.map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-extrabold text-ink block mb-1">
+            확인 문구 입력 — <code className="bg-red-100 text-red-700 px-1 rounded">RESET</code> 을 정확히 입력하세요
+          </span>
+          <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
+            placeholder="RESET"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-red-400" />
+        </label>
+
+        {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
+
+        <button
+          onClick={doReset}
+          disabled={busy || confirm !== 'RESET' || !contractorId}
+          className="w-full py-2.5 rounded-md bg-red-600 text-white text-sm font-extrabold hover:bg-red-700 active:scale-95 disabled:opacity-40"
+        >
+          {busy ? '삭제 중…' : '🗑️ 테스트 데이터 초기화'}
+        </button>
+      </div>
+
+      {result && (
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
+          <div className="text-sm font-extrabold text-success mb-2">✓ 초기화 완료</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+            {Object.entries(result).map(([k, v]) => (
+              <div key={k} className="flex justify-between">
+                <span className="text-ink-muted">{k}</span>
+                <span className="font-bold text-ink">{v}건 삭제</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

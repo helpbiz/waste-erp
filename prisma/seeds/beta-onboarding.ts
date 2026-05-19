@@ -174,7 +174,7 @@ async function main() {
     /* 6. MUNI_ADMIN 지자체 모니터링 계정 */
     await prisma.user.upsert({
       where: { username: m.muniAdminUser.username },
-      update: { passwordHash: hash, status: 'ACTIVE', privacyConsentAt: new Date() },
+      update: { status: 'ACTIVE', privacyConsentAt: new Date() },
       create: {
         username: m.muniAdminUser.username,
         passwordHash: hash,
@@ -192,7 +192,7 @@ async function main() {
     for (const u of m.contractorUsers) {
       await prisma.user.upsert({
         where: { username: u.username },
-        update: { passwordHash: hash, status: 'ACTIVE', privacyConsentAt: new Date() },
+        update: { status: 'ACTIVE', privacyConsentAt: new Date() },
         create: {
           username: u.username,
           passwordHash: hash,

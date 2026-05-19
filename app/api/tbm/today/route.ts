@@ -19,17 +19,29 @@ const PostBody = z.object({
   facilityId: z.string().optional(),
   department: z.string().max(50).optional(),
   photoDataUrl: z.string().max(3_000_000).optional(),
+  leader: z.string().trim().max(50).optional(),
+  location: z.string().trim().max(100).optional(),
+  hazards: z.string().trim().max(1000).optional(),
 });
 
-function parseTbmContent(raw: string | null): { text: string | null; photoDataUrl: string | null } {
-  if (!raw) return { text: null, photoDataUrl: null };
+function parseTbmContent(raw: string | null): {
+  text: string | null; photoDataUrl: string | null;
+  leader: string | null; location: string | null; hazards: string | null;
+} {
+  if (!raw) return { text: null, photoDataUrl: null, leader: null, location: null, hazards: null };
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
-      return { text: p.text ?? null, photoDataUrl: p.photoDataUrl ?? null };
+    if (p && typeof p === 'object') {
+      return {
+        text: p.text ?? null,
+        photoDataUrl: p.photoDataUrl ?? null,
+        leader: p.leader ?? null,
+        location: p.location ?? null,
+        hazards: p.hazards ?? null,
+      };
     }
   } catch {}
-  return { text: raw, photoDataUrl: null };
+  return { text: raw, photoDataUrl: null, leader: null, location: null, hazards: null };
 }
 
 function isManager(role: string): boolean {
@@ -77,6 +89,9 @@ export async function GET(req: Request) {
           topic: tbm.topic,
           content: parsed.text,
           photoDataUrl: parsed.photoDataUrl,
+          leader: parsed.leader,
+          location: parsed.location,
+          hazards: parsed.hazards,
           createdBy: tbm.creator.name,
           signCount: tbm.signatures.length,
           totalWorkers,
@@ -98,11 +113,14 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
 
-  // 시설 담당자도 본인 집하장 TBM 작성 허용
+  // 시설 담당자 또는 TBM 매니저도 TBM 작성 허용
   if (!isManager(session.role)) {
     const opScope = await getFacilityOperatorScope(session.userId);
     if (!opScope.isFacilityOperator) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      const me = await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isTbmManager: true } });
+      if (!me?.isTbmManager) {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+      }
     }
   }
 
@@ -115,12 +133,16 @@ export async function POST(req: Request) {
   const contractorId = BigInt(session.contractorId);
   const department = parsed.data.department ?? null;
 
-  /* 사진 또는 텍스트가 있으면 JSON으로 묶어 content 필드에 저장 */
+  /* 사진, 텍스트, 리더/장소/위험요인이 있으면 JSON으로 묶어 content 필드에 저장 */
+  const { content: txt, photoDataUrl, leader, location, hazards } = parsed.data;
   let contentToStore: string | null = null;
-  if (parsed.data.content || parsed.data.photoDataUrl) {
+  if (txt || photoDataUrl || leader || location || hazards) {
     contentToStore = JSON.stringify({
-      text: parsed.data.content ?? null,
-      photoDataUrl: parsed.data.photoDataUrl ?? null,
+      text: txt ?? null,
+      photoDataUrl: photoDataUrl ?? null,
+      leader: leader ?? null,
+      location: location ?? null,
+      hazards: hazards ?? null,
     });
   }
 

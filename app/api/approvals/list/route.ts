@@ -17,6 +17,11 @@ export type ApprovalItem = {
   detail: string | null;
   status: string;
   createdAt: string;
+  routeDetail?: string | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
+  fuelUsed?: number | null;
+  tripCount?: number | null;
 };
 
 export async function GET(req: Request) {
@@ -48,17 +53,19 @@ export async function GET(req: Request) {
     : tab === 'rejected' ? ['REJECTED']
     : ['PENDING', 'APPROVED', 'REJECTED'];
 
+  // VehicleLog: DRAFT | SUBMITTED | APPROVED (반려 시 DRAFT로 복귀, REJECTED 없음)
   const vehicleStatuses = tab === 'pending'
     ? ['SUBMITTED']
     : tab === 'approved' ? ['APPROVED']
-    : tab === 'rejected' ? ['REJECTED']
-    : ['SUBMITTED', 'APPROVED', 'REJECTED'];
+    : tab === 'rejected' ? ['DRAFT']   // 반려된 일지는 DRAFT로 복귀
+    : ['DRAFT', 'SUBMITTED', 'APPROVED'];
 
+  // SafetyReportStatus: SUBMITTED | REVIEWED | MOL_REPORTED | RESOLVED
   const safetyStatuses = tab === 'pending'
     ? ['SUBMITTED']
-    : tab === 'approved' ? ['REVIEWED']
-    : tab === 'rejected' ? ['DISMISSED']
-    : ['SUBMITTED', 'REVIEWED', 'DISMISSED'];
+    : tab === 'approved' ? ['REVIEWED', 'MOL_REPORTED', 'RESOLVED']
+    : tab === 'rejected' ? []   // 안전보고서는 반려 없음
+    : ['SUBMITTED', 'REVIEWED', 'MOL_REPORTED', 'RESOLVED'];
 
   const LEAVE_TYPE: Record<string, string> = {
     ANNUAL: '연차', ANNUAL_HALF: '연차(반차)', SPECIAL: '경조사', MATERNITY: '출산',
@@ -81,7 +88,7 @@ export async function GET(req: Request) {
     }),
     prisma.vehicleLog.findMany({
       where: { ...vlWhere, status: { in: vehicleStatuses as never[] } },
-      orderBy: { logDate: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       take: 200,
       include: {
         driver: { select: { name: true } },
@@ -129,8 +136,12 @@ export async function GET(req: Request) {
         r.fuelUsed != null ? `주유 ${r.fuelUsed}L` : null,
       ].filter(Boolean).join(' · ') || null,
       routeDetail: r.routeDetail ?? null,
+      startMileage: r.startMileage,
+      endMileage: r.endMileage,
+      fuelUsed: r.fuelUsed ? Number(r.fuelUsed) : null,
+      tripCount: r.tripCount,
       status: r.status,
-      createdAt: r.logDate.toISOString(),
+      createdAt: r.updatedAt.toISOString(),
     })),
     ...safetyRows.map((r) => ({
       kind: 'safety' as const,

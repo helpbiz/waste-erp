@@ -13,6 +13,10 @@ type ApprovalItem = {
   summary: string;
   detail: string | null;
   routeDetail?: string | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
+  fuelUsed?: number | null;
+  tripCount?: number | null;
   status: string;
   createdAt: string;
 };
@@ -343,12 +347,39 @@ function ApprovalDetailModal({
             <DetailRow label="상태" value={STATUS_LABEL[item.status] ?? item.status} />
           </dl>
 
-          {item.kind === 'vehicleLog' && item.routeDetail && (
-            <VehicleLogRouteDetail raw={item.routeDetail} />
+          {item.kind === 'vehicleLog' && (
+            <div className="space-y-2">
+              {/* 주행/연료 요약 */}
+              {(item.startMileage != null || item.fuelUsed != null || item.tripCount != null) && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {item.startMileage != null && item.endMileage != null && (
+                    <div className="bg-slate-50 border border-line rounded px-2 py-1.5">
+                      <div className="text-[0.625rem] font-bold text-ink-muted">주행거리</div>
+                      <div className="font-extrabold">{(item.endMileage - item.startMileage).toLocaleString()} km</div>
+                      <div className="text-[0.625rem] text-ink-muted">{item.startMileage.toLocaleString()} → {item.endMileage.toLocaleString()}</div>
+                    </div>
+                  )}
+                  {item.fuelUsed != null && (
+                    <div className="bg-slate-50 border border-line rounded px-2 py-1.5">
+                      <div className="text-[0.625rem] font-bold text-ink-muted">주유량</div>
+                      <div className="font-extrabold">{item.fuelUsed.toFixed(1)} L</div>
+                    </div>
+                  )}
+                  {item.tripCount != null && (
+                    <div className="bg-slate-50 border border-line rounded px-2 py-1.5">
+                      <div className="text-[0.625rem] font-bold text-ink-muted">운행횟수</div>
+                      <div className="font-extrabold">{item.tripCount} 회</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* 운행 상세 (routeDetail JSON) */}
+              {item.routeDetail && <VehicleLogRouteDetail raw={item.routeDetail} />}
+            </div>
           )}
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-            <DetailRow label="신청일시" value={fmtKst(item.createdAt)} />
+            <DetailRow label="제출일시" value={fmtKst(item.createdAt)} />
           </dl>
 
           {isSafety && actions.approve && (
@@ -452,6 +483,23 @@ function fmtKst(iso: string): string {
   return `${k.getUTCFullYear()}-${pad(k.getUTCMonth() + 1)}-${pad(k.getUTCDate())} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
 }
 
+const INSPECTION_KEY_LABEL: Record<string, string> = {
+  safetyBar: '안전멈춤Bar', handSwitch: '양손조작안전스위치', dashcam: '블랙박스',
+  turnSignal: '방향지시등', engineOil: '엔진오일', lubricant: '윤활제',
+  brake: '브레이크', tire: '타이어', headlight: '전조등', carWash: '세차여부',
+};
+const BAG_MACHINE_LABEL: Record<string, string> = {
+  food_1L: '음식물 1L', food_2L: '음식물 2L', food_3L: '음식물 3L', food_5L: '음식물 5L', food_10L: '음식물 10L',
+  living_5L: '생활 5L', living_10L: '생활 10L', living_20L: '생활 20L', living_30L: '생활 30L', living_50L: '생활 50L', living_75L: '생활 75L',
+  reuse_10L: '재사용 10L', reuse_20L: '재사용 20L',
+  illegal_20: '무단투기(20기준)', special: '특수', deadAnimal: '동물사채(마대)',
+};
+const LARGE_WASTE_LABEL: Record<string, string> = {
+  furniture: '가구류', chair: '의자류', sofa: '쇼파류', bed: '침대류',
+  appliance: '가전제품', extinguisher: '소화기', household: '생활용품', other: '기타',
+  illegalTotal: '무단투기 총합',
+};
+
 function VehicleLogRouteDetail({ raw }: { raw: string }) {
   let d: Record<string, unknown> = {};
   try { d = JSON.parse(raw) as Record<string, unknown>; } catch { return null; }
@@ -487,6 +535,7 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
               <th className="pr-2 pb-1 font-extrabold">음식물</th>
               <th className="pr-2 pb-1 font-extrabold">재활용</th>
               <th className="text-left pb-1 font-extrabold">반입장소</th>
+              <th className="text-left pb-1 font-extrabold">비고</th>
             </tr></thead>
             <tbody>
               {bagWork.map((row, i) => (
@@ -495,7 +544,8 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
                   <td className="pr-2 py-0.5 text-center">{row.general || '—'}</td>
                   <td className="pr-2 py-0.5 text-center">{row.food || '—'}</td>
                   <td className="pr-2 py-0.5 text-center">{row.recycle || '—'}</td>
-                  <td className="py-0.5">{row.disposalSite || '—'}</td>
+                  <td className="py-0.5 pr-2">{row.disposalSite || '—'}</td>
+                  <td className="py-0.5">{row.note || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -508,7 +558,7 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
           <div className="font-extrabold text-green-900 mb-1.5">작업내역 B — 중량계·봉투 수거 (L)</div>
           <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
             {Object.entries(bagMachineWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
-              <span key={k}>{k}: {v}</span>
+              <span key={k}>{BAG_MACHINE_LABEL[k] ?? k}: {v}</span>
             ))}
           </div>
         </div>
@@ -519,7 +569,7 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
           <div className="font-extrabold text-amber-900 mb-1.5">작업내역 C — 대형폐기물 (점)</div>
           <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
             {Object.entries(largeWasteWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
-              <span key={k}>{k}: {v}</span>
+              <span key={k}>{LARGE_WASTE_LABEL[k] ?? k}: {v}</span>
             ))}
           </div>
         </div>
@@ -531,7 +581,7 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
           <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5">
             {Object.entries(inspection).map(([k, v]) => (
               <span key={k} className={v === '이상' ? 'text-danger font-bold' : v === '수리점검' ? 'text-warn font-bold' : ''}>
-                {k}: {v}
+                {INSPECTION_KEY_LABEL[k] ?? k}: {v}
               </span>
             ))}
           </div>

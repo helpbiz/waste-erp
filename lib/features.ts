@@ -20,7 +20,10 @@ export type FeatureKey =
   | 'avac'                    // 자동집하시설(AVAC) 전용 모듈 — 시설별 TBM·시설운전기록·실적 3시트
   | 'leaveApprovalSingleStage'  // 휴가 결재 1단계(관리자 단독 최종 결재) — 대표 최종 결재 생략
   | 'vehicleLogFuel'            // 차량일지 주유 카드 표시 여부
-  | 'vehicleLogUrea';           // 차량일지 요소수 필드 표시 여부 (주유 카드 안)
+  | 'vehicleLogUrea'           // 차량일지 요소수 필드 표시 여부 (주유 카드 안)
+  | 'safetyNearMiss'           // 아차사고 보고 — 근로자 아차사고 신고 기능
+  | 'safetyIncident'           // 재해보고 — 근로자 재해 발생 신고 기능
+  | 'payslip';                 // 급여명세서 — 엑셀 업로드 → 근로자 앱 개별 발송·조회·인쇄
 
 export type FeatureMeta = {
   key: FeatureKey;
@@ -135,6 +138,27 @@ export const FEATURE_CATALOG: FeatureMeta[] = [
     description: '주유 카드 안에 요소수(L)·요소수금액(원) 필드를 추가합니다. 경유 차량이 있는 업체만 ON.',
     group: '차량',
     defaultEnabled: false,
+  },
+  {
+    key: 'safetyNearMiss',
+    label: '아차사고 보고',
+    description: '근로자 안전 화면에서 아차사고(위험요소) 신고 버튼을 표시합니다. OFF 시 버튼 미노출.',
+    group: '안전',
+    defaultEnabled: true,
+  },
+  {
+    key: 'safetyIncident',
+    label: '재해보고',
+    description: '근로자 안전 화면에서 재해 발생 신고 버튼을 표시합니다. OFF 시 버튼 미노출.',
+    group: '안전',
+    defaultEnabled: true,
+  },
+  {
+    key: 'payslip',
+    label: '급여명세서',
+    description: '엑셀 업로드 → 근로자 앱 개별 발송·조회·인쇄. 지급/공제 항목 회사별 설정 가능.',
+    group: '급여',
+    defaultEnabled: true,
   },
 ];
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PayslipTab from './_payslip-tab';
 
 export type Row = {
   workerId: string;
@@ -31,6 +32,7 @@ export default function PayrollClient({
   canUnlock: boolean;
 }) {
   const router = useRouter();
+  const [tab, setTab]   = useState<'finalize' | 'payslip'>('finalize');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -124,10 +126,8 @@ export default function PayrollClient({
       {/* 헤더 + 월 네비 */}
       <header className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-ink tracking-tight">인건비 정산 — 월마감</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">
-            Plan §3-2 P0 · 마감 후 조정은 이중승인 필요 (Phase 1A-4)
-          </p>
+          <h2 className="text-xl font-black text-ink tracking-tight">인건비 정산</h2>
+          <p className="text-xs font-bold text-ink-muted mt-1">월마감 · 급여명세 발송</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => navigateMonth(-1)} className="px-3 py-2 rounded-md border border-line text-ink hover:bg-surface-soft text-sm font-extrabold">←</button>
@@ -136,6 +136,18 @@ export default function PayrollClient({
         </div>
       </header>
 
+      {/* 탭 전환 */}
+      <div className="grid grid-cols-2 gap-1 bg-surface-soft rounded-lg p-1 border border-line max-w-xs">
+        {([['finalize', '📋 근태 마감'], ['payslip', '💰 급여명세']] as const).map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`py-2 rounded-md text-sm font-extrabold transition ${tab === k ? 'bg-accent text-white shadow-card' : 'text-ink-muted hover:bg-surface'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'payslip' && <PayslipTab ym={ym} />}
+      {tab === 'finalize' && (<>
       {/* 요약 + 액션 */}
       <section className="bg-surface rounded-xl border border-line shadow-card p-5">
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5">
@@ -263,6 +275,7 @@ export default function PayrollClient({
       <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold leading-relaxed">
         <strong className="font-extrabold">가산임금 자동 계산</strong> · 현재 월 집계는 시간 분배만 표시합니다. 근로기준법 정확 계산(연장 ×1.5, 야간 +0.5, 휴일 ×1.5) + 정책 룰 테이블은 Phase 1A-4에서 추가됩니다.
       </div>
+      </>)}
     </div>
   );
 }

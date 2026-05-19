@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ChecklistItem } from '@/lib/safety';
+import type { ChecklistItem as BaseChecklistItem } from '@/lib/safety';
+type ChecklistItem = BaseChecklistItem & { reason?: string };
 import type { WeatherSnapshot } from '@/lib/weather';
 import WeatherAlertCard, { type WorkerOpt } from './_weather-alert';
 
 type TbmInfo = {
   id: string; topic: string; content: string | null; photoDataUrl: string | null;
+  leader: string | null; location: string | null; hazards: string | null;
   department: string | null; signCount: number; createdBy: string;
   signedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
   unsignedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
@@ -45,7 +47,7 @@ const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: '접수', REVIEWED: '검토 완료', MOL_REPORTED: '지자체 보고 완료', RESOLVED: '종결',
 };
 
-type Tab = 'ALL' | 'INCIDENT' | 'NEAR_MISS' | 'CHECKLIST' | 'PENDING' | 'DAILY';
+type Tab = 'ALL' | 'INCIDENT' | 'NEAR_MISS' | 'CHECKLIST' | 'PENDING' | 'DAILY' | 'ABNORMAL';
 
 export default function SafetyClient({
   rows,
@@ -58,6 +60,8 @@ export default function SafetyClient({
   meName,
   meSignatureUrl,
   defaultTab = 'ALL',
+  hasNearMiss = true,
+  hasIncident = true,
 }: {
   rows: Row[];
   isManager: boolean;
@@ -69,6 +73,8 @@ export default function SafetyClient({
   meName: string | null;
   meSignatureUrl: string | null;
   defaultTab?: Tab;
+  hasNearMiss?: boolean;
+  hasIncident?: boolean;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
@@ -82,6 +88,9 @@ export default function SafetyClient({
   const [tbmContent, setTbmContent] = useState(tbm?.content ?? '');
   const [tbmDept, setTbmDept] = useState(tbm?.department ?? '');
   const [tbmPhoto, setTbmPhoto] = useState<string | null>(tbm?.photoDataUrl ?? null);
+  const [tbmLeader, setTbmLeader] = useState(tbm?.leader ?? '');
+  const [tbmLocation, setTbmLocation] = useState(tbm?.location ?? '');
+  const [tbmHazards, setTbmHazards] = useState(tbm?.hazards ?? '');
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return rows;
@@ -89,6 +98,9 @@ export default function SafetyClient({
     if (tab === 'CHECKLIST') return rows.filter((r) => r.reportType === 'DAILY_CHECKLIST');
     if (tab === 'INCIDENT') return rows.filter((r) => r.reportType === 'INCIDENT');
     if (tab === 'NEAR_MISS') return rows.filter((r) => r.reportType === 'NEAR_MISS');
+    if (tab === 'ABNORMAL') return rows.filter(
+      (r) => r.reportType === 'DAILY_CHECKLIST' && !r.allChecked
+    );
     return rows;
   }, [rows, tab]);
 
@@ -104,13 +116,16 @@ export default function SafetyClient({
     (r) => r.reportType === 'INCIDENT' && r.molDeadline && !r.molReportedAt && new Date(r.molDeadline).getTime() < Date.now()
   ).length;
 
+  const abnormalCount = rows.filter((r) => r.reportType === 'DAILY_CHECKLIST' && !r.allChecked).length;
+
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'ALL', label: '전체', count: rows.length },
     { key: 'DAILY', label: '일별 보기', count: 0 },
     { key: 'PENDING', label: '미검토', count: rows.filter((r) => r.status === 'SUBMITTED').length },
     { key: 'CHECKLIST', label: '일일점검', count: rows.filter((r) => r.reportType === 'DAILY_CHECKLIST').length },
-    { key: 'NEAR_MISS', label: '아차사고', count: rows.filter((r) => r.reportType === 'NEAR_MISS').length },
-    { key: 'INCIDENT', label: '재해', count: rows.filter((r) => r.reportType === 'INCIDENT').length },
+    { key: 'ABNORMAL', label: '⚠ 이상항목', count: abnormalCount },
+    ...(hasNearMiss ? [{ key: 'NEAR_MISS' as Tab, label: '아차사고', count: rows.filter((r) => r.reportType === 'NEAR_MISS').length }] : []),
+    ...(hasIncident ? [{ key: 'INCIDENT' as Tab, label: '재해', count: rows.filter((r) => r.reportType === 'INCIDENT').length }] : []),
   ];
 
   const [dailyDate, setDailyDate] = useState(new Date().toISOString().slice(0, 10));
@@ -133,6 +148,9 @@ export default function SafetyClient({
           content: tbmContent.trim() || undefined,
           department: tbmDept.trim() || undefined,
           photoDataUrl: tbmPhoto || undefined,
+          leader: tbmLeader.trim() || undefined,
+          location: tbmLocation.trim() || undefined,
+          hazards: tbmHazards.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -204,11 +222,26 @@ export default function SafetyClient({
           content={tbmContent}
           dept={tbmDept}
           photo={tbmPhoto}
+          leader={tbmLeader}
+          location={tbmLocation}
+          hazards={tbmHazards}
           onTopicChange={setTbmTopic}
           onContentChange={setTbmContent}
           onDeptChange={setTbmDept}
           onPhotoChange={setTbmPhoto}
-          onEdit={() => { setTbmEdit(true); setTbmTopic(tbm?.topic ?? ''); setTbmContent(tbm?.content ?? ''); setTbmDept(tbm?.department ?? ''); setTbmPhoto(tbm?.photoDataUrl ?? null); }}
+          onLeaderChange={setTbmLeader}
+          onLocationChange={setTbmLocation}
+          onHazardsChange={setTbmHazards}
+          onEdit={() => {
+            setTbmEdit(true);
+            setTbmTopic(tbm?.topic ?? '');
+            setTbmContent(tbm?.content ?? '');
+            setTbmDept(tbm?.department ?? '');
+            setTbmPhoto(tbm?.photoDataUrl ?? null);
+            setTbmLeader(tbm?.leader ?? '');
+            setTbmLocation(tbm?.location ?? '');
+            setTbmHazards(tbm?.hazards ?? '');
+          }}
           onCancel={() => setTbmEdit(false)}
           onSave={saveTbm}
           busy={busy}
@@ -218,6 +251,17 @@ export default function SafetyClient({
       {/* 기상악화 알림톡 공지 — 매니저만 노출 */}
       {isManager && (
         <WeatherAlertCard workers={alertWorkers} hazardLevel={weather.hazardLevel} />
+      )}
+
+      {/* 일자별 온도 바로가기 — 매니저만 노출 */}
+      {isManager && (
+        <div className="flex items-center gap-2 print:hidden">
+          <a href="/safety/temperature"
+            className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm">
+            🌡 일자별 온도조회
+          </a>
+          <span className="text-[10px] text-slate-400">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
+        </div>
       )}
 
       {/* 요약 카드 */}
@@ -303,14 +347,24 @@ export default function SafetyClient({
                     </div>
                     {r.checklistItems && (
                       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[0.6875rem]">
-                        {r.checklistItems.map((item, i) => (
-                          <div key={i} className="flex items-center gap-1.5">
-                            <span className={`inline-block w-3 h-3 rounded border ${item.ok ? 'bg-emerald-500 border-emerald-600' : 'bg-white border-slate-400'}`}>
-                              {item.ok && <span className="text-white text-[0.5rem] font-bold leading-none flex items-center justify-center h-full">✓</span>}
-                            </span>
-                            <span className={item.ok ? 'text-ink' : 'text-slate-600 line-through'}>{item.label}</span>
+                        {(r.checklistItems as ChecklistItem[]).map((item, i) => (
+                          <div key={i} className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-block w-3 h-3 rounded border ${item.ok ? 'bg-emerald-500 border-emerald-600' : 'bg-white border-slate-400'}`}>
+                                {item.ok && <span className="text-white text-[0.5rem] font-bold leading-none flex items-center justify-center h-full">✓</span>}
+                              </span>
+                              <span className={item.ok ? 'text-ink' : 'text-amber-800 font-bold'}>{item.label}</span>
+                            </div>
+                            {!item.ok && item.reason && (
+                              <div className="ml-4.5 text-amber-700 text-[0.5625rem]">사유: {item.reason}</div>
+                            )}
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {r.reviewNote && (
+                      <div className="mt-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-[0.6875rem] text-blue-800">
+                        <span className="font-extrabold">관리자 조치:</span> {r.reviewNote}
                       </div>
                     )}
                   </div>
@@ -395,7 +449,20 @@ export default function SafetyClient({
                   {r.reportType === 'DAILY_CHECKLIST' && r.checklistItems && (
                     <div className="text-xs text-ink font-semibold mt-1">
                       체크: {r.checklistItems.filter((i) => i.ok).length} / {r.checklistItems.length}
-                      {r.allChecked ? ' ✓ 전체 완료' : ' (미완료)'}
+                      {r.allChecked ? ' ✓ 전체 완료' : ' (이상항목 있음)'}
+                    </div>
+                  )}
+                  {/* 미체크 항목 + 사유 표시 */}
+                  {r.reportType === 'DAILY_CHECKLIST' && !r.allChecked && r.checklistItems && (
+                    <div className="mt-2 space-y-1">
+                      {(r.checklistItems as ChecklistItem[]).filter((i) => !i.ok).map((item, idx) => (
+                        <div key={idx} className="bg-amber-50 border border-amber-300 rounded px-2 py-1 text-xs">
+                          <span className="font-extrabold text-amber-800">⚠ {item.label}</span>
+                          {item.reason && (
+                            <span className="ml-2 text-amber-700">— {item.reason}</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                   {r.description && (
@@ -423,14 +490,27 @@ export default function SafetyClient({
                   )}
                 </div>
               </div>
-              {isManager && r.status === 'SUBMITTED' && (
-                <div className="px-5 py-3 bg-surface-soft border-t border-line">
-                  <button
-                    onClick={() => { setReviewing(r); setNote(''); setReviewStatus(r.reportType === 'INCIDENT' && (r.severity === 'FATAL' || r.severity === 'SEVERE' || r.severity === 'INJURY') ? 'MOL_REPORTED' : 'REVIEWED'); }}
-                    className="px-3 py-1.5 rounded-md bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95"
-                  >
-                    검토 처리
-                  </button>
+              {isManager && (r.status === 'SUBMITTED' || (r.reportType === 'DAILY_CHECKLIST' && !r.allChecked)) && (
+                <div className="px-5 py-3 bg-surface-soft border-t border-line flex items-center gap-2">
+                  {r.status === 'SUBMITTED' && (
+                    <button
+                      onClick={() => { setReviewing(r); setNote(''); setReviewStatus(r.reportType === 'INCIDENT' && (r.severity === 'FATAL' || r.severity === 'SEVERE' || r.severity === 'INJURY') ? 'MOL_REPORTED' : 'REVIEWED'); }}
+                      className="px-3 py-1.5 rounded-md bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95"
+                    >
+                      검토 처리
+                    </button>
+                  )}
+                  {r.reportType === 'DAILY_CHECKLIST' && !r.allChecked && r.status !== 'SUBMITTED' && (
+                    <button
+                      onClick={() => { setReviewing(r); setNote(r.reviewNote ?? ''); setReviewStatus('RESOLVED'); }}
+                      className="px-3 py-1.5 rounded-md bg-slate-600 text-white text-xs font-extrabold hover:bg-slate-700 active:scale-95"
+                    >
+                      조치사항 작성
+                    </button>
+                  )}
+                  {r.reviewNote && (
+                    <span className="text-xs font-semibold text-ink-muted">조치: {r.reviewNote}</span>
+                  )}
                 </div>
               )}
             </article>
@@ -452,12 +532,16 @@ export default function SafetyClient({
                 <option value="MOL_REPORTED">지자체 보고 완료</option>
                 <option value="RESOLVED">종결</option>
               </select>
-              <label className="block text-xs font-extrabold text-ink mb-2">검토 메모 (필수)</label>
+              <label className="block text-xs font-extrabold text-ink mb-2">
+                {reviewing?.reportType === 'DAILY_CHECKLIST' ? '조치사항 (예: 5/15 새 안전모 교체 완료)' : '검토 메모 (필수)'}
+              </label>
               <textarea
                 rows={4}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="조치 내역 / 후속 행동 / MOL 보고 첨부 등"
+                placeholder={reviewing?.reportType === 'DAILY_CHECKLIST'
+                  ? '조치 내용을 입력하세요 (예: 5/15 새 안전모 교체 완료)'
+                  : '조치 내역 / 후속 행동 / MOL 보고 첨부 등'}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
               />
             </div>
@@ -572,8 +656,10 @@ function WeatherWidget({ w }: { w: WeatherSnapshot }) {
 }
 
 function TbmWidget({
-  tbm, isManager, editing, topic, content, dept, photo,
-  onTopicChange, onContentChange, onDeptChange, onPhotoChange, onEdit, onCancel, onSave, busy,
+  tbm, isManager, editing, topic, content, dept, photo, leader, location, hazards,
+  onTopicChange, onContentChange, onDeptChange, onPhotoChange,
+  onLeaderChange, onLocationChange, onHazardsChange,
+  onEdit, onCancel, onSave, busy,
 }: {
   tbm: TbmInfo | null;
   isManager: boolean;
@@ -582,10 +668,16 @@ function TbmWidget({
   content: string;
   dept: string;
   photo: string | null;
+  leader: string;
+  location: string;
+  hazards: string;
   onTopicChange: (s: string) => void;
   onContentChange: (s: string) => void;
   onDeptChange: (s: string) => void;
   onPhotoChange: (s: string | null) => void;
+  onLeaderChange: (s: string) => void;
+  onLocationChange: (s: string) => void;
+  onHazardsChange: (s: string) => void;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
@@ -611,16 +703,38 @@ function TbmWidget({
 
   return (
     <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-      <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between">
+      <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2">
         <div className="text-sm font-extrabold text-ink">📋 오늘 TBM 안전교육</div>
-        {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
+          {isManager && !editing && (
+            <>
+              <a href="/safety/tbm-print" className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold border border-slate-400 text-slate-600 hover:bg-slate-100 print:hidden">
+                월별 출력
+              </a>
+              <a href="/safety/tbm-history"
+                className="px-3 py-1 rounded text-xs font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
+                📋 TBM이력
+              </a>
+              <a href="/safety/alert-history"
+                className="px-3 py-1 rounded text-xs font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
+                📡 공지이력
+              </a>
+            </>
+          )}
+        </div>
       </header>
       <div className="p-4">
         {editing ? (
           <div className="space-y-2">
-            <input value={topic} onChange={(e) => onTopicChange(e.target.value)} placeholder="오늘의 안전 주제 (예: 폭염 대비 수분 섭취)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
+            <input value={topic} onChange={(e) => onTopicChange(e.target.value)} placeholder="오늘의 안전 주제 (예: 폭염 대비 수분 섭취) *" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
+            <div className="grid grid-cols-2 gap-2">
+              <input value={leader} onChange={(e) => onLeaderChange(e.target.value)} placeholder="리더 (예: 홍길동)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
+              <input value={location} onChange={(e) => onLocationChange(e.target.value)} placeholder="교육 장소 (예: 차고지)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
+            </div>
+            <textarea rows={2} value={hazards} onChange={(e) => onHazardsChange(e.target.value)} placeholder="위험요인 (예: 폭염, 탈수, 교통사고)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
             <input value={dept} onChange={(e) => onDeptChange(e.target.value)} placeholder="팀명 (선택, 예: 1팀)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
-            <textarea rows={3} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="간략 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <textarea rows={2} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="기타 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
             <div className="flex items-center gap-2">
               <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md border-2 border-dashed border-line cursor-pointer hover:border-accent transition">
                 <span className="text-xs font-bold text-ink-muted">📷 TBM 사진</span>
@@ -629,7 +743,7 @@ function TbmWidget({
               </label>
               {photo && <button onClick={() => onPhotoChange(null)} className="px-2 py-1.5 text-[0.625rem] font-bold text-danger border border-danger rounded hover:bg-red-50">삭제</button>}
             </div>
-            {photo && <img src={photo} alt="TBM 사진 미리보기" className="w-full rounded-md max-h-40 object-cover border border-line" />}
+            {photo && <img src={photo} alt="TBM 사진 미리보기" className="w-full rounded-md max-h-40 object-contain bg-slate-50 border border-line" />}
             <div className="flex gap-2">
               <button onClick={onSave} disabled={busy || topic.trim().length < 2} className="flex-1 px-3 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
                 {busy ? '저장 중…' : '저장'}
@@ -643,8 +757,19 @@ function TbmWidget({
               <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
               {tbm.department && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-slate-100 text-ink-muted border">{tbm.department}</span>}
             </div>
+            {(tbm.leader || tbm.location) && (
+              <div className="flex gap-3 mt-1.5 text-xs font-semibold text-ink-muted">
+                {tbm.leader && <span>리더: <span className="text-ink font-bold">{tbm.leader}</span></span>}
+                {tbm.location && <span>장소: <span className="text-ink font-bold">{tbm.location}</span></span>}
+              </div>
+            )}
+            {tbm.hazards && (
+              <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
+                <span className="font-extrabold">위험요인: </span>{tbm.hazards}
+              </div>
+            )}
             {tbm.content && <p className="text-xs font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
-            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-cover border border-line" />}
+            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-contain bg-slate-50 border border-line" />}
             <div className="flex items-center justify-between mt-2.5">
               <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
               {isManager && <button onClick={onEdit} className="text-xs font-extrabold text-accent hover:underline">수정</button>}

@@ -19,6 +19,7 @@ const PatchBody = z.object({
   audience: z.enum(['ALL', 'OWNER', 'ADMIN', 'WORKER', 'MUNI']).optional(),
   pinned: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
+  attachmentUrls: z.array(z.string().max(2_000_000)).max(3).optional().nullable(),
 });
 
 function canManage(
@@ -64,6 +65,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (b.audience !== undefined) data.audience = b.audience;
   if (b.pinned !== undefined) data.pinned = b.pinned;
   if (b.expiresAt !== undefined) data.expiresAt = b.expiresAt ? new Date(b.expiresAt) : null;
+  if (b.attachmentUrls !== undefined) {
+    data.attachmentUrls = b.attachmentUrls ? JSON.stringify(b.attachmentUrls) : null;
+  }
 
   await prisma.announcement.update({ where: { id }, data });
 

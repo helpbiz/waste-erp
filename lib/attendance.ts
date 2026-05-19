@@ -49,10 +49,22 @@ export async function getTodayAttendance(session: SessionPayload) {
 
   /* WORKER 본인 단건 */
   if (session.role === 'WORKER') {
-    const me = await prisma.attendanceRecord.findUnique({
-      where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: today } },
+    const workerId = BigInt(session.userId);
+    let me = await prisma.attendanceRecord.findUnique({
+      where: { workerId_workDate: { workerId, workDate: today } },
       include: { worker: true, zone: true },
     });
+    /* 야간 근무: 자정 이후에도 어제 출근 기록(퇴근 미등록)이 있으면 그 기록을 현재 상태로 노출 */
+    if (!me?.checkInTime) {
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const nightRecord = await prisma.attendanceRecord.findUnique({
+        where: { workerId_workDate: { workerId, workDate: yesterday } },
+        include: { worker: true, zone: true },
+      });
+      if (nightRecord?.checkInTime && !nightRecord.checkOutTime) {
+        me = nightRecord;
+      }
+    }
     return { isWorker: true, today, me };
   }
 

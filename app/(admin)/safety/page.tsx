@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { safetyWhere, isSafetyManager, type ChecklistItem } from '@/lib/safety';
 import { todayKstDate } from '@/lib/dates';
 import { fetchWeatherCached } from '@/lib/weather-providers';
+import { hasFeature } from '@/lib/features';
 import SafetyClient, { type Row } from './_safety-client';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ export default async function SafetyPage({
     include: { activeSignature: { include: { asset: { select: { contentRef: true } } } } },
   });
   const meSignatureUrl = me?.activeSignature?.asset.contentRef ?? null;
+  const isTbmManager = me?.isTbmManager ?? false;
 
   const [items, todayWorkers, todayChecklist, tbm, workersList] = await Promise.all([
     prisma.safetyReport.findMany({
@@ -102,12 +104,18 @@ export default async function SafetyPage({
     ? { region: contractorInfo.garageAddress }
     : undefined;
 
+  const contractorBigId = session.contractorId ? BigInt(session.contractorId) : null;
+  const [hasNearMiss, hasIncident] = await Promise.all([
+    contractorBigId ? hasFeature(contractorBigId, 'safetyNearMiss') : Promise.resolve(true),
+    contractorBigId ? hasFeature(contractorBigId, 'safetyIncident') : Promise.resolve(true),
+  ]);
+
   const defaultTab = searchParams?.tab === 'DAILY' ? 'DAILY' : 'ALL';
 
   return (
     <SafetyClient
       rows={rows}
-      isManager={isSafetyManager(session.role)}
+      isManager={isSafetyManager(session.role) || isTbmManager}
       defaultTab={defaultTab as 'DAILY' | 'ALL'}
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
@@ -116,12 +124,18 @@ export default async function SafetyPage({
         ? (() => {
             let contentText: string | null = tbm.content;
             let photoDataUrl: string | null = null;
+            let leader: string | null = null;
+            let location: string | null = null;
+            let hazards: string | null = null;
             if (tbm.content) {
               try {
                 const p = JSON.parse(tbm.content);
-                if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
+                if (p && typeof p === 'object') {
                   contentText = p.text ?? null;
                   photoDataUrl = p.photoDataUrl ?? null;
+                  leader = p.leader ?? null;
+                  location = p.location ?? null;
+                  hazards = p.hazards ?? null;
                 }
               } catch {}
             }
@@ -130,6 +144,9 @@ export default async function SafetyPage({
               topic: tbm.topic,
               content: contentText,
               photoDataUrl,
+              leader,
+              location,
+              hazards,
               department: tbm.department ?? null,
               signCount: tbm.signatures.length,
               createdBy: tbm.creator.name,
@@ -144,6 +161,8 @@ export default async function SafetyPage({
       alertWorkers={workersList.map((w) => ({ id: w.id.toString(), name: w.name }))}
       meName={me?.name ?? null}
       meSignatureUrl={meSignatureUrl}
+      hasNearMiss={hasNearMiss}
+      hasIncident={hasIncident}
     />
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import MultiPhotoUploader from '@/components/MultiPhotoUploader';
 import VoiceSettingsModal from '@/components/VoiceSettingsModal';
 import {
   AUDIENCE_LABEL,
@@ -21,6 +22,7 @@ type Announcement = {
   expiresAt: string | null;
   authorName: string;
   facilityId: string | null;
+  attachmentUrls: string[] | null;
 };
 type FacilityOption = { id: string; name: string };
 
@@ -38,7 +40,7 @@ export default function AnnouncementsClient({
   isAvac = false,
   facilities = [],
 }: {
-  session: { name: string; role: string };
+  session: { name: string; role: string; isNoticeManager?: boolean };
   isAvac?: boolean;
   facilities?: FacilityOption[];
 }) {
@@ -75,7 +77,8 @@ export default function AnnouncementsClient({
           {session.role === 'SUPER_ADMIN' ? '🌐 시스템 전체 공지 가능' :
            session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 (관리자/근로자/전체)' :
            session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 (관리자/근로자/전체)' :
-           session.role === 'MUNI_ADMIN' ? '🏛 지자체 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' : ''}
+           session.role === 'MUNI_ADMIN' ? '🏛 지자체 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' :
+           session.isNoticeManager ? '📝 공지 담당자 — 회사 내부 공지 작성 가능' : ''}
         </span>
         <button
           onClick={() => setVoiceOpen(true)}
@@ -92,8 +95,8 @@ export default function AnnouncementsClient({
         </button>
       </div>
 
-      {createOpen && <CreateModal role={session.role} facilities={isAvac ? facilities : []} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
-      {editTarget && <CreateModal role={session.role} facilities={isAvac ? facilities : []} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
+      {createOpen && <CreateModal role={session.isNoticeManager ? 'INTERNAL_ADMIN' : session.role} facilities={isAvac ? facilities : []} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
+      {editTarget && <CreateModal role={session.isNoticeManager ? 'INTERNAL_ADMIN' : session.role} facilities={isAvac ? facilities : []} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
       {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
@@ -123,6 +126,14 @@ export default function AnnouncementsClient({
                   </div>
                   <h3 className="text-base font-black text-ink">{a.title}</h3>
                   <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1.5 leading-relaxed">{a.body}</p>
+                  {a.attachmentUrls && a.attachmentUrls.length > 0 && (
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                      {a.attachmentUrls.map((src, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={i} src={src} alt={`첨부사진 ${i+1}`} className="h-16 w-16 object-cover rounded border border-line cursor-pointer" onClick={() => window.open(src)} />
+                      ))}
+                    </div>
+                  )}
                   <div className="text-[0.6875rem] font-mono text-slate-500 mt-2 flex items-center gap-1.5 flex-wrap">
                     <span>{a.authorName}</span>
                     <span>·</span>
@@ -181,6 +192,7 @@ function CreateModal({
   const [pinned, setPinned] = useState(initial?.pinned ?? false);
   const [expiresAt, setExpiresAt] = useState(initial?.expiresAt ? initial.expiresAt.slice(0, 10) : '');
   const [facilityId, setFacilityId] = useState<string>(initial?.facilityId ?? '');
+  const [attachments, setAttachments] = useState<string[]>(initial?.attachmentUrls ?? []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,11 +214,16 @@ function CreateModal({
         pinned,
         expiresAt: expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null,
         facilityId: facilityId || undefined,
+        attachmentUrls: attachments.length > 0 ? attachments : null,
       }),
     });
     setBusy(false);
     if (r.ok) onCreated();
-    else setError((await r.json().catch(() => ({}))).error ?? '실패');
+    else {
+      const j = await r.json().catch(() => ({}));
+      const issueStr = j.issues ? ' (' + Object.entries(j.issues).map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`).join('; ') + ')' : '';
+      setError((j.error ?? '실패') + issueStr);
+    }
   }
 
   return (
@@ -227,6 +244,10 @@ function CreateModal({
             <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} maxLength={10000}
               className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent" />
             <div className="text-[0.625rem] text-slate-500 mt-0.5">{body.length}/10000자</div>
+          </div>
+          <div>
+            <div className="text-xs font-extrabold text-ink mb-1">사진 첨부 (선택, 최대 3장)</div>
+            <MultiPhotoUploader initial={attachments} onChange={setAttachments} max={3} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

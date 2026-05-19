@@ -14,7 +14,21 @@ import { ToastProvider } from '@/components/ui/Toast';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await readSession();
   if (!session) redirect('/login');
-  if (session.role === 'WORKER') redirect('/worker'); // WORKER는 워커앱으로
+
+  // WORKER 역할: isNoticeManager / isComplaintManager / isPayrollManager 여부 확인 후 분기
+  let isNoticeManagerWorker = false;
+  let isComplaintManagerWorker = false;
+  let isPayrollManagerWorker = false;
+  if (session.role === 'WORKER') {
+    const meFlag = await prisma.user.findUnique({
+      where: { id: BigInt(session.userId) },
+      select: { isNoticeManager: true, isComplaintManager: true, isPayrollManager: true },
+    });
+    isNoticeManagerWorker = meFlag?.isNoticeManager === true;
+    isComplaintManagerWorker = meFlag?.isComplaintManager === true;
+    isPayrollManagerWorker = meFlag?.isPayrollManager === true;
+    if (!isNoticeManagerWorker && !isComplaintManagerWorker && !isPayrollManagerWorker) redirect('/worker');
+  }
 
   /* 사이드바 뱃지: 미처리 민원 + 미검토 안전 보고 + 미결재 */
   const isManager = canManageUsers(session.role);
@@ -42,11 +56,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const canPostAnnouncement = isInternal || session.role === 'MUNI_ADMIN';
 
   /* 회사별 기능 권한 — sidebar 메뉴 동적 필터링 (SUPER/MUNI 는 게이트 미적용) */
-  const [feLiveVehicles, feAnnouncements, feWorkerSuggestion, feNocAccess] = await Promise.all([
+  const [feLiveVehicles, feAnnouncements, feWorkerSuggestion, feNocAccess, fePayslip] = await Promise.all([
     hasFeature(session.contractorId, 'vehicleTracking'),
     hasFeature(session.contractorId, 'announcements'),
     hasFeature(session.contractorId, 'workerSuggestion'),
     hasFeature(session.contractorId, 'nocAccess'),  /* Agent Team 합의 2026-05-02 */
+    hasFeature(session.contractorId, 'payslip'),
   ]);
   const feSkipForSuperOrMuni = !session.contractorId; /* SUPER/MUNI 는 모두 표시 */
 
@@ -97,6 +112,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           : []),
         { href: '/reports', label: '통계/보고서' },
         { href: '/print', label: '🖨 출력 센터' },
+        ...(isInternal && (feSkipForSuperOrMuni || fePayslip)
+          ? [{ href: '/payroll', label: '💰 급여관리' }]
+          : []),
       ],
     },
     ...(isInternal
@@ -107,9 +125,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               ...(feSkipForSuperOrMuni || feAnnouncements
                 ? [{ href: '/announcements', label: '📢 공지사항' }]
                 : []),
+              /* 회사 정보 설정: CONTRACTOR_ADMIN / INTERNAL_ADMIN 전용 (SUPER_ADMIN은 super-admin 콘솔 사용) */
+              ...(session.role !== 'SUPER_ADMIN'
+                ? [{ href: '/settings/info', label: '🏢 회사 정보 설정' }]
+                : []),
               { href: '/users', label: '사용자관리' },
               { href: '/import', label: '📥 일괄 업로드' },
               { href: '/settings/disposal-sites', label: '🏭 반입장소 설정' },
+              { href: '/settings/zones', label: '🗺 담당구역 설정' },
               { href: '/bulky-waste', label: '대형폐기물 설정' },
               ...(session.role === 'SUPER_ADMIN'
                 ? [{ href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' }]
@@ -124,6 +147,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             group: 'SETTINGS',
             items: [
               { href: '/announcements', label: '📢 공지사항' },
+            ],
+          },
+        ]
+      : (isNoticeManagerWorker || isComplaintManagerWorker || isPayrollManagerWorker)
+      ? [
+          {
+            group: 'SETTINGS',
+            items: [
+              ...(isComplaintManagerWorker ? [{ href: '/complaints', label: '민원관리' }] : []),
+              ...(isNoticeManagerWorker ? [{ href: '/announcements', label: '📢 공지사항' }] : []),
+              ...(isPayrollManagerWorker ? [{ href: '/payroll', label: '💰 급여관리' }] : []),
             ],
           },
         ]

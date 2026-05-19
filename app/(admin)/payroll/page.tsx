@@ -17,6 +17,25 @@ export default async function PayrollPage({
   searchParams: { ym?: string };
 }) {
   const session = (await readSession())!;
+
+  /* 급여관리 권한: 관리자 역할 또는 isPayrollManager 플래그 */
+  const isManagerRole = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(session.role);
+  let workerIsPayrollManager = false;
+  if (!isManagerRole && session.role === 'WORKER') {
+    const flag = await prisma.user.findUnique({
+      where: { id: BigInt(session.userId) },
+      select: { isPayrollManager: true },
+    });
+    workerIsPayrollManager = flag?.isPayrollManager === true;
+    if (!workerIsPayrollManager) {
+      return (
+        <div className="bg-red-50 border border-red-300 border-l-4 border-l-red-500 rounded-md px-5 py-4 text-sm font-bold text-red-900">
+          급여관리 접근 권한이 없습니다.
+        </div>
+      );
+    }
+  }
+
   /* 회사별 기능 권한 — costCalculation OFF 면 안내 페이지로 */
   await requireFeature(session, 'costCalculation');
 
@@ -79,7 +98,7 @@ export default async function PayrollPage({
   });
 
   const finalizedCount = rows.filter((r) => r.isFinalized).length;
-  const isManager = isAttendanceManager(session.role);
+  const isManager = isAttendanceManager(session.role) || workerIsPayrollManager;
   const canUnlock = session.role === 'SUPER_ADMIN';
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AccessibleConfirmDialog from '@/components/ui/AccessibleConfirmDialog';
 
@@ -33,6 +33,21 @@ export default function AttendanceClient({
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isToday = selectedDate === todayStr;
+
+  // 오늘 날짜 조회 시 60초마다 자동 새로고침
+  useEffect(() => {
+    if (!isToday) { if (timerRef.current) clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(() => {
+      router.refresh();
+      setLastRefresh(new Date());
+    }, 60000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isToday, router]);
 
   function changeDate(v: string) {
     setSelectedDate(v);
@@ -50,12 +65,28 @@ export default function AttendanceClient({
       {selfRecord !== undefined && <AdminPunchWidget selfRecord={selfRecord} onSuccess={() => router.refresh()} />}
       <div>
         <h2 className="text-xl font-extrabold text-ink">근태관리</h2>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
           <input type="date" value={selectedDate} onChange={(e) => changeDate(e.target.value)}
             aria-label="기준일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold w-[200px]" />
-          <button onClick={() => changeDate(new Date().toISOString().slice(0, 10))}
+          <button onClick={() => changeDate(todayStr)}
             className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 shrink-0">오늘</button>
+          {isToday && (
+            <>
+              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[0.6875rem] font-extrabold border border-green-300 animate-pulse">
+                ● 실시간
+              </span>
+              <button
+                onClick={() => { router.refresh(); setLastRefresh(new Date()); }}
+                className="px-2.5 py-1 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50"
+              >
+                새로고침
+              </button>
+              <span className="text-[0.6875rem] text-ink-muted font-mono">
+                최근: {lastRefresh.getHours().toString().padStart(2,'0')}:{lastRefresh.getMinutes().toString().padStart(2,'0')}:{lastRefresh.getSeconds().toString().padStart(2,'0')}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

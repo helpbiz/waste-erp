@@ -47,6 +47,9 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       leaveApprovalSingleStage: false,
       vehicleLogFuel: true,
       vehicleLogUrea: false,
+      safetyNearMiss: true,
+      safetyIncident: true,
+      payslip: false,
     },
   },
   {
@@ -70,6 +73,9 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       leaveApprovalSingleStage: false,
       vehicleLogFuel: true,
       vehicleLogUrea: false,
+      safetyNearMiss: true,
+      safetyIncident: true,
+      payslip: true,
     },
   },
   {
@@ -93,6 +99,9 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       leaveApprovalSingleStage: false,
       vehicleLogFuel: true,
       vehicleLogUrea: false,
+      safetyNearMiss: true,
+      safetyIncident: true,
+      payslip: true,
     },
   },
   {
@@ -116,6 +125,9 @@ export const FEATURE_PACKAGES: FeaturePackage[] = [
       leaveApprovalSingleStage: false,
       vehicleLogFuel: true,
       vehicleLogUrea: false,
+      safetyNearMiss: true,
+      safetyIncident: true,
+      payslip: true,
     },
   },
 ];

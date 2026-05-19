@@ -28,6 +28,7 @@ const PostBody = z.object({
     key: z.string().max(40),
     label: z.string().max(100),
     ok: z.boolean(),
+    reason: z.string().max(500).optional(), /* 미체크 시 사유 (근로자 입력) */
   })).optional(),
 });
 

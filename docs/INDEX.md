@@ -33,6 +33,7 @@
 | 문서 | 용도 |
 |---|---|
 | [`playbook/RAPID_DEV_PROMPT.md`](playbook/RAPID_DEV_PROMPT.md) ⭐ | **대한민국 최고 개발자 프롬프트** — 14일 MVP 출시 가이드 (CleanERP 검증) |
+| [`playbook/ios-pwa-checklist.md`](playbook/ios-pwa-checklist.md) 📱 | **iOS PWA 설치 체크리스트** — Next.js 14 crossorigin 함정, 인증서, SW, 트러블슈팅 |
 
 ---
 
@@ -137,3 +138,4 @@
 | "장애 대응 절차" | [`유지보수_메뉴얼.md` §9](../유지보수_메뉴얼.md) |
 | "코드 변경 후 배포" | [`DEPLOY.md`](../DEPLOY.md) |
 | "지난번 세션에서 뭘 했나?" | 가장 최신 [`04-report/YYYY-MM-DD-session-log.md`](04-report/) |
+| "아이폰 PWA 설치가 안 됨" | [`playbook/ios-pwa-checklist.md`](playbook/ios-pwa-checklist.md) |

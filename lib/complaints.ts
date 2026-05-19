@@ -13,12 +13,15 @@
 import type { Prisma } from '@prisma/client';
 import type { SessionPayload } from '@/lib/auth';
 
-export function complaintWhere(session: SessionPayload): Prisma.ComplaintWhereInput {
+export function complaintWhere(session: SessionPayload, workerIsManager = false): Prisma.ComplaintWhereInput {
   if (session.role === 'SUPER_ADMIN') return {};
   if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
     return { contractor: { municipalityId: BigInt(session.municipalityId) } };
   }
   if (session.role === 'WORKER') {
+    if (workerIsManager && session.contractorId) {
+      return { contractorId: BigInt(session.contractorId) };
+    }
     /* WORKER: 자기 신고한 민원 + 자기 배정 민원 모두 노출.
        사용자 진단 2026-05-02: 기동반 처리 민원을 못 보던 버그. */
     return {
@@ -75,9 +78,10 @@ export function isComplaintManager(role: string): boolean {
 /** start/complete 가능 — 매니저 또는 본인 담당 건 */
 export function canTransitionComplaint(
   session: { role: string; userId: string },
-  complaint: { assignedTo: bigint | null }
+  complaint: { assignedTo: bigint | null },
+  workerIsManager = false
 ): boolean {
-  if (isComplaintManager(session.role)) return true;
+  if (isComplaintManager(session.role) || workerIsManager) return true;
   if (session.role === 'WORKER' && complaint.assignedTo?.toString() === session.userId) return true;
   return false;
 }

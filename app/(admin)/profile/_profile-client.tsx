@@ -107,6 +107,18 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
           </button>
         </form>
       </div>
+      {/* 아이폰 홈 화면 추가 안내 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+        <h3 className="text-sm font-extrabold text-blue-900">📱 아이폰 홈 화면 설치 방법</h3>
+        <ol className="text-xs text-blue-800 font-semibold space-y-1 list-decimal list-inside leading-relaxed">
+          <li>Safari 브라우저로 이 앱에 접속합니다 (Chrome/Firefox 불가)</li>
+          <li>화면 하단의 <strong>공유 버튼</strong> (□↑ 아이콘)을 탭합니다</li>
+          <li><strong>&quot;홈 화면에 추가&quot;</strong> 를 선택합니다</li>
+          <li>앱 이름 확인 후 <strong>&quot;추가&quot;</strong> 버튼을 탭합니다</li>
+          <li>홈 화면에서 앱 아이콘을 탭하면 전체화면 앱으로 실행됩니다</li>
+        </ol>
+        <p className="text-[0.625rem] text-blue-700 font-mono">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
+      </div>
     </div>
   );
 }

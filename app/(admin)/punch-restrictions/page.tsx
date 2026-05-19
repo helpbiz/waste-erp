@@ -17,7 +17,7 @@ export default async function PunchRestrictionsPage() {
     prisma.punchRestriction.findMany({
       where: { contractorId },
       include: { department: { select: { id: true, name: true } } },
-      orderBy: [{ active: 'desc' }, { departmentId: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { active: 'desc' }, { name: 'asc' }],
     }),
     prisma.department.findMany({
       where: { contractorId, active: true },
@@ -40,7 +40,9 @@ export default async function PunchRestrictionsPage() {
     lng: r.lng ? Number(r.lng) : null,
     radiusMeters: r.radiusMeters,
     locationLabel: r.locationLabel,
+    allowedDays: r.allowedDays ? JSON.parse(r.allowedDays) : null,
     active: r.active,
+    sortOrder: r.sortOrder,
   }));
 
   const depts: DeptOpt[] = departments.map((d) => ({ id: d.id.toString(), name: d.name }));

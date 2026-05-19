@@ -6,12 +6,8 @@ import GlobalNotifications from '@/components/GlobalNotifications';
 export const metadata: Metadata = {
   title: 'CleanERP — 생활폐기물 수집운반 관리시스템',
   description: 'Phase 1A — 인증/RBAC/근태/실적/실시간 차량조회',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    title: 'CleanERP',
-    statusBarStyle: 'default',
-  },
+  /* manifest 는 <head> 에 직접 선언 — metadata.manifest 사용 시 Next.js가
+     crossorigin="use-credentials" 를 자동 추가해 iOS Safari PWA 설치를 차단함 */
   icons: {
     icon: '/icons/icon-192.png',
     apple: '/icons/icon-192.png',
@@ -34,6 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
+        {/* iOS Safari PWA 홈 화면 설치 메타태그 — appleWebApp 메타데이터 대신 직접 선언
+            (appleWebApp 사용 시 manifest 링크에 crossorigin="use-credentials" 가 추가되어
+             iOS PWA manifest 인식 불가) */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="CleanERP" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="apple-touch-icon" href="/icons/icon-180.png" />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap"

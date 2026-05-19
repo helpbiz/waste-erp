@@ -24,6 +24,7 @@ const Create = z.object({
   lng: z.number().min(-180).max(180).optional().nullable(),
   radiusMeters: z.number().int().min(10).max(50000).optional().nullable(),
   locationLabel: z.string().max(100).optional().nullable(),
+  allowedDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
   active: z.boolean().optional(),
 });
 
@@ -36,7 +37,7 @@ export async function GET(_req: Request) {
   const rows = await prisma.punchRestriction.findMany({
     where: { contractorId: BigInt(session.contractorId) },
     include: { department: { select: { id: true, name: true } } },
-    orderBy: [{ active: 'desc' }, { departmentId: 'asc' }, { name: 'asc' }],
+    orderBy: [{ sortOrder: 'asc' }, { active: 'desc' }, { name: 'asc' }],
   });
 
   return NextResponse.json({
@@ -54,7 +55,9 @@ export async function GET(_req: Request) {
       lng: r.lng ? Number(r.lng) : null,
       radiusMeters: r.radiusMeters,
       locationLabel: r.locationLabel,
+      allowedDays: r.allowedDays ? JSON.parse(r.allowedDays) : null,
       active: r.active,
+      sortOrder: r.sortOrder,
       createdAt: r.createdAt.toISOString(),
     })),
   });
@@ -93,6 +96,7 @@ export async function POST(req: Request) {
       lng: b.lng ?? null,
       radiusMeters: b.radiusMeters ?? null,
       locationLabel: b.locationLabel ?? null,
+      allowedDays: b.allowedDays ? JSON.stringify(b.allowedDays) : null,
       active: b.active ?? true,
       createdBy: BigInt(session.userId),
     },

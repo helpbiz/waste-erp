@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function VehiclePrintPage({ searchParams }: { searchParams: { date?: string; vehicleId?: string } }) {
   const session = (await readSession())!;
+  const isSuperAdmin = session.role === 'SUPER_ADMIN';
   const dateStr = searchParams.date ?? todayKstDate().toISOString().slice(0, 10);
   const date = new Date(dateStr);
   const vehicleId = searchParams.vehicleId;
@@ -30,6 +31,7 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
       zone: { select: { zoneName: true } },
     },
     orderBy: [{ vehicleId: 'asc' }],
+    take: 30,
   });
 
   /* 차량 목록 (단건 선택용 — 가시범위 모든 차량) */
@@ -43,6 +45,7 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
     <VehiclePrintClient
       date={dateStr}
       selectedVehicleId={vehicleId ?? null}
+      isSuperAdmin={isSuperAdmin}
       vehicles={vehicles.map((v) => ({ id: v.id.toString(), vehicleNo: v.vehicleNo, type: vehicleTypeLabel(v.vehicleType) }))}
       logs={logs.map((l) => ({
         id: l.id.toString(),

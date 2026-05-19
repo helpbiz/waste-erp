@@ -1,15 +1,19 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { complaintWhere, isComplaintManager, isOverdue } from '@/lib/complaints';
-import ComplaintsClient, { type Row, type Worker, type ContractorOpt } from './_complaints-client';
+import ComplaintsClient, { type Row, type Worker, type ContractorOpt, type ZoneOpt } from './_complaints-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ComplaintsPage() {
   const session = (await readSession())!;
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const rawItems = await prisma.complaint.findMany({
-    where: complaintWhere(session),
+    where: complaintWhere(session, workerIsManager),
     orderBy: { reportedAt: 'desc' },
     include: {
       reporter: { select: { id: true, name: true } },
@@ -33,6 +37,7 @@ export default async function ComplaintsPage() {
       ? { id: c.reporter.id.toString(), name: c.reporter.name }
       : { id: '0', name: c.citizenName ?? '시민' },
     assignee: c.assignee ? { id: c.assignee.id.toString(), name: c.assignee.name } : null,
+    zoneId: c.zoneId?.toString() ?? null,
     zoneName: c.zone?.zoneName ?? null,
     resolveNote: c.resolveNote,
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
@@ -40,9 +45,9 @@ export default async function ComplaintsPage() {
     requestImage: c.requestImage ?? null,
   }));
 
-  /* 매니저는 담당자 dropdown 위해 worker 목록 prefetch */
+  /* 매니저(역할 또는 플래그)는 담당자 dropdown 위해 worker 목록 prefetch */
   let workers: Worker[] = [];
-  if (isComplaintManager(session.role)) {
+  if (isComplaintManager(session.role) || workerIsManager) {
     const ws = await prisma.user.findMany({
       where: {
         role: 'WORKER',
@@ -72,13 +77,25 @@ export default async function ComplaintsPage() {
     contractorOpts = cs.map((c) => ({ id: c.id.toString(), name: c.companyName }));
   }
 
+  /* MUNI_ADMIN 구역 필터용 — 산하 위탁업체의 담당구역 목록 */
+  let zoneOpts: ZoneOpt[] = [];
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    const zones = await prisma.cleaningZone.findMany({
+      where: { contractor: { municipalityId: BigInt(session.municipalityId) } },
+      select: { id: true, zoneName: true, zoneCode: true },
+      orderBy: { zoneName: 'asc' },
+    });
+    zoneOpts = zones.map((z) => ({ id: z.id.toString(), name: `${z.zoneName} (${z.zoneCode})` }));
+  }
+
   return (
     <ComplaintsClient
-      role={session.role}
+      role={workerIsManager ? 'CONTRACTOR_ADMIN' : session.role}
       userId={session.userId}
       items={items}
       workers={workers}
       contractorOpts={contractorOpts}
+      zoneOpts={zoneOpts}
     />
   );
 }

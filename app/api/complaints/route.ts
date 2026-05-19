@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { isInsideKorea } from '@/lib/gps';
 import { roundCoord } from '@/lib/geo';
-import { complaintWhere, isOverdue } from '@/lib/complaints';
+import { complaintWhere, isOverdue, isComplaintManager } from '@/lib/complaints';
 import { writeAudit } from '@/lib/audit';
 import { autoAssignComplaint } from '@/lib/complaint-assign';
 import { hasFeature } from '@/lib/features';
@@ -24,6 +24,7 @@ const PostBody = z.object({
   locationAddress: z.string().trim().max(255).optional(),
   zoneId: z.union([z.string(), z.number()]).optional(),
   contractorId: z.union([z.string(), z.number()]).optional(), // SUPER만 사용
+  assigneeId: z.union([z.string(), z.number()]).optional(),   // 근로자 선택 배정 (선택)
   /* 청구항 4 — 처리 대상 폐기물 촬영 이미지 */
   requestImage: z.string().max(DATA_URL_MAX).optional(),                       // 단일 (하위 호환)
   requestImages: z.array(z.string().max(DATA_URL_MAX)).max(PHOTOS_MAX).optional(), // 다중 (신규)
@@ -120,9 +121,25 @@ export async function POST(req: Request) {
     },
   });
 
+  /* 선택 배정 — 근로자가 직접 지정한 경우 자동배정 건너뜀 */
+  let manualAssigned = false;
+  if (b.assigneeId) {
+    try {
+      const aid = BigInt(b.assigneeId);
+      const assignee = await prisma.user.findUnique({ where: { id: aid } });
+      if (assignee && assignee.role === 'WORKER' && assignee.contractorId === contractorId) {
+        await prisma.complaint.update({
+          where: { id: created.id },
+          data: { assignedTo: aid, status: 'ASSIGNED' },
+        });
+        manualAssigned = true;
+      }
+    } catch { /* 잘못된 assigneeId는 무시하고 자동배정으로 폴백 */ }
+  }
+
   /* 자동 배정 — 회사별 기능 권한 ON 일 때만 실행 (best-effort) */
   let assignment: Awaited<ReturnType<typeof autoAssignComplaint>> | null = null;
-  try {
+  if (!manualAssigned) try {
     const autoAssignOn = await hasFeature(contractorId, 'complaintAutoAssign');
     if (autoAssignOn) {
       const aiNearbyOn = await hasFeature(contractorId, 'aiNearbyDispatch');
@@ -160,12 +177,16 @@ export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const url = new URL(req.url);
   const statusParam = url.searchParams.get('status');
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 20)));
   const offset = Math.max(0, Number(url.searchParams.get('offset') ?? 0));
 
-  const where = complaintWhere(session);
+  const where = complaintWhere(session, workerIsManager);
   if (statusParam) {
     const valid = ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'];
     if (valid.includes(statusParam)) (where as Record<string, unknown>).status = statusParam;

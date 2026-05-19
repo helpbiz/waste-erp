@@ -77,7 +77,7 @@ export default async function VehicleLogPage() {
       defaultVehicleId={defaultVehicleId}
       driverName={session.name}
       lastEndMileage={lastLog?.endMileage ?? null}
-      showFuel={showFuel}
+      showFuel={true}
       showUrea={showUrea}
     />
   );

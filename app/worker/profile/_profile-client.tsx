@@ -256,6 +256,19 @@ export default function ProfileClient({ user }: { user: UserData }) {
         {saving ? '저장 중…' : '저장'}
       </button>
 
+      {/* 아이폰 홈 화면 추가 안내 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+        <h3 className="text-sm font-extrabold text-blue-900">📱 아이폰 홈 화면 설치 방법</h3>
+        <ol className="text-xs font-bold text-blue-800 space-y-1 list-decimal list-inside leading-relaxed">
+          <li><strong>Safari 브라우저</strong>로 이 앱에 접속합니다 (Chrome/Firefox 불가)</li>
+          <li>화면 하단의 공유 버튼 <strong>(□↑ 아이콘)</strong>을 탭합니다</li>
+          <li><strong>&quot;홈 화면에 추가&quot;</strong>를 선택합니다</li>
+          <li>앱 이름 확인 후 <strong>&quot;추가&quot;</strong> 버튼을 탭합니다</li>
+          <li>홈 화면에서 앱 아이콘을 탭하면 전체화면 앱으로 실행됩니다</li>
+        </ol>
+        <p className="text-[11px] font-mono text-blue-600">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
+      </div>
+
       {/* 로그아웃은 AppBar 우상단으로 이동 (PWA Mobile UX Mastering 2026-04-28).
           하단 카드 제거 사유: 모든 worker 화면 우상단에 항상 보이므로 프로필 페이지에 별도 표시 중복. */}
     </div>

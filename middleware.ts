@@ -92,6 +92,15 @@ export async function middleware(req: NextRequest) {
      예: ACME_CHALLENGES='{"abc123":"abc123.xyz789"}' */
   if (pathname.startsWith('/.well-known/acme-challenge/')) {
     const token = pathname.slice('/.well-known/acme-challenge/'.length);
+    /* thumbprint 기반 동적 응답 — 어떤 토큰에도 <token>.<thumbprint> 로 응답 */
+    const thumbprint = process.env.ACME_THUMBPRINT;
+    if (thumbprint && token) {
+      return new NextResponse(`${token}.${thumbprint}`, {
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
+    /* 레거시: 단일 토큰 */
     const single = process.env.ACME_CHALLENGE_TOKEN;
     const singleResp = process.env.ACME_CHALLENGE_RESPONSE;
     if (single && singleResp && single === token) {
@@ -100,6 +109,7 @@ export async function middleware(req: NextRequest) {
         headers: { 'Content-Type': 'text/plain' },
       });
     }
+    /* 레거시: JSON 멀티맵 */
     const multiRaw = process.env.ACME_CHALLENGES;
     if (multiRaw) {
       try {

@@ -25,6 +25,8 @@ function Label({ children }: { children: React.ReactNode }) {
 export default function PrintHubPage() {
   /* 차량일지 */
   const [vDate, setVDate] = useState(today());
+  const [vExFrom, setVExFrom] = useState(thisMonth() + '-01');
+  const [vExTo, setVExTo] = useState(today());
 
   /* 처리실적 PDF */
   const [pDate, setPDate] = useState(today());
@@ -51,8 +53,8 @@ export default function PrintHubPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
-        {/* 1. 차량일지 */}
-        <Card title="🚛 차량 운행일지" desc="날짜별 차량 운행일지 인쇄">
+        {/* 1. 차량일지 인쇄 */}
+        <Card title="🚛 차량 운행일지 인쇄" desc="날짜별 차량 운행일지 인쇄">
           <div>
             <Label>날짜</Label>
             <input type="date" value={vDate} onChange={(e) => setVDate(e.target.value)}
@@ -61,6 +63,26 @@ export default function PrintHubPage() {
           <a href={`/vehicles/print?date=${vDate}`} target="_blank" rel="noopener"
             className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-accent text-white hover:bg-accent-strong transition-colors">
             🖨 출력 화면 열기
+          </a>
+        </Card>
+
+        {/* 1-B. 차량일지 Excel */}
+        <Card title="🚛 차량일지 Excel 내보내기" desc="기간별 차량일지 Excel 다운로드">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label>시작일</Label>
+              <input type="date" value={vExFrom} onChange={(e) => setVExFrom(e.target.value)}
+                className="w-full px-2 py-2 rounded-lg border border-line bg-white text-xs font-mono font-bold" />
+            </div>
+            <div>
+              <Label>종료일</Label>
+              <input type="date" value={vExTo} onChange={(e) => setVExTo(e.target.value)}
+                className="w-full px-2 py-2 rounded-lg border border-line bg-white text-xs font-mono font-bold" />
+            </div>
+          </div>
+          <a href={`/api/vehicle-logs/export?from=${vExFrom}&to=${vExTo}`}
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+            ⬇ Excel 다운로드
           </a>
         </Card>
 
@@ -162,6 +184,19 @@ export default function PrintHubPage() {
           </div>
           <a href={`/print/attendance?ym=${aYm}`} target="_blank" rel="noopener"
             className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-violet-600 text-white hover:bg-violet-700 transition-colors">
+            🖨 출력 화면 열기
+          </a>
+        </Card>
+
+        {/* 7. TBM 안전교육 */}
+        <Card title="🦺 TBM 안전교육 월별 기록" desc="월별 TBM 세션·서명자 출력 (안전관리 전용)">
+          <div>
+            <Label>년월</Label>
+            <input type="month" value={aYm} onChange={(e) => setAYm(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-line bg-white text-sm font-mono font-bold" />
+          </div>
+          <a href={`/safety/tbm-print?yearMonth=${aYm}`} target="_blank" rel="noopener"
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
             🖨 출력 화면 열기
           </a>
         </Card>

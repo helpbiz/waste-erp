@@ -4,6 +4,23 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VEHICLE_TYPE_OPTIONS, VEHICLE_TYPE_LABEL, type VehicleTypeKey } from '@/lib/vehicle-types';
 
+const INSPECTION_KEY_LABEL: Record<string, string> = {
+  safetyBar: '안전멈춤Bar', handSwitch: '양손조작안전스위치', dashcam: '블랙박스',
+  turnSignal: '방향지시등', engineOil: '엔진오일', lubricant: '윤활제',
+  brake: '브레이크', tire: '타이어', headlight: '전조등', carWash: '세차여부',
+};
+const BAG_MACHINE_LABEL: Record<string, string> = {
+  food_1L: '음식물 1L', food_2L: '음식물 2L', food_3L: '음식물 3L', food_5L: '음식물 5L', food_10L: '음식물 10L',
+  living_5L: '생활 5L', living_10L: '생활 10L', living_20L: '생활 20L', living_30L: '생활 30L', living_50L: '생활 50L', living_75L: '생활 75L',
+  reuse_10L: '재사용 10L', reuse_20L: '재사용 20L',
+  illegal_20: '무단투기(20기준)', special: '특수', deadAnimal: '동물사채(마대)',
+};
+const LARGE_WASTE_LABEL: Record<string, string> = {
+  furniture: '가구류', chair: '의자류', sofa: '쇼파류', bed: '침대류',
+  appliance: '가전제품', extinguisher: '소화기', household: '생활용품', other: '기타',
+  illegalTotal: '무단투기 총합',
+};
+
 export type VehicleRow = {
   id: string;
   vehicleNo: string;
@@ -51,15 +68,22 @@ export default function VehiclesClient({
   workers,
   isManager,
   todayLabel,
+  selectedDate,
 }: {
   vehicles: VehicleRow[];
   logs: LogRow[];
   workers: WorkerOpt[];
   isManager: boolean;
   todayLabel: string;
+  selectedDate?: string;
 }) {
   const router = useRouter();
+  const [dateInput, setDateInput] = useState(selectedDate ?? todayLabel);
   const [busy, setBusy] = useState(false);
+
+  function navigateDate(date: string) {
+    router.push(`/vehicles?date=${date}`);
+  }
   const [error, setError] = useState<string | null>(null);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
@@ -107,11 +131,17 @@ export default function VehiclesClient({
             {todayLabel} · Plan §2-4 / §3-3 · 차량 마스터 + 운행일지 결재
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {submittedCount > 0 && (
             <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
               결재 대기 {submittedCount}건
             </span>
+          )}
+          {isManager && (
+            <a href="/vehicles/logs-overview"
+              className="px-3 py-1.5 rounded-md border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition">
+              📋 차량일지 현황
+            </a>
           )}
           {isManager && (
             <button
@@ -217,11 +247,31 @@ export default function VehiclesClient({
         </div>
       </section>
 
-      {/* 오늘 운행일지 — 일괄 출력 버튼 제거 (사용자 요청 2026-04-28). */}
+      {/* 운행일지 — 날짜 조회 지원 */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-        <header className="px-5 py-3.5 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2">
-          <h3 className="text-sm font-extrabold text-ink">오늘 운행일지 ({logs.length}건)</h3>
-          <span className="text-[0.6875rem] font-mono font-bold text-ink-muted">{todayLabel}</span>
+        <header className="px-5 py-3.5 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="text-sm font-extrabold text-ink">운행일지 ({logs.length}건)</h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              className="px-2 py-1 rounded border border-line bg-white text-sm font-mono font-bold focus:outline-none focus:border-accent"
+            />
+            <button
+              onClick={() => navigateDate(dateInput)}
+              className="px-3 py-1 rounded bg-accent text-white text-xs font-extrabold hover:bg-cyan-800"
+            >
+              조회
+            </button>
+            <button
+              onClick={() => { setDateInput(todayLabel); navigateDate(todayLabel); }}
+              className="px-2 py-1 rounded border border-line text-xs font-bold hover:bg-surface"
+            >
+              오늘
+            </button>
+            <span className="text-[0.6875rem] font-mono font-bold text-ink-muted">{selectedDate ?? todayLabel}</span>
+          </div>
         </header>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="운행일지 표">
         <table className="w-full min-w-[640px] text-[0.8125rem]">
@@ -279,7 +329,7 @@ export default function VehiclesClient({
                     {isManager && l.status === 'SUBMITTED' && (
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => call(`/api/vehicle-logs/${l.id}/approve`)}
+                          onClick={() => call(`/api/vehicle-logs/${l.id}/approve`, undefined, 'POST')}
                           disabled={busy}
                           className="px-2.5 py-1 rounded-md bg-success text-white text-xs font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
                         >
@@ -798,15 +848,83 @@ type LogDetail = {
   passengers?: string;
   operationPeriod?: string;
   fuelCost?: number;
+  fuelUsed?: number;
   ureaUsed?: number;
   ureaCost?: number;
-  bags30L?: number;
-  bags50L?: number;
-  bags75L?: number;
   inspection?: Record<string, string>;
   maintenance?: { company?: string; content?: string; cost?: number };
+  bagWork?: Array<Record<string, string | number | null>>;
+  bagMachineWork?: Record<string, number>;
+  largeWasteWork?: Record<string, number>;
   note?: string;
 };
+
+function VehicleOperationDetailTable({ routeDetail }: { routeDetail: string | null }) {
+  const rows: Array<{ round: string; start: string; end: string; zone: string; note: string }> = [];
+
+  if (routeDetail) {
+    try {
+      const d = JSON.parse(routeDetail) as {
+        operationRows?: Array<{ startTime: string; endTime: string; zone: string; note: string }>;
+        operationPeriod?: string;
+      };
+      if (Array.isArray(d.operationRows) && d.operationRows.length > 0) {
+        for (const [i, r] of d.operationRows.entries()) {
+          rows.push({ round: `${i + 1}회`, start: r.startTime ?? '', end: r.endTime ?? '', zone: r.zone ?? '', note: r.note ?? '' });
+        }
+      } else if (d.operationPeriod) {
+        const parts = d.operationPeriod.split(';').map((s: string) => s.trim()).filter(Boolean);
+        for (const part of parts) {
+          const m = part.match(/^(\d+차)\s+(.+)$/);
+          if (m) {
+            const timePart = m[2];
+            const timem = timePart.match(/^([\d:]+)[-–]([\d:]+)(.*)$/);
+            if (timem) {
+              rows.push({ round: m[1], start: timem[1], end: timem[2], zone: timem[3].trim(), note: '' });
+            } else {
+              rows.push({ round: m[1], start: timePart, end: '', zone: '', note: '' });
+            }
+          }
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  while (rows.length < 6) {
+    rows.push({ round: `${rows.length + 1}회`, start: '', end: '', zone: '', note: '' });
+  }
+
+  return (
+    <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+      <div className="font-extrabold text-slate-700 mb-1 text-[0.6875rem] flex items-center gap-2">
+        <span>◎ 차량운행내역</span>
+        <span className="font-normal text-red-600 text-[0.625rem]">※지정 소각장 및 기타처리장 반입 상황에 따라 근무시간 조정.</span>
+      </div>
+      <table className="border-collapse text-[0.6875rem] w-full">
+        <thead>
+          <tr>
+            <th className="border border-slate-400 w-8 py-0.5 bg-slate-200"></th>
+            <th className="border border-slate-400 px-2 py-0.5 font-bold text-center bg-slate-200">시작시간</th>
+            <th className="border border-slate-400 px-2 py-0.5 font-bold text-center bg-slate-200">종료시간</th>
+            <th className="border border-slate-400 px-4 py-0.5 font-bold text-center bg-slate-200">작 업 구 간</th>
+            <th className="border border-slate-400 px-4 py-0.5 font-bold text-center bg-slate-200">비 고</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              <td className="border border-slate-400 px-1 py-1 text-center font-bold bg-slate-100">{r.round}</td>
+              <td className="border border-slate-400 px-2 py-1 text-center font-mono min-w-[60px]">{r.start || <span className="text-slate-300">:</span>}</td>
+              <td className="border border-slate-400 px-2 py-1 text-center font-mono min-w-[60px]">{r.end || <span className="text-slate-300">:</span>}</td>
+              <td className="border border-slate-400 px-2 py-1 min-w-[120px]">{r.zone}</td>
+              <td className="border border-slate-400 px-2 py-1 min-w-[80px]">{r.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDetail: string | null; startMileage: number | null; endMileage: number | null }) {
   let detail: LogDetail | null = null;
@@ -820,9 +938,13 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
 
   const inspection = detail?.inspection;
   const maint = detail?.maintenance;
+  const bagWork = Array.isArray(detail?.bagWork) ? detail.bagWork : null;
+  const bagMachineWork = detail?.bagMachineWork && typeof detail.bagMachineWork === 'object' ? detail.bagMachineWork : null;
+  const largeWasteWork = detail?.largeWasteWork && typeof detail.largeWasteWork === 'object' ? detail.largeWasteWork : null;
 
   return (
     <div className="text-xs space-y-2">
+      {/* 기본 운행 정보 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {startMileage != null && endMileage != null && (
           <div className="bg-white border border-line rounded px-2 py-1.5">
@@ -843,22 +965,71 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
             <div className="font-semibold">{detail.operationPeriod}</div>
           </div>
         ) : null}
-        {(detail?.bags30L || detail?.bags50L || detail?.bags75L) ? (
-          <div className="bg-white border border-line rounded px-2 py-1.5">
-            <div className="text-[0.625rem] font-bold text-ink-muted">봉투수량</div>
-            <div className="font-semibold">30L: {detail.bags30L ?? 0} · 50L: {detail.bags50L ?? 0} · 75L: {detail.bags75L ?? 0}</div>
-          </div>
-        ) : null}
         {detail?.fuelCost != null && detail.fuelCost > 0 ? (
           <div className="bg-white border border-line rounded px-2 py-1.5">
             <div className="text-[0.625rem] font-bold text-ink-muted">연료비</div>
-            <div className="font-semibold">{detail.fuelCost.toLocaleString()} 원</div>
+            <div className="font-semibold">{Number(detail.fuelCost).toLocaleString()} 원</div>
           </div>
         ) : null}
       </div>
+
+      {/* 작업내역 A */}
+      {bagWork && bagWork.length > 0 && bagWork.some((r) => Number(r.general) > 0 || Number(r.food) > 0 || Number(r.recycle) > 0) && (
+        <div className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-200">
+          <div className="font-extrabold text-blue-900 mb-1">작업내역 A — 중량제봉투·음식물·재활 (kg)</div>
+          <table className="w-full border-collapse text-[0.6875rem]">
+            <thead><tr className="text-blue-700">
+              <th className="text-left pr-2 pb-0.5 font-extrabold">회차</th>
+              <th className="pr-2 pb-0.5 font-extrabold">일반</th>
+              <th className="pr-2 pb-0.5 font-extrabold">음식물</th>
+              <th className="pr-2 pb-0.5 font-extrabold">재활용</th>
+              <th className="text-left pb-0.5 font-extrabold">반입장소</th>
+              <th className="text-left pb-0.5 font-extrabold">비고</th>
+            </tr></thead>
+            <tbody>
+              {bagWork.map((row, i) => (
+                <tr key={i} className="font-mono">
+                  <td className="pr-2 py-0.5 text-blue-700">{i + 1}회</td>
+                  <td className="pr-2 py-0.5 text-center">{row.general || '—'}</td>
+                  <td className="pr-2 py-0.5 text-center">{row.food || '—'}</td>
+                  <td className="pr-2 py-0.5 text-center">{row.recycle || '—'}</td>
+                  <td className="py-0.5 pr-2">{(row.disposalSite as string) || '—'}</td>
+                  <td className="py-0.5">{(row.note as string) || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 작업내역 B */}
+      {bagMachineWork && Object.values(bagMachineWork).some((v) => Number(v) > 0) && (
+        <div className="bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+          <div className="font-extrabold text-green-900 mb-1">작업내역 B — 중량계·봉투 수거 (L)</div>
+          <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5 text-[0.6875rem]">
+            {Object.entries(bagMachineWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
+              <span key={k}>{BAG_MACHINE_LABEL[k] ?? k}: {v}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 작업내역 C */}
+      {largeWasteWork && Object.values(largeWasteWork).some((v) => Number(v) > 0) && (
+        <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-200">
+          <div className="font-extrabold text-amber-900 mb-1">작업내역 C — 대형폐기물 (점)</div>
+          <div className="font-mono grid grid-cols-2 gap-x-3 gap-y-0.5 text-[0.6875rem]">
+            {Object.entries(largeWasteWork).filter(([, v]) => Number(v) > 0).map(([k, v]) => (
+              <span key={k}>{LARGE_WASTE_LABEL[k] ?? k}: {v}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 차량 점검 */}
       {inspection && Object.keys(inspection).length > 0 && (
         <div>
-          <div className="text-[0.625rem] font-extrabold text-ink-muted mb-1">점검항목</div>
+          <div className="text-[0.625rem] font-extrabold text-ink-muted mb-1">차량 점검</div>
           <div className="flex flex-wrap gap-1">
             {Object.entries(inspection).map(([key, val]) => (
               <span key={key} className={`px-1.5 py-0.5 rounded text-[0.625rem] font-bold border ${
@@ -866,12 +1037,14 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
                 val === '이상' ? 'bg-red-50 border-red-300 text-red-700' :
                 'bg-amber-50 border-amber-300 text-amber-800'
               }`}>
-                {key}: {val}
+                {INSPECTION_KEY_LABEL[key] ?? key}: {val}
               </span>
             ))}
           </div>
         </div>
       )}
+
+      {/* 정비 이력 */}
       {maint && (maint.company || maint.content) && (
         <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
           <div className="text-[0.625rem] font-extrabold text-amber-900 mb-0.5">정비 이력</div>
@@ -880,8 +1053,12 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
           {maint.cost ? <div className="text-ink">비용: {maint.cost.toLocaleString()} 원</div> : null}
         </div>
       )}
+
+      {/* 차량운행내역 */}
+      <VehicleOperationDetailTable routeDetail={routeDetail} />
+
       {detail?.note ? (
-        <div className="text-ink-muted italic">메모: {detail.note}</div>
+        <div className="text-ink-muted italic">특이사항: {detail.note}</div>
       ) : null}
       {!detail && routeDetail ? (
         <pre className="text-[0.6875rem] font-mono whitespace-pre-wrap break-all text-ink-muted">{routeDetail}</pre>

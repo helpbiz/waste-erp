@@ -19,7 +19,12 @@ const Body = z.object({
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!isComplaintManager(session.role)) {
+
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
+  if (!isComplaintManager(session.role) && !workerIsManager) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -34,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   /* 가시범위 + 동일 위탁업체 검증 */
   const target = await prisma.complaint.findFirst({
-    where: { id, ...complaintWhere(session) },
+    where: { id, ...complaintWhere(session, workerIsManager) },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
