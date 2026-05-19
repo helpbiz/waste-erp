@@ -1,20 +1,17 @@
 /**
  * GET /api/super-admin/facility-ops/export — AVAC 운전기록 Excel 다운로드
  *   query: ?facilityId=N&from=YYYY-MM-DD&to=YYYY-MM-DD (최대 90일)
- *
- * Design Ref: §3.3 — exceljs Buffer → Response. Streamlit avac_export_service 대체.
- * Plan SC: FR-07, FR-08 (Excel 컬럼 12개)
  */
 import ExcelJS from 'exceljs';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { applyStandardHeader, addHeaderRow, styleDataRow, makeFilename, xlsxResponse } from '@/lib/excel-utils';
 
 export const runtime = 'nodejs';
 
 const MAX_DAYS = 90;
 
-// Design Ref: §5 — CONTRACTOR_ADMIN 시설 접근 제어
 async function resolveMunicipalityId(session: {
   role: string;
   contractorId: string | null;
@@ -66,71 +63,53 @@ export async function GET(req: Request) {
     orderBy: [{ opsDate: 'asc' }, { facilityId: 'asc' }],
   });
 
+  const period = `${from} ~ ${to}`;
+  const COL_HEADERS = [
+    '집하장', '운영일자', '일반가동(h)', '음식가동(h)', '비가동(h)',
+    '일반처리(t)', '음식처리(t)', '일반수거(t)', '음식수거(t)',
+    '일반반출(t)', '음식반출(t)', '전일전력(kWh)',
+  ];
+  const COL_WIDTHS = [20, 14, 14, 14, 12, 14, 14, 14, 14, 14, 14, 16];
+
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CleanERP';
   wb.created = new Date();
 
-  const COLS: ExcelJS.Column[] = [
-    { header: '집하장', key: 'facility', width: 20 },
-    { header: '운영일자', key: 'opsDate', width: 14 },
-    { header: '일반가동(h)', key: 'generalOpHours', width: 14 },
-    { header: '음식가동(h)', key: 'foodOpHours', width: 14 },
-    { header: '비가동(h)', key: 'downtimeHours', width: 12 },
-    { header: '일반처리(t)', key: 'generalWasteTon', width: 14 },
-    { header: '음식처리(t)', key: 'foodWasteTon', width: 14 },
-    { header: '일반수거(t)', key: 'generalCollectTon', width: 14 },
-    { header: '음식수거(t)', key: 'foodCollectTon', width: 14 },
-    { header: '일반반출(t)', key: 'generalTransferTon', width: 14 },
-    { header: '음식반출(t)', key: 'foodTransferTon', width: 14 },
-    { header: '전일전력(kWh)', key: 'prevDayPowerKwh', width: 16 },
-  ] as ExcelJS.Column[];
-
-  // ── Sheet 1: 상세 (일별 × 집하장) ──────────────────────────────
+  /* 1) 상세 시트 */
   const ws1 = wb.addWorksheet('상세');
-  ws1.columns = COLS;
-  ws1.getRow(1).font = { bold: true };
+  applyStandardHeader(ws1, { title: '집하장 운전기록 현황 (상세)', colCount: 12, period, totalCount: items.length });
+  addHeaderRow(ws1, COL_HEADERS);
 
-  for (const r of items) {
-    ws1.addRow({
-      facility: r.facility.name,
-      opsDate: r.opsDate.toISOString().slice(0, 10),
-      generalOpHours: Number(r.generalOpHours),
-      foodOpHours: Number(r.foodOpHours),
-      downtimeHours: Number(r.downtimeHours),
-      generalWasteTon: Number(r.generalWasteTon),
-      foodWasteTon: Number(r.foodWasteTon),
-      generalCollectTon: Number(r.generalCollectTon),
-      foodCollectTon: Number(r.foodCollectTon),
-      generalTransferTon: Number(r.generalTransferTon),
-      foodTransferTon: Number(r.foodTransferTon),
-      prevDayPowerKwh: Number(r.prevDayPowerKwh),
+  items.forEach((r, idx) => {
+    const row = ws1.addRow([
+      r.facility.name,
+      r.opsDate.toISOString().slice(0, 10),
+      Number(r.generalOpHours),
+      Number(r.foodOpHours),
+      Number(r.downtimeHours),
+      Number(r.generalWasteTon),
+      Number(r.foodWasteTon),
+      Number(r.generalCollectTon),
+      Number(r.foodCollectTon),
+      Number(r.generalTransferTon),
+      Number(r.foodTransferTon),
+      Number(r.prevDayPowerKwh),
+    ]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.font = { name: '맑은 고딕', size: 9 };
+      cell.alignment = { horizontal: colNum <= 2 ? 'center' : 'right', vertical: 'middle' };
     });
-  }
+  });
+  ws1.columns = COL_WIDTHS.map((width) => ({ width }));
 
-  // ── Sheet 2: 집하장별 합계 ──────────────────────────────────────
-  const ws2 = wb.addWorksheet('집하장별합계');
-  ws2.columns = [
-    { header: '집하장', key: 'facility', width: 20 },
-    { header: '일수', key: 'days', width: 8 },
-    { header: '일반가동(h)', key: 'generalOpHours', width: 14 },
-    { header: '음식가동(h)', key: 'foodOpHours', width: 14 },
-    { header: '비가동(h)', key: 'downtimeHours', width: 12 },
-    { header: '일반처리(t)', key: 'generalWasteTon', width: 14 },
-    { header: '음식처리(t)', key: 'foodWasteTon', width: 14 },
-    { header: '일반수거(t)', key: 'generalCollectTon', width: 14 },
-    { header: '음식수거(t)', key: 'foodCollectTon', width: 14 },
-    { header: '일반반출(t)', key: 'generalTransferTon', width: 14 },
-    { header: '음식반출(t)', key: 'foodTransferTon', width: 14 },
-    { header: '전일전력(kWh)', key: 'prevDayPowerKwh', width: 16 },
-  ] as ExcelJS.Column[];
-  ws2.getRow(1).font = { bold: true };
-
+  /* 2) 집하장별 합계 */
   const byFacility = new Map<string, {
     days: number; generalOpHours: number; foodOpHours: number; downtimeHours: number;
     generalWasteTon: number; foodWasteTon: number; generalCollectTon: number; foodCollectTon: number;
     generalTransferTon: number; foodTransferTon: number; prevDayPowerKwh: number;
   }>();
-
   for (const r of items) {
     const k = r.facility.name;
     const cur = byFacility.get(k) ?? {
@@ -153,48 +132,56 @@ export async function GET(req: Request) {
     });
   }
 
-  for (const [facility, v] of [...byFacility.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    ws2.addRow({ facility, ...v });
-  }
+  const ws2 = wb.addWorksheet('집하장별합계');
+  applyStandardHeader(ws2, { title: '집하장 운전기록 현황 (집하장별 합계)', colCount: 12, period, totalCount: byFacility.size, unit: '개소' });
+  addHeaderRow(ws2, ['집하장', '일수', ...COL_HEADERS.slice(2)]);
+  [...byFacility.entries()].sort(([a], [b]) => a.localeCompare(b)).forEach(([facility, v], idx) => {
+    const row = ws2.addRow([
+      facility, v.days,
+      v.generalOpHours, v.foodOpHours, v.downtimeHours,
+      v.generalWasteTon, v.foodWasteTon, v.generalCollectTon, v.foodCollectTon,
+      v.generalTransferTon, v.foodTransferTon, v.prevDayPowerKwh,
+    ]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.font = { name: '맑은 고딕', size: 9 };
+      cell.alignment = { horizontal: colNum <= 2 ? 'center' : 'right', vertical: 'middle' };
+    });
+  });
+  ws2.columns = [{ width: 20 }, { width: 8 }, ...COL_WIDTHS.slice(2).map((width) => ({ width }))];
 
-  // ── Sheet 3: 전체 합계 ──────────────────────────────────────────
-  const ws3 = wb.addWorksheet('전체합계');
-  ws3.columns = [
-    { header: '항목', key: 'label', width: 18 },
-    { header: '합계', key: 'value', width: 16 },
-    { header: '단위', key: 'unit', width: 8 },
-  ] as ExcelJS.Column[];
-  ws3.getRow(1).font = { bold: true };
-
-  function sum(key: keyof typeof items[0]) {
+  /* 3) 전체 합계 */
+  function sum(key: keyof (typeof items)[0]) {
     return items.reduce((acc, r) => acc + Number(r[key] ?? 0), 0);
   }
 
-  ws3.addRow({ label: '조회 기간', value: `${from} ~ ${to}`, unit: '' });
-  ws3.addRow({ label: '집하장 수', value: byFacility.size, unit: '개' });
-  ws3.addRow({ label: '데이터 일수', value: items.length, unit: '건' });
-  ws3.addRow({});
-  ws3.addRow({ label: '일반 가동시간 합계', value: sum('generalOpHours').toFixed(2), unit: 'h' });
-  ws3.addRow({ label: '음식 가동시간 합계', value: sum('foodOpHours').toFixed(2), unit: 'h' });
-  ws3.addRow({ label: '비가동시간 합계', value: sum('downtimeHours').toFixed(2), unit: 'h' });
-  ws3.addRow({ label: '일반 처리량 합계', value: sum('generalWasteTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '음식 처리량 합계', value: sum('foodWasteTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '일반 수거량 합계', value: sum('generalCollectTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '음식 수거량 합계', value: sum('foodCollectTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '일반 반출량 합계', value: sum('generalTransferTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '음식 반출량 합계', value: sum('foodTransferTon').toFixed(3), unit: 't' });
-  ws3.addRow({ label: '전력 사용량 합계', value: sum('prevDayPowerKwh').toFixed(2), unit: 'kWh' });
+  const ws3 = wb.addWorksheet('전체합계');
+  applyStandardHeader(ws3, { title: '집하장 운전기록 현황 (전체 합계)', colCount: 3, period, totalCount: items.length });
+  addHeaderRow(ws3, ['항목', '합계', '단위']);
+  const summaryRows: [string, string | number, string][] = [
+    ['집하장 수', byFacility.size, '개'],
+    ['일반 가동시간 합계', sum('generalOpHours').toFixed(2), 'h'],
+    ['음식 가동시간 합계', sum('foodOpHours').toFixed(2), 'h'],
+    ['비가동시간 합계', sum('downtimeHours').toFixed(2), 'h'],
+    ['일반 처리량 합계', sum('generalWasteTon').toFixed(3), 't'],
+    ['음식 처리량 합계', sum('foodWasteTon').toFixed(3), 't'],
+    ['일반 수거량 합계', sum('generalCollectTon').toFixed(3), 't'],
+    ['음식 수거량 합계', sum('foodCollectTon').toFixed(3), 't'],
+    ['일반 반출량 합계', sum('generalTransferTon').toFixed(3), 't'],
+    ['음식 반출량 합계', sum('foodTransferTon').toFixed(3), 't'],
+    ['전력 사용량 합계', sum('prevDayPowerKwh').toFixed(2), 'kWh'],
+  ];
+  summaryRows.forEach((r, idx) => {
+    const row = ws3.addRow(r);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { name: '맑은 고딕', size: 9 };
+    });
+  });
+  ws3.columns = [{ width: 22 }, { width: 16 }, { width: 8 }];
 
   const buf = Buffer.from(await wb.xlsx.writeBuffer());
-  const fromLabel = from.replace(/-/g, '');
-  const toLabel = to.replace(/-/g, '');
-
-  return new NextResponse(new Uint8Array(buf), {
-    status: 200,
-    headers: {
-      'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'content-disposition': `attachment; filename="facility_ops_${fromLabel}_${toLabel}.xlsx"`,
-      'content-length': String(buf.length),
-    },
-  });
+  return xlsxResponse(buf, makeFilename('집하장운전기록'));
 }

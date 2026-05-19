@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import ExcelJS from 'exceljs';
+import { applyStandardHeader, addHeaderRow, styleDataRow, makeFilename, xlsxResponse } from '@/lib/excel-utils';
 
 export const runtime = 'nodejs';
 
@@ -25,7 +26,6 @@ export async function GET(req: Request) {
   const statusParam = url.searchParams.get('status');
 
   const base = vehicleLogWhere(session);
-
   const where: Prisma.VehicleLogWhereInput = {
     ...base,
     ...(from || to ? {
@@ -50,87 +50,82 @@ export async function GET(req: Request) {
     },
   });
 
+  const period = from && to ? `${from} ~ ${to}` : from ? `${from} 이후` : to ? `${to} 이전` : '전체';
+
   const wb = new ExcelJS.Workbook();
+  wb.creator = 'CleanERP';
+  wb.created = new Date();
+
   const ws = wb.addWorksheet('차량일지');
 
-  ws.columns = [
-    { header: '일자', key: 'logDate', width: 13 },
-    { header: '차량번호', key: 'vehicleNo', width: 14 },
-    { header: '차종', key: 'vehicleType', width: 10 },
-    { header: '톤급', key: 'tonClass', width: 8 },
-    { header: '운전자', key: 'driverName', width: 10 },
-    { header: '구역', key: 'zoneName', width: 12 },
-    { header: '상태', key: 'status', width: 10 },
-    { header: '시작계기(km)', key: 'startMileage', width: 14 },
-    { header: '종료계기(km)', key: 'endMileage', width: 14 },
-    { header: '주행거리(km)', key: 'distance', width: 14 },
-    { header: '주유량(L)', key: 'fuelUsed', width: 12 },
-    { header: '수거량(kg)', key: 'wasteWeightKg', width: 12 },
-    { header: '운행횟수', key: 'tripCount', width: 10 },
-  ];
-
-  // 헤더 스타일
-  ws.getRow(1).eachCell((cell) => {
-    cell.font = { bold: true, size: 10 };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E5F7C' } };
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  // 표준 헤더 (1~3행)
+  applyStandardHeader(ws, {
+    title: '차량일지',
+    colCount: 13,
+    period,
+    totalCount: logs.length,
   });
-  ws.getRow(1).height = 20;
 
-  for (const l of logs) {
+  // 4행: 컬럼 헤더
+  addHeaderRow(ws, [
+    '일자', '차량번호', '차종', '톤급', '운전자', '구역', '상태',
+    '시작계기(km)', '종료계기(km)', '주행거리(km)', '주유량(L)', '수거량(kg)', '운행횟수',
+  ]);
+
+  // 5행~: 데이터
+  logs.forEach((l, idx) => {
+    const v = l as typeof l & { vehicle: { vehicleNo: string; vehicleType: string; vehicleTon: string | null } };
+    const d = l as typeof l & { driver: { name: string } };
+    const z = l as typeof l & { zone: { zoneName: string } | null };
     const dist = (l.startMileage != null && l.endMileage != null)
       ? (Number(l.endMileage) - Number(l.startMileage))
       : null;
 
-    ws.addRow({
-      logDate: l.logDate.toISOString().slice(0, 10),
-      vehicleNo: (l as typeof l & { vehicle: { vehicleNo: string; vehicleType: string; vehicleTon: string | null } }).vehicle.vehicleNo,
-      vehicleType: (l as typeof l & { vehicle: { vehicleType: string } }).vehicle.vehicleType,
-      tonClass: (l as typeof l & { vehicle: { vehicleTon: string | null } }).vehicle.vehicleTon ?? '',
-      driverName: (l as typeof l & { driver: { name: string } }).driver.name,
-      zoneName: (l as typeof l & { zone: { zoneName: string } | null }).zone?.zoneName ?? '',
-      status: STATUS_LABEL[l.status] ?? l.status,
-      startMileage: l.startMileage != null ? Number(l.startMileage) : null,
-      endMileage: l.endMileage != null ? Number(l.endMileage) : null,
-      distance: dist,
-      fuelUsed: l.fuelUsed != null ? Number(l.fuelUsed) : null,
-      wasteWeightKg: l.wasteWeightKg != null ? Number(l.wasteWeightKg) : null,
-      tripCount: l.tripCount,
+    const row = ws.addRow([
+      l.logDate.toISOString().slice(0, 10),
+      v.vehicle.vehicleNo,
+      v.vehicle.vehicleType,
+      v.vehicle.vehicleTon ?? '',
+      d.driver.name,
+      z.zone?.zoneName ?? '',
+      STATUS_LABEL[l.status] ?? l.status,
+      l.startMileage != null ? Number(l.startMileage) : null,
+      l.endMileage != null ? Number(l.endMileage) : null,
+      dist,
+      l.fuelUsed != null ? Number(l.fuelUsed) : null,
+      l.wasteWeightKg != null ? Number(l.wasteWeightKg) : null,
+      l.tripCount,
+    ]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+    // 숫자 컬럼 오른쪽 정렬
+    [8, 9, 10, 11, 12, 13].forEach((col) => {
+      row.getCell(col).alignment = { horizontal: 'right', vertical: 'middle' };
     });
-  }
-
-  // 숫자 컬럼 포맷
-  ws.getColumn('startMileage').numFmt = '#,##0';
-  ws.getColumn('endMileage').numFmt = '#,##0';
-  ws.getColumn('distance').numFmt = '#,##0';
-  ws.getColumn('fuelUsed').numFmt = '#,##0.0';
-  ws.getColumn('wasteWeightKg').numFmt = '#,##0';
-
-  ws.eachRow((row, rowNum) => {
-    if (rowNum === 1) return;
-    row.eachCell((cell) => {
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-      };
-    });
-    if (rowNum % 2 === 0) {
-      row.eachCell((cell) => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
-      });
-    }
   });
 
-  const buf = await wb.xlsx.writeBuffer();
-  const label = from && to ? `${from}_${to}` : new Date().toISOString().slice(0, 10);
+  ws.getColumn(8).numFmt = '#,##0';
+  ws.getColumn(9).numFmt = '#,##0';
+  ws.getColumn(10).numFmt = '#,##0';
+  ws.getColumn(11).numFmt = '#,##0.0';
+  ws.getColumn(12).numFmt = '#,##0';
 
-  return new Response(buf, {
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="vehicle-logs_${label}.xlsx"`,
-    },
-  });
+  ws.columns = [
+    { width: 13 }, // 일자
+    { width: 14 }, // 차량번호
+    { width: 10 }, // 차종
+    { width: 8 },  // 톤급
+    { width: 10 }, // 운전자
+    { width: 12 }, // 구역
+    { width: 10 }, // 상태
+    { width: 14 }, // 시작계기
+    { width: 14 }, // 종료계기
+    { width: 14 }, // 주행거리
+    { width: 12 }, // 주유량
+    { width: 12 }, // 수거량
+    { width: 10 }, // 운행횟수
+  ];
+
+  const buf = Buffer.from(await wb.xlsx.writeBuffer());
+  return xlsxResponse(buf, makeFilename('차량일지'));
 }

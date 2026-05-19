@@ -1,13 +1,12 @@
 /**
  * GET /api/leave-requests/export?from=YYYY-MM-DD&to=YYYY-MM-DD&format=xlsx|csv
  *  - 가시범위 휴가 통계 + 신청 목록 엑셀/CSV 다운로드
- *
- * XLSX 시트: 1) 요약  2) 유형별  3) 워커별  4) 부서별  5) 월별  6) 신청 내역
  */
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { readSession } from '@/lib/auth';
 import { collectLeaveStats } from '@/lib/leave-stats';
+import { applyStandardHeader, addHeaderRow, styleDataRow, makeFilename, xlsxResponse } from '@/lib/excel-utils';
 
 export const runtime = 'nodejs';
 
@@ -41,110 +40,117 @@ function buildCsv(stats: Awaited<ReturnType<typeof collectLeaveStats>>): string 
       r.createdAt.slice(0, 19).replace('T', ' '),
     ].map(csvEscape).join(','));
   }
-  return '﻿' + lines.join('\n'); // UTF-8 BOM (Excel 한글 호환)
+  return '﻿' + lines.join('\n');
 }
 
 async function buildXlsx(stats: Awaited<ReturnType<typeof collectLeaveStats>>): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CleanERP';
   wb.created = new Date();
+  const period = `${stats.range.from} ~ ${stats.range.to}`;
 
   /* 1) 요약 */
   const s1 = wb.addWorksheet('요약');
-  s1.columns = [{ width: 18 }, { width: 18 }];
-  s1.addRow(['휴가 보고서']).font = { bold: true, size: 14 };
-  s1.addRow(['기간', `${stats.range.from} ~ ${stats.range.to}`]);
-  s1.addRow([]);
-  s1.addRow(['전체 신청', stats.total.requested]);
-  s1.addRow(['결재 완료', stats.total.approved]);
-  s1.addRow(['결재 중', stats.total.inReview]);
-  s1.addRow(['반려', stats.total.rejected]);
-  s1.addRow([]);
-  s1.addRow(['총 신청 일수', stats.totalDays.requested]);
-  s1.addRow(['승인 일수', stats.totalDays.approved]);
-  s1.addRow(['연차 사용 일수', stats.totalDays.annualUsed]);
+  applyStandardHeader(s1, { title: '휴가신청 현황 — 요약', colCount: 2, period, totalCount: stats.total.requested });
+  addHeaderRow(s1, ['항목', '건수/일수']);
+  const summaryRows = [
+    ['전체 신청', stats.total.requested],
+    ['결재 완료', stats.total.approved],
+    ['결재 중', stats.total.inReview],
+    ['반려', stats.total.rejected],
+    ['총 신청 일수', stats.totalDays.requested],
+    ['승인 일수', stats.totalDays.approved],
+    ['연차 사용 일수', stats.totalDays.annualUsed],
+  ];
+  summaryRows.forEach((r, idx) => {
+    const row = s1.addRow(r);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+  });
+  s1.columns = [{ width: 20 }, { width: 16 }];
 
   /* 2) 유형별 */
   const s2 = wb.addWorksheet('유형별');
-  s2.columns = [
-    { header: '유형', key: 'type', width: 16 },
-    { header: '건수', key: 'count', width: 10 },
-    { header: '일수', key: 'days', width: 10 },
-  ];
-  for (const [t, v] of Object.entries(stats.byType)) {
-    s2.addRow({ type: TYPE_LABEL[t] ?? t, count: v.count, days: v.days });
-  }
-  s2.getRow(1).font = { bold: true };
+  applyStandardHeader(s2, { title: '휴가신청 현황 — 유형별', colCount: 3, period, totalCount: stats.total.requested });
+  addHeaderRow(s2, ['유형', '건수', '일수']);
+  Object.entries(stats.byType).forEach(([t, v], idx) => {
+    const row = s2.addRow([TYPE_LABEL[t] ?? t, v.count, v.days]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+  });
+  s2.columns = [{ width: 16 }, { width: 10 }, { width: 10 }];
 
-  /* 3) 워커별 */
-  const s3 = wb.addWorksheet('워커별');
-  s3.columns = [
-    { header: '근로자', key: 'name', width: 16 },
-    { header: '사번', key: 'no', width: 12 },
-    { header: '건수', key: 'count', width: 10 },
-    { header: '일수', key: 'days', width: 10 },
-  ];
-  for (const w of stats.byWorker) {
-    s3.addRow({ name: w.workerName, no: w.employeeNo ?? '', count: w.count, days: w.days });
-  }
-  s3.getRow(1).font = { bold: true };
+  /* 3) 근로자별 */
+  const s3 = wb.addWorksheet('근로자별');
+  applyStandardHeader(s3, { title: '휴가신청 현황 — 근로자별', colCount: 4, period, totalCount: stats.total.requested });
+  addHeaderRow(s3, ['근로자', '사번', '건수', '일수']);
+  stats.byWorker.forEach((w, idx) => {
+    const row = s3.addRow([w.workerName, w.employeeNo ?? '', w.count, w.days]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+  });
+  s3.columns = [{ width: 16 }, { width: 12 }, { width: 10 }, { width: 10 }];
 
   /* 4) 부서별 */
   const s4 = wb.addWorksheet('부서별');
-  s4.columns = [
-    { header: '부서', key: 'dept', width: 20 },
-    { header: '건수', key: 'count', width: 10 },
-    { header: '일수', key: 'days', width: 10 },
-  ];
-  for (const d of stats.byDepartment) {
-    s4.addRow({ dept: d.departmentName, count: d.count, days: d.days });
-  }
-  s4.getRow(1).font = { bold: true };
+  applyStandardHeader(s4, { title: '휴가신청 현황 — 부서별', colCount: 3, period, totalCount: stats.total.requested });
+  addHeaderRow(s4, ['부서', '건수', '일수']);
+  stats.byDepartment.forEach((d, idx) => {
+    const row = s4.addRow([d.departmentName, d.count, d.days]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+  });
+  s4.columns = [{ width: 20 }, { width: 10 }, { width: 10 }];
 
   /* 5) 월별 */
   const s5 = wb.addWorksheet('월별');
-  s5.columns = [
-    { header: '월', key: 'ym', width: 12 },
-    { header: '건수', key: 'count', width: 10 },
-    { header: '일수', key: 'days', width: 10 },
-  ];
-  for (const m of stats.byMonth) {
-    s5.addRow({ ym: m.ym, count: m.count, days: m.days });
-  }
-  s5.getRow(1).font = { bold: true };
+  applyStandardHeader(s5, { title: '휴가신청 현황 — 월별', colCount: 3, period, totalCount: stats.total.requested });
+  addHeaderRow(s5, ['월', '건수', '일수']);
+  stats.byMonth.forEach((m, idx) => {
+    const row = s5.addRow([m.ym, m.count, m.days]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+  });
+  s5.columns = [{ width: 12 }, { width: 10 }, { width: 10 }];
 
-  /* 6) 신청 내역 */
+  /* 6) 신청 내역 (메인 시트) */
   const s6 = wb.addWorksheet('신청 내역');
+  applyStandardHeader(s6, { title: '휴가신청 현황', colCount: 14, period, totalCount: stats.rows.length });
+  addHeaderRow(s6, [
+    'ID', '근로자', '사번', '부서', '직책', '유형', '상태',
+    '시작일', '종료일', '일수', '사유', '1차결재자', '대표결재자', '신청일',
+  ]);
+  stats.rows.forEach((r, idx) => {
+    const row = s6.addRow([
+      r.id, r.workerName, r.workerEmployeeNo,
+      r.departmentName, r.positionLabel,
+      TYPE_LABEL[r.requestType] ?? r.requestType,
+      STATUS_LABEL[r.status] ?? r.status,
+      r.startDate, r.endDate, r.days,
+      r.reason ?? '',
+      r.firstApproverName ?? '', r.finalApproverName ?? '',
+      r.createdAt.slice(0, 19).replace('T', ' '),
+    ]);
+    styleDataRow(row, idx + 1);
+    row.height = 18;
+    row.getCell(11).alignment = { horizontal: 'left', vertical: 'middle' }; // 사유 좌측
+  });
   s6.columns = [
-    { header: 'ID', key: 'id', width: 8 },
-    { header: '근로자', key: 'name', width: 12 },
-    { header: '사번', key: 'no', width: 10 },
-    { header: '부서', key: 'dept', width: 14 },
-    { header: '직책', key: 'pos', width: 12 },
-    { header: '유형', key: 'type', width: 12 },
-    { header: '상태', key: 'status', width: 10 },
-    { header: '시작일', key: 'start', width: 12 },
-    { header: '종료일', key: 'end', width: 12 },
-    { header: '일수', key: 'days', width: 8 },
-    { header: '사유', key: 'reason', width: 30 },
-    { header: '1차결재자', key: 'first', width: 12 },
-    { header: '대표결재자', key: 'final', width: 12 },
-    { header: '신청일', key: 'created', width: 18 },
+    { width: 8 },  // ID
+    { width: 12 }, // 근로자
+    { width: 10 }, // 사번
+    { width: 14 }, // 부서
+    { width: 12 }, // 직책
+    { width: 12 }, // 유형
+    { width: 10 }, // 상태
+    { width: 12 }, // 시작일
+    { width: 12 }, // 종료일
+    { width: 8 },  // 일수
+    { width: 30 }, // 사유
+    { width: 12 }, // 1차결재자
+    { width: 12 }, // 대표결재자
+    { width: 18 }, // 신청일
   ];
-  for (const r of stats.rows) {
-    s6.addRow({
-      id: r.id, name: r.workerName, no: r.workerEmployeeNo,
-      dept: r.departmentName, pos: r.positionLabel,
-      type: TYPE_LABEL[r.requestType] ?? r.requestType,
-      status: STATUS_LABEL[r.status] ?? r.status,
-      start: r.startDate, end: r.endDate, days: r.days,
-      reason: r.reason ?? '',
-      first: r.firstApproverName ?? '', final: r.finalApproverName ?? '',
-      created: r.createdAt.slice(0, 19).replace('T', ' '),
-    });
-  }
-  s6.getRow(1).font = { bold: true };
-  s6.autoFilter = { from: 'A1', to: 'N1' };
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
@@ -173,27 +179,18 @@ export async function GET(req: Request) {
     departmentId: url.searchParams.get('departmentId') ?? undefined,
   });
 
-  const filename = `leave-report_${stats.range.from}_${stats.range.to}`;
-
   if (format === 'csv') {
     const csv = buildCsv(stats);
+    const filename = `휴가신청현황_${fromStr}_${toStr}.csv`;
     return new NextResponse(csv, {
       status: 200,
       headers: {
         'content-type': 'text/csv; charset=utf-8',
-        'content-disposition': `attachment; filename="${filename}.csv"`,
+        'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
       },
     });
   }
 
-  /* xlsx */
   const buf = await buildXlsx(stats);
-  return new NextResponse(new Uint8Array(buf), {
-    status: 200,
-    headers: {
-      'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'content-disposition': `attachment; filename="${filename}.xlsx"`,
-      'content-length': String(buf.length),
-    },
-  });
+  return xlsxResponse(buf, makeFilename('휴가신청현황'));
 }

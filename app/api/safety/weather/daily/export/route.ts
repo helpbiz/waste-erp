@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { readSession } from '@/lib/auth';
 import ExcelJS from 'exceljs';
 import { fetchJson } from '@/lib/fetch-ipv4';
+import { applyStandardHeader, addHeaderRow, styleDataRow, makeFilename, xlsxResponse } from '@/lib/excel-utils';
 
 export const runtime = 'nodejs';
 
@@ -34,8 +35,7 @@ const WMO_SKY: Record<number, string> = {
   56: '얼음이슬비', 57: '짙은얼음이슬비',
   61: '가벼운비', 63: '비', 65: '강한비',
   66: '얼음비', 67: '강한얼음비',
-  71: '가벼운눈', 73: '눈', 75: '강한눈',
-  77: '싸락눈',
+  71: '가벼운눈', 73: '눈', 75: '강한눈', 77: '싸락눈',
   80: '소나기', 81: '강한소나기', 82: '매우강한소나기',
   85: '소설', 86: '강한소설',
   95: '뇌우', 96: '우박뇌우', 99: '강한우박뇌우',
@@ -204,61 +204,36 @@ export async function GET(req: Request) {
     const highRiskDays = dataRows.filter((d) => d.hazard === 'HIGH_RISK').length;
     const coldDays = dataRows.filter((d) => d.hazard === 'COLD').length;
 
-    // Build Excel
     const wb = new ExcelJS.Workbook();
     wb.creator = 'WCI-ERP';
     wb.created = new Date();
 
     const ws = wb.addWorksheet('일자별온도');
 
-    // ─── Title ───
-    ws.mergeCells('A1:K1');
-    const titleCell = ws.getCell('A1');
-    titleCell.value = '사업장 일자별 온도 기록부';
-    titleCell.font = { name: '맑은 고딕', bold: true, size: 16 };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.getRow(1).height = 36;
+    // 표준 헤더 (1~3행) — 통계 요약은 2행에 함께 포함
+    const period = `${y}년 ${m}월 (${startDate} ~ ${endDate})  |  폭염: ${heatWaveDays}일 · 고위험: ${highRiskDays}일 · 한파: ${coldDays}일`;
+    applyStandardHeader(ws, {
+      title: '사업장 일자별 온도 기록부',
+      colCount: 11,
+      period,
+      totalCount: lastDay,
+      unit: '일',
+    });
 
-    // ─── Period ───
-    ws.mergeCells('A2:K2');
-    const periodCell = ws.getCell('A2');
-    periodCell.value = `조회기간: ${y}년 ${m}월 (${startDate} ~ ${endDate})`;
-    periodCell.font = { name: '맑은 고딕', size: 10 };
-    periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.getRow(2).height = 20;
-
-    // ─── Summary ───
-    ws.mergeCells('A3:K3');
-    const sumCell = ws.getCell('A3');
-    sumCell.value = `전체일수: ${lastDay}일  |  데이터: ${dataRows.length}일  |  폭염작업일수(31℃↑): ${heatWaveDays}일  |  고위험일수(33℃↑): ${highRiskDays}일  |  한파일수: ${coldDays}일`;
-    sumCell.font = { name: '맑은 고딕', size: 9, italic: true };
-    sumCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    ws.getRow(3).height = 18;
-
-    ws.addRow([]); // spacer row 4
-
-    // ─── Header row ───
-    const headers = [
+    // 4행: 컬럼 헤더
+    addHeaderRow(ws, [
       '날짜', '최고체감온도(℃)', '최고기온(℃)', '최저기온(℃)',
       '최고습도(%)', '평균풍속(m/s)', '하늘상태', '폭염등급',
       '법적 조치기준', '조치구분', '조치내용',
-    ];
-    const headerRow = ws.addRow(headers); // row 5
-    headerRow.eachCell((cell) => {
-      cell.font = { name: '맑은 고딕', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E5DA8' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.border = {
-        top: { style: 'thin' }, bottom: { style: 'thin' },
-        left: { style: 'thin' }, right: { style: 'thin' },
-      };
-    });
-    ws.getRow(5).height = 32;
+    ]);
 
     const DOW_KR = ['(일)', '(월)', '(화)', '(수)', '(목)', '(금)', '(토)'];
+    const hazardBg: Record<string, string> = {
+      HIGH_RISK: 'FFFCE4EC', HEAT_WAVE: 'FFFFF3E0', COLD: 'FFE3F2FD',
+    };
 
-    // ─── Data rows ───
-    for (const day of days) {
+    // 5행~: 데이터
+    days.forEach((day, idx) => {
       const dt = new Date(day.date + 'T00:00:00+09:00');
       const dow = DOW_KR[dt.getDay()];
       const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
@@ -278,23 +253,19 @@ export async function GET(req: Request) {
         action.actionContent,
       ]);
 
-      // Row styling
-      const hazardBg: Record<string, string> = {
-        HIGH_RISK: 'FFFCE4EC',
-        HEAT_WAVE: 'FFFFF3E0',
-        COLD: 'FFE3F2FD',
-      };
-      const bgColor = day.hazard && day.hazard !== 'NORMAL' ? (hazardBg[day.hazard] ?? 'FFFFFFFF') : 'FFFFFFFF';
+      const bgColor = day.hazard && day.hazard !== 'NORMAL' ? (hazardBg[day.hazard] ?? 'FFFFFFFF') : undefined;
 
       row.eachCell({ includeEmpty: true }, (cell, colNum) => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-          right: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-        };
         cell.font = { name: '맑은 고딕', size: 10 };
+        cell.border = {
+          top:    { style: 'thin', color: { argb: 'FFD0D0D0' } },
+          bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+          left:   { style: 'thin', color: { argb: 'FFD0D0D0' } },
+          right:  { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        };
+        if (bgColor) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+        else if (idx % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8F8F8' } };
+
         if (colNum <= 2) {
           cell.alignment = { horizontal: 'center', vertical: 'middle' };
           if (isWeekend) cell.font = { name: '맑은 고딕', size: 10, color: { argb: 'FFCC0000' } };
@@ -310,40 +281,16 @@ export async function GET(req: Request) {
         }
       });
       row.height = 20;
-    }
+    });
 
-    // ─── Column widths ───
     ws.columns = [
-      { width: 14 }, // 날짜
-      { width: 14 }, // 최고체감온도
-      { width: 12 }, // 최고기온
-      { width: 12 }, // 최저기온
-      { width: 12 }, // 최고습도
-      { width: 14 }, // 평균풍속
-      { width: 14 }, // 하늘상태
-      { width: 16 }, // 폭염등급
-      { width: 36 }, // 법적조치기준
-      { width: 20 }, // 조치구분
-      { width: 42 }, // 조치내용
+      { width: 14 }, { width: 14 }, { width: 12 }, { width: 12 },
+      { width: 12 }, { width: 14 }, { width: 14 }, { width: 16 },
+      { width: 36 }, { width: 20 }, { width: 42 },
     ];
 
-    // ─── Source note ───
-    const noteRowIdx = 5 + days.length + 1;
-    ws.mergeCells(`A${noteRowIdx}:K${noteRowIdx}`);
-    const noteCell = ws.getCell(`A${noteRowIdx}`);
-    noteCell.value = `데이터 출처: Open-Meteo (archive-api.open-meteo.com / api.open-meteo.com)  |  출력일시: ${new Date().toLocaleString('ko-KR')}`;
-    noteCell.font = { name: '맑은 고딕', size: 8, color: { argb: 'FF888888' } };
-    noteCell.alignment = { horizontal: 'center' };
-
     const buffer = await wb.xlsx.writeBuffer();
-    const filename = `사업장일자별온도_${yearMonth.replace('-', '')}.xlsx`;
-
-    return new Response(buffer, {
-      headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
-      },
-    });
+    return xlsxResponse(Buffer.from(buffer), makeFilename('사업장일자별온도'));
   } catch (e) {
     console.error('[weather/daily/export]', e);
     return NextResponse.json(
