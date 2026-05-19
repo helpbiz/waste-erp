@@ -12,6 +12,7 @@ export const runtime = 'nodejs';
 
 const Patch = z.object({
   contractorId: z.string().optional(), // SUPER_ADMIN 전용
+  companyName: z.string().trim().min(1).max(100).optional(),
   ceoName: z.string().max(50).nullable().optional(),
   phoneMain: z.string().max(20).nullable().optional(),
   emailMain: z.string().max(100).nullable().optional(),
@@ -81,6 +82,7 @@ export async function PATCH(req: Request) {
   await prisma.contractor.update({
     where: { id: BigInt(targetId) },
     data: {
+      ...(b.companyName !== undefined ? { companyName: b.companyName } : {}),
       ...(b.ceoName !== undefined ? { ceoName: b.ceoName } : {}),
       ...(b.phoneMain !== undefined ? { phoneMain: b.phoneMain } : {}),
       ...(b.emailMain !== undefined ? { emailMain: b.emailMain } : {}),

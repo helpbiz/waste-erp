@@ -40,6 +40,7 @@ export default function ContractorInfoSettingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
+    companyName: '',
     ceoName: '',
     phoneMain: '',
     emailMain: '',
@@ -64,6 +65,7 @@ export default function ContractorInfoSettingsPage() {
     if (c) {
       setInfo(c);
       setForm({
+        companyName: c.companyName,
         ceoName: c.ceoName ?? '',
         phoneMain: c.phoneMain ?? '',
         emailMain: c.emailMain ?? '',
@@ -119,6 +121,7 @@ export default function ContractorInfoSettingsPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        companyName: form.companyName.trim() || undefined,
         ceoName: form.ceoName.trim() || null,
         phoneMain: form.phoneMain.trim() || null,
         emailMain: form.emailMain.trim() || null,
@@ -153,18 +156,14 @@ export default function ContractorInfoSettingsPage() {
       <div>
         <h2 className="text-xl font-black text-ink tracking-tight">회사 정보 설정</h2>
         <p className="text-sm text-ink-muted mt-1">
-          위탁업체 기본 정보를 관리합니다. 회사명·사업자번호·계약기간은 지자체 담당자가 설정합니다.
+          위탁업체 기본 정보를 관리합니다. 사업자번호·계약기간·관할 지자체는 지자체 담당자가 설정합니다.
         </p>
       </div>
 
-      {/* 읽기 전용 정보 */}
+      {/* 지자체 관할 정보 (읽기 전용) */}
       <div className="bg-surface-soft border border-line rounded-xl p-5 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">기본 정보 (읽기 전용)</div>
+        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">지자체 관할 정보 (읽기 전용)</div>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <div>
-            <dt className="text-xs font-bold text-ink-muted">회사명</dt>
-            <dd className="font-extrabold text-ink mt-0.5">{info.companyName}</dd>
-          </div>
           <div>
             <dt className="text-xs font-bold text-ink-muted">사업자등록번호</dt>
             <dd className="font-mono font-bold text-ink mt-0.5">{info.businessNo}</dd>
@@ -202,9 +201,20 @@ export default function ContractorInfoSettingsPage() {
 
       {/* 편집 가능 정보 */}
       <div className="bg-surface border border-line rounded-xl p-5 space-y-4">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">편집 가능 정보</div>
+        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">회사 정보 편집</div>
 
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label className="block text-xs font-bold text-ink-muted mb-1">회사명</label>
+            <input
+              type="text"
+              value={form.companyName}
+              onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+              placeholder="회사명"
+              maxLength={100}
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-xs font-bold text-ink-muted mb-1">대표자명</label>
             <input
