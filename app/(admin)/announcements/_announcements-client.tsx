@@ -80,13 +80,15 @@ export default function AnnouncementsClient({
            session.role === 'MUNI_ADMIN' ? '🏛 지자체 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' :
            session.isNoticeManager ? '📝 공지 담당자 — 회사 내부 공지 작성 가능' : ''}
         </span>
-        <button
-          onClick={() => setVoiceOpen(true)}
-          className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-white hover:bg-purple-50 text-purple-800 text-sm font-extrabold active:scale-95"
-          title="공지 도착 음성 알림 설정"
-        >
-          🔊 음성 설정
-        </button>
+        {session.role !== 'MUNI_ADMIN' && (
+          <button
+            onClick={() => setVoiceOpen(true)}
+            className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-white hover:bg-purple-50 text-purple-800 text-sm font-extrabold active:scale-95"
+            title="공지 도착 음성 알림 설정"
+          >
+            🔊 음성 설정
+          </button>
+        )}
         <button
           onClick={() => setCreateOpen(true)}
           className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"

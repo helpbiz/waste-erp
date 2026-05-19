@@ -190,8 +190,11 @@ function SidebarBody({
         ))}
       </nav>
 
-      {/* 사이드바 footer — 로그아웃은 헤더 우측으로 이동 (R1, 2026-04-28). 계정 식별만 유지. */}
-      <div className="px-4 py-4 border-t border-white/10 bg-black/15 flex items-center gap-2.5">
+      {/* 사이드바 footer — 클릭 시 /profile(비밀번호 변경) 이동 */}
+      <Link
+        href="/profile"
+        className="px-4 py-4 border-t border-white/10 bg-black/15 flex items-center gap-2.5 hover:bg-white/5 transition-colors"
+      >
         <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white font-extrabold shadow-card flex-shrink-0">
           {session.name.charAt(0)}
         </div>
@@ -199,7 +202,7 @@ function SidebarBody({
           <div className="text-white text-sm font-extrabold truncate">{session.name}</div>
           <div className="text-slate-300 text-xs font-mono font-bold mt-0.5">{session.role}</div>
         </div>
-      </div>
+      </Link>
     </aside>
   );
 }
