@@ -4,6 +4,7 @@
  * - 권한: 매니저 또는 본인 담당 WORKER (canTransitionComplaint)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -33,7 +34,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     );
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },

@@ -4,6 +4,7 @@
  * - 권한: 매니저 또는 본인 담당 건 (WORKER)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { complaintWhere, canTransitionComplaint, isComplaintManager } from '@/lib/complaints';
@@ -18,7 +19,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
     : false;
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },

@@ -3,6 +3,7 @@
  * 관리자(가시범위) 또는 본인만 조회 가능.
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { userScope, canManageUsers } from '@/lib/users';
@@ -13,7 +14,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const isSelf = id.toString() === session.userId;
 
   if (!isSelf) {

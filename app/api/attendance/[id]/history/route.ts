@@ -4,6 +4,7 @@
  * - 권한: 매니저 또는 본인 (WORKER) 본인 레코드만
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { verifyChain, type ChainLink } from '@/lib/audit-chain';
@@ -14,7 +15,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const record = await prisma.attendanceRecord.findUnique({
     where: { id },
     select: { id: true, contractorId: true, workerId: true },

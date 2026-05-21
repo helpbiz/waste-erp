@@ -6,6 +6,7 @@
  * - 멱등 (idempotent): 이미 departedAt 있으면 그대로 유지 (재호출 무시)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { complaintWhere, canTransitionComplaint, isComplaintManager } from '@/lib/complaints';
@@ -20,7 +21,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
     : false;
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true, departedAt: true },

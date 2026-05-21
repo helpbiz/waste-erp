@@ -3,6 +3,7 @@
  * 권한: 같은 회사 관리자 (SUPER_ADMIN 은 전체).
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -42,7 +43,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.announcement.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (!canManage(session, target)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
@@ -90,7 +92,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.announcement.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (!canManage(session, target)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });

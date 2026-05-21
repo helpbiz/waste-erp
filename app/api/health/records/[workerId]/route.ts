@@ -5,6 +5,7 @@
  *  - 모든 변경은 audit_log에 metadata 기록 (의료 정보 접근 추적)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -38,7 +39,8 @@ export async function PATCH(req: Request, { params }: { params: { workerId: stri
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!isHealthManager(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const workerId = BigInt(params.workerId);
+  const workerId = parseId(params.workerId);
+  if (workerId == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const worker = await prisma.user.findUnique({ where: { id: workerId } });
   if (!worker || worker.role !== 'WORKER') return NextResponse.json({ error: 'not_found' }, { status: 404 });
 

@@ -3,6 +3,7 @@
  * DELETE /api/recycling-intake/[id]
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -24,7 +25,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (session.role === 'MUNI_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.recyclingCenterIntake.findFirst({
     where: { id, contractorId: BigInt(session.contractorId) },
     select: { id: true },
@@ -70,7 +72,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (session.role === 'MUNI_ADMIN' || session.role === 'WORKER') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.recyclingCenterIntake.findFirst({
     where: { id, contractorId: BigInt(session.contractorId) },
     select: { id: true },

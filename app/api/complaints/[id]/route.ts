@@ -4,6 +4,7 @@
  *  - 처리 완료/반려된 민원은 수정 불가
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -34,7 +35,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
     : false;
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },
@@ -78,7 +80,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
     : false;
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },

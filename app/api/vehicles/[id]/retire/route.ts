@@ -5,6 +5,7 @@
  *  - RETIRED 차량은 운행일지 작성 차단 (vehicle-logs POST에서 검증)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -26,7 +27,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.vehicle.findFirst({ where: { id, ...vehicleWhere(session) } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (target.status === 'RETIRED') {

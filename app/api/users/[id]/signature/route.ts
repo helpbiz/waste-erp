@@ -4,6 +4,7 @@
  * Design Ref: §4 (FR-14), §2.1 D3
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -18,7 +19,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const isSelf = id.toString() === session.userId;
   if (!isSelf) {
     if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });

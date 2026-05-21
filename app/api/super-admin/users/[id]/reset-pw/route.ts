@@ -3,6 +3,7 @@
  * 12자 랜덤 PW 생성 + 응답에 1회 노출 (재조회 불가).
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { hashPassword } from '@/lib/auth';
@@ -22,7 +23,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.user.findUnique({
     where: { id },
     select: { id: true, username: true, contractorId: true, municipalityId: true },

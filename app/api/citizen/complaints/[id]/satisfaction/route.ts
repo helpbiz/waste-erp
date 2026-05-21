@@ -4,6 +4,7 @@
  *  - 본인이 신고한 민원만 평가 가능 (citizenPhone 일치)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 
@@ -23,7 +24,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const phoneNorm = normalizePhone(parsed.data.citizenPhone);
 
   const target = await prisma.complaint.findFirst({

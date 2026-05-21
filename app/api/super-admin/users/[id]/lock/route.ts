@@ -3,6 +3,7 @@
  * POST: { action: 'lock' | 'unlock' }
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -20,7 +21,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.user.findUnique({
     where: { id },
     select: { id: true, username: true, contractorId: true, municipalityId: true },

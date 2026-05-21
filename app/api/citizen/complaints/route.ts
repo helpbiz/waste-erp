@@ -15,6 +15,7 @@ import { isInsideKorea } from '@/lib/gps';
 import { roundCoord } from '@/lib/geo';
 import { evaluateCandidateFlag, estimateArrivalEta } from '@/lib/citizen';
 import { writeAudit } from '@/lib/audit';
+import { makeLookupToken, verifyLookupToken } from '@/lib/ids';
 
 export const runtime = 'nodejs';
 
@@ -149,8 +150,11 @@ export async function POST(req: Request) {
     },
   });
 
+  const lookupToken = makeLookupToken(phoneNorm);
+
   return NextResponse.json({
     ok: true,
+    lookupToken,
     complaint: {
       id: created.id.toString(),
       type: created.type,
@@ -164,7 +168,13 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const phone = url.searchParams.get('phone');
+  const token = url.searchParams.get('token');
   if (!phone) return NextResponse.json({ items: [] });
+
+  /* IDOR 방어 — 오늘 민원 접수 시 발급된 token 검증 */
+  if (!token || !verifyLookupToken(normalizePhone(phone), token)) {
+    return NextResponse.json({ error: 'invalid_token' }, { status: 403 });
+  }
 
   const phoneNorm = normalizePhone(phone);
   const items = await prisma.complaint.findMany({

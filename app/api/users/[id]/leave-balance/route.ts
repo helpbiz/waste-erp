@@ -4,6 +4,7 @@
  *   { year, granted, carriedOver?, note? }
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -22,7 +23,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const workerId = BigInt(params.id);
+  const workerId = parseId(params.id);
+  if (workerId == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const u = await prisma.user.findFirst({ where: { id: workerId, ...userScope(session) }, select: { id: true } });
   if (!u) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
@@ -50,7 +52,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const workerId = BigInt(params.id);
+  const workerId = parseId(params.id);
+  if (workerId == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const u = await prisma.user.findFirst({ where: { id: workerId, ...userScope(session) }, select: { id: true } });
   if (!u) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 

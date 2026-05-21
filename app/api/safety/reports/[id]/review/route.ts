@@ -4,6 +4,7 @@
  * - 권한: 매니저 (SUPER, CONTRACTOR_ADMIN, INTERNAL_ADMIN)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -31,7 +32,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     );
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.safetyReport.findFirst({ where: { id, ...safetyWhere(session) } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 

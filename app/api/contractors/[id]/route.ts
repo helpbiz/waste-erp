@@ -7,6 +7,7 @@
  * 회사 상세(차고지·연락처)는 /api/contractor/info PATCH 그대로 사용 — 분리.
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -26,7 +27,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.contractor.findUnique({
     where: { id },
     select: { id: true, companyName: true, municipalityId: true },
@@ -88,7 +90,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const url = new URL(req.url);
   const isHard = url.searchParams.get('hard') === 'true';
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.contractor.findUnique({
     where: { id },
     include: {

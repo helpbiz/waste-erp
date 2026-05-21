@@ -2,6 +2,7 @@
  * DELETE /api/delegations/[id] — 위임 규칙 즉시 종료 (active=false)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { canManageUsers, userScope } from '@/lib/users';
@@ -13,7 +14,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.delegationRule.findFirst({
     where: { id, delegator: userScope(session) },
     select: { id: true },

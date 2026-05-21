@@ -108,7 +108,21 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
       {/* ② 기본정보 — 섹션 헤더 없음, 12열 3행 구성 */}
       <table className="vl-info">
         <colgroup>
-          {Array.from({ length: 12 }, (_, i) => <col key={i} />)}
+          {/* col1,4: 5글자 헤더(시작누적·종료누적 등) — 62px */}
+          {/* col5,7,9,10: 3-4글자 헤더 — 52px */}
+          {/* col2,3,6,8,11,12: 데이터 칸 — 나머지 균등 */}
+          <col style={{width:'62px'}} />{/* 1: 차량번호/시작누적/연료사용 */}
+          <col />
+          <col />
+          <col style={{width:'62px'}} />{/* 4: 종료누적 */}
+          <col style={{width:'52px'}} />{/* 5: 차종/주유금액 */}
+          <col />
+          <col style={{width:'52px'}} />{/* 7: 주행거리 */}
+          <col />
+          <col style={{width:'52px'}} />{/* 9: 운전자/동승자 */}
+          <col style={{width:'52px'}} />{/* 10: 수거량 */}
+          <col />
+          <col />
         </colgroup>
         <tbody>
           <tr>
@@ -391,8 +405,9 @@ export default function VehiclePrintClient({
         .vl-info, .vl-tbl {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 4px;
         }
+        .vl-info { margin-bottom: 4px; }
+        .vl-tbl  { margin-bottom: 12px; }
         .vl-info th, .vl-info td,
         .vl-tbl  th, .vl-tbl  td {
           border: 1px solid #666;
@@ -424,7 +439,7 @@ export default function VehiclePrintClient({
           font-weight: 700;
           border-left: 3px solid #333;
           padding: 2px 0 2px 6px;
-          margin: 5px 0 2px;
+          margin: 12px 0 2px;
           background: #f8f8f8;
         }
         .vl-notice {
@@ -520,7 +535,8 @@ export default function VehiclePrintClient({
           .vl-uniform th,
           .vl-uniform td  { padding: 2px 4px !important; font-size: 8.5pt !important; }
           .wd-b-lbl, .wd-insp { font-size: 8.5pt !important; }
-          .vl-sec    { font-size: 9pt !important; margin: 3px 0 2px !important; padding: 1px 0 1px 5px !important; }
+          .vl-tbl    { margin-bottom: 7px !important; }
+          .vl-sec    { font-size: 9pt !important; margin: 7px 0 2px !important; padding: 1px 0 1px 5px !important; }
           .vl-notice { font-size: 7.5pt !important; }
         }
       `}</style>

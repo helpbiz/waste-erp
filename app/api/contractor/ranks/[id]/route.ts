@@ -1,5 +1,6 @@
 // Design Ref: §4.4 — 직급 수정·비활성화. Plan SC: FR-06
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -21,7 +22,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const rank = await prisma.contractorRank.findUnique({ where: { id } });
   if (!rank) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 

@@ -6,6 +6,7 @@
  *  - 만족도 평가는 별도 API에서 시민이 입력 (S660)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -27,7 +28,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
     where: { id, ...complaintWhere(session) },
     select: { id: true, status: true, assignedTo: true },

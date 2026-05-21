@@ -6,6 +6,7 @@
  * 안전장치: 산하 위탁업체가 있으면 DELETE 거부 (status=INACTIVE는 가능)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -24,7 +25,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.municipality.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
@@ -76,7 +78,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.municipality.findUnique({
     where: { id },
     include: { _count: { select: { contractors: true } } },

@@ -2,6 +2,7 @@
  * POST /api/vehicle-logs/[id]/submit — DRAFT → SUBMITTED (작성자 본인)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 
@@ -11,7 +12,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const log = await prisma.vehicleLog.findUnique({ where: { id } });
   if (!log) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (!log.driverId || log.driverId.toString() !== session.userId) {

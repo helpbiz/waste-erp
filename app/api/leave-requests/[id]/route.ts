@@ -4,6 +4,7 @@
  * DELETE /api/leave-requests/[id] — 신청 취소 (PENDING 상태에서만, 본인 또는 관리자)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -39,7 +40,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
@@ -311,7 +313,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const id = BigInt(params.id);
+  const id = parseId(params.id);
+  if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.leaveRequest.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (target.status !== 'PENDING') {

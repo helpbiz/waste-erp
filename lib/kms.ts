@@ -36,7 +36,7 @@ let cached: { provider: string; key: Buffer } | null = null;
 class LocalKmsProvider implements KmsProvider {
   name = 'LOCAL';
   async getDataKey(): Promise<Buffer> {
-    const b64 = process.env.MASTER_KEY_BASE64;
+    const b64 = process.env.KMS_LOCAL_KEY ?? process.env.MASTER_KEY_BASE64;
     if (b64) {
       const buf = Buffer.from(b64, 'base64');
       if (buf.length === 32) return buf;
