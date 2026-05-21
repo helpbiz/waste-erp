@@ -32,7 +32,14 @@ type ImportResult = {
 type PublishedRecord = {
   id: string; workerId: string; workerName: string; employeeNo: string | null;
   yearMonth: string; isPublished: boolean; publishedAt: string | null;
+  approvedAt: string | null;
   data: { totals: { 실수령액: number } };
+};
+
+type ApproverInfo = {
+  approverId:           string | null;
+  approverName:         string | null;
+  isCurrentUserApprover: boolean;
 };
 
 const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
@@ -73,7 +80,7 @@ const DEFAULT_TEMPLATE: Template = {
 };
 
 /* ─── 메인 컴포넌트 ─────────────────────────────────────────────── */
-export default function PayslipTab({ ym }: { ym: string }) {
+export default function PayslipTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo }) {
   const [sub, setSub] = useState<'send' | 'settings'>('send');
 
   return (
@@ -87,14 +94,14 @@ export default function PayslipTab({ ym }: { ym: string }) {
         ))}
       </div>
 
-      {sub === 'send'     && <SendTab     ym={ym} />}
+      {sub === 'send'     && <SendTab ym={ym} approverInfo={approverInfo} />}
       {sub === 'settings' && <SettingsTab />}
     </div>
   );
 }
 
 /* ─── 발송 탭 ────────────────────────────────────────────────────── */
-function SendTab({ ym }: { ym: string }) {
+function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo }) {
   const fileRef  = useRef<HTMLInputElement>(null);
   const [busy,        setBusy]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
@@ -134,6 +141,26 @@ function SendTab({ ym }: { ym: string }) {
     await loadList();
   }
 
+  async function handleApprove() {
+    if (!confirm(`${ym} 급여명세서 전체를 결재 승인하시겠습니까?\n승인 후 관리자가 근로자 앱으로 발송할 수 있습니다.`)) return;
+    setBusy(true); setError(null);
+    const res  = await fetch('/api/payroll/payslips/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ yearMonth: ym }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error === 'not_approver' ? '결재승인 권한이 없습니다.'
+        : data.error === 'no_approver_configured' ? '승인권자가 지정되지 않았습니다.'
+        : data.error ?? '결재 승인 실패');
+      return;
+    }
+    setInfo(`✓ ${data.approvedCount}건 결재 승인 완료 — 이제 발송이 가능합니다.`);
+    await loadList();
+  }
+
   async function handlePublish() {
     if (!confirm(`${ym} 급여명세서를 근로자 앱에 발송하시겠습니까?\n발송 후 즉시 근로자가 확인할 수 있습니다.`)) return;
     setBusy(true); setError(null);
@@ -144,17 +171,52 @@ function SendTab({ ym }: { ym: string }) {
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? '발송 실패'); return; }
+    if (!res.ok) {
+      if (data.error === 'approval_required') {
+        setError(`결재 승인 후 발송 가능합니다. 미승인 ${data.unapprovedCount}건이 있습니다.`);
+      } else {
+        setError(data.error ?? '발송 실패');
+      }
+      return;
+    }
     setInfo(`✓ ${data.publishedCount}명에게 발송 완료`);
     setResults(null);
     await loadList();
   }
 
-  const unpublishedCount = published.filter((r) => !r.isPublished).length;
-  const publishedCount   = published.filter((r) => r.isPublished).length;
+  const unpublishedCount  = published.filter((r) => !r.isPublished).length;
+  const publishedCount    = published.filter((r) => r.isPublished).length;
+  const unapprovedCount   = published.filter((r) => !r.approvedAt).length;
+  const needsApproval     = !!approverInfo.approverId;
+  const publishBlocked    = needsApproval && unapprovedCount > 0;
 
   return (
     <div className="space-y-4">
+
+      {/* 결재승인 상태 배너 */}
+      {needsApproval && (
+        <section className={`rounded-xl border-2 px-5 py-4 ${unapprovedCount > 0 ? 'border-amber-400 bg-amber-50' : 'border-green-400 bg-green-50'}`}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className={`text-sm font-extrabold ${unapprovedCount > 0 ? 'text-amber-800' : 'text-green-800'}`}>
+                {unapprovedCount > 0
+                  ? `⚠️ 결재 대기 중 — 승인 전 발송 불가 (미승인 ${unapprovedCount}건)`
+                  : '✅ 결재 승인 완료 — 발송 가능'}
+              </div>
+              <div className="text-xs text-ink-muted font-semibold mt-1">
+                결재승인권자: <strong className="text-ink">{approverInfo.approverName ?? '(지정됨)'}</strong>
+              </div>
+            </div>
+            {approverInfo.isCurrentUserApprover && unapprovedCount > 0 && (
+              <button onClick={handleApprove} disabled={busy}
+                className="px-5 py-2.5 rounded-lg bg-amber-500 text-white text-sm font-extrabold hover:bg-amber-600 active:scale-95 disabled:opacity-50 flex-shrink-0">
+                {busy ? '처리 중…' : '✍️ 결재 승인'}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* 업로드 카드 */}
       <section className="bg-surface rounded-xl border border-line shadow-card p-5 space-y-3">
         <h3 className="text-sm font-extrabold text-ink">1단계 — 엑셀 업로드</h3>
@@ -178,9 +240,10 @@ function SendTab({ ym }: { ym: string }) {
           <div className="px-5 py-3 border-b border-line flex items-center justify-between">
             <h3 className="text-sm font-extrabold text-ink">2단계 — 미리보기 ({savedCount}명)</h3>
             {unpublishedCount > 0 && (
-              <button onClick={handlePublish} disabled={busy}
-                className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50">
-                {busy ? '발송 중…' : `📤 ${unpublishedCount}명 발송`}
+              <button onClick={handlePublish} disabled={busy || publishBlocked}
+                className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
+                title={publishBlocked ? '결재 승인 후 발송 가능합니다' : undefined}>
+                {busy ? '발송 중…' : publishBlocked ? `🔒 결재 필요 (${unapprovedCount}건)` : `📤 ${unpublishedCount}명 발송`}
               </button>
             )}
           </div>
@@ -241,9 +304,10 @@ function SendTab({ ym }: { ym: string }) {
               {unpublishedCount > 0 && <span className="ml-2 text-xs font-bold text-warn">미발송 {unpublishedCount}명</span>}
             </h3>
             {unpublishedCount > 0 && (
-              <button onClick={handlePublish} disabled={busy}
-                className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50">
-                {busy ? '발송 중…' : `📤 미발송 ${unpublishedCount}명 발송`}
+              <button onClick={handlePublish} disabled={busy || publishBlocked}
+                className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
+                title={publishBlocked ? '결재 승인 후 발송 가능합니다' : undefined}>
+                {busy ? '발송 중…' : publishBlocked ? `🔒 결재 필요 (${unapprovedCount}건)` : `📤 미발송 ${unpublishedCount}명 발송`}
               </button>
             )}
           </div>
@@ -256,7 +320,7 @@ function SendTab({ ym }: { ym: string }) {
               <table className="w-full text-[0.8125rem]">
                 <thead>
                   <tr className="bg-surface-soft border-b-2 border-line-strong">
-                    {['이름', '직원번호', '실수령액', '발송상태'].map((h) => (
+                    {(needsApproval ? ['이름', '직원번호', '실수령액', '결재', '발송상태'] : ['이름', '직원번호', '실수령액', '발송상태']).map((h) => (
                       <th key={h} className="text-left px-3 py-2 text-xs font-extrabold text-ink uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -267,6 +331,14 @@ function SendTab({ ym }: { ym: string }) {
                       <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName}</td>
                       <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
                       <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">{fmt(r.data.totals.실수령액)}</td>
+                      {needsApproval && (
+                        <td className="px-3 py-2 border-b border-line">
+                          {r.approvedAt
+                            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-extrabold bg-blue-100 text-info border border-blue-200">✅ 결재완료</span>
+                            : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-extrabold bg-amber-100 text-warn border border-amber-200">미결재</span>
+                          }
+                        </td>
+                      )}
                       <td className="px-3 py-2 border-b border-line">
                         {r.isPublished
                           ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-extrabold bg-green-100 text-success border border-green-200">✓ 발송완료</span>

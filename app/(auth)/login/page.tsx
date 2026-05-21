@@ -175,7 +175,7 @@ function LoginInner() {
           router.replace(finalTarget);
         }
         router.refresh();
-      }, 1200);
+      }, 500);
     } catch {
       setError('서버 연결에 실패했습니다.');
     } finally {

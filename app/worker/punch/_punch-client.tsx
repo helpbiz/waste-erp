@@ -10,6 +10,7 @@ type Initial = {
   checkInTime: string | null;
   checkOutTime: string | null;
   zoneName: string | null;
+  isYesterdayRecord?: boolean;
 };
 
 type GpsState =
@@ -70,16 +71,20 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
 
   const checkedIn = !!state.checkInTime;
   const checkedOut = !!state.checkOutTime;
+  const isStaleYesterday = !!(initial.isYesterdayRecord && checkedIn && !checkedOut);
   const phase: 'before-in' | 'before-out' | 'done' = !checkedIn ? 'before-in' : !checkedOut ? 'before-out' : 'done';
 
-  async function punch() {
+  async function punch(forceCheckIn = false) {
     if (gps.kind !== 'ready') {
       toast.warning('GPS 위치를 먼저 확인해 주세요.');
       return;
     }
     setBusy(true);
     try {
-      const url = phase === 'before-in' ? '/api/attendance/check-in' : '/api/attendance/check-out';
+      const url =
+        forceCheckIn || phase === 'before-in'
+          ? '/api/attendance/check-in'
+          : '/api/attendance/check-out';
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +97,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
         return;
       }
       hapticSuccess();
-      toast.success(phase === 'before-in' ? '출근 등록 완료' : '퇴근 등록 완료');
+      toast.success(forceCheckIn || phase === 'before-in' ? '출근 등록 완료' : '퇴근 등록 완료');
       setState((s) => ({
         ...s,
         checkInTime: data.record?.checkInTime ?? s.checkInTime,
@@ -186,19 +191,51 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
         </div>
       )}
 
+      {/* 어제 퇴근 미처리 경고 */}
+      {isStaleYesterday && (
+        <div className="bg-red-50 border-2 border-red-400 border-l-4 border-l-red-600 rounded-xl px-4 py-4 space-y-3">
+          <div className="text-sm font-extrabold text-red-800">
+            ⚠️ 어제 퇴근이 등록되지 않았습니다
+          </div>
+          <div className="text-xs font-semibold text-red-700 leading-relaxed">
+            어제 출근 기록이 미마감 상태입니다.<br />
+            아래 두 가지 중 선택하세요.
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => punch(false)}
+              disabled={busy || gps.kind !== 'ready'}
+              className="py-3 rounded-xl bg-amber-500 text-white text-sm font-extrabold active:scale-[0.98] disabled:opacity-50 transition"
+            >
+              {busy ? '처리 중…' : '어제 퇴근 처리'}
+            </button>
+            <button
+              onClick={() => punch(true)}
+              disabled={busy || gps.kind !== 'ready'}
+              className="py-3 rounded-xl bg-success text-white text-sm font-extrabold active:scale-[0.98] disabled:opacity-50 transition"
+            >
+              {busy ? '처리 중…' : '오늘 출근 등록'}
+            </button>
+          </div>
+          <p className="text-[0.625rem] text-red-600 font-semibold">
+            ※ "오늘 출근" 선택 시 어제 퇴근 기록은 관리자가 수동 조정합니다.
+          </p>
+        </div>
+      )}
+
       {/* 안내 */}
       <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-xl px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed">
         <strong className="font-extrabold">출퇴근 등록 안내</strong> · 출근 시각은 자동으로 KST 기준 저장됩니다. 06:00 이후 출근은 지각으로 분류되며, 관리자 조정 후 임금이 반영됩니다.
       </div>
 
       {/* Sticky CTA — 풀-너비 56dp+ + 햅틱 */}
-      {phase !== 'done' && (
+      {phase !== 'done' && !isStaleYesterday && (
         <div
           className="fixed left-0 right-0 bottom-16 bg-surface border-t border-line shadow-[0_-4px_12px_rgba(0,0,0,0.08)] px-4 py-3"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)', bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
         >
           <button
-            onClick={punch}
+            onClick={() => punch(false)}
             disabled={busy || gps.kind !== 'ready'}
             className={`w-full min-h-14 px-5 rounded-2xl text-white text-lg font-black shadow-md active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2 ${
               phase === 'before-in' ? 'bg-success active:bg-green-700' : 'bg-info active:bg-blue-700'

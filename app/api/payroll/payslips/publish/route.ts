@@ -43,6 +43,25 @@ export async function POST(req: Request) {
     contractorId = BigInt(session.contractorId);
   }
 
+  /* 승인 필요 여부 체크 */
+  const policy = await prisma.payrollPolicy.findUnique({
+    where: { contractorId },
+    select: { payslipApproverId: true },
+  });
+  if (policy?.payslipApproverId) {
+    const unapproved = await prisma.payslipRecord.count({
+      where: ids?.length
+        ? { id: { in: ids.map((i) => BigInt(i)) }, contractorId, yearMonth, approvedAt: null }
+        : { contractorId, yearMonth, isPublished: false, approvedAt: null },
+    });
+    if (unapproved > 0) {
+      return NextResponse.json(
+        { error: 'approval_required', unapprovedCount: unapproved },
+        { status: 403 }
+      );
+    }
+  }
+
   const now = new Date();
   const where = ids?.length
     ? { id: { in: ids.map((i) => BigInt(i)) }, contractorId, yearMonth }

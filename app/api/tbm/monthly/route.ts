@@ -43,7 +43,8 @@ export async function GET(req: Request) {
   const contractorId = BigInt(session.contractorId);
   const facilityId = facilityIdParam ? BigInt(facilityIdParam) : null;
 
-  const sessions = await prisma.tbmSession.findMany({
+  const [sessions, allWorkers] = await Promise.all([
+    prisma.tbmSession.findMany({
     where: {
       contractorId,
       facilityId: facilityId ?? null,
@@ -52,15 +53,22 @@ export async function GET(req: Request) {
     include: {
       creator: { select: { name: true } },
       signatures: {
-        include: { worker: { select: { name: true, employeeNo: true } } },
+        include: { worker: { select: { id: true, name: true, employeeNo: true } } },
         orderBy: { signedAt: 'asc' },
       },
     },
     orderBy: { sessionDate: 'asc' },
-  });
+  }),
+  prisma.user.findMany({
+    where: { contractorId, role: 'WORKER', status: 'ACTIVE' },
+    select: { id: true, name: true, employeeNo: true },
+    orderBy: { name: 'asc' },
+  }),
+]);
 
   return NextResponse.json({
     yearMonth,
+    workers: allWorkers.map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: w.employeeNo ?? null })),
     sessions: sessions.map((s) => {
       const parsed = parseTbmContent(s.content ?? null);
       return {
@@ -73,6 +81,7 @@ export async function GET(req: Request) {
         createdBy: s.creator.name,
         signCount: s.signatures.length,
         signers: s.signatures.map((sig) => ({
+          workerId: sig.worker.id.toString(),
           name: sig.worker.name,
           employeeNo: sig.worker.employeeNo ?? null,
           signedAt: sig.signedAt.toISOString(),

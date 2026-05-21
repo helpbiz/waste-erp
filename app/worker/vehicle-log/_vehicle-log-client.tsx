@@ -513,8 +513,8 @@ export default function VehicleLogClient({
           </Card>
         )}
 
-        {/* ── Card A: 작업내역 — 중량제봉투 및 음식물용기, 재활·자원 ── */}
-        <Card title="작업내역 — 중량제봉투 및 음식물용기, 재활·자원 (단위: kg)">
+        {/* ── Card A: 작업내역 — 중량제봉투 및 음식물용기, 재활용·자원 ── */}
+        <Card title="작업내역 — 중량제봉투 및 음식물용기, 재활용·자원 (단위: kg)">
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse min-w-[340px]">
               <thead>
@@ -522,7 +522,7 @@ export default function VehicleLogClient({
                   <th className="px-2 py-1.5 border border-line font-extrabold text-left w-10">회차</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">일반(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">음식물(kg)</th>
-                  <th className="px-2 py-1.5 border border-line font-extrabold text-center">재활·자원(kg)</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center">재활용·자원(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center min-w-[90px]">반입장소</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center min-w-[80px]">비고</th>
                 </tr>
@@ -601,8 +601,8 @@ export default function VehicleLogClient({
           </p>
         </Card>
 
-        {/* ── Card B: 작업내역 — 중량계 및 봉투 수거량 기계 ── */}
-        <Card title="작업내역 — 중량계 및 봉투 수거량 기계 (단위: L)">
+        {/* ── Card B: 작업내역 — 종량제 및 봉투 수거량 기재 ── */}
+        <Card title="작업내역 — 종량제 및 봉투 수거량 기재 (단위: L)">
           <div className="space-y-3">
             {/* 음식물 종량제 */}
             <div>

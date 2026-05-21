@@ -56,6 +56,10 @@ export default function DailyTreatmentPrintClient({
           className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-accent-strong">
           🖨 인쇄 / PDF 저장
         </button>
+        <a href="/print"
+          className="px-4 py-2 rounded-lg bg-slate-100 border border-slate-300 text-ink text-sm font-bold hover:bg-slate-200">
+          🖨 출력센터
+        </a>
         <button onClick={() => window.close()}
           className="px-4 py-2 rounded-lg bg-slate-200 text-ink text-sm font-bold hover:bg-slate-300">
           닫기

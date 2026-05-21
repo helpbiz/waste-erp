@@ -75,6 +75,9 @@ export default function TbmHistoryClient() {
         <a href="/safety" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
           ← 안전관리
         </a>
+        <a href="/print" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-slate-50">
+          🖨 출력센터
+        </a>
         <h2 className="text-xl font-black text-ink tracking-tight">TBM 교육 관리</h2>
       </div>
 

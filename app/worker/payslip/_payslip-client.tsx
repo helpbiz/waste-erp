@@ -134,27 +134,25 @@ function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; w
         </div>
       </div>
 
-      {/* 지급/공제 2단 */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* 임금구성항목 */}
-        <div>
-          <SectionHeader>임금구성항목</SectionHeader>
-          <div className="border border-line rounded-b-lg overflow-hidden">
-            {Object.entries(d.earnings).map(([k, v]) => (
-              <Row key={k} label={k} value={dash(v)} />
-            ))}
-            <TotalRow label="임금 소계①" value={fmt(totals.임금소계)} accent />
-          </div>
+      {/* 임금구성항목 */}
+      <div>
+        <SectionHeader>임금구성항목</SectionHeader>
+        <div className="border border-line rounded-b-lg overflow-hidden">
+          {Object.entries(d.earnings).map(([k, v]) => (
+            <Row key={k} label={k} value={dash(v)} />
+          ))}
+          <TotalRow label="임금 소계①" value={fmt(totals.임금소계)} accent />
         </div>
-        {/* 공제내역 */}
-        <div>
-          <SectionHeader>공 제 내 역</SectionHeader>
-          <div className="border border-line rounded-b-lg overflow-hidden">
-            {Object.entries(d.deductions).map(([k, v]) => (
-              <Row key={k} label={k} value={dash(v)} />
-            ))}
-            <TotalRow label="공제 소계②" value={fmt(totals.공제소계)} danger />
-          </div>
+      </div>
+
+      {/* 공제내역 */}
+      <div>
+        <SectionHeader>공 제 내 역</SectionHeader>
+        <div className="border border-line rounded-b-lg overflow-hidden">
+          {Object.entries(d.deductions).map(([k, v]) => (
+            <Row key={k} label={k} value={dash(v)} />
+          ))}
+          <TotalRow label="공제 소계②" value={fmt(totals.공제소계)} danger />
         </div>
       </div>
 
@@ -185,26 +183,15 @@ function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; w
       {/* 근로시간 */}
       {d.workHours && (
         <div className="border border-line rounded-lg overflow-hidden text-xs">
-          <div className="grid grid-cols-2 divide-x divide-line bg-surface-soft">
-            <div className="px-3 py-1.5 text-center font-extrabold text-ink">연장근로시간</div>
-            <div className="px-3 py-1.5 text-center font-extrabold text-ink">야간근로시간</div>
-          </div>
-          <div className="grid grid-cols-4 divide-x divide-line border-t border-line bg-surface-soft">
-            {['기본','추가','기본','추가'].map((l, i) => (
-              <div key={i} className="px-2 py-1 text-center text-[0.625rem] font-bold text-ink-muted">{l}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 divide-x divide-line border-t border-line">
-            {[d.workHours.overtimeBasic, d.workHours.overtimeExtra, d.workHours.nightBasic, d.workHours.nightExtra].map((v, i) => (
-              <div key={i} className="px-2 py-2 text-center font-mono font-bold text-ink">{v || 0}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 divide-x divide-line border-t border-line">
-            <div className="px-3 py-1.5 text-center font-mono font-extrabold text-ink">
-              {(d.workHours.overtimeBasic + d.workHours.overtimeExtra) || 0}
+          <SectionHeader>근 로 시 간</SectionHeader>
+          <div className="divide-y divide-line">
+            <div className="flex justify-between px-3 py-2">
+              <span className="text-ink-muted font-semibold">연장근로시간</span>
+              <span className="font-mono font-bold text-ink">{(d.workHours.overtimeBasic + d.workHours.overtimeExtra) || 0} 시간</span>
             </div>
-            <div className="px-3 py-1.5 text-center font-mono font-extrabold text-ink">
-              {(d.workHours.nightBasic + d.workHours.nightExtra) || 0}
+            <div className="flex justify-between px-3 py-2">
+              <span className="text-ink-muted font-semibold">야간근로시간</span>
+              <span className="font-mono font-bold text-ink">{(d.workHours.nightBasic + d.workHours.nightExtra) || 0} 시간</span>
             </div>
           </div>
         </div>
@@ -237,10 +224,9 @@ function buildPrintHtml({ item, workerName, month, year }: { item: PayslipItem; 
   const wh = d.workHours;
   const workHoursSection = wh ? `
     <table class="main-table" style="margin-top:12px">
-      <tr><td colspan="2" class="section-header">연장근로시간</td><td colspan="2" class="section-header">야간근로시간</td></tr>
-      <tr><td class="sub-header">기본</td><td class="sub-header">추가</td><td class="sub-header">기본</td><td class="sub-header">추가</td></tr>
-      <tr><td class="val">${wh.overtimeBasic||0}</td><td class="val">${wh.overtimeExtra||0}</td><td class="val">${wh.nightBasic||0}</td><td class="val">${wh.nightExtra||0}</td></tr>
-      <tr><td colspan="2" class="val bold">${(wh.overtimeBasic+wh.overtimeExtra)||0}</td><td colspan="2" class="val bold">${(wh.nightBasic+wh.nightExtra)||0}</td></tr>
+      <tr><td colspan="2" class="section-header">근 로 시 간</td></tr>
+      <tr><td class="label">연장근로시간</td><td class="val bold">${(wh.overtimeBasic+wh.overtimeExtra)||0} 시간</td></tr>
+      <tr><td class="label">야간근로시간</td><td class="val bold">${(wh.nightBasic+wh.nightExtra)||0} 시간</td></tr>
     </table>` : '';
 
   const calcSection = (d.hourlyRate && wh) ? `
@@ -302,22 +288,17 @@ function buildPrintHtml({ item, workerName, month, year }: { item: PayslipItem; 
   </tr>
 </table>
 
-<div class="two-col">
-  <div>
-    <table class="main-table">
-      <tr><td colspan="2" class="section-header">임 금 구 성 항 목</td></tr>
-      ${earningsRows}
-      <tr class="subtotal"><td class="label bold">임금 소계①</td><td class="val">${(pt.임금소계 || 0).toLocaleString('ko-KR')}</td></tr>
-    </table>
-  </div>
-  <div>
-    <table class="main-table">
-      <tr><td colspan="2" class="section-header">공 제 내 역</td></tr>
-      ${deductRows}
-      <tr class="subtotal-d"><td class="label bold">공제 소계②</td><td class="val">${(pt.공제소계 || 0).toLocaleString('ko-KR')}</td></tr>
-    </table>
-  </div>
-</div>
+<table class="main-table" style="margin-bottom:8px">
+  <tr><td colspan="2" class="section-header">임 금 구 성 항 목</td></tr>
+  ${earningsRows}
+  <tr class="subtotal"><td class="label bold">임금 소계①</td><td class="val">${(pt.임금소계 || 0).toLocaleString('ko-KR')}</td></tr>
+</table>
+
+<table class="main-table" style="margin-bottom:8px">
+  <tr><td colspan="2" class="section-header">공 제 내 역</td></tr>
+  ${deductRows}
+  <tr class="subtotal-d"><td class="label bold">공제 소계②</td><td class="val">${(pt.공제소계 || 0).toLocaleString('ko-KR')}</td></tr>
+</table>
 
 <table class="main-table">
   <tr class="net"><td class="label bold" style="text-align:center">실지급액 (①-②)</td><td class="val" style="font-size:14px">${(pt.실지급액 || 0).toLocaleString('ko-KR')}</td></tr>

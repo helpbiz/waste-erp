@@ -16,19 +16,33 @@ export default function AttendancePrintClient({
   const SUN = 0, SAT = 6;
   const getDow = (day: number) => new Date(year, month - 1, day).getDay();
 
+  function handleExcel() {
+    window.location.href = `/api/print/attendance-excel?ym=${ym}`;
+  }
+
+  const TITLE = `월별 출퇴근 현황 — ${year}년 ${month}월 · 총 ${rows.length}명`;
+  const TOTAL_COLS = 4 + daysInMonth + 1;
+
   return (
     <div className="bg-white min-h-screen">
-      {/* 화면 전용 컨트롤 */}
+      {/* 화면 전용 컨트롤 — 인쇄 시 숨김 */}
       <div className="print:hidden flex items-center gap-3 px-6 py-4 border-b bg-slate-50">
-        <span className="text-sm font-bold text-ink">
-          월별 출퇴근 대장 — {ym} ({rows.length}명)
-        </span>
+        <span className="text-sm font-bold text-ink">{TITLE}</span>
         <button
           onClick={() => window.print()}
           className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
         >
           🖨 인쇄
         </button>
+        <button
+          onClick={handleExcel}
+          className="px-5 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700"
+        >
+          📊 엑셀 출력
+        </button>
+        <a href="/print" className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 border border-line hover:bg-slate-200">
+          🖨 출력센터
+        </a>
         <button
           onClick={() => window.close()}
           className="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-line hover:bg-slate-50"
@@ -37,8 +51,9 @@ export default function AttendancePrintClient({
         </button>
       </div>
 
-      <div className="px-4 py-6">
-        <div className="border-t-4 border-double border-slate-800 pt-3 mb-5">
+      <div className="px-4 py-4 print:px-2 print:py-2">
+        {/* 화면 전용 제목 — 인쇄 시 숨김 (thead 에서 반복 출력) */}
+        <div className="print:hidden border-t-4 border-double border-slate-800 pt-3 mb-4">
           <h1 className="text-xl font-black text-center tracking-tight">월별 출퇴근 현황</h1>
           <div className="text-center text-sm font-bold text-slate-600 mt-1">
             {year}년 {month}월 · 총 {rows.length}명
@@ -51,6 +66,20 @@ export default function AttendancePrintClient({
           <div className="overflow-x-auto">
             <table className="text-[9px] border-collapse min-w-full">
               <thead>
+                {/* 인쇄 전용 반복 타이틀 — 화면에서는 숨김 */}
+                <tr className="screen-hidden">
+                  <th
+                    colSpan={TOTAL_COLS}
+                    style={{
+                      textAlign: 'center', fontWeight: 900, fontSize: '13pt',
+                      padding: '6px 4px 4px', borderBottom: '2px solid #1e293b',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    {TITLE}
+                  </th>
+                </tr>
+                {/* 컬럼 헤더 */}
                 <tr className="bg-slate-100">
                   <th className="border border-slate-300 px-1.5 py-1 text-center font-extrabold w-5 whitespace-nowrap">No</th>
                   <th className="border border-slate-300 px-1.5 py-1 text-left font-extrabold whitespace-nowrap">부서</th>
@@ -105,15 +134,48 @@ export default function AttendancePrintClient({
           </div>
         )}
 
-        <div className="mt-6 text-right text-[9px] font-mono text-slate-400">
+        <div className="mt-4 text-right text-[9px] font-mono text-slate-400 print:hidden">
           출력일: {new Date().toLocaleDateString('ko-KR')}
         </div>
       </div>
 
       <style>{`
+        /* 화면에서 인쇄 전용 타이틀 행 숨기기 */
+        .screen-hidden { display: none; }
+
         @media print {
+          /* 앱 셸 전체 숨김 (햄버거·메뉴명·날짜·시스템상태·로그아웃) */
+          header,
+          aside,
+          nav,
+          [data-sidebar],
+          .sidebar,
+          .no-print {
+            display: none !important;
+          }
+
+          /* 인쇄 전용 타이틀 행 표시 */
+          .screen-hidden { display: table-row !important; }
+
+          /* 페이지 설정 */
           @page { size: A3 landscape; margin: 8mm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 8px; }
+
+          /* thead 가 각 페이지 상단에 반복 출력되도록 */
+          thead { display: table-header-group; }
+
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-size: 8px;
+            background: white !important;
+          }
+
+          /* 화면 전용 요소 숨김 */
+          .print\\:hidden { display: none !important; }
+
+          /* 컨텐츠 여백 최소화 */
+          .print\\:px-2 { padding-left: 4px !important; padding-right: 4px !important; }
+          .print\\:py-2 { padding-top: 4px !important; padding-bottom: 4px !important; }
         }
       `}</style>
     </div>

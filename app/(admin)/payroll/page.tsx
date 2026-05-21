@@ -2,6 +2,7 @@ import { readSession } from '@/lib/auth';
 import { aggregateContractorMonth, isAttendanceManager } from '@/lib/attendance-aggregate';
 import { prisma } from '@/lib/db';
 import { requireFeature } from '@/lib/feature-guard';
+import { getPayrollPolicy, type PayrollPolicyData } from '@/lib/payroll-policy';
 import PayrollClient, { type Row } from './_payroll-client';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +64,24 @@ export default async function PayrollPage({
     );
   }
 
-  const { aggregates, workers } = await aggregateContractorMonth(contractorId, ym);
+  const policy = await getPayrollPolicy(contractorId);
+
+  /* 결재승인권자 이름 조회 */
+  let approverName: string | null = null;
+  if (policy.payslipApproverId) {
+    const approver = await prisma.user.findUnique({
+      where: { id: BigInt(policy.payslipApproverId) },
+      select: { name: true },
+    });
+    approverName = approver?.name ?? null;
+  }
+  const approverInfo = {
+    approverId:           policy.payslipApproverId,
+    approverName,
+    isCurrentUserApprover: policy.payslipApproverId === session.userId,
+  };
+
+  const { aggregates, workers } = await aggregateContractorMonth(contractorId, ym, policy);
   const summaries = await prisma.monthlyAttendanceSummary.findMany({
     where: { yearMonth: ym, workerId: { in: workers.map((w) => BigInt(w.id)) } },
   });
@@ -108,6 +126,8 @@ export default async function PayrollPage({
       finalizedCount={finalizedCount}
       isManager={isManager}
       canUnlock={canUnlock}
+      policy={policy}
+      approverInfo={approverInfo}
     />
   );
 }

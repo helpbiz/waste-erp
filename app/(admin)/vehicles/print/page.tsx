@@ -12,26 +12,49 @@ import VehiclePrintClient from './_print-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function VehiclePrintPage({ searchParams }: { searchParams: { date?: string; vehicleId?: string } }) {
+export default async function VehiclePrintPage({ searchParams }: { searchParams: { date?: string; vehicleId?: string; autoprint?: string } }) {
   const session = (await readSession())!;
   const isSuperAdmin = session.role === 'SUPER_ADMIN';
   const dateStr = searchParams.date ?? todayKstDate().toISOString().slice(0, 10);
   const date = new Date(dateStr);
   const vehicleId = searchParams.vehicleId;
+  const autoprint = searchParams.autoprint === '1';
+
+  /*
+   * 차량일지 출력 필터 — 26→14 누락 버그 수정 (2026-05-21)
+   * 기존: vehicle.contractorId = session.contractorId 만 조건 → 차량이 타 업체 소속이거나
+   *   재배정된 경우 누락.
+   * 수정: 차량 소속 OR 운전자 소속 중 하나라도 이 업체면 포함.
+   * SUPER_ADMIN/MUNI_ADMIN은 기존 vehicleLogWhere 그대로 사용.
+   */
+  const isAdminWithContractor =
+    session.contractorId &&
+    ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(session.role);
+
+  const logWhere = isAdminWithContractor
+    ? {
+        logDate: date,
+        ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
+        OR: [
+          { vehicle: { contractorId: BigInt(session.contractorId!) } },
+          { driver: { contractorId: BigInt(session.contractorId!) } },
+        ],
+      }
+    : {
+        ...vehicleLogWhere(session),
+        logDate: date,
+        ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
+      };
 
   const logs = await prisma.vehicleLog.findMany({
-    where: {
-      ...vehicleLogWhere(session),
-      logDate: date,
-      ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
-    },
+    where: logWhere,
     include: {
       vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true, contractor: { select: { companyName: true } } } },
       driver: { select: { name: true, employeeNo: true } },
       zone: { select: { zoneName: true } },
     },
-    orderBy: [{ vehicleId: 'asc' }],
-    take: 30,
+    orderBy: [{ vehicleId: 'asc' }, { id: 'asc' }],
+    take: 200,
   });
 
   /* 차량 목록 (단건 선택용 — 가시범위 모든 차량) */
@@ -46,6 +69,7 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
       date={dateStr}
       selectedVehicleId={vehicleId ?? null}
       isSuperAdmin={isSuperAdmin}
+      autoprint={autoprint}
       vehicles={vehicles.map((v) => ({ id: v.id.toString(), vehicleNo: v.vehicleNo, type: vehicleTypeLabel(v.vehicleType) }))}
       logs={logs.map((l) => ({
         id: l.id.toString(),

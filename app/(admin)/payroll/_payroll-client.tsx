@@ -3,6 +3,14 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PayslipTab from './_payslip-tab';
+import PolicyTab from './_policy-tab';
+import type { PayrollPolicyData } from '@/lib/payroll-policy';
+
+export type ApproverInfo = {
+  approverId:           string | null;
+  approverName:         string | null;
+  isCurrentUserApprover: boolean;
+};
 
 export type Row = {
   workerId: string;
@@ -24,15 +32,19 @@ export default function PayrollClient({
   finalizedCount,
   isManager,
   canUnlock,
+  policy,
+  approverInfo,
 }: {
   ym: string;
   rows: Row[];
   finalizedCount: number;
   isManager: boolean;
   canUnlock: boolean;
+  policy: PayrollPolicyData;
+  approverInfo: ApproverInfo;
 }) {
   const router = useRouter();
-  const [tab, setTab]   = useState<'finalize' | 'payslip'>('finalize');
+  const [tab, setTab]   = useState<'finalize' | 'payslip' | 'policy'>('finalize');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -137,8 +149,8 @@ export default function PayrollClient({
       </header>
 
       {/* 탭 전환 */}
-      <div className="grid grid-cols-2 gap-1 bg-surface-soft rounded-lg p-1 border border-line max-w-xs">
-        {([['finalize', '📋 근태 마감'], ['payslip', '💰 급여명세']] as const).map(([k, label]) => (
+      <div className="grid grid-cols-3 gap-1 bg-surface-soft rounded-lg p-1 border border-line max-w-sm">
+        {([['finalize', '📋 근태 마감'], ['payslip', '💰 급여명세'], ['policy', '⚙️ 급여 정책']] as const).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`py-2 rounded-md text-sm font-extrabold transition ${tab === k ? 'bg-accent text-white shadow-card' : 'text-ink-muted hover:bg-surface'}`}>
             {label}
@@ -146,7 +158,8 @@ export default function PayrollClient({
         ))}
       </div>
 
-      {tab === 'payslip' && <PayslipTab ym={ym} />}
+      {tab === 'payslip' && <PayslipTab ym={ym} approverInfo={approverInfo} />}
+      {tab === 'policy'  && <PolicyTab initialPolicy={policy} />}
       {tab === 'finalize' && (<>
       {/* 요약 + 액션 */}
       <section className="bg-surface rounded-xl border border-line shadow-card p-5">
@@ -273,7 +286,7 @@ export default function PayrollClient({
       )}
 
       <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold leading-relaxed">
-        <strong className="font-extrabold">가산임금 자동 계산</strong> · 현재 월 집계는 시간 분배만 표시합니다. 근로기준법 정확 계산(연장 ×1.5, 야간 +0.5, 휴일 ×1.5) + 정책 룰 테이블은 Phase 1A-4에서 추가됩니다.
+        <strong className="font-extrabold">가산임금 자동 계산 활성</strong> · 출퇴근 시각 기반으로 야간근로를 자동 집계합니다. 연장/야간/휴일 기준시간은 <button className="underline font-extrabold" onClick={() => setTab('policy')}>⚙️ 급여 정책</button> 탭에서 변경하세요.
       </div>
       </>)}
     </div>

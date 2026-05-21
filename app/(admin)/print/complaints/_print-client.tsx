@@ -29,12 +29,9 @@ export default function ComplaintsPrintClient({
           {statusFilter ? ` · ${statusFilter}` : ' · 전체'}
           <span className="ml-3 text-ink-muted font-mono">총 {items.length}건</span>
         </span>
-        <button
-          onClick={() => window.print()}
-          className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          🖨 인쇄
-        </button>
+        <a href="/print" className="ml-auto px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 border border-line hover:bg-slate-200">
+          🖨 출력센터
+        </a>
         <button
           onClick={() => window.close()}
           className="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-line hover:bg-slate-50"

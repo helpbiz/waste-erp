@@ -50,6 +50,7 @@ export async function GET(req: Request) {
         data:        r.data,
         isPublished: r.isPublished,
         publishedAt: r.publishedAt?.toISOString() ?? null,
+        approvedAt:  r.approvedAt?.toISOString() ?? null,
       })),
     });
   }

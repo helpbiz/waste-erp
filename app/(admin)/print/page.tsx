@@ -60,10 +60,16 @@ export default function PrintHubPage() {
             <input type="date" value={vDate} onChange={(e) => setVDate(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-line bg-white text-sm font-mono font-bold" />
           </div>
-          <a href={`/vehicles/print?date=${vDate}`} target="_blank" rel="noopener"
-            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-accent text-white hover:bg-accent-strong transition-colors">
-            🖨 출력 화면 열기
-          </a>
+          <div className="flex gap-2">
+            <a href={`/vehicles/print?date=${vDate}`} target="_blank" rel="noopener"
+              className="flex-1 text-center px-3 py-2 rounded-lg text-sm font-extrabold bg-accent text-white hover:bg-accent-strong transition-colors">
+              🖨 화면 출력
+            </a>
+            <a href={`/vehicles/print?date=${vDate}&autoprint=1`} target="_blank" rel="noopener"
+              className="flex-1 text-center px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+              🖨 화면 인쇄
+            </a>
+          </div>
         </Card>
 
         {/* 1-B. 차량일지 Excel */}
@@ -100,11 +106,18 @@ export default function PrintHubPage() {
         </Card>
 
         {/* 3. 안전관리 */}
-        <Card title="⛑ 안전관리 보고서" desc="TBM·안전 보고서 화면 인쇄">
-          <p className="text-xs text-ink-muted flex-1">안전관리 페이지의 일별 보기 탭에서 인쇄합니다.</p>
-          <Link href="/safety?tab=DAILY"
+        <Card title="⛑ 산업안전보건" desc="TBM 월별 출력 · TBM 이력 · 공지 이력">
+          <a href={`/safety/tbm-print?yearMonth=${aYm}`} target="_blank" rel="noopener"
             className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-amber-500 text-white hover:bg-amber-600 transition-colors">
-            🖨 일별 보기로 바로 이동
+            🖨 월별 출력
+          </a>
+          <Link href="/safety/tbm-history"
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+            📋 TBM 이력
+          </Link>
+          <Link href="/safety/alert-history"
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-amber-700 text-white hover:bg-amber-800 transition-colors">
+            📢 공지 이력
           </Link>
         </Card>
 
@@ -166,7 +179,7 @@ export default function PrintHubPage() {
             <a href={`/print/complaints?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}`}
               target="_blank" rel="noopener"
               className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-              🖨 출력
+              🖨 화면 출력
             </a>
             <a href={`/api/complaints/export?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}&format=xlsx`}
               className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
@@ -189,7 +202,7 @@ export default function PrintHubPage() {
         </Card>
 
         {/* 7. TBM 안전교육 */}
-        <Card title="🦺 TBM 안전교육 월별 기록" desc="월별 TBM 세션·서명자 출력 (안전관리 전용)">
+        <Card title="🦺 TBM 안전교육" desc="월별 TBM 세션·서명자 출력 (안전관리 전용)">
           <div>
             <Label>년월</Label>
             <input type="month" value={aYm} onChange={(e) => setAYm(e.target.value)}

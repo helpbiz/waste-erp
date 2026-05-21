@@ -54,6 +54,7 @@ export async function getTodayAttendance(session: SessionPayload) {
       where: { workerId_workDate: { workerId, workDate: today } },
       include: { worker: true, zone: true },
     });
+    let isYesterdayNightRecord = false;
     /* 야간 근무: 자정 이후에도 어제 출근 기록(퇴근 미등록)이 있으면 그 기록을 현재 상태로 노출 */
     if (!me?.checkInTime) {
       const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -63,9 +64,10 @@ export async function getTodayAttendance(session: SessionPayload) {
       });
       if (nightRecord?.checkInTime && !nightRecord.checkOutTime) {
         me = nightRecord;
+        isYesterdayNightRecord = true;
       }
     }
-    return { isWorker: true, today, me };
+    return { isWorker: true, today, me, isYesterdayNightRecord };
   }
 
   /* 관리자 — 가시 범위의 근로자 + 오늘 기록을 조인 */

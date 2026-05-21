@@ -1,12 +1,14 @@
 /**
  * 월별 근태 집계 — Plan §3-2 B "임금 계산 연계" + §6 P0 "월 마감 확정"
  *
- * MVP 단순 집계 (Phase 1A-3): workType 기반 시간 분배
- * Phase 1A-4 가산임금 자동: 근로기준법 정확 계산 (8시간 초과 ×1.5, 22~06 ×0.5 추가, 휴일 ×1.5)
- * 정책 룰은 추후 정책 테이블 분리 (enterprise-expert 권고)
+ * Phase 1A-4: PayrollPolicy 기반 clock_in/out → 야간/연장 자동 계산
+ * - NORMAL/EXTENDED: clock 시간으로 야간 구간 자동 산출 (22:00~06:00 등 설정 값 적용)
+ * - NIGHT: workType 수동 지정도 계속 지원
+ * - 연장: 1일 기본근무시간(dailyWorkHours) 초과분 자동 가산
  */
 import { prisma } from '@/lib/db';
 import type { Prisma, WorkType } from '@prisma/client';
+import { calcNightHours, DEFAULT_POLICY, type PayrollPolicyData } from '@/lib/payroll-policy';
 
 export type MonthAggregate = {
   workerId: string;
@@ -17,7 +19,6 @@ export type MonthAggregate = {
   nightHours: number;
   holidayHours: number;
   absenceDays: number;
-  /* 룰 적용 전 raw, 룰 엔진은 Phase 1A-4 */
   recordCount: number;
 };
 
@@ -25,13 +26,11 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 export function ymRange(yearMonth: string): { start: Date; end: Date } {
   const [y, m] = yearMonth.split('-').map(Number);
-  /* DB의 work_date는 KST 자정에 해당하는 UTC (예: 2026-04-25 KST 00:00 = 2026-04-24 15:00 UTC) */
   const start = new Date(Date.UTC(y, m - 1, 1));
   const end = new Date(Date.UTC(y, m, 1));
   return { start, end };
 }
 
-/** 평일 수 (월 ~ 금) — absence 계산용 단순 추정 */
 export function weekdayCountInMonth(yearMonth: string): number {
   const [y, m] = yearMonth.split('-').map(Number);
   const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -48,10 +47,11 @@ function hoursBetween(checkIn: Date | null, checkOut: Date | null): number {
   return Math.max(0, (checkOut.getTime() - checkIn.getTime()) / 3600000);
 }
 
-/** 단일 근로자의 월 집계 */
+/** 단일 근로자의 월 집계 (정책 기반 야간/연장 자동 계산) */
 export async function aggregateWorkerMonth(
   workerId: bigint,
-  yearMonth: string
+  yearMonth: string,
+  policy: PayrollPolicyData = DEFAULT_POLICY
 ): Promise<MonthAggregate> {
   const { start, end } = ymRange(yearMonth);
   const records = await prisma.attendanceRecord.findMany({
@@ -70,20 +70,58 @@ export async function aggregateWorkerMonth(
     if (r.checkInTime) workedDays++;
     totalWorkHours += h;
 
-    /* MVP 분류 — workType 기반 단순 분배 */
     switch (r.workType as WorkType) {
-      case 'EXTENDED':
-        overtimeHours += h;
-        break;
-      case 'NIGHT':
-        nightHours += h;
-        break;
       case 'HOLIDAY':
         holidayHours += h;
+        // 휴일근무도 야간 구간 포함 여부 체크
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(
+            r.checkInTime, r.checkOutTime,
+            policy.nightStartHour, policy.nightEndHour
+          );
+        }
         break;
-      default:
-        /* 8시간 초과분은 자동으로 overtime 가산 (근로기준법 §56) */
-        if (h > 8) overtimeHours += h - 8;
+
+      case 'NIGHT':
+        // 수동 야간 지정: clock 기반으로 재계산 (더 정확)
+        if (r.checkInTime && r.checkOutTime) {
+          const autoNight = calcNightHours(
+            r.checkInTime, r.checkOutTime,
+            policy.nightStartHour, policy.nightEndHour
+          );
+          nightHours += autoNight > 0 ? autoNight : h;
+        } else {
+          nightHours += h;
+        }
+        // 야간근무 중 dailyWorkHours 초과도 연장으로 처리
+        if (h > policy.dailyWorkHours) {
+          overtimeHours += h - policy.dailyWorkHours;
+        }
+        break;
+
+      case 'EXTENDED':
+        overtimeHours += h;
+        // 연장근무 중에도 야간 구간 자동 계산
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(
+            r.checkInTime, r.checkOutTime,
+            policy.nightStartHour, policy.nightEndHour
+          );
+        }
+        break;
+
+      default: // NORMAL
+        // 일일 기본근무시간 초과 → 연장
+        if (h > policy.dailyWorkHours) {
+          overtimeHours += h - policy.dailyWorkHours;
+        }
+        // clock 기반 야간 자동 산출
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(
+            r.checkInTime, r.checkOutTime,
+            policy.nightStartHour, policy.nightEndHour
+          );
+        }
         break;
     }
   }
@@ -107,7 +145,8 @@ export async function aggregateWorkerMonth(
 /** 위탁업체 단위 다수 집계 */
 export async function aggregateContractorMonth(
   contractorId: bigint,
-  yearMonth: string
+  yearMonth: string,
+  policy: PayrollPolicyData = DEFAULT_POLICY
 ): Promise<{ aggregates: MonthAggregate[]; workers: { id: string; name: string }[] }> {
   const workers = await prisma.user.findMany({
     where: { role: 'WORKER', status: 'ACTIVE', contractorId },
@@ -116,7 +155,7 @@ export async function aggregateContractorMonth(
   });
   const aggregates: MonthAggregate[] = [];
   for (const w of workers) {
-    aggregates.push(await aggregateWorkerMonth(w.id, yearMonth));
+    aggregates.push(await aggregateWorkerMonth(w.id, yearMonth, policy));
   }
   return {
     aggregates,
@@ -128,7 +167,6 @@ export function isAttendanceManager(role: string): boolean {
   return role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
 }
 
-/** Prisma upsert input 빌더 */
 export function summaryUpsertData(agg: MonthAggregate): Prisma.MonthlyAttendanceSummaryCreateInput {
   return {
     workerId: BigInt(agg.workerId),

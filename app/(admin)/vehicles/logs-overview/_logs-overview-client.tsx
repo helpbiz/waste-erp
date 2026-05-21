@@ -282,65 +282,93 @@ export default function LogsOverviewClient() {
             {data.items.length === 0 ? (
               <div className="py-12 text-center text-slate-500 text-sm">해당 조건의 차량일지가 없습니다.</div>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-line">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-extrabold text-xs">일자</th>
-                    <th className="px-3 py-2 text-left font-extrabold text-xs">차량번호</th>
-                    <th className="px-3 py-2 text-left font-extrabold text-xs hidden md:table-cell">운전자</th>
-                    <th className="px-3 py-2 text-center font-extrabold text-xs">상태</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs hidden sm:table-cell">폐기물(kg)</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs hidden lg:table-cell">주행(km)</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs hidden lg:table-cell">운행횟수</th>
-                    <th className="px-3 py-2 text-center font-extrabold text-xs">상세</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {data.items.map((l) => (
-                    <React.Fragment key={l.id}>
-                      <tr className="hover:bg-surface-soft transition">
-                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{l.logDate}</td>
-                        <td className="px-3 py-2">
-                          <span className="font-bold text-sm">{l.vehicleNo}</span>
-                          {l.vehicleTon && <span className="text-xs text-ink-muted ml-1">{l.vehicleTon}</span>}
-                        </td>
-                        <td className="px-3 py-2 text-xs text-ink-muted hidden md:table-cell">{l.driverName}</td>
-                        <td className="px-3 py-2 text-center">
-                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                            {STATUS_LABEL[l.status] ?? l.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm hidden sm:table-cell">
-                          {l.wasteWeightKg != null ? l.wasteWeightKg.toLocaleString() : '—'}
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm hidden lg:table-cell">
-                          {l.startMileage != null && l.endMileage != null
-                            ? (l.endMileage - l.startMileage).toLocaleString()
-                            : '—'}
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm hidden lg:table-cell">
-                          {l.tripCount ?? '—'}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
-                            className="px-2 py-1 rounded text-[0.6875rem] font-extrabold border border-line hover:bg-surface-soft whitespace-nowrap"
-                          >
-                            {expandedId === l.id ? '접기' : '상세'}
-                          </button>
-                        </td>
-                      </tr>
-                      {expandedId === l.id && (
-                        <tr className="bg-slate-50">
-                          <td colSpan={8} className="px-4 py-3 border-b border-line">
-                            <LogDetail item={l} />
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: '1080px' }}>
+                  <colgroup>
+                    <col style={{ width: '88px' }} />  {/* 일자 */}
+                    <col style={{ width: '96px' }} />  {/* 차량번호 */}
+                    <col style={{ width: '72px' }} />  {/* 차종 */}
+                    <col style={{ width: '56px' }} />  {/* 톤급 */}
+                    <col style={{ width: '72px' }} />  {/* 운전자 */}
+                    <col style={{ width: '72px' }} />  {/* 구역 */}
+                    <col style={{ width: '76px' }} />  {/* 상태 */}
+                    <col style={{ width: '92px' }} />  {/* 시작계기 */}
+                    <col style={{ width: '92px' }} />  {/* 종료계기 */}
+                    <col style={{ width: '88px' }} />  {/* 주행거리 */}
+                    <col style={{ width: '72px' }} />  {/* 주유량 */}
+                    <col style={{ width: '80px' }} />  {/* 수거량 */}
+                    <col style={{ width: '72px' }} />  {/* 운행횟수 */}
+                    <col style={{ width: '56px' }} />  {/* 상세 */}
+                  </colgroup>
+                  <thead className="bg-slate-50 border-b border-line">
+                    <tr>
+                      {[
+                        '일자', '차량번호', '차종', '톤급', '운전자', '구역', '상태',
+                        '시작계기(km)', '종료계기(km)', '주행거리(km)', '주유량(L)', '수거량(kg)', '운행횟수', '상세',
+                      ].map((h) => (
+                        <th key={h} className="py-2 px-2 text-xs border border-slate-200"
+                          style={{ textAlign: 'center', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.items.map((l) => {
+                      const driven = l.startMileage != null && l.endMileage != null
+                        ? l.endMileage - l.startMileage : null;
+                      const tdBase: React.CSSProperties = {
+                        border: '1px solid #d9d9d9', padding: '8px',
+                        verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden',
+                        textOverflow: 'ellipsis', fontSize: '12px',
+                      };
+                      const tdC: React.CSSProperties = { ...tdBase, textAlign: 'center' };
+                      const tdR: React.CSSProperties = { ...tdBase, textAlign: 'right' };
+                      return (
+                        <React.Fragment key={l.id}>
+                          <tr style={{ height: '40px' }}
+                            className="transition"
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f7f9fc')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
+                            <td style={tdC} className="font-mono">{l.logDate}</td>
+                            <td style={tdC} className="font-bold">{l.vehicleNo}</td>
+                            <td style={tdC}>{l.vehicleType || '—'}</td>
+                            <td style={tdC}>{l.vehicleTon || '—'}</td>
+                            <td style={tdC}>{l.driverName}</td>
+                            <td style={tdC}>{l.zoneName || '—'}</td>
+                            <td style={tdC}>
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                                {STATUS_LABEL[l.status] ?? l.status}
+                              </span>
+                            </td>
+                            <td style={tdR}>{l.startMileage != null ? l.startMileage.toLocaleString() : '—'}</td>
+                            <td style={tdR}>{l.endMileage   != null ? l.endMileage.toLocaleString()   : '—'}</td>
+                            <td style={tdR}>{driven         != null ? driven.toLocaleString()          : '—'}</td>
+                            <td style={tdR}>{l.fuelUsed     != null ? Number(l.fuelUsed).toLocaleString() : '—'}</td>
+                            <td style={tdR}>{l.wasteWeightKg != null ? l.wasteWeightKg.toLocaleString() : '—'}</td>
+                            <td style={tdR}>{l.tripCount     != null ? l.tripCount.toLocaleString()    : '—'}</td>
+                            <td style={tdC}>
+                              <button
+                                onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
+                                className="px-2 py-0.5 rounded text-[11px] font-extrabold border border-line hover:bg-surface-soft"
+                              >
+                                {expandedId === l.id ? '접기' : '상세'}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedId === l.id && (
+                            <tr style={{ background: '#f8fafc' }}>
+                              <td colSpan={14} style={{ border: '1px solid #d9d9d9', padding: '12px 16px' }}>
+                                <LogDetail item={l} />
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
