@@ -177,7 +177,7 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
       <div className="vl-sec">◎ 작업내역 A — 종량제봉투·음식물·재활용 (kg)</div>
       <table className="vl-tbl vl-tbl-a">
         <colgroup>
-          <col style={{width:'30px'}} />
+          <col style={{width:'40px'}} />
           <col />
           <col />
           <col />
@@ -464,7 +464,7 @@ export default function VehiclePrintClient({
         }
 
         /* 표 1/2 열 너비 */
-        .wd-rd { width: 30px; }
+        .wd-rd { width: 40px; }
         .wd-tm { width: 58px; }
         .wd-nt { width: 80px; }
         .wd-nm { width: 48px; }
