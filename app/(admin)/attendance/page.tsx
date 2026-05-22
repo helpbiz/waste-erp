@@ -27,7 +27,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       orderBy: [{ workType: 'asc' }, { worker: { name: 'asc' } }],
     }),
     prisma.user.findMany({
-      where: { role: 'WORKER', status: 'ACTIVE', ...userWhere },
+      where: { role: { in: ['WORKER', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] }, status: 'ACTIVE', ...userWhere },
       include: { position: { select: { label: true } }, department: { select: { name: true } } },
       orderBy: { name: 'asc' },
     }),

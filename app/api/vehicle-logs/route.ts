@@ -19,7 +19,7 @@ const PostBody = z.object({
   fuelUsed: z.number().min(0).max(10_000).optional(),
   wasteWeightKg: z.number().min(0).max(99_999).optional(),
   tripCount: z.number().int().min(0).max(99).optional(),
-  routeDetail: z.string().trim().max(2000).optional(),
+  routeDetail: z.string().trim().max(500_000).optional(),
 });
 
 export async function GET(req: Request) {

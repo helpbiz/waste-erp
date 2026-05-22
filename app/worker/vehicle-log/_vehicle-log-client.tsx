@@ -64,10 +64,9 @@ type FormState = {
   todayMileage: string;
   operationRows: OperationRow[];
   fuelUsed: string;
-  fuelCost: string;
   ureaUsed: string;
   ureaCost: string;
-  bagWork: [BagWorkRow, BagWorkRow, BagWorkRow];
+  bagWork: BagWorkRow[];
   bagMachineWork: BagMachineWork;
   largeWasteWork: LargeWasteWork;
   inspection: Record<InspectionKey, string>;
@@ -88,12 +87,11 @@ function defaultForm(lastEndMileage: number | null): FormState {
     logDate: today,
     prevMileage: lastEndMileage != null ? String(lastEndMileage) : '',
     todayMileage: '',
-    operationRows: Array.from({ length: 6 }, () => ({ startTime: '', endTime: '', zone: '', note: '' })),
+    operationRows: Array.from({ length: 4 }, () => ({ startTime: '', endTime: '', zone: '', note: '' })),
     fuelUsed: '',
-    fuelCost: '',
     ureaUsed: '',
     ureaCost: '',
-    bagWork: [emptyBagRow(), emptyBagRow(), emptyBagRow()],
+    bagWork: [emptyBagRow(), emptyBagRow(), emptyBagRow(), emptyBagRow()],
     bagMachineWork: {
       food_1L: '', food_2L: '', food_3L: '', food_5L: '', food_10L: '',
       living_5L: '', living_10L: '', living_20L: '', living_30L: '', living_50L: '', living_75L: '',
@@ -153,7 +151,7 @@ export default function VehicleLogClient({
 
   function setBagWorkRow(idx: number, field: keyof BagWorkRow, value: string) {
     setForm((p) => {
-      const next = [...p.bagWork] as [BagWorkRow, BagWorkRow, BagWorkRow];
+      const next = [...p.bagWork] as BagWorkRow[];
       next[idx] = { ...next[idx], [field]: value };
       return { ...p, bagWork: next };
     });
@@ -194,7 +192,6 @@ export default function VehicleLogClient({
     const routeDetail = JSON.stringify({
       passengers: selectedPassengerNames.join(', '),
       operationRows: form.operationRows.filter((r) => r.startTime || r.endTime || r.zone || r.note),
-      fuelCost: Number(form.fuelCost) || 0,
       ...(showUrea && { ureaUsed: Number(form.ureaUsed) || 0, ureaCost: Number(form.ureaCost) || 0 }),
       bagWork: form.bagWork.map((row) => ({
         general: Number(row.general) || 0,
@@ -433,12 +430,12 @@ export default function VehicleLogClient({
             </Field>
 
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-mono font-extrabold text-slate-600">차량운행내역 (6회차)</span>
+              <span className="text-xs font-mono font-extrabold text-slate-600">차량운행내역 (4차)</span>
               <div className="overflow-x-auto -mx-1">
                 <table className="w-full text-xs border-collapse min-w-[420px]">
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-8">회차</th>
+                      <th className="border border-slate-300 px-1 py-1 font-bold text-center w-8">차수</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">시작시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">종료시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center">작업구간</th>
@@ -448,7 +445,7 @@ export default function VehicleLogClient({
                   <tbody>
                     {form.operationRows.map((row, i) => (
                       <tr key={i}>
-                        <td className="border border-slate-300 px-1 py-0.5 text-center font-bold">{i + 1}회</td>
+                        <td className="border border-slate-300 px-1 py-0.5 text-center font-bold">{i + 1}차</td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="time" value={row.startTime}
                             onChange={(e) => setOperationRow(i, 'startTime', e.target.value)}
@@ -483,18 +480,11 @@ export default function VehicleLogClient({
         {showFuel && (
           <Card title={showUrea ? '주유 / 요소수' : '주유'}>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="주유량 (ℓ)">
-                  <input type="number" inputMode="decimal" step="0.1" min="0"
-                    value={form.fuelUsed} onChange={(e) => setField('fuelUsed', e.target.value)}
-                    placeholder="0.0" className={INPUT_CLS} />
-                </Field>
-                <Field label="주유금액 (원)">
-                  <input type="number" inputMode="numeric" min="0"
-                    value={form.fuelCost} onChange={(e) => setField('fuelCost', e.target.value)}
-                    placeholder="0" className={INPUT_CLS} />
-                </Field>
-              </div>
+              <Field label="주유량 (ℓ)">
+                <input type="number" inputMode="decimal" step="0.1" min="0"
+                  value={form.fuelUsed} onChange={(e) => setField('fuelUsed', e.target.value)}
+                  placeholder="0.0" className={INPUT_CLS} />
+              </Field>
               {showUrea && (
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line">
                   <Field label="요소수 (ℓ)">
@@ -519,7 +509,7 @@ export default function VehicleLogClient({
             <table className="w-full text-xs border-collapse min-w-[340px]">
               <thead>
                 <tr className="bg-slate-100">
-                  <th className="px-2 py-1.5 border border-line font-extrabold text-left w-10">회차</th>
+                  <th className="px-2 py-1.5 border border-line font-extrabold text-center w-10">차수</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">일반(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">음식물(kg)</th>
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center">재활용·자원(kg)</th>
@@ -528,10 +518,10 @@ export default function VehicleLogClient({
                 </tr>
               </thead>
               <tbody>
-                {([0, 1, 2] as const).map((idx) => (
+                {([0, 1, 2, 3] as const).map((idx) => (
                   <tr key={idx} className="even:bg-slate-50">
                     <td className="px-2 py-1.5 border border-line text-center font-extrabold text-ink-muted">
-                      {idx + 1}회
+                      {idx + 1}차
                     </td>
                     <td className="px-1 py-1 border border-line">
                       <input type="number" inputMode="numeric" min="0" placeholder="0"
@@ -955,7 +945,7 @@ function HistoryPanel() {
                   {Array.isArray(detail.operationRows) && (detail.operationRows as OperationRow[]).some((r) => r.startTime || r.zone) && (
                     <div className="col-span-2">
                       {(detail.operationRows as OperationRow[]).filter((r) => r.startTime || r.zone).map((r, i) => (
-                        <div key={i} className="font-mono">{i + 1}회: {r.startTime}{r.endTime ? `–${r.endTime}` : ''}{r.zone ? ` ${r.zone}` : ''}{r.note ? ` (${r.note})` : ''}</div>
+                        <div key={i} className="font-mono">{i + 1}차: {r.startTime}{r.endTime ? `–${r.endTime}` : ''}{r.zone ? ` ${r.zone}` : ''}{r.note ? ` (${r.note})` : ''}</div>
                       ))}
                     </div>
                   )}
@@ -969,7 +959,7 @@ function HistoryPanel() {
                     <div className="font-extrabold text-ink mb-1">작업내역 A (kg)</div>
                     {(detail.bagWork as Record<string, string>[]).map((row, i) => (
                       <div key={i} className="text-[0.6875rem] font-mono">
-                        {`${i + 1}회차 | 일반 ${row.general ?? 0} · 음식 ${row.food ?? 0} · 재활 ${row.recycle ?? 0} · 반입: ${row.disposalSite ?? '-'}${row.note ? ` · 비고: ${row.note}` : ''}`}
+                        {`${i + 1}차 | 일반 ${row.general ?? 0} · 음식 ${row.food ?? 0} · 재활 ${row.recycle ?? 0} · 반입: ${row.disposalSite ?? '-'}${row.note ? ` · 비고: ${row.note}` : ''}`}
                       </div>
                     ))}
                   </div>

@@ -29,11 +29,13 @@ type ImportResult = {
   };
 };
 
+type PayslipTotals = Record<string, number>;
+
 type PublishedRecord = {
   id: string; workerId: string; workerName: string; employeeNo: string | null;
   yearMonth: string; isPublished: boolean; publishedAt: string | null;
   approvedAt: string | null;
-  data: { totals: { 실수령액: number } };
+  data: { totals: PayslipTotals };
 };
 
 type ApproverInfo = {
@@ -42,7 +44,9 @@ type ApproverInfo = {
   isCurrentUserApprover: boolean;
 };
 
-const fmt = (n: number) => n.toLocaleString('ko-KR') + '원';
+const fmt = (n: number | null | undefined) => (n ?? 0).toLocaleString('ko-KR') + '원';
+/** 명세서 데이터의 실수령액 — 구버전 키(실지급액)와 신버전 키(실수령액) 모두 지원 */
+const getNetPay = (totals: PayslipTotals) => totals['실수령액'] ?? totals['실지급액'] ?? 0;
 const DEFAULT_TEMPLATE: Template = {
   earnings: [
     { key: '기본급',           label: '기 본 급',               required: true  },
@@ -330,7 +334,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                     <tr key={r.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                       <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName}</td>
                       <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
-                      <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">{fmt(r.data.totals.실수령액)}</td>
+                      <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">{fmt(getNetPay(r.data.totals))}</td>
                       {needsApproval && (
                         <td className="px-3 py-2 border-b border-line">
                           {r.approvedAt

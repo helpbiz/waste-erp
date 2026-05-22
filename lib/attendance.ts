@@ -72,7 +72,7 @@ export async function getTodayAttendance(session: SessionPayload) {
 
   /* 관리자 — 가시 범위의 근로자 + 오늘 기록을 조인 */
   const workers = await prisma.user.findMany({
-    where: { ...userWhere, role: 'WORKER', status: 'ACTIVE' },
+    where: { ...userWhere, role: { in: ['WORKER', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] }, status: 'ACTIVE' },
     select: { id: true, name: true, contractorId: true },
     orderBy: { id: 'asc' },
   });

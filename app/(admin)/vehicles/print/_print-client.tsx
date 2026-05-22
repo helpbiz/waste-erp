@@ -63,13 +63,13 @@ function parseDetail(raw: string | null): Detail {
 function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: string; isSuperAdmin: boolean }) {
   const d = parseDetail(log.routeDetail);
 
-  /* 항상 6회차 — 데이터 있으면 채움, 없으면 빈 칸 */
-  const opRows = Array.from({ length: 6 }, (_, i) => {
+  /* 항상 4차 — 데이터 있으면 채움, 없으면 빈 칸 */
+  const opRows = Array.from({ length: 4 }, (_, i) => {
     const r = d.operationRows?.[i];
     return { start: r?.startTime ?? '', end: r?.endTime ?? '', zone: r?.zone ?? '', note: r?.note ?? '' };
   });
 
-  const bagRows = Array.from({ length: 6 }, (_, i) => {
+  const bagRows = Array.from({ length: 4 }, (_, i) => {
     const r = d.bagWork?.[i] as Record<string, unknown> | undefined;
     const gn = Number(r?.general ?? 0);
     const fd = Number(r?.food ?? 0);
@@ -101,7 +101,9 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
 
       {/* ① 헤더: 제목 + 날짜 */}
       <div className="vl-hd">
-        <span className="vl-doc-title">차량 운행일지</span>
+        <span className="vl-doc-title">
+          차량 운행일지<span className="vl-doc-subtitle">(폐기물관리법 제14조 5에 의함)</span>
+        </span>
         <span className="vl-date-str">{dateLabel}</span>
       </div>
 
@@ -145,11 +147,12 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
           </tr>
           <tr>
             <th>연료 사용</th>
-            <td colSpan={3}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
-            <th>주유금액</th>
-            <td colSpan={3}>{d.fuelCost ? `${Number(d.fuelCost).toLocaleString()} 원` : ''}</td>
+            <td colSpan={7}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
             <th>동&nbsp;승&nbsp;자</th>
-            <td colSpan={3}>{d.passengers ?? ''}</td>
+            <td colSpan={3}>
+              {d.passengers ?? ''}
+              {d.fuelCost ? <span className="vl-fuel-inline"> (주유금액 {Number(d.fuelCost).toLocaleString()}원)</span> : null}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -167,48 +170,50 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
           </tr>
         </thead>
         <tbody>
-          {opRows.map((r, i) => {
-            const empty = !r.start && !r.end && !r.zone && !r.note;
-            return (
-              <tr key={i} className={empty ? 'vl-empty-row' : ''}>
-                <td className="tc">{i + 1}회</td>
-                <td className="tc mono">{r.start}</td>
-                <td className="tc mono">{r.end}</td>
-                <td>{r.zone}</td>
-                <td>{r.note}</td>
-              </tr>
-            );
-          })}
+          {opRows.map((r, i) => (
+            <tr key={i}>
+              <td className="tc">{i + 1}차</td>
+              <td className="tc mono">{r.start}</td>
+              <td className="tc mono">{r.end}</td>
+              <td>{r.zone}</td>
+              <td>{r.note}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
       {/* ④ 표 2: 작업내역 A */}
       <div className="vl-sec">◎ 작업내역 A — 종량제봉투·음식물·재활용 (kg)</div>
-      <table className="vl-tbl">
+      <table className="vl-tbl vl-tbl-a">
+        <colgroup>
+          <col style={{width:'16.67%'}} />
+          <col style={{width:'16.67%'}} />
+          <col style={{width:'16.67%'}} />
+          <col style={{width:'16.67%'}} />
+          <col style={{width:'16.67%'}} />
+          <col style={{width:'16.65%'}} />
+        </colgroup>
         <thead>
           <tr>
-            <th className="wd-rd">회차</th>
-            <th className="wd-nm">일반</th>
-            <th className="wd-nm">음식물</th>
-            <th className="wd-nm">재활용</th>
+            <th>차&nbsp;수</th>
+            <th>일반</th>
+            <th>음식물</th>
+            <th>재활용</th>
             <th>반&nbsp;입&nbsp;장&nbsp;소</th>
-            <th className="wd-nt">비고</th>
+            <th>비고</th>
           </tr>
         </thead>
         <tbody>
-          {bagRows.map((r, i) => {
-            const empty = !r.general && !r.food && !r.recycle && !r.site && !r.note;
-            return (
-              <tr key={i} className={empty ? 'vl-empty-row' : ''}>
-                <td className="tc">{i + 1}회</td>
-                <td className="tc">{r.general}</td>
-                <td className="tc">{r.food}</td>
-                <td className="tc">{r.recycle}</td>
-                <td>{r.site}</td>
-                <td>{r.note}</td>
-              </tr>
-            );
-          })}
+          {bagRows.map((r, i) => (
+            <tr key={i}>
+              <td className="tc">{i + 1}차</td>
+              <td className="tc">{r.general}</td>
+              <td className="tc">{r.food}</td>
+              <td className="tc">{r.recycle}</td>
+              <td>{r.site}</td>
+              <td>{r.note}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
@@ -397,9 +402,14 @@ export default function VehiclePrintClient({
           padding-bottom: 5px;
           margin-bottom: 6px;
         }
-        .vl-doc-title  { font-size: 18pt; font-weight: 900; letter-spacing: -0.5px; }
-        .vl-plate-no   { font-size: 12pt; font-weight: 700; color: #222; }
-        .vl-date-str   { font-size: 10pt; font-weight: 600; color: #444; margin-left: auto; }
+        .vl-doc-title    { font-size: 18pt; font-weight: 900; letter-spacing: -0.5px; }
+        .vl-doc-subtitle { font-size: 8pt; font-weight: 600; color: #333; margin-left: 5px; vertical-align: middle; }
+        .vl-plate-no     { font-size: 12pt; font-weight: 700; color: #222; }
+        .vl-date-str     { font-size: 10pt; font-weight: 600; color: #444; margin-left: auto; }
+        .vl-fuel-inline  { font-size: 8.5pt; color: #444; }
+
+        /* 작업내역 A — 6열 등폭 */
+        .vl-tbl-a { table-layout: fixed; }
 
         /* 공통 테이블 */
         .vl-info, .vl-tbl {
@@ -519,8 +529,9 @@ export default function VehiclePrintClient({
           .vl-empty-row { display: none !important; }
 
           /* 폰트 크기 */
-          .vl-doc-title  { font-size: 14pt !important; }
-          .vl-date-str   { font-size: 9pt !important; }
+          .vl-doc-title    { font-size: 14pt !important; }
+          .vl-doc-subtitle { font-size: 8pt !important; }
+          .vl-date-str     { font-size: 9pt !important; }
 
           .vl-info { table-layout: fixed !important; }
           .vl-info th { white-space: nowrap !important; overflow: hidden !important; }
