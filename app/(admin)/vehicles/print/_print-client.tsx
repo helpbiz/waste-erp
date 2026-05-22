@@ -110,19 +110,16 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
       {/* ② 기본정보 — 섹션 헤더 없음, 12열 3행 구성 */}
       <table className="vl-info">
         <colgroup>
-          {/* col1,4: 5글자 헤더(시작누적·종료누적 등) — 62px */}
-          {/* col5,7,9,10: 3-4글자 헤더 — 52px */}
-          {/* col2,3,6,8,11,12: 데이터 칸 — 나머지 균등 */}
-          <col style={{width:'62px'}} />{/* 1: 차량번호/시작누적/연료사용 */}
+          <col style={{width:'62px'}} />{/* 1: th — 차량번호/시작누적/연료사용 */}
           <col />
           <col />
-          <col style={{width:'62px'}} />{/* 4: 종료누적 */}
-          <col style={{width:'52px'}} />{/* 5: 차종/주유금액 */}
+          <col style={{width:'60px'}} />{/* 4: th — 종료누적 */}
           <col />
-          <col style={{width:'52px'}} />{/* 7: 주행거리 */}
           <col />
-          <col style={{width:'52px'}} />{/* 9: 운전자/동승자 */}
-          <col style={{width:'52px'}} />{/* 10: 수거량 */}
+          <col style={{width:'52px'}} />{/* 7: th — 주행거리/수거량 */}
+          <col />
+          <col style={{width:'52px'}} />{/* 9: th — 운전자/동승자 */}
+          <col />
           <col />
           <col />
         </colgroup>
@@ -141,13 +138,13 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
             <th>종료 누적</th>
             <td colSpan={2}>{log.endMileage != null ? `${log.endMileage.toLocaleString()} km` : ''}</td>
             <th>주행거리</th>
-            <td colSpan={2}>{dist}</td>
-            <th>수&nbsp;거&nbsp;량</th>
-            <td colSpan={2}>{log.wasteWeightKg != null ? `${log.wasteWeightKg.toLocaleString()} ㎏` : ''}</td>
+            <td colSpan={5}>{dist}</td>
           </tr>
           <tr>
             <th>연료 사용</th>
-            <td colSpan={7}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
+            <td colSpan={5}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
+            <th>수&nbsp;거&nbsp;량</th>
+            <td>{log.wasteWeightKg != null ? `${log.wasteWeightKg.toLocaleString()} ㎏` : ''}</td>
             <th>동&nbsp;승&nbsp;자</th>
             <td colSpan={3}>
               {d.passengers ?? ''}
@@ -172,7 +169,7 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
         <tbody>
           {opRows.map((r, i) => (
             <tr key={i}>
-              <td className="tc">{i + 1}차</td>
+              <td className="tc">{i + 1}회차</td>
               <td className="tc mono">{r.start}</td>
               <td className="tc mono">{r.end}</td>
               <td>{r.zone}</td>
@@ -186,16 +183,16 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
       <div className="vl-sec">◎ 작업내역 A — 종량제봉투·음식물·재활용 (kg)</div>
       <table className="vl-tbl vl-tbl-a">
         <colgroup>
-          <col style={{width:'16.67%'}} />
-          <col style={{width:'16.67%'}} />
-          <col style={{width:'16.67%'}} />
-          <col style={{width:'16.67%'}} />
-          <col style={{width:'16.67%'}} />
-          <col style={{width:'16.65%'}} />
+          <col style={{width:'30px'}} />
+          <col />
+          <col />
+          <col />
+          <col />
+          <col />
         </colgroup>
         <thead>
           <tr>
-            <th>차&nbsp;수</th>
+            <th>회&nbsp;차</th>
             <th>일반</th>
             <th>음식물</th>
             <th>재활용</th>
@@ -206,7 +203,7 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
         <tbody>
           {bagRows.map((r, i) => (
             <tr key={i}>
-              <td className="tc">{i + 1}차</td>
+              <td className="tc">{i + 1}회차</td>
               <td className="tc">{r.general}</td>
               <td className="tc">{r.food}</td>
               <td className="tc">{r.recycle}</td>
@@ -219,7 +216,12 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
 
       {/* ⑤ 표 3: 작업내역 B */}
       <div className="vl-sec">◎ 작업내역 B — 종량제봉투 수거 (ℓ)</div>
-      <table className="vl-tbl vl-uniform">
+      <table className="vl-tbl vl-uniform vl-tbl-bc">
+        <colgroup>
+          <col style={{width:'22%'}} /><col style={{width:'11%'}} />
+          <col style={{width:'22%'}} /><col style={{width:'11%'}} />
+          <col style={{width:'22%'}} /><col style={{width:'12%'}} />
+        </colgroup>
         <tbody>
           {BM_ROWS.map((row, ri) => (
             <tr key={ri}>
@@ -239,7 +241,12 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
 
       {/* ⑥ 표 4: 작업내역 C */}
       <div className="vl-sec">◎ 작업내역 C — 대형폐기물 (점)</div>
-      <table className="vl-tbl vl-uniform">
+      <table className="vl-tbl vl-uniform vl-tbl-bc">
+        <colgroup>
+          <col style={{width:'22%'}} /><col style={{width:'11%'}} />
+          <col style={{width:'22%'}} /><col style={{width:'11%'}} />
+          <col style={{width:'22%'}} /><col style={{width:'12%'}} />
+        </colgroup>
         <tbody>
           {LW_ROWS.map((row, ri) => (
             <tr key={ri}>
@@ -367,7 +374,7 @@ export default function VehiclePrintClient({
       </div>
 
       {/* 인쇄 영역 */}
-      <div className="bg-white print:bg-white">
+      <div className="bg-white print:bg-white vl-print-wrap">
         {logs.length === 0 ? (
           <div className="text-center py-12 text-slate-600 print:hidden">해당 날짜의 운행일지가 없습니다.</div>
         ) : (
@@ -408,8 +415,11 @@ export default function VehiclePrintClient({
         .vl-date-str     { font-size: 10pt; font-weight: 600; color: #444; margin-left: auto; }
         .vl-fuel-inline  { font-size: 8.5pt; color: #444; }
 
-        /* 작업내역 A — 6열 등폭 */
+        /* 작업내역 A — 회차 30px 고정, 나머지 5열 균등 */
         .vl-tbl-a { table-layout: fixed; }
+
+        /* 작업내역 B·C — 동일 6열 고정 레이아웃 */
+        .vl-tbl-bc { table-layout: fixed; }
 
         /* 공통 테이블 */
         .vl-info, .vl-tbl {
@@ -512,11 +522,14 @@ export default function VehiclePrintClient({
             background-color: white !important;
           }
 
+          /* space-y 마진 제거 — 첫 페이지와 후속 페이지 title 간격 통일 */
+          .vl-print-wrap { margin-top: 0 !important; }
+
           /* 차량 1대 = 1페이지 */
           .vl-sheet {
             page-break-after: always !important;
             break-after: page !important;
-            margin-bottom: 0 !important;
+            margin: 0 !important;
             padding: 0 !important;
             border: none !important;
           }
