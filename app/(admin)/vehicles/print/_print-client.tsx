@@ -107,21 +107,15 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
         <span className="vl-date-str">{dateLabel}</span>
       </div>
 
-      {/* ② 기본정보 — 섹션 헤더 없음, 12열 3행 구성 */}
+      {/* ② 기본정보 — 12열 3행, th 위치 col 1·5·9 로 통일 */}
       <table className="vl-info">
         <colgroup>
-          <col style={{width:'62px'}} />{/* 1: th — 차량번호/시작누적/연료사용 */}
-          <col />
-          <col />
-          <col style={{width:'60px'}} />{/* 4: th — 종료누적 */}
-          <col />
-          <col />
-          <col style={{width:'52px'}} />{/* 7: th — 주행거리/수거량 */}
-          <col />
-          <col style={{width:'52px'}} />{/* 9: th — 운전자/동승자 */}
-          <col />
-          <col />
-          <col />
+          <col style={{width:'62px'}} />{/* col1: th */}
+          <col /><col /><col />           {/* col2-4: data */}
+          <col style={{width:'52px'}} />{/* col5: th */}
+          <col /><col /><col />           {/* col6-8: data */}
+          <col style={{width:'52px'}} />{/* col9: th */}
+          <col /><col /><col />           {/* col10-12: data */}
         </colgroup>
         <tbody>
           <tr>
@@ -134,17 +128,17 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
           </tr>
           <tr>
             <th>시작 누적</th>
-            <td colSpan={2}>{log.startMileage != null ? `${log.startMileage.toLocaleString()} km` : ''}</td>
+            <td colSpan={3}>{log.startMileage != null ? `${log.startMileage.toLocaleString()} km` : ''}</td>
             <th>종료 누적</th>
-            <td colSpan={2}>{log.endMileage != null ? `${log.endMileage.toLocaleString()} km` : ''}</td>
+            <td colSpan={3}>{log.endMileage != null ? `${log.endMileage.toLocaleString()} km` : ''}</td>
             <th>주행거리</th>
-            <td colSpan={5}>{dist}</td>
+            <td colSpan={3}>{dist}</td>
           </tr>
           <tr>
             <th>연료 사용</th>
-            <td colSpan={5}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
+            <td colSpan={3}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
             <th>수&nbsp;거&nbsp;량</th>
-            <td>{log.wasteWeightKg != null ? `${log.wasteWeightKg.toLocaleString()} ㎏` : ''}</td>
+            <td colSpan={3}>{log.wasteWeightKg != null ? `${log.wasteWeightKg.toLocaleString()} ㎏` : ''}</td>
             <th>동&nbsp;승&nbsp;자</th>
             <td colSpan={3}>
               {d.passengers ?? ''}
