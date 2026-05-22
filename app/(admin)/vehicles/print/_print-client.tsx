@@ -110,11 +110,11 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
       {/* ② 기본정보 — 12열 3행, th 위치 col 1·5·9 로 통일 */}
       <table className="vl-info">
         <colgroup>
-          <col style={{width:'62px'}} />{/* col1: th */}
+          <col style={{width:'72px'}} />{/* col1: th */}
           <col /><col /><col />           {/* col2-4: data */}
-          <col style={{width:'52px'}} />{/* col5: th */}
+          <col style={{width:'62px'}} />{/* col5: th */}
           <col /><col /><col />           {/* col6-8: data */}
-          <col style={{width:'52px'}} />{/* col9: th */}
+          <col style={{width:'62px'}} />{/* col9: th */}
           <col /><col /><col />           {/* col10-12: data */}
         </colgroup>
         <tbody>
@@ -186,7 +186,7 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
         </colgroup>
         <thead>
           <tr>
-            <th>회&nbsp;차</th>
+            <th>회차</th>
             <th>일반</th>
             <th>음식물</th>
             <th>재활용</th>
