@@ -524,7 +524,7 @@ export default function VehiclePrintClient({
             page-break-after: always !important;
             break-after: page !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 12px 0 0 0 !important;
             border: none !important;
           }
           .vl-sheet:last-child {
