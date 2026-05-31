@@ -17,6 +17,12 @@ type ApprovalItem = {
   endMileage?: number | null;
   fuelUsed?: number | null;
   tripCount?: number | null;
+  // safety-specific
+  checklistItems?: Array<{ key: string; label: string; ok: boolean }> | null;
+  allChecked?: boolean;
+  severity?: string;
+  locationAddress?: string | null;
+  reportType?: string;
   status: string;
   createdAt: string;
 };
@@ -339,7 +345,7 @@ function ApprovalDetailModal({
             <div className="col-span-2">
               <DetailRow label="내용" value={item.summary} />
             </div>
-            {item.detail && (
+            {item.detail && item.kind !== 'safety' && (
               <div className="col-span-2">
                 <DetailRow label="상세" value={item.detail} />
               </div>
@@ -377,6 +383,8 @@ function ApprovalDetailModal({
               {item.routeDetail && <VehicleLogRouteDetail raw={item.routeDetail} />}
             </div>
           )}
+
+          {item.kind === 'safety' && <SafetyReportDetail item={item} />}
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
             <DetailRow label="제출일시" value={fmtKst(item.createdAt)} />
@@ -481,6 +489,86 @@ function fmtKst(iso: string): string {
   const k = new Date(d.getTime() + 9 * 3600_000);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${k.getUTCFullYear()}-${pad(k.getUTCMonth() + 1)}-${pad(k.getUTCDate())} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
+}
+
+const SAFETY_TYPE_LABEL: Record<string, string> = {
+  DAILY_CHECKLIST: '일일 안전점검',
+  NEAR_MISS: '아차사고',
+  INCIDENT: '재해 발생',
+  TBM_SIGNATURE: 'TBM 서명',
+};
+
+const SEVERITY_LABEL: Record<string, string> = {
+  NONE: '일반', MINOR: '경미', INJURY: '부상', SEVERE: '중상', FATAL: '사망',
+};
+
+function SafetyReportDetail({ item }: { item: ApprovalItem }) {
+  const { checklistItems, allChecked, severity, locationAddress, reportType, detail } = item;
+  const showSeverity = severity && severity !== 'NONE';
+
+  return (
+    <div className="space-y-3 text-xs">
+      {/* 유형 / 심각도 / 위치 / 설명 */}
+      <div className="bg-red-50 rounded-lg px-3 py-2.5 border border-red-200 space-y-1.5">
+        <div className="font-extrabold text-red-900 mb-1">안전보고서 상세</div>
+        {reportType && (
+          <div className="font-mono">
+            <span className="text-ink-muted">유형: </span>
+            {SAFETY_TYPE_LABEL[reportType] ?? reportType}
+          </div>
+        )}
+        {showSeverity && (
+          <div className="font-mono font-bold text-danger">
+            <span className="text-ink-muted font-normal">심각도: </span>
+            {SEVERITY_LABEL[severity!] ?? severity}
+          </div>
+        )}
+        {locationAddress && (
+          <div className="font-mono">
+            <span className="text-ink-muted">위치: </span>
+            {locationAddress}
+          </div>
+        )}
+        {detail && (
+          <div className="font-mono whitespace-pre-wrap leading-relaxed">
+            <span className="text-ink-muted">설명: </span>
+            {detail}
+          </div>
+        )}
+        {!detail && !checklistItems?.length && (
+          <div className="text-ink-muted">작성된 상세내용이 없습니다.</div>
+        )}
+      </div>
+
+      {/* 일일 체크리스트 */}
+      {checklistItems && checklistItems.length > 0 && (
+        <div className="bg-slate-50 rounded-lg px-3 py-2.5 border border-line">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-extrabold text-ink">일일 점검 체크리스트</span>
+            <span className={`text-[0.625rem] px-1.5 py-0.5 rounded font-extrabold border ${
+              allChecked
+                ? 'bg-green-50 text-green-700 border-green-300'
+                : 'bg-amber-50 text-amber-700 border-amber-300'
+            }`}>
+              {allChecked ? '전체 이상없음' : '미완료 항목 있음'}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-1">
+            {checklistItems.map((ci) => (
+              <div key={ci.key} className="flex items-center gap-2 font-mono">
+                <span className={`w-4 h-4 rounded flex items-center justify-center text-[0.625rem] font-extrabold flex-shrink-0 ${
+                  ci.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {ci.ok ? '✓' : '✕'}
+                </span>
+                <span className={ci.ok ? 'text-ink' : 'text-danger font-bold'}>{ci.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const INSPECTION_KEY_LABEL: Record<string, string> = {

@@ -224,7 +224,7 @@ export default function VehicleLogClient({
           vehicleId,
           startMileage: Number(form.prevMileage) || undefined,
           endMileage: Number(form.todayMileage),
-          fuelUsed: Number(form.fuelUsed) || undefined,
+          fuelUsed: form.fuelUsed.trim() !== '' ? Number(form.fuelUsed) : undefined,
           routeDetail,
         }),
       });

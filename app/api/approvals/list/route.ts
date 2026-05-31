@@ -22,6 +22,12 @@ export type ApprovalItem = {
   endMileage?: number | null;
   fuelUsed?: number | null;
   tripCount?: number | null;
+  // safety-specific
+  checklistItems?: Array<{ key: string; label: string; ok: boolean }> | null;
+  allChecked?: boolean;
+  severity?: string;
+  locationAddress?: string | null;
+  reportType?: string;
 };
 
 export async function GET(req: Request) {
@@ -66,6 +72,13 @@ export async function GET(req: Request) {
     : tab === 'approved' ? ['REVIEWED', 'MOL_REPORTED', 'RESOLVED']
     : tab === 'rejected' ? []   // 안전보고서는 반려 없음
     : ['SUBMITTED', 'REVIEWED', 'MOL_REPORTED', 'RESOLVED'];
+
+  const SAFETY_TYPE_LABEL: Record<string, string> = {
+    DAILY_CHECKLIST: '일일 안전점검',
+    NEAR_MISS: '아차사고',
+    INCIDENT: '재해 발생',
+    TBM_SIGNATURE: 'TBM 서명',
+  };
 
   const LEAVE_TYPE: Record<string, string> = {
     ANNUAL: '연차', ANNUAL_HALF: '연차(반차)', SPECIAL: '경조사', MATERNITY: '출산',
@@ -138,7 +151,7 @@ export async function GET(req: Request) {
       routeDetail: r.routeDetail ?? null,
       startMileage: r.startMileage,
       endMileage: r.endMileage,
-      fuelUsed: r.fuelUsed ? Number(r.fuelUsed) : null,
+      fuelUsed: r.fuelUsed != null ? Number(r.fuelUsed) : null,
       tripCount: r.tripCount,
       status: r.status,
       createdAt: r.updatedAt.toISOString(),
@@ -148,8 +161,13 @@ export async function GET(req: Request) {
       id: r.id.toString(),
       personName: r.reporter?.name ?? '—',
       departmentName: null,
-      summary: `안전보고서 — ${r.reportType}`,
-      detail: r.description ? r.description.slice(0, 80) + (r.description.length > 80 ? '…' : '') : null,
+      summary: `안전보고서 — ${SAFETY_TYPE_LABEL[r.reportType] ?? r.reportType} (${r.reportDate.toISOString().slice(0, 10)})`,
+      detail: r.description ?? null,
+      checklistItems: r.checklistItems as Array<{ key: string; label: string; ok: boolean }> | null,
+      allChecked: r.allChecked,
+      severity: r.severity,
+      locationAddress: r.locationAddress ?? null,
+      reportType: r.reportType,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
     })),
