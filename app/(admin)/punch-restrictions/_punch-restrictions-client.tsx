@@ -235,6 +235,10 @@ function RestrictionFormModal({
   const isEdit = !!initial;
   const [name, setName] = useState(initial?.name ?? '');
   const [deptId, setDeptId] = useState(initial?.departmentId ?? '');
+  const [blockAll, setBlockAll] = useState(
+    !initial || (initial.checkInUntil === '00:00' && initial.checkOutUntil === '00:00')
+      ? false : false
+  );
   const [checkInFrom, setCheckInFrom] = useState(initial?.checkInFrom ?? '');
   const [checkInUntil, setCheckInUntil] = useState(initial?.checkInUntil ?? '');
   const [checkOutFrom, setCheckOutFrom] = useState(initial?.checkOutFrom ?? '');
@@ -256,10 +260,10 @@ function RestrictionFormModal({
     const body = {
       name: name.trim(),
       departmentId: deptId || null,
-      checkInFrom: checkInFrom || null,
-      checkInUntil: checkInUntil || null,
-      checkOutFrom: checkOutFrom || null,
-      checkOutUntil: checkOutUntil || null,
+      checkInFrom: blockAll ? null : (checkInFrom || null),
+      checkInUntil: blockAll ? '00:00' : (checkInUntil || null),
+      checkOutFrom: blockAll ? null : (checkOutFrom || null),
+      checkOutUntil: blockAll ? '00:00' : (checkOutUntil || null),
       requireLocation,
       lat: requireLocation && lat ? Number(lat) : null,
       lng: requireLocation && lng ? Number(lng) : null,
@@ -304,7 +308,27 @@ function RestrictionFormModal({
             </select>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* 완전 차단 모드 */}
+          <div className="border border-amber-300 bg-amber-50 rounded-lg p-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={blockAll} onChange={(e) => setBlockAll(e.target.checked)}
+                className="w-4 h-4 rounded border-2 border-amber-400 accent-amber-500" />
+              <span className="text-sm font-extrabold text-amber-900">선택 요일 완전 차단 모드</span>
+            </label>
+            {blockAll ? (
+              <p className="text-xs font-bold text-amber-700">
+                아래에서 선택한 요일은 출근·퇴근 모두 아예 불가능하게 됩니다.<br />
+                요일을 선택하지 않으면 매일 차단됩니다.
+              </p>
+            ) : (
+              <p className="text-xs text-amber-700">
+                체크 시 선택 요일의 출·퇴근을 모두 차단합니다.<br />
+                예: 토(5)+일(6) 선택 → 주말 출퇴근 완전 차단
+              </p>
+            )}
+          </div>
+
+          {!blockAll && <div className="grid grid-cols-2 gap-3">
             <Field label="출근 허용 시작">
               <input type="time" value={checkInFrom} onChange={(e) => setCheckInFrom(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
@@ -321,7 +345,13 @@ function RestrictionFormModal({
               <input type="time" value={checkOutUntil} onChange={(e) => setCheckOutUntil(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
             </Field>
-          </div>
+          </div>}
+          {!blockAll && (
+            <p className="text-[0.6875rem] text-ink-muted font-bold bg-slate-50 rounded-lg px-3 py-2">
+              ※ 허용 시작·종료를 비워두면 해당 방향(출근·퇴근) 시간 제한 없음<br />
+              ※ 예: 출근 허용 06:00~10:00 → 그 외 시간에는 출근 등록 불가
+            </p>
+          )}
 
           <div className="space-y-2">
             <span className="block text-[0.6875rem] font-extrabold text-ink tracking-wide">적용 요일 (비워두면 매일 적용)</span>
