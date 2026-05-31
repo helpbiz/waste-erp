@@ -467,8 +467,44 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
 
       <style>{`
         @media print {
-          @page { size: A4; margin: 1.2cm; }
-          .page-break { page-break-before: always; }
+          @page { size: A4 portrait; margin: 1.2cm 1cm; }
+
+          /* 앱 셸·컨트롤 바 숨김 */
+          header, aside, nav, [data-sidebar], .sidebar { display: none !important; }
+
+          /* 스크롤 컨테이너 해제 */
+          html, body { overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+          main, section { overflow: visible !important; height: auto !important; max-height: none !important; }
+
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            background: white !important;
+            font-size: 9pt !important;
+          }
+
+          /* 배경색 인쇄 강제 — BarRow 막대, KCard 배경 등 */
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+          /* 컨트롤 숨김 */
+          .print\\:hidden { display: none !important; }
+
+          /* 카드 내부 잘림 방지 */
+          .mb-6 { page-break-inside: avoid; break-inside: avoid; }
+
+          /* 섹션 페이지 구분 */
+          .page-break { page-break-before: always; break-before: page; }
+
+          /* BarRow 텍스트 크기 */
+          .text-\\[0\\.625rem\\] { font-size: 7pt !important; }
+          .text-\\[0\\.5625rem\\] { font-size: 6.5pt !important; }
+
+          /* 그리드 인쇄 적합하게 */
+          .grid { display: grid !important; }
+
+          /* 헤더 폰트 */
+          h1 { font-size: 18pt !important; }
+          h2 { font-size: 13pt !important; }
         }
       `}</style>
     </div>

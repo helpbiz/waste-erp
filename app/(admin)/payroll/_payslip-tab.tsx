@@ -108,11 +108,22 @@ export default function PayslipTab({ ym, approverInfo }: { ym: string; approverI
 /* ─── 발송 탭 ────────────────────────────────────────────────────── */
 function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo }) {
   const fileRef  = useRef<HTMLInputElement>(null);
+  const STORAGE_KEY = `payslip_preview_${ym}`;
   const [busy,        setBusy]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [info,        setInfo]        = useState<string | null>(null);
-  const [results,     setResults]     = useState<ImportResult[] | null>(null);
-  const [savedCount,  setSavedCount]  = useState(0);
+  const [results,     setResults]     = useState<ImportResult[] | null>(() => {
+    try {
+      const saved = sessionStorage.getItem(`payslip_preview_${ym}`);
+      return saved ? (JSON.parse(saved) as ImportResult[]) : null;
+    } catch { return null; }
+  });
+  const [savedCount,  setSavedCount]  = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(`payslip_preview_${ym}`);
+      return saved ? (JSON.parse(saved) as ImportResult[]).filter((r) => r.status !== 'ERROR').length : 0;
+    } catch { return 0; }
+  });
   const [published,   setPublished]   = useState<PublishedRecord[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [expandRow,   setExpandRow]   = useState<number | null>(null);
@@ -140,9 +151,11 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) { setError(data.error ?? '업로드 실패'); return; }
-    setResults(data.results ?? []);
+    const importedResults: ImportResult[] = data.results ?? [];
+    setResults(importedResults);
     setSavedCount(data.savedCount ?? 0);
     setInfo(`✓ ${data.savedCount}명 불러오기 완료 — 아래 미리보기 확인 후 발송하세요.`);
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(importedResults)); } catch { /* ignore */ }
     await loadList();
   }
 

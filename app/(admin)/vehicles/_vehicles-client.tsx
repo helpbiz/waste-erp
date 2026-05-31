@@ -85,6 +85,7 @@ export default function VehiclesClient({
     router.push(`/vehicles?date=${date}`);
   }
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<VehicleRow | 'NEW' | null>(null);
@@ -381,12 +382,13 @@ export default function VehiclesClient({
         <VehicleFormModal
           initial={editing === 'NEW' ? null : editing}
           workers={workers}
-          onCancel={() => setEditing(null)}
+          onCancel={() => { setEditing(null); setSaveError(null); }}
+          errorMsg={saveError}
           onSubmit={async (body) => {
             const path = editing === 'NEW' ? '/api/vehicles' : `/api/vehicles/${editing.id}`;
             const method = editing === 'NEW' ? 'POST' : 'PATCH';
             setBusy(true);
-            setError(null);
+            setSaveError(null);
             try {
               const res = await fetch(path, {
                 method,
@@ -395,20 +397,21 @@ export default function VehiclesClient({
               });
               const data = await res.json();
               if (!res.ok) {
-                setError(translateError(data?.error) ?? data?.error ?? '저장 실패');
+                setSaveError(translateError(data?.error) ?? data?.message ?? data?.error ?? '저장에 실패했습니다.');
                 return false;
               }
               setEditing(null);
+              setSaveError(null);
               router.refresh();
               return true;
             } catch {
-              setError('네트워크 오류');
+              setSaveError('네트워크 오류가 발생했습니다.');
               return false;
             } finally {
               setBusy(false);
             }
           }}
-          onDelete={editing !== 'NEW' ? () => { setEditing(null); setDeleteFor(editing); } : undefined}
+          onDelete={editing !== 'NEW' ? () => { setEditing(null); setSaveError(null); setDeleteFor(editing); } : undefined}
           busy={busy}
         />
       )}
@@ -502,6 +505,7 @@ function VehicleFormModal({
   onSubmit,
   onDelete,
   busy,
+  errorMsg,
 }: {
   initial: VehicleRow | null;
   workers: WorkerOpt[];
@@ -509,6 +513,7 @@ function VehicleFormModal({
   onSubmit: (body: Partial<VehicleFormPayload>) => Promise<boolean>;
   onDelete?: () => void;
   busy: boolean;
+  errorMsg?: string | null;
 }) {
   const isEdit = !!initial;
   const [vehicleNo, setVehicleNo] = useState(initial?.vehicleNo ?? '');
@@ -710,6 +715,11 @@ function VehicleFormModal({
               삭제
             </button>
           )}
+          {errorMsg && (
+            <div className="flex-1 text-sm font-bold text-danger bg-red-50 border border-red-200 rounded-md px-3 py-1.5 mr-2">
+              {errorMsg}
+            </div>
+          )}
           <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface">취소</button>
           <button onClick={handleSave} disabled={!canSubmit} className="px-5 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
             {busy ? '저장 중…' : isEdit ? '저장' : '등록'}
@@ -777,6 +787,9 @@ function translateError(code?: string): string | null {
     case 'duplicate_vehicle_no': return '같은 차량번호가 이미 등록되어 있습니다.';
     case 'forbidden': return '권한이 없습니다.';
     case 'invalid_request': return '입력값이 올바르지 않습니다 (차량번호 형식 확인).';
+    case 'invalid_driver_or_passenger': return '운전자/동승자가 올바르지 않습니다. 같은 업체 소속 현장 근로자만 지정할 수 있습니다.';
+    case 'duplicate_crew_member': return '운전자와 동승자에 동일 인원이 중복 지정되었습니다.';
+    case 'contractor_id_required': return '위탁업체를 선택해 주세요.';
     case 'no_contractor': return '소속 위탁업체가 지정되지 않았습니다.';
     case 'not_found': return '차량을 찾을 수 없습니다.';
     case 'already_retired': return '이미 폐차 처리된 차량입니다.';

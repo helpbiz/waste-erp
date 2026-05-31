@@ -84,6 +84,10 @@ export default function ApprovalsClient({ role }: { role: string }) {
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ApprovalItem | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkNote, setBulkNote] = useState('');
 
   const load = useCallback(async (t: Tab, s: string) => {
     setLoading(true);
@@ -101,9 +105,73 @@ export default function ApprovalsClient({ role }: { role: string }) {
   }, []);
 
   useEffect(() => {
+    setCheckedIds(new Set());
+    setBulkError(null);
     const t = setTimeout(() => load(tab, search), 250);
     return () => clearTimeout(t);
   }, [tab, search, load]);
+
+  const approvableItems = items.filter((item) => {
+    const a = getActions(item);
+    return a.approve;
+  });
+  const allApprovableChecked = approvableItems.length > 0 &&
+    approvableItems.every((i) => checkedIds.has(`${i.kind}-${i.id}`));
+
+  function toggleCheck(item: ApprovalItem) {
+    const key = `${item.kind}-${item.id}`;
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allApprovableChecked) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(approvableItems.map((i) => `${i.kind}-${i.id}`)));
+    }
+  }
+
+  async function bulkApprove() {
+    const hasSafety = items.some(
+      (i) => checkedIds.has(`${i.kind}-${i.id}`) && i.kind === 'safety'
+    );
+    if (hasSafety && bulkNote.trim().length < 2) {
+      setBulkError('안전보고서 포함 시 검토 의견(2자 이상)을 입력하세요.');
+      return;
+    }
+    setBulkBusy(true);
+    setBulkError(null);
+    try {
+      const payload = items
+        .filter((i) => checkedIds.has(`${i.kind}-${i.id}`))
+        .map((i) => ({ kind: i.kind, id: i.id }));
+      const res = await fetch('/api/approvals/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: payload, reviewNote: bulkNote.trim() || undefined }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setBulkError(d.error ?? '일괄 승인 실패');
+        return;
+      }
+      if (d.failCount > 0) {
+        setBulkError(`${d.okCount}건 승인 완료, ${d.failCount}건 실패`);
+      } else {
+        setBulkError(null);
+      }
+      setCheckedIds(new Set());
+      setBulkNote('');
+      load(tab, search);
+      router.refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   const TABS: { key: Tab; label: string }[] = [
     { key: 'pending',  label: '결재 대기' },
@@ -153,60 +221,113 @@ export default function ApprovalsClient({ role }: { role: string }) {
           {tab === 'pending' ? '결재 대기 중인 문서가 없습니다.' : '해당 항목이 없습니다.'}
         </div>
       ) : (
-        <div className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-surface-soft text-[0.6875rem] font-mono font-extrabold text-ink uppercase tracking-wider">
-              <tr>
-                <th className="px-4 py-2.5 text-left">종류</th>
-                <th className="px-4 py-2.5 text-left">신청인</th>
-                <th className="px-4 py-2.5 text-left">내용</th>
-                <th className="px-4 py-2.5 text-left">상태</th>
-                <th className="px-4 py-2.5 text-left">일시</th>
-                <th className="px-4 py-2.5 text-left">액션</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {items.map((item) => {
-                const actions = getActions(item);
-                return (
-                  <tr key={`${item.kind}-${item.id}`} className="hover:bg-surface-soft/40">
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[0.625rem] font-extrabold border ${KIND_COLOR[item.kind]}`}>
-                        {KIND_LABEL[item.kind]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="font-extrabold text-ink">{item.personName}</div>
-                      {item.departmentName && (
-                        <div className="text-[0.6875rem] text-ink-muted font-bold">{item.departmentName}</div>
+        <>
+          {/* 일괄승인 바 — 결재대기 탭 + 승인 가능 항목 있을 때 */}
+          {tab === 'pending' && approvableItems.length > 0 && (
+            <div className="bg-accent/5 border border-accent/30 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
+              <span className="text-xs font-extrabold text-accent">
+                일괄승인 {checkedIds.size > 0 ? `${checkedIds.size}건 선택` : `(${approvableItems.length}건 가능)`}
+              </span>
+              {items.some((i) => checkedIds.has(`${i.kind}-${i.id}`) && i.kind === 'safety') && (
+                <input
+                  value={bulkNote}
+                  onChange={(e) => setBulkNote(e.target.value)}
+                  placeholder="안전보고서 검토 의견 (2자 이상 필수)"
+                  className="flex-1 min-w-[200px] px-3 py-1.5 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent"
+                />
+              )}
+              {bulkError && <span className="text-xs font-bold text-danger">{bulkError}</span>}
+              <button
+                onClick={bulkApprove}
+                disabled={bulkBusy || checkedIds.size === 0}
+                className="ml-auto px-4 py-1.5 rounded-lg bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 disabled:opacity-50"
+              >
+                {bulkBusy ? '처리 중…' : `선택 ${checkedIds.size}건 일괄승인`}
+              </button>
+            </div>
+          )}
+
+          <div className="bg-surface border border-line rounded-xl shadow-card overflow-hidden">
+            <table className="w-full min-w-[600px] text-sm">
+              <thead className="bg-surface-soft text-[0.6875rem] font-mono font-extrabold text-ink uppercase tracking-wider">
+                <tr>
+                  {tab === 'pending' && (
+                    <th className="px-3 py-2.5 text-center w-8">
+                      <input
+                        type="checkbox"
+                        checked={allApprovableChecked}
+                        onChange={toggleAll}
+                        className="w-3.5 h-3.5 accent-accent cursor-pointer"
+                        title="승인 가능한 항목 전체 선택"
+                      />
+                    </th>
+                  )}
+                  <th className="px-4 py-2.5 text-left">종류</th>
+                  <th className="px-4 py-2.5 text-left">신청인</th>
+                  <th className="px-4 py-2.5 text-left">내용</th>
+                  <th className="px-4 py-2.5 text-left">상태</th>
+                  <th className="px-4 py-2.5 text-left">일시</th>
+                  <th className="px-4 py-2.5 text-left">액션</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {items.map((item) => {
+                  const actions = getActions(item);
+                  const key = `${item.kind}-${item.id}`;
+                  const isChecked = checkedIds.has(key);
+                  const canCheck = tab === 'pending' && actions.approve;
+                  return (
+                    <tr key={key} className={`hover:bg-surface-soft/40 ${isChecked ? 'bg-accent/5' : ''}`}>
+                      {tab === 'pending' && (
+                        <td className="px-3 py-2.5 text-center">
+                          {canCheck && (
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleCheck(item)}
+                              className="w-3.5 h-3.5 accent-accent cursor-pointer"
+                            />
+                          )}
+                        </td>
                       )}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="font-bold text-ink">{item.summary}</div>
-                      {item.detail && <div className="text-[0.6875rem] text-ink-muted font-bold mt-0.5 truncate max-w-[280px]">{item.detail}</div>}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[0.625rem] font-extrabold border ${STATUS_COLOR[item.status] ?? 'bg-slate-100 text-slate-600 border-slate-300'}`}>
-                        {STATUS_LABEL[item.status] ?? item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-ink-muted font-bold whitespace-nowrap">
-                      {fmtKst(item.createdAt)}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <button
-                        onClick={() => setSelected(item)}
-                        className="px-2.5 py-1 rounded text-xs font-extrabold border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
-                      >
-                        {actions.approve || actions.reject ? '결재' : '상세'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[0.625rem] font-extrabold border ${KIND_COLOR[item.kind]}`}>
+                          {KIND_LABEL[item.kind]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="font-extrabold text-ink">{item.personName}</div>
+                        {item.departmentName && (
+                          <div className="text-[0.6875rem] text-ink-muted font-bold">{item.departmentName}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="font-bold text-ink">{item.summary}</div>
+                        {item.detail && <div className="text-[0.6875rem] text-ink-muted font-bold mt-0.5 truncate max-w-[280px]">{item.detail}</div>}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[0.625rem] font-extrabold border ${STATUS_COLOR[item.status] ?? 'bg-slate-100 text-slate-600 border-slate-300'}`}>
+                          {STATUS_LABEL[item.status] ?? item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted font-bold whitespace-nowrap">
+                        {fmtKst(item.createdAt)}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          onClick={() => setSelected(item)}
+                          className="px-2.5 py-1 rounded text-xs font-extrabold border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
+                        >
+                          {actions.approve || actions.reject ? '결재' : '상세'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {selected && (
