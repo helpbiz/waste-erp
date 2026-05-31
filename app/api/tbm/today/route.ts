@@ -75,9 +75,17 @@ export async function GET(req: Request) {
     signed = tbm.signatures.some((s) => s.workerId.toString() === session.userId);
   }
 
-  /* 위탁업체 전체 근로자 수 (서명률 계산용) */
+  /* 위탁업체 TBM 대상 근로자 수 (excludeFromTbm 부서 제외, 서명률 계산용) */
   const totalWorkers = await prisma.user.count({
-    where: { role: 'WORKER', status: 'ACTIVE', contractorId: BigInt(session.contractorId) },
+    where: {
+      role: 'WORKER',
+      status: 'ACTIVE',
+      contractorId: BigInt(session.contractorId),
+      OR: [
+        { departmentId: null },
+        { department: { excludeFromTbm: false } },
+      ],
+    },
   });
 
   const parsed = parseTbmContent(tbm?.content ?? null);

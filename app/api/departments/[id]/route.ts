@@ -16,6 +16,7 @@ const Patch = z.object({
   name: z.string().min(1).max(60).optional(),
   parentId: z.string().nullable().optional(),
   sortOrder: z.number().int().min(0).max(9999).optional(),
+  excludeFromTbm: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -40,6 +41,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const data: Record<string, unknown> = {};
   if (b.name !== undefined) data.name = b.name;
   if (b.sortOrder !== undefined) data.sortOrder = b.sortOrder;
+  if (b.excludeFromTbm !== undefined) data.excludeFromTbm = b.excludeFromTbm;
   if (b.parentId !== undefined) data.parentId = b.parentId ? BigInt(b.parentId) : null;
   if (b.headUserId !== undefined) {
     if (b.headUserId === null) {

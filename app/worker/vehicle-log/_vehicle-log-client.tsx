@@ -137,6 +137,7 @@ export default function VehicleLogClient({
   const [form, setForm] = useState<FormState>(() => defaultForm(lastEndMileage));
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const receiptInputRef = useRef<HTMLInputElement>(null);
 
   const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
@@ -182,9 +183,14 @@ export default function VehicleLogClient({
     .filter((w) => selectedPassengerIds.includes(w.id))
     .map((w) => w.name);
 
-  async function submit() {
+  function openPreview() {
     if (!vehicleId) { alert('차량을 선택해 주세요.'); return; }
     if (!form.todayMileage) { alert('금일누적거리를 입력해 주세요.'); return; }
+    setShowPreview(true);
+  }
+
+  async function submit() {
+    setShowPreview(false);
 
     setSubmitting(true);
     setResult(null);
@@ -843,19 +849,204 @@ export default function VehicleLogClient({
         )}
       </div>
 
-      {/* Sticky 제출 버튼 */}
+      {/* Sticky 미리보기 버튼 */}
       {!result?.ok && (
         <div className="fixed left-0 right-0 z-40 bg-surface border-t border-line px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
           style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
-          <button type="button" onClick={submit}
+          <button type="button" onClick={openPreview}
             disabled={submitting || !vehicleId || !form.todayMileage}
             className="w-full py-3.5 rounded-xl bg-accent text-white text-base font-black shadow-card active:scale-[0.99] disabled:opacity-50 transition">
-            {submitting ? '제출 중…' : '🚛 차량일지 제출'}
+            {submitting ? '제출 중…' : '📋 미리보기 후 제출'}
           </button>
         </div>
       )}
 
+      {/* 미리보기 모달 */}
+      {showPreview && (
+        <VehicleLogPreview
+          form={form}
+          vehicle={selectedVehicle ?? null}
+          passengerNames={selectedPassengerNames}
+          driverName={driverName}
+          onConfirm={submit}
+          onCancel={() => setShowPreview(false)}
+          submitting={submitting}
+        />
+      )}
+
       </>}
+    </div>
+  );
+}
+
+/* ─── 미리보기 모달 ─── */
+
+function VehicleLogPreview({
+  form, vehicle, passengerNames, driverName, onConfirm, onCancel, submitting,
+}: {
+  form: FormState;
+  vehicle: { vehicleNo: string; vehicleType: string; vehicleTon: string | null } | null;
+  passengerNames: string[];
+  driverName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  submitting: boolean;
+}) {
+  const dist = form.prevMileage && form.todayMileage
+    ? (Number(form.todayMileage) - Number(form.prevMileage)).toLocaleString()
+    : null;
+
+  const filledOps = form.operationRows.filter((r) => r.startTime || r.zone);
+  const bagTotals = {
+    general: form.bagWork.reduce((s, r) => s + (Number(r.general) || 0), 0),
+    food:    form.bagWork.reduce((s, r) => s + (Number(r.food) || 0), 0),
+    recycle: form.bagWork.reduce((s, r) => s + (Number(r.recycle) || 0), 0),
+  };
+  const abnormalInsp = INSPECTION_ITEMS.filter((i) => form.inspection[i.key] !== i.opts[0]);
+  const hasMaint = form.maintCompany || form.maintContent || form.maintCost;
+  const hasBagB = Object.values(form.bagMachineWork).some((v) => Number(v) > 0);
+  const hasBagC = Object.values(form.largeWasteWork).some((v) => Number(v) > 0);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-end" onClick={onCancel}>
+      <div
+        className="w-full bg-surface rounded-t-2xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-surface px-4 py-3 border-b border-line flex items-center justify-between flex-shrink-0 rounded-t-2xl">
+          <div className="text-base font-extrabold text-ink">제출 전 최종 확인</div>
+          <button type="button" onClick={onCancel} className="text-ink-muted text-lg font-bold px-2">✕</button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-4 py-4 space-y-4 text-sm">
+          {/* 기본정보 */}
+          <section>
+            <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">기본정보</div>
+            <div className="bg-slate-50 rounded-xl border border-line p-3 grid grid-cols-2 gap-y-2 gap-x-4 text-xs font-mono">
+              <Row label="차량" value={vehicle?.vehicleNo ?? '—'} />
+              <Row label="작성자" value={driverName} />
+              <Row label="작성일자" value={form.logDate} />
+              <Row label="동승자" value={passengerNames.join(', ') || '없음'} />
+              <Row label="전일누적" value={form.prevMileage ? `${Number(form.prevMileage).toLocaleString()} km` : '—'} />
+              <Row label="금일누적" value={`${Number(form.todayMileage).toLocaleString()} km`} />
+              {dist && <Row label="운행거리" value={`${dist} km`} />}
+              {form.fuelUsed.trim() !== '' && <Row label="주유량" value={`${form.fuelUsed} L`} />}
+            </div>
+          </section>
+
+          {/* 운행내역 */}
+          {filledOps.length > 0 && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">차량운행내역</div>
+              <div className="bg-slate-50 rounded-xl border border-line divide-y divide-line">
+                {filledOps.map((r, i) => (
+                  <div key={i} className="px-3 py-2 text-xs font-mono flex gap-3">
+                    <span className="text-ink-muted w-8 flex-shrink-0">{form.operationRows.indexOf(r) + 1}차</span>
+                    <span>{r.startTime && r.endTime ? `${r.startTime}~${r.endTime}` : r.startTime || ''}</span>
+                    {r.zone && <span className="text-ink">{r.zone}</span>}
+                    {r.note && <span className="text-ink-muted ml-auto">{r.note}</span>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 작업내역 A */}
+          {(bagTotals.general > 0 || bagTotals.food > 0 || bagTotals.recycle > 0) && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">작업내역 A (kg)</div>
+              <div className="bg-blue-50 rounded-xl border border-blue-200 px-3 py-2 text-xs font-mono flex gap-6">
+                {bagTotals.general > 0 && <span>일반 {bagTotals.general} kg</span>}
+                {bagTotals.food > 0 && <span>음식물 {bagTotals.food} kg</span>}
+                {bagTotals.recycle > 0 && <span>재활용 {bagTotals.recycle} kg</span>}
+              </div>
+            </section>
+          )}
+
+          {/* 작업내역 B·C 요약 */}
+          {(hasBagB || hasBagC) && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">작업내역 B·C</div>
+              <div className="bg-green-50 rounded-xl border border-green-200 px-3 py-2 text-xs font-mono space-y-1">
+                {hasBagB && (
+                  <div>
+                    <span className="font-extrabold text-green-800">B — 종량제봉투: </span>
+                    {Object.entries(form.bagMachineWork)
+                      .filter(([, v]) => Number(v) > 0)
+                      .map(([k, v]) => `${k.replace(/_/g, ' ')} ${v}`)
+                      .join(' / ')}
+                  </div>
+                )}
+                {hasBagC && (
+                  <div>
+                    <span className="font-extrabold text-amber-800">C — 대형폐기물: </span>
+                    {Object.entries(form.largeWasteWork)
+                      .filter(([, v]) => Number(v) > 0)
+                      .map(([k, v]) => `${k} ${v}점`)
+                      .join(' / ')}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* 차량점검 이상 */}
+          {abnormalInsp.length > 0 && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-warn mb-2 tracking-wider">⚠ 차량점검 이상 항목</div>
+              <div className="bg-amber-50 rounded-xl border border-amber-300 px-3 py-2 text-xs font-mono space-y-0.5">
+                {abnormalInsp.map((i) => (
+                  <div key={i.key} className="text-amber-800 font-bold">
+                    {i.label}: {form.inspection[i.key]}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 정비이력 */}
+          {hasMaint && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">정비이력</div>
+              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-xs font-mono space-y-0.5">
+                {form.maintCompany && <div>업체: {form.maintCompany}</div>}
+                {form.maintContent && <div>내용: {form.maintContent}</div>}
+                {form.maintCost && <div>비용: {Number(form.maintCost).toLocaleString()}원</div>}
+              </div>
+            </section>
+          )}
+
+          {/* 특이사항 */}
+          {form.note.trim() && (
+            <section>
+              <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">특이사항</div>
+              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-xs font-mono whitespace-pre-wrap">
+                {form.note}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 px-4 py-3 border-t border-line grid grid-cols-2 gap-2">
+          <button type="button" onClick={onCancel}
+            className="py-3.5 rounded-xl border-2 border-line text-sm font-extrabold text-ink active:scale-[0.99]">
+            ← 수정
+          </button>
+          <button type="button" onClick={onConfirm} disabled={submitting}
+            className="py-3.5 rounded-xl bg-accent text-white text-sm font-extrabold shadow-card active:scale-[0.99] disabled:opacity-50">
+            {submitting ? '제출 중…' : '🚛 제출 확인'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-1">
+      <span className="text-ink-muted w-16 flex-shrink-0">{label}</span>
+      <span className="font-bold text-ink truncate">{value}</span>
     </div>
   );
 }

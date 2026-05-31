@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 type PosRow = { id: string; name: string; category: string; sortOrder: number; active: boolean; userCount: number };
 type RankRow = { id: string; name: string; level: number; sortOrder: number; active: boolean; userCount: number };
-type DeptRow = { id: string; name: string; sortOrder: number; parentId: string | null };
+type DeptRow = { id: string; name: string; sortOrder: number; parentId: string | null; excludeFromTbm: boolean };
 type SubTab = 'positions' | 'ranks' | 'departments';
 
 const CATEGORY_LABEL: Record<string, string> = { MANAGER: '관리자', FIELD: '현장', ADMIN: '임원·사무' };
@@ -101,7 +101,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
     onRefresh();
   }
 
-  async function handleSave(id: string, data: { name?: string; sortOrder?: number }) {
+  async function handleSave(id: string, data: { name?: string; sortOrder?: number; excludeFromTbm?: boolean }) {
     await fetch(`/api/departments/${id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -170,6 +170,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
             <tr className="bg-slate-100 text-xs text-slate-500">
               <th className="px-3 py-2 text-center font-semibold w-20">표시순서</th>
               <th className="px-3 py-2 text-left font-semibold">부서명</th>
+              <th className="px-3 py-2 text-center font-semibold w-28">TBM 대상</th>
               <th className="px-3 py-2 text-center font-semibold w-24">작업</th>
             </tr>
           </thead>
@@ -182,6 +183,19 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
                   <>
                     <td className="px-3 py-2 text-center font-mono text-slate-500">{row.sortOrder}</td>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => handleSave(row.id, { excludeFromTbm: !row.excludeFromTbm })}
+                        className={`px-2 py-0.5 rounded text-xs font-semibold border ${
+                          row.excludeFromTbm
+                            ? 'bg-slate-100 text-slate-500 border-slate-300'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        }`}
+                        title={row.excludeFromTbm ? '클릭하면 TBM 대상으로 변경' : '클릭하면 TBM 제외로 변경'}
+                      >
+                        {row.excludeFromTbm ? '제외' : '대상'}
+                      </button>
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditId(row.id)}
@@ -204,9 +218,10 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
   );
 }
 
-function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { name: string; sortOrder: number }) => void; onCancel: () => void }) {
+function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { name: string; sortOrder: number; excludeFromTbm: boolean }) => void; onCancel: () => void }) {
   const [name, setName] = useState(row.name);
   const [sortOrder, setSortOrder] = useState(row.sortOrder);
+  const [excludeFromTbm, setExcludeFromTbm] = useState(row.excludeFromTbm);
   return (
     <>
       <td className="px-3 py-1 text-center">
@@ -215,9 +230,18 @@ function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { na
       <td className="px-3 py-1">
         <input className="border border-line rounded px-2 py-0.5 text-sm w-full" value={name} onChange={(e) => setName(e.target.value)} />
       </td>
+      <td className="px-3 py-1 text-center">
+        <button
+          type="button"
+          onClick={() => setExcludeFromTbm((v) => !v)}
+          className={`px-2 py-0.5 rounded text-xs font-semibold border ${excludeFromTbm ? 'bg-slate-100 text-slate-500 border-slate-300' : 'bg-emerald-50 text-emerald-700 border-emerald-300'}`}
+        >
+          {excludeFromTbm ? '제외' : '대상'}
+        </button>
+      </td>
       <td className="px-3 py-1">
         <div className="flex gap-1 justify-center">
-          <button onClick={() => onSave({ name, sortOrder })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
+          <button onClick={() => onSave({ name, sortOrder, excludeFromTbm })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
           <button onClick={onCancel} className="px-2 py-0.5 rounded text-xs border border-line">취소</button>
         </div>
       </td>

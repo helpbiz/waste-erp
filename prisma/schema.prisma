@@ -239,6 +239,7 @@ model Contractor {
   disposalSites       DisposalSite[]
   garages             Garage[]
   payslipRecords      PayslipRecord[]      @relation("ContractorPayslips")
+  weatherNotices      WeatherSafetyNotice[]
   payrollPolicy       PayrollPolicy?
 
   @@index([municipalityId])
@@ -407,6 +408,8 @@ model User {
   contractorRank         ContractorRank?         @relation("UserContractorRank", fields: [rankId], references: [id])
   contractorPositionsCreated ContractorPosition[] @relation("ContractorPositionCreator")
   contractorRanksCreated     ContractorRank[]     @relation("ContractorRankCreator")
+  weatherNoticesCreated      WeatherSafetyNotice[] @relation("WeatherNoticeCreator")
+  weatherSafetyPhotos        WeatherSafetyPhoto[]  @relation("WorkerWeatherPhotos")
   punchRestrictionsCreated   PunchRestriction[]   @relation("PunchRestrictionCreator")
   payslips                   PayslipRecord[]      @relation("WorkerPayslips")
   payslipsCreated            PayslipRecord[]      @relation("PayslipCreator")
@@ -860,10 +863,11 @@ model Department {
   contractorId BigInt   @map("contractor_id")
   parentId     BigInt?  @map("parent_id")
   headUserId   BigInt?  @map("head_user_id")
-  name         String   @db.VarChar(60)
-  sortOrder    Int      @default(0) @map("sort_order")
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
+  name            String   @db.VarChar(60)
+  sortOrder       Int      @default(0) @map("sort_order")
+  active          Boolean  @default(true)
+  excludeFromTbm  Boolean  @default(false) @map("exclude_from_tbm")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   contractor        Contractor         @relation(fields: [contractorId], references: [id])
   parent            Department?        @relation("DeptTree", fields: [parentId], references: [id])
@@ -1488,4 +1492,40 @@ model PayrollPolicy {
   payslipApprover User?      @relation("PayrollPolicyApprover", fields: [payslipApproverId], references: [id])
 
   @@map("payroll_policies")
+}
+
+// ─────────────── 날씨관리대장 ───────────────
+
+/// 폭염·한파 등 기상 안전 공지 (관리자 등록)
+model WeatherSafetyNotice {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  noticeDate   DateTime @map("notice_date") @db.Date
+  alertType    String   @default("HEATWAVE") @map("alert_type") @db.VarChar(20)
+  title        String   @db.VarChar(100)
+  content      String?  @db.Text
+  createdBy    BigInt   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor             @relation(fields: [contractorId], references: [id])
+  creator    User                   @relation("WeatherNoticeCreator", fields: [createdBy], references: [id])
+  photos     WeatherSafetyPhoto[]
+
+  @@index([contractorId, noticeDate])
+  @@map("weather_safety_notices")
+}
+
+/// 근로자 휴식 인증 사진 (공지 1건당 근로자 1장)
+model WeatherSafetyPhoto {
+  id         BigInt   @id @default(autoincrement())
+  noticeId   BigInt   @map("notice_id")
+  workerId   BigInt   @map("worker_id")
+  photoData  String   @map("photo_data") @db.Text  // base64 Data URL (JPEG, max ~200KB)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  notice WeatherSafetyNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  worker User                @relation("WorkerWeatherPhotos", fields: [workerId], references: [id])
+
+  @@unique([noticeId, workerId])
+  @@map("weather_safety_photos")
 }

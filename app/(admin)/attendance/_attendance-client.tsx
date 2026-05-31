@@ -214,6 +214,9 @@ function AdjustModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmReject, setConfirmReject] = useState(false);
+  const [confirmNightReset, setConfirmNightReset] = useState(false);
+
+  const shiftComplete = !!(row.checkInTime && row.checkOutTime);
 
   const reasonValid = reason.trim().length >= 2;
 
@@ -237,6 +240,29 @@ function AdjustModal({
         setError(data?.message ?? data?.error ?? '조정 실패');
         return;
       }
+      onSuccess();
+    } catch {
+      setError('네트워크 오류');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doNightReset() {
+    setConfirmNightReset(false);
+    setBusy(true); setError(null);
+    try {
+      const res = await fetch(`/api/attendance/${row.recordId}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adjustedCheckIn: null,
+          reason: `야간 2교대 재출근 활성화 — 오전 기록(${isoToHm(row.checkInTime)}~${isoToHm(row.checkOutTime)}) 조정 이력 보존`,
+          adjustmentType: 'CORRECTION',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data?.message ?? data?.error ?? '처리 실패'); return; }
       onSuccess();
     } catch {
       setError('네트워크 오류');
@@ -310,6 +336,25 @@ function AdjustModal({
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
             </label>
 
+            {shiftComplete && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5 space-y-1.5">
+                <div className="text-xs font-extrabold text-amber-800">야간 2교대 재출근 활성화</div>
+                <div className="text-[0.6875rem] text-amber-700 leading-relaxed">
+                  오전 교대 근무({isoToHm(row.checkInTime)}~{isoToHm(row.checkOutTime)})가 완료된 상태입니다.
+                  같은 날 야간 교대 출근이 필요한 경우 아래 버튼을 클릭하면 근로자의 출근 등록이 다시 활성화됩니다.
+                  오전 기록은 조정 이력에 보존됩니다.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmNightReset(true)}
+                  disabled={busy}
+                  className="w-full py-2 rounded-md bg-amber-500 text-white text-xs font-extrabold hover:bg-amber-600 disabled:opacity-50"
+                >
+                  야간 재출근 활성화
+                </button>
+              </div>
+            )}
+
             {error && (
               <div role="alert" className="bg-red-50 border-2 border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-800">
                 {error}
@@ -345,6 +390,16 @@ function AdjustModal({
         cancelLabel="취소"
         onConfirm={doReject}
         onCancel={() => setConfirmReject(false)}
+      />
+      <AccessibleConfirmDialog
+        open={confirmNightReset}
+        tone="neutral"
+        title="야간 재출근을 활성화하시겠습니까?"
+        message={`오전 기록(${isoToHm(row.checkInTime)}~${isoToHm(row.checkOutTime)})은 조정 이력에 보존되며, 출근 시각이 초기화됩니다. 근로자가 야간 출근 버튼을 다시 누를 수 있게 됩니다.`}
+        confirmLabel="활성화"
+        cancelLabel="취소"
+        onConfirm={doNightReset}
+        onCancel={() => setConfirmNightReset(false)}
       />
     </>
   );

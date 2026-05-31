@@ -60,7 +60,15 @@ export async function GET(req: Request) {
     orderBy: { sessionDate: 'asc' },
   }),
   prisma.user.findMany({
-    where: { contractorId, role: 'WORKER', status: 'ACTIVE' },
+    where: {
+      contractorId,
+      role: 'WORKER',
+      status: 'ACTIVE',
+      OR: [
+        { departmentId: null },
+        { department: { excludeFromTbm: false } },
+      ],
+    },
     select: { id: true, name: true, employeeNo: true },
     orderBy: { name: 'asc' },
   }),

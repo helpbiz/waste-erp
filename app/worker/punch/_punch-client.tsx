@@ -27,6 +27,11 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState(initial);
 
+  /* 관리자가 출퇴근 기록을 수정한 경우(야간 재출근 활성화 등) router.refresh() 후 반영 */
+  useEffect(() => {
+    setState(initial);
+  }, [initial]);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);

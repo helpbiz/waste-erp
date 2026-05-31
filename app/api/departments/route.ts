@@ -17,6 +17,7 @@ const Create = z.object({
   parentId: z.string().nullable().optional(),
   name: z.string().trim().min(1).max(60),
   sortOrder: z.number().int().min(0).max(9999).optional(),
+  excludeFromTbm: z.boolean().optional(),
 });
 
 export async function GET(req: Request) {
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
       parentId: d.parentId?.toString() ?? null,
       name: d.name,
       sortOrder: d.sortOrder,
+      excludeFromTbm: d.excludeFromTbm,
     })),
   });
 }
@@ -88,6 +90,7 @@ export async function POST(req: Request) {
       parentId,
       name: b.name,
       sortOrder: b.sortOrder ?? 0,
+      excludeFromTbm: b.excludeFromTbm ?? false,
     },
   });
   return NextResponse.json({ ok: true, id: created.id.toString() }, { status: 201 });

@@ -61,6 +61,56 @@ export default function SafetyWorkerClient({
   const [tbmSignaturePad, setTbmSignaturePad] = useState<string | null>(null);
   const [tbmShowPad, setTbmShowPad] = useState(false);
 
+  // 날씨 안전 공지
+  const [weatherNotices, setWeatherNotices] = useState<{ id: string; alertLabel: string; alertType: string; title: string; content: string | null; photoCount: number }[]>([]);
+  const [uploadingNoticeId, setUploadingNoticeId] = useState<string | null>(null);
+  const [uploadedNoticeIds, setUploadedNoticeIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    fetch(`/api/safety/weather-notices?date=${today}`)
+      .then((r) => r.json())
+      .then((d) => setWeatherNotices(d.notices ?? []))
+      .catch(() => null);
+  }, []);
+
+  async function uploadWeatherPhoto(noticeId: string, file: File) {
+    setUploadingNoticeId(noticeId);
+    try {
+      const photoData = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const MAX = 800;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+        img.src = url;
+      });
+      const r = await fetch(`/api/safety/weather-notices/${noticeId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoData }),
+      });
+      if (r.ok) {
+        setUploadedNoticeIds((prev) => new Set([...prev, noticeId]));
+        toast.success('휴식 인증 사진이 등록되었습니다.');
+      } else {
+        toast.error('사진 업로드 실패. 다시 시도해 주세요.');
+      }
+    } catch {
+      toast.error('사진 처리 중 오류가 발생했습니다.');
+    } finally {
+      setUploadingNoticeId(null);
+    }
+  }
+
   // AVAC: 시설 선택 + 동적 TBM + 공지 로드
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(
     isAvac && facilities.length === 1 ? facilities[0].id : null
@@ -788,6 +838,56 @@ export default function SafetyWorkerClient({
           )}
         </div>
       </section>
+
+      {/* 날씨 안전 공지 + 휴식 인증 사진 */}
+      {weatherNotices.length > 0 && (
+        <section className="bg-red-50 rounded-xl border-2 border-red-300 shadow-card overflow-hidden">
+          <header className="px-4 py-3 bg-red-100 border-b-2 border-red-300">
+            <div className="text-base font-extrabold text-red-900">⚠ 기상 안전 공지</div>
+            <div className="text-sm font-semibold text-red-700 mt-0.5">아래 공지를 확인하고 휴식 인증 사진을 등록해 주세요.</div>
+          </header>
+          <div className="p-3 space-y-3">
+            {weatherNotices.map((n) => {
+              const uploaded = uploadedNoticeIds.has(n.id);
+              return (
+                <div key={n.id} className="bg-white rounded-xl border border-red-200 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[0.625rem] font-extrabold border border-red-300 flex-shrink-0">
+                      {n.alertLabel}
+                    </span>
+                    <div className="font-extrabold text-sm text-ink leading-snug">{n.title}</div>
+                  </div>
+                  {n.content && (
+                    <div className="text-sm font-semibold text-ink-mid leading-relaxed bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+                      {n.content}
+                    </div>
+                  )}
+                  {uploaded ? (
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-300 rounded-lg px-3 py-2.5">
+                      <span className="text-success text-lg">✓</span>
+                      <span className="text-sm font-extrabold text-success">휴식 인증 완료</span>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 bg-red-600 text-white rounded-xl py-3 font-extrabold text-sm active:scale-[0.99] transition cursor-pointer">
+                      {uploadingNoticeId === n.id ? '업로드 중…' : '📷 휴식 인증 사진 등록'}
+                      <input
+                        type="file" accept="image/*" capture="environment"
+                        className="hidden"
+                        disabled={uploadingNoticeId !== null}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadWeatherPhoto(n.id, file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
