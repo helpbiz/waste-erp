@@ -43,6 +43,8 @@ type Detail = {
   bagMachineWork?: Record<string, number>;
   largeWasteWork?: Record<string, number>;
   inspection?: Record<string, string>;
+  maintenance?: { company?: string; content?: string; cost?: number } | null;
+  note?: string;
 };
 
 type Log = {
@@ -275,7 +277,40 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
         </tbody>
       </table>
 
-      {/* ⑧ 하단: 위탁업체명 + 운전자 서명 */}
+      {/* ⑧ 정비이력 */}
+      <div className="vl-sec">◎ 정비이력</div>
+      <table className="vl-tbl">
+        <colgroup>
+          <col style={{width:'72px'}} />
+          <col />
+          <col style={{width:'72px'}} />
+          <col style={{width:'100px'}} />
+        </colgroup>
+        <tbody>
+          <tr>
+            <th>정비업체</th>
+            <td>{d.maintenance?.company ?? ''}</td>
+            <th>수리비용</th>
+            <td className="tc">{d.maintenance?.cost ? `${Number(d.maintenance.cost).toLocaleString()} 원` : ''}</td>
+          </tr>
+          <tr>
+            <th>정비내용</th>
+            <td colSpan={3} style={{minHeight:'26px'}}>{d.maintenance?.content ?? ''}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* ⑨ 특이사항 */}
+      <div className="vl-sec">◎ 특이사항</div>
+      <table className="vl-tbl">
+        <tbody>
+          <tr>
+            <td style={{minHeight:'26px', padding:'4px 6px'}}>{d.note ?? ''}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* ⑩ 하단: 위탁업체명 + 운전자 서명 */}
       <table className="vl-tbl vl-footer-tbl">
         <tbody>
           <tr>

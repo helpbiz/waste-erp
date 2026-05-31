@@ -28,7 +28,7 @@ export default async function AttendancePrintPage({
     prisma.user.findMany({
       where: { role: { in: ['WORKER', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] }, status: 'ACTIVE', ...userWhere },
       select: { id: true, name: true, employeeNo: true, department: { select: { name: true } } },
-      orderBy: [{ department: { name: 'asc' } }, { name: 'asc' }],
+      orderBy: [{ department: { sortOrder: 'asc' } }, { department: { name: 'asc' } }, { name: 'asc' }],
     }),
     prisma.attendanceRecord.findMany({
       where: {

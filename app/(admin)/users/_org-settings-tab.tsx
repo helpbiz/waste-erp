@@ -5,15 +5,17 @@ import { useState, useEffect, useCallback } from 'react';
 
 type PosRow = { id: string; name: string; category: string; sortOrder: number; active: boolean; userCount: number };
 type RankRow = { id: string; name: string; level: number; sortOrder: number; active: boolean; userCount: number };
-type SubTab = 'positions' | 'ranks';
+type DeptRow = { id: string; name: string; sortOrder: number; parentId: string | null };
+type SubTab = 'positions' | 'ranks' | 'departments';
 
 const CATEGORY_LABEL: Record<string, string> = { MANAGER: '관리자', FIELD: '현장', ADMIN: '임원·사무' };
 const CATEGORY_OPTIONS = ['MANAGER', 'FIELD', 'ADMIN'] as const;
 
 export default function OrgSettingsTab() {
-  const [sub, setSub] = useState<SubTab>('positions');
+  const [sub, setSub] = useState<SubTab>('departments');
   const [positions, setPositions] = useState<PosRow[]>([]);
   const [ranks, setRanks] = useState<RankRow[]>([]);
+  const [departments, setDepartments] = useState<DeptRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,12 +23,14 @@ export default function OrgSettingsTab() {
     setLoading(true);
     setError('');
     try {
-      const [pr, rr] = await Promise.all([
+      const [pr, rr, dr] = await Promise.all([
         fetch('/api/contractor/positions?active=all').then((r) => r.json()),
         fetch('/api/contractor/ranks?active=all').then((r) => r.json()),
+        fetch('/api/departments').then((r) => r.json()),
       ]);
       setPositions(pr.positions ?? []);
       setRanks(rr.ranks ?? []);
+      setDepartments(dr.departments ?? []);
     } catch {
       setError('불러오기 실패');
     } finally {
@@ -39,6 +43,7 @@ export default function OrgSettingsTab() {
   return (
     <div className="space-y-4">
       <div className="flex gap-1 border-b border-line">
+        <SubTabBtn active={sub === 'departments'} onClick={() => setSub('departments')}>부서 관리</SubTabBtn>
         <SubTabBtn active={sub === 'positions'} onClick={() => setSub('positions')}>직책 관리</SubTabBtn>
         <SubTabBtn active={sub === 'ranks'} onClick={() => setSub('ranks')}>직급 관리</SubTabBtn>
       </div>
@@ -46,6 +51,9 @@ export default function OrgSettingsTab() {
       {loading && <p className="text-sm text-slate-400 py-4 text-center">불러오는 중…</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
 
+      {!loading && sub === 'departments' && (
+        <DepartmentsPanel rows={departments} onRefresh={load} />
+      )}
       {!loading && sub === 'positions' && (
         <PositionsPanel rows={positions} onRefresh={load} />
       )}
@@ -66,6 +74,154 @@ function SubTabBtn({ active, onClick, children }: { active: boolean; onClick: ()
     >
       {children}
     </button>
+  );
+}
+
+/* ─────────────────────────── Departments Panel ─────────────────────────── */
+
+function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () => void }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+  const [addForm, setAddForm] = useState({ name: '', sortOrder: 0 });
+
+  async function handleAdd() {
+    setSubmitting(true); setErrMsg('');
+    const res = await fetch('/api/departments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(addForm),
+    });
+    setSubmitting(false);
+    if (res.status === 409) { setErrMsg('같은 이름의 부서가 이미 있습니다'); return; }
+    if (!res.ok) { setErrMsg('추가 실패'); return; }
+    setShowAdd(false);
+    setAddForm({ name: '', sortOrder: 0 });
+    onRefresh();
+  }
+
+  async function handleSave(id: string, data: { name?: string; sortOrder?: number }) {
+    await fetch(`/api/departments/${id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    setEditId(null);
+    onRefresh();
+  }
+
+  async function handleDelete(row: DeptRow) {
+    if (!confirm(`"${row.name}" 부서를 삭제(비활성화)하시겠습니까?\n소속 사용자가 없을 때만 가능합니다.`)) return;
+    const res = await fetch(`/api/departments/${row.id}`, { method: 'DELETE' });
+    if (res.status === 409) {
+      const j = await res.json();
+      alert(`삭제 불가: 소속 사용자 ${j.users}명 또는 하위 부서가 있습니다.`);
+      return;
+    }
+    onRefresh();
+  }
+
+  const sorted = [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <div>
+          <span className="text-sm text-slate-500">부서 {rows.length}개</span>
+          <span className="text-xs text-slate-400 ml-2">· 출근대장 인쇄 순서는 표시순서(숫자)에 따라 적용됩니다</span>
+        </div>
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="px-3 py-1.5 rounded-md text-xs font-bold bg-primary text-white hover:bg-primary/90"
+        >+ 부서 추가</button>
+      </div>
+
+      {showAdd && (
+        <div className="border border-line rounded-lg p-3 bg-slate-50 space-y-2">
+          <div className="flex gap-2 flex-wrap">
+            <input
+              className="border border-line rounded px-2 py-1 text-sm flex-1 min-w-[140px]"
+              placeholder="부서명 (예: 생활폐기물)"
+              value={addForm.name}
+              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+            />
+            <input
+              type="number"
+              className="border border-line rounded px-2 py-1 text-sm w-24"
+              placeholder="표시순서"
+              value={addForm.sortOrder}
+              onChange={(e) => setAddForm({ ...addForm, sortOrder: Number(e.target.value) })}
+            />
+          </div>
+          {errMsg && <p className="text-xs text-red-500">{errMsg}</p>}
+          <div className="flex gap-2">
+            <button onClick={handleAdd} disabled={submitting || !addForm.name}
+              className="px-3 py-1.5 rounded text-xs font-bold bg-primary text-white disabled:opacity-40">저장</button>
+            <button onClick={() => { setShowAdd(false); setErrMsg(''); }}
+              className="px-3 py-1.5 rounded text-xs font-bold border border-line text-slate-600">취소</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-slate-100 text-xs text-slate-500">
+              <th className="px-3 py-2 text-center font-semibold w-20">표시순서</th>
+              <th className="px-3 py-2 text-left font-semibold">부서명</th>
+              <th className="px-3 py-2 text-center font-semibold w-24">작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((row) => (
+              <tr key={row.id} className="border-t border-line">
+                {editId === row.id ? (
+                  <EditDeptRow row={row} onSave={(d) => handleSave(row.id, d)} onCancel={() => setEditId(null)} />
+                ) : (
+                  <>
+                    <td className="px-3 py-2 text-center font-mono text-slate-500">{row.sortOrder}</td>
+                    <td className="px-3 py-2 font-medium">{row.name}</td>
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex gap-1 justify-center">
+                        <button onClick={() => setEditId(row.id)}
+                          className="px-2 py-0.5 rounded text-xs border border-line hover:bg-slate-50">수정</button>
+                        <button onClick={() => handleDelete(row)}
+                          className="px-2 py-0.5 rounded text-xs border border-red-200 text-red-600 hover:bg-red-50">삭제</button>
+                      </div>
+                    </td>
+                  </>
+                )}
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={3} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { name: string; sortOrder: number }) => void; onCancel: () => void }) {
+  const [name, setName] = useState(row.name);
+  const [sortOrder, setSortOrder] = useState(row.sortOrder);
+  return (
+    <>
+      <td className="px-3 py-1 text-center">
+        <input type="number" className="border border-line rounded px-1 py-0.5 text-sm w-16" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
+      </td>
+      <td className="px-3 py-1">
+        <input className="border border-line rounded px-2 py-0.5 text-sm w-full" value={name} onChange={(e) => setName(e.target.value)} />
+      </td>
+      <td className="px-3 py-1">
+        <div className="flex gap-1 justify-center">
+          <button onClick={() => onSave({ name, sortOrder })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
+          <button onClick={onCancel} className="px-2 py-0.5 rounded text-xs border border-line">취소</button>
+        </div>
+      </td>
+    </>
   );
 }
 
