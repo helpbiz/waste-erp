@@ -45,8 +45,8 @@ export default async function AttendancePrintPage({
     }),
   ]);
 
-  /* workerId → day → {in, out} 매핑 */
-  type DayRecord = { checkIn: string | null; checkOut: string | null };
+  /* workerId → day → {in, out, rejected} 매핑 */
+  type DayRecord = { checkIn: string | null; checkOut: string | null; rejected: boolean };
   const map = new Map<string, Map<number, DayRecord>>();
 
   for (const r of records) {
@@ -58,13 +58,17 @@ export default async function AttendancePrintPage({
       const utc = new Date(t.getTime() + 9 * 3600 * 1000);
       return `${String(utc.getUTCHours()).padStart(2, '0')}:${String(utc.getUTCMinutes()).padStart(2, '0')}`;
     };
-    map.get(wid)!.set(d, { checkIn: fmt(r.checkInTime), checkOut: fmt(r.checkOutTime) });
+    map.get(wid)!.set(d, {
+      checkIn: fmt(r.checkInTime),
+      checkOut: fmt(r.checkOutTime),
+      rejected: r.status === 'REJECTED',
+    });
   }
 
   const rows = workers.map((w) => {
     const dayMap = map.get(w.id.toString()) ?? new Map<number, DayRecord>();
     const days: (DayRecord | null)[] = Array.from({ length: daysInMonth }, (_, i) => dayMap.get(i + 1) ?? null);
-    const attendCount = days.filter((d) => d?.checkIn).length;
+    const attendCount = days.filter((d) => d?.checkIn && !d.rejected).length;
     return {
       workerId: w.id.toString(),
       name: w.name,

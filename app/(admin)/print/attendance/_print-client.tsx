@@ -1,6 +1,6 @@
 'use client';
 
-type DayRecord = { checkIn: string | null; checkOut: string | null };
+type DayRecord = { checkIn: string | null; checkOut: string | null; rejected: boolean };
 type WorkerRow = {
   workerId: string; name: string; employeeNo: string;
   department: string; days: (DayRecord | null)[]; attendCount: number;
@@ -112,8 +112,13 @@ export default function AttendancePrintClient({
                       return (
                         <td key={i} className={`border border-slate-300 px-0.5 py-1 text-center ${
                           isWeekend ? 'bg-slate-100/60' : ''
-                        } ${d?.checkIn ? '' : 'text-slate-300'}`}>
-                          {d?.checkIn ? (
+                        } ${d?.rejected ? 'bg-red-50' : ''} ${d?.checkIn ? '' : 'text-slate-300'}`}>
+                          {d?.rejected ? (
+                            <div>
+                              <div className="text-red-600 font-bold leading-tight text-[0.6rem]">[반려]</div>
+                              <div className="text-red-400 leading-tight">{d.checkIn ?? '—'}</div>
+                            </div>
+                          ) : d?.checkIn ? (
                             <div>
                               <div className="text-green-700 font-bold leading-tight">{d.checkIn}</div>
                               <div className="text-slate-500 leading-tight">{d.checkOut ?? '—'}</div>
