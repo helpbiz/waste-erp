@@ -49,6 +49,7 @@ export default function AnnouncementsClient({
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Announcement | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
@@ -101,6 +102,27 @@ export default function AnnouncementsClient({
       {editTarget && <CreateModal role={session.isNoticeManager ? 'INTERNAL_ADMIN' : session.role} facilities={isAvac ? facilities : []} initial={editTarget} onClose={() => setEditTarget(null)} onCreated={() => { setEditTarget(null); load(); }} />}
       {voiceOpen && <VoiceSettingsModal onClose={() => setVoiceOpen(false)} />}
 
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt="첨부사진 확대"
+            className="max-w-full max-h-full rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white text-2xl font-bold flex items-center justify-center hover:bg-white/40"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
       {!loading && items.length === 0 && (
         <div className="bg-surface border border-line rounded-lg py-16 text-center text-slate-500 font-bold">
@@ -132,7 +154,7 @@ export default function AnnouncementsClient({
                     <div className="flex gap-1.5 mt-2 flex-wrap">
                       {a.attachmentUrls.map((src, i) => (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={src} alt={`첨부사진 ${i+1}`} className="h-16 w-16 object-cover rounded border border-line cursor-pointer" onClick={() => window.open(src)} />
+                        <img key={i} src={src} alt={`첨부사진 ${i+1}`} className="h-16 w-16 object-cover rounded border border-line cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setLightboxSrc(src)} />
                       ))}
                     </div>
                   )}

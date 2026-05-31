@@ -178,7 +178,7 @@ export async function POST(req: Request) {
       deductions,
       extras,
       workHours,
-      totals: { 임금소계: gross, 공제소계: deduct, 실지급액: net, 총계: net + extrasTotal },
+      totals: { 지급합계: gross, 공제합계: deduct, 실수령액: net },
     };
 
     /* 필수항목 누락 경고 */

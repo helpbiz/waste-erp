@@ -93,6 +93,7 @@ enum LeaveStatus {
 enum VehicleType {
   PRESS_REFUSE // 압착진개
   COMPACTOR_REFUSE // 압축진개
+  SEALED_REFUSE // 밀폐식
   ARM_ROLL // 암롤차
   DUMP_TRUCK // 덤프트럭
   GRAB_TRUCK // 집게차
@@ -109,6 +110,7 @@ enum FuelType {
   LPG
   ELECTRIC
   CNG
+  GASOLINE
 }
 
 enum VehicleStatus {

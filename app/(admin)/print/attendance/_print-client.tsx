@@ -144,38 +144,40 @@ export default function AttendancePrintClient({
         .screen-hidden { display: none; }
 
         @media print {
-          /* 앱 셸 전체 숨김 (햄버거·메뉴명·날짜·시스템상태·로그아웃) */
-          header,
-          aside,
-          nav,
-          [data-sidebar],
-          .sidebar,
-          .no-print {
-            display: none !important;
-          }
+          /* 앱 셸 전체 숨김 */
+          header, aside, nav, [data-sidebar], .sidebar, .no-print { display: none !important; }
 
           /* 인쇄 전용 타이틀 행 표시 */
           .screen-hidden { display: table-row !important; }
 
-          /* 페이지 설정 */
-          @page { size: A3 landscape; margin: 8mm; }
+          /* 페이지 설정 — A3 가로 */
+          @page { size: A3 landscape; margin: 6mm; }
 
-          /* thead 가 각 페이지 상단에 반복 출력되도록 */
+          /* 스크롤 컨테이너 해제 → 전체 테이블 인쇄 */
+          html, body { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+          main, section, div { overflow: visible !important; height: auto !important; max-height: none !important; }
+
+          /* thead 각 페이지마다 반복 */
           thead { display: table-header-group; }
 
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-            font-size: 8px;
+            font-size: 7.5px !important;
             background: white !important;
           }
 
+          /* 테이블 너비 꽉 채우기 */
+          table { width: 100% !important; table-layout: fixed !important; }
+          td, th { font-size: 7.5px !important; padding: 2px 3px !important; }
+
           /* 화면 전용 요소 숨김 */
           .print\\:hidden { display: none !important; }
+          .print\\:px-2 { padding-left: 2px !important; padding-right: 2px !important; }
+          .print\\:py-2 { padding-top: 2px !important; padding-bottom: 2px !important; }
 
-          /* 컨텐츠 여백 최소화 */
-          .print\\:px-2 { padding-left: 4px !important; padding-right: 4px !important; }
-          .print\\:py-2 { padding-top: 4px !important; padding-bottom: 4px !important; }
+          /* 셀 줄 넘김 방지 */
+          .whitespace-nowrap { white-space: nowrap !important; }
         }
       `}</style>
     </div>

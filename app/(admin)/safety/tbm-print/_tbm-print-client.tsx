@@ -244,21 +244,27 @@ export default function TbmPrintClient({
           .screen-hidden { display: block !important; }
           .print\\:hidden { display: none !important; }
 
-          @page { size: A4 portrait; margin: 10mm; }
+          @page { size: A4 portrait; margin: 8mm; }
+
+          /* 스크롤 컨테이너 해제 → 전체 내용 인쇄 */
+          html, body { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+          main, section { overflow: visible !important; height: auto !important; max-height: none !important; }
 
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-            font-size: 10pt !important;
+            font-size: 9pt !important;
             background: white !important;
           }
 
-          /* 글자 크기 10pt 통일 */
-          .tbm-body, .tbm-body * { font-size: 10pt !important; }
-          table, td, th { font-size: 10pt !important; }
+          /* 글자 크기 통일 */
+          .tbm-body, .tbm-body * { font-size: 9pt !important; }
+          table { width: 100% !important; table-layout: fixed !important; }
+          td, th { font-size: 9pt !important; }
 
-          .tbm-sheet { break-after: page; page-break-after: always; margin-bottom: 0 !important; }
-          .tbm-sheet-last { break-before: page; page-break-before: always; }
+          /* 서명 그리드: 잘리지 않도록 페이지 내 유지 */
+          .tbm-sheet { break-after: page; page-break-after: always; margin-bottom: 0 !important; break-inside: avoid-page; }
+          .tbm-sheet:last-child { break-after: auto !important; page-break-after: auto !important; }
         }
       `}</style>
     </div>

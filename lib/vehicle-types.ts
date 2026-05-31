@@ -5,6 +5,7 @@
 export const VEHICLE_TYPE_VALUES = [
   'PRESS_REFUSE',
   'COMPACTOR_REFUSE',
+  'SEALED_REFUSE',
   'ARM_ROLL',
   'DUMP_TRUCK',
   'GRAB_TRUCK',
@@ -21,6 +22,7 @@ export type VehicleTypeKey = typeof VEHICLE_TYPE_VALUES[number];
 export const VEHICLE_TYPE_LABEL: Record<VehicleTypeKey, string> = {
   PRESS_REFUSE:     '압착진개',
   COMPACTOR_REFUSE: '압축진개',
+  SEALED_REFUSE:    '밀폐식',
   ARM_ROLL:         '암롤차',
   DUMP_TRUCK:       '덤프트럭',
   GRAB_TRUCK:       '집게차',

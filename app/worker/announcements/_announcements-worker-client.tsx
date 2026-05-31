@@ -13,6 +13,7 @@ type Announcement = {
   expiresAt: string | null;
   authorName: string;
   audience: string;
+  attachmentUrls: string[] | null;
 };
 
 const SEVERITY_CLS: Record<string, string> = {
@@ -101,6 +102,19 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
               {isOpen && (
                 <div className="px-4 pb-3 border-t border-current/20">
                   <pre className="text-sm whitespace-pre-wrap leading-relaxed mt-2 text-current font-sans">{a.body}</pre>
+                  {a.attachmentUrls && a.attachmentUrls.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {a.attachmentUrls.map((src, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={src}
+                          alt={`첨부사진 ${i + 1}`}
+                          className="w-full max-w-sm rounded-xl border border-current/20 object-contain"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {/민원 #\d+/.test(a.body) && (
                     <Link
                       href="/worker/complaint"

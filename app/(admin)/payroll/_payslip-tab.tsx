@@ -22,6 +22,7 @@ type ImportResult = {
   employeeNo?: string;
   preview?: {
     employeeNo: string | null;
+    payDate?:   string | null;
     earnings:   Record<string, number>;
     deductions: Record<string, number>;
     extras?:    Record<string, number>;
@@ -272,20 +273,23 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                         <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName ?? '—'}</td>
                         <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
                         <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">
-                          {r.preview ? fmt(r.preview.totals.실수령액) : r.message}
+                          {r.preview ? fmt(r.preview.totals.실수령액) : '—'}
                         </td>
                         <td className="px-3 py-2 border-b border-line">
-                          {r.preview && (
+                          {(r.preview || r.status === 'ERROR' || r.status === 'WARN') && (
                             <button onClick={() => setExpandRow(isOpen ? null : i)} className="text-xs font-extrabold text-accent hover:underline">
                               {isOpen ? '닫기' : '상세'}
                             </button>
                           )}
                         </td>
                       </tr>
-                      {isOpen && r.preview && (
+                      {isOpen && (
                         <tr key={`${r.rowNo}-detail`}>
                           <td colSpan={6} className="px-4 pb-4 pt-1 bg-blue-50 border-b border-line">
-                            <PayslipPreview data={r.preview} />
+                            {r.preview
+                              ? <PayslipPreview data={r.preview} />
+                              : <div className="text-sm font-bold text-danger py-2">{r.message}</div>
+                            }
                           </td>
                         </tr>
                       )}
@@ -393,6 +397,12 @@ function PayslipPreview({ data }: { data: NonNullable<ImportResult['preview']> }
         <span className="font-extrabold text-accent">실수령액</span>
         <span className="font-mono text-xl font-black text-accent">{fmt(data.totals.실수령액)}</span>
       </div>
+      {data.payDate && (
+        <div className="col-span-2 flex items-center justify-between text-xs font-mono text-ink-muted border-t border-line pt-2">
+          <span className="font-extrabold text-ink">임금 지급일</span>
+          <span className="font-bold">{data.payDate}</span>
+        </div>
+      )}
     </div>
   );
 }

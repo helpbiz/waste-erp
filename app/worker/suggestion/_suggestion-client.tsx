@@ -93,7 +93,6 @@ export default function SuggestionClient() {
   }
 
   useEffect(() => {
-    if (tab === 'board') loadList(false);
     if (tab === 'mine') loadList(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
@@ -108,10 +107,9 @@ export default function SuggestionClient() {
         </p>
       </div>
 
-      {/* 탭 */}
+      {/* 탭 — 게시판(전체 열람) 제거: 관리자만 전체 건의 확인 가능 */}
       <div className="flex gap-1 bg-surface-soft p-1 rounded-lg">
         <TabBtn active={tab === 'write'} onClick={() => setTab('write')}>작성</TabBtn>
-        <TabBtn active={tab === 'board'} onClick={() => setTab('board')}>게시판</TabBtn>
         <TabBtn active={tab === 'mine'} onClick={() => setTab('mine')}>내 건의</TabBtn>
       </div>
 

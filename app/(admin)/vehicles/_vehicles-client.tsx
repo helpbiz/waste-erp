@@ -485,7 +485,7 @@ type VehicleFormPayload = {
   vehicleType: VehicleTypeKey;
   vehicleTon: string | null;
   capacityTon: number | null;
-  fuelType: 'DIESEL' | 'LPG' | 'ELECTRIC' | 'CNG';
+  fuelType: 'DIESEL' | 'LPG' | 'ELECTRIC' | 'CNG' | 'GASOLINE';
   yearManufactured: number | null;
   status?: 'ACTIVE' | 'MAINTENANCE';
   driverId: string | null;
@@ -607,6 +607,7 @@ function VehicleFormModal({
               <select value={fuelType} onChange={(e) => setFuelType(e.target.value as VehicleFormPayload['fuelType'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
                 <option value="DIESEL">경유</option>
                 <option value="LPG">LPG</option>
+                <option value="GASOLINE">휘발유</option>
                 <option value="ELECTRIC">전기</option>
                 <option value="CNG">CNG</option>
               </select>
