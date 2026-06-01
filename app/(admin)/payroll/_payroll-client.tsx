@@ -103,34 +103,43 @@ export default function PayrollClient({
     }
   }
 
-  async function unlock() {
-    const reason = prompt('해제 사유를 입력하세요 (10자 이상, 영구 보존):');
+  async function doUnlock(workerIds?: string[]) {
+    const target = workerIds ? '선택한 근로자의' : `${ym} 전체`;
+    const reason = prompt(`${target} 마감을 해제합니다.\n해제 사유를 입력하세요 (10자 이상, 영구 보존):`);
     if (!reason || reason.trim().length < 10) {
       if (reason !== null) setError('사유는 10자 이상이어야 합니다.');
       return;
     }
-    if (!confirm(`정말 ${ym} 마감을 해제하시겠습니까?\n해제 즉시 근태 조정이 가능해집니다.`)) return;
+    if (!confirm(`${target} 마감을 해제하시겠습니까?\n해제 후 수정하고 재마감하세요.`)) return;
     setBusy(true);
     setError(null);
     setInfo(null);
     try {
+      const body: Record<string, unknown> = { yearMonth: ym, reason: reason.trim() };
+      if (workerIds) body.workerIds = workerIds;
       const res = await fetch('/api/attendance/finalize-month/unlock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ yearMonth: ym, reason: reason.trim() }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data?.message ?? data?.error ?? '해제 실패');
         return;
       }
-      setInfo(`✓ ${data.unlockedCount}건 해제됨`);
+      setInfo(`✓ ${data.unlockedCount}건 해제됨 — 수정 후 재마감 하세요.`);
       router.refresh();
     } catch {
       setError('네트워크 오류');
     } finally {
       setBusy(false);
     }
+  }
+
+  async function unlock() { await doUnlock(); }
+  async function unlockOne(workerId: string, workerName: string) {
+    setInfo(`${workerName} 개별 해제 진행 중…`);
+    await doUnlock([workerId]);
   }
 
   return (
@@ -202,7 +211,7 @@ export default function PayrollClient({
               disabled={busy}
               className="px-4 py-2 rounded-md border-2 border-danger text-danger text-sm font-extrabold hover:bg-danger hover:text-white active:scale-95 disabled:opacity-50"
             >
-              {ym} 마감 해제 (SUPER)
+              {ym} 전체 마감 해제
             </button>
           )}
         </div>
@@ -257,20 +266,31 @@ export default function PayrollClient({
                   )}
                 </td>
                 <td className="px-3 py-2.5 border-b border-line">
-                  {isManager && !r.isFinalized && (
-                    <button
-                      onClick={() => finalize([r.workerId])}
-                      disabled={busy}
-                      className="text-xs font-extrabold text-accent hover:underline disabled:opacity-50"
-                    >
-                      개별 마감
-                    </button>
-                  )}
-                  {r.isFinalized && r.finalizedByName && (
-                    <span className="text-[0.6875rem] font-mono font-bold text-ink-faint">
-                      by {r.finalizedByName}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isManager && !r.isFinalized && (
+                      <button
+                        onClick={() => finalize([r.workerId])}
+                        disabled={busy}
+                        className="text-xs font-extrabold text-accent hover:underline disabled:opacity-50"
+                      >
+                        개별 마감
+                      </button>
+                    )}
+                    {canUnlock && r.isFinalized && (
+                      <button
+                        onClick={() => unlockOne(r.workerId, r.workerName)}
+                        disabled={busy}
+                        className="text-xs font-extrabold text-danger hover:underline disabled:opacity-50"
+                      >
+                        해제
+                      </button>
+                    )}
+                    {r.isFinalized && r.finalizedByName && (
+                      <span className="text-[0.6875rem] font-mono font-bold text-ink-faint">
+                        by {r.finalizedByName}
+                      </span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

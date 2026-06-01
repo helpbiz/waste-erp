@@ -117,7 +117,8 @@ export default async function PayrollPage({
 
   const finalizedCount = rows.filter((r) => r.isFinalized).length;
   const isManager = isAttendanceManager(session.role) || workerIsPayrollManager;
-  const canUnlock = session.role === 'SUPER_ADMIN';
+  /* canUnlock: SUPER_ADMIN은 전체/개별 모두, CONTRACTOR_ADMIN/INTERNAL_ADMIN은 개별만 */
+  const canUnlock = isManager;
 
   return (
     <PayrollClient
