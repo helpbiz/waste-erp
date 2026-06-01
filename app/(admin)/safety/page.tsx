@@ -13,10 +13,20 @@ export type ContractorOpt = { id: string; name: string };
 export default async function SafetyPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string; contractorId?: string };
+  searchParams?: { tab?: string; contractorId?: string; from?: string; to?: string };
 }) {
   const session = (await readSession())!;
   const today = todayKstDate();
+
+  /* 날짜 범위 — 기본값: 이번 달 */
+  const now = new Date();
+  const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const defaultTo   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const fromStr = /^\d{4}-\d{2}-\d{2}$/.test(searchParams?.from ?? '') ? searchParams!.from! : defaultFrom;
+  const toStr   = /^\d{4}-\d{2}-\d{2}$/.test(searchParams?.to   ?? '') ? searchParams!.to!   : defaultTo;
+  const fromDate = new Date(fromStr + 'T00:00:00');
+  const toDate   = new Date(toStr   + 'T23:59:59');
 
   /* MUNI_ADMIN 업체 탭 필터 — 산하 업체 목록 + 선택된 업체로 범위 제한 */
   let contractorOpts: ContractorOpt[] = [];
@@ -43,17 +53,19 @@ export default async function SafetyPage({
   const meSignatureUrl = me?.activeSignature?.asset.contentRef ?? null;
   const isTbmManager = me?.isTbmManager ?? false;
 
-  /* 실제 조회 범위 — 업체 선택 시 해당 업체만 */
-  const baseWhere = pickedContractorId
-    ? { contractorId: pickedContractorId }
-    : safetyWhere(session);
+  /* 실제 조회 범위 — 업체·날짜 필터 */
+  const dateFilter = { reportDate: { gte: fromDate, lte: toDate } };
+  const baseWhere = {
+    ...(pickedContractorId ? { contractorId: pickedContractorId } : safetyWhere(session)),
+    ...dateFilter,
+  };
   const scopedContractorId = pickedContractorId ?? (session.contractorId ? BigInt(session.contractorId) : null);
 
   const [items, todayWorkers, todayChecklist, tbm, workersList] = await Promise.all([
     prisma.safetyReport.findMany({
       where: baseWhere,
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take: 500,
       include: {
         reporter: { select: { id: true, name: true } },
         reviewer: { select: { id: true, name: true } },
@@ -143,6 +155,8 @@ export default async function SafetyPage({
       defaultTab={defaultTab as 'DAILY' | 'ALL'}
       contractorOpts={contractorOpts}
       selectedContractorId={pickedContractorId?.toString() ?? ''}
+      from={fromStr}
+      to={toStr}
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
       weather={await fetchWeatherCached(weatherLocation)}

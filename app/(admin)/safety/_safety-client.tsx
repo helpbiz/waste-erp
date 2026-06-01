@@ -66,6 +66,8 @@ export default function SafetyClient({
   hasIncident = true,
   contractorOpts = [],
   selectedContractorId = '',
+  from: initFrom = '',
+  to: initTo = '',
 }: {
   rows: Row[];
   isManager: boolean;
@@ -81,6 +83,8 @@ export default function SafetyClient({
   hasIncident?: boolean;
   contractorOpts?: ContractorOpt[];
   selectedContractorId?: string;
+  from?: string;
+  to?: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
@@ -88,6 +92,39 @@ export default function SafetyClient({
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<Row | null>(null);
+  const [dateFrom, setDateFrom] = useState(initFrom);
+  const [dateTo, setDateTo]   = useState(initTo);
+
+  function navigateSafety(from: string, to: string, cid?: string) {
+    const p = new URLSearchParams();
+    if (from) p.set('from', from);
+    if (to)   p.set('to', to);
+    const c = cid !== undefined ? cid : selectedContractorId;
+    if (c) p.set('contractorId', c);
+    router.push(`/safety?${p.toString()}`);
+  }
+
+  function quickRange(kind: 'thisMonth' | 'lastMonth' | 'last3') {
+    const n = new Date();
+    let f: string, t: string;
+    if (kind === 'thisMonth') {
+      f = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+      t = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    } else if (kind === 'lastMonth') {
+      const d = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+      f = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      t = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    } else {
+      const d3 = new Date(n.getFullYear(), n.getMonth() - 2, 1);
+      f = `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+      t = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    }
+    setDateFrom(f); setDateTo(t);
+    navigateSafety(f, t);
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -237,10 +274,30 @@ export default function SafetyClient({
       </header>
 
       {/* MUNI_ADMIN 업체 탭 필터 */}
+      {/* 날짜 필터 */}
+      <div className="bg-surface border border-line rounded-xl p-3 flex flex-wrap items-center gap-2 shadow-sm">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-extrabold text-ink-muted whitespace-nowrap">기간</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+          <span className="text-xs text-ink-muted">~</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => quickRange('thisMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">이번달</button>
+          <button onClick={() => quickRange('lastMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">전월</button>
+          <button onClick={() => quickRange('last3')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">최근 3개월</button>
+        </div>
+        <button onClick={() => navigateSafety(dateFrom, dateTo)}
+          className="px-4 py-1.5 rounded bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95">조회</button>
+        <span className="ml-auto text-[0.6875rem] font-mono text-ink-muted">{initFrom} ~ {initTo} · {rows.length}건</span>
+      </div>
+
       {contractorOpts.length >= 1 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
-            onClick={() => router.push('/safety')}
+            onClick={() => navigateSafety(initFrom, initTo, '')}
             className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
               !selectedContractorId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
             }`}
@@ -250,7 +307,7 @@ export default function SafetyClient({
           {contractorOpts.map((c) => (
             <button
               key={c.id}
-              onClick={() => router.push(`/safety?contractorId=${c.id}`)}
+              onClick={() => navigateSafety(initFrom, initTo, c.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
                 selectedContractorId === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
               }`}

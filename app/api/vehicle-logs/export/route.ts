@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     take: 2000,
     include: {
       driver: { select: { name: true } },
-      vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true } },
+      vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true, contractor: { select: { companyName: true } } } },
       zone: { select: { zoneName: true } },
     },
   });
@@ -61,14 +61,14 @@ export async function GET(req: Request) {
   // 표준 헤더 (1~3행)
   applyStandardHeader(ws, {
     title: '차량일지',
-    colCount: 13,
+    colCount: 14,
     period,
     totalCount: logs.length,
   });
 
-  // 4행: 컬럼 헤더
+  // 4행: 컬럼 헤더 — 업체명 첫 컬럼 추가
   addHeaderRow(ws, [
-    '일자', '차량번호', '차종', '톤급', '운전자', '구역', '상태',
+    '업체명', '일자', '차량번호', '차종', '톤급', '운전자', '구역', '상태',
     '시작계기(km)', '종료계기(km)', '주행거리(km)', '주유량(L)', '수거량(kg)', '운행횟수',
   ]);
 
@@ -82,6 +82,7 @@ export async function GET(req: Request) {
       : null;
 
     const row = ws.addRow([
+      (v.vehicle as { contractor?: { companyName: string } }).contractor?.companyName ?? '',
       l.logDate.toISOString().slice(0, 10),
       v.vehicle.vehicleNo,
       v.vehicle.vehicleType,
@@ -98,19 +99,20 @@ export async function GET(req: Request) {
     ]);
     styleDataRow(row, idx + 1);
     row.height = 18;
-    // 숫자 컬럼 오른쪽 정렬
-    [8, 9, 10, 11, 12, 13].forEach((col) => {
+    // 숫자 컬럼 오른쪽 정렬 (업체명 추가로 1열씩 우측 이동)
+    [9, 10, 11, 12, 13, 14].forEach((col) => {
       row.getCell(col).alignment = { horizontal: 'right', vertical: 'middle' };
     });
   });
 
-  ws.getColumn(8).numFmt = '#,##0';
-  ws.getColumn(9).numFmt = '#,##0';
+  ws.getColumn(9).numFmt  = '#,##0';
   ws.getColumn(10).numFmt = '#,##0';
-  ws.getColumn(11).numFmt = '#,##0.0';
-  ws.getColumn(12).numFmt = '#,##0';
+  ws.getColumn(11).numFmt = '#,##0';
+  ws.getColumn(12).numFmt = '#,##0.0';
+  ws.getColumn(13).numFmt = '#,##0';
 
   ws.columns = [
+    { width: 20 }, // 업체명
     { width: 13 }, // 일자
     { width: 14 }, // 차량번호
     { width: 10 }, // 차종

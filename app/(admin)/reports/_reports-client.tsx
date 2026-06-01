@@ -246,6 +246,12 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
         <div className="bg-white border-t-4 border-double border-slate-700 pt-4 px-4 print:px-2 print:pt-0">
           <h1 className="text-3xl font-black text-center mb-1">통합 운영 보고서</h1>
           <div className="text-center text-sm font-bold text-slate-600 mb-1">{data.range.from} ~ {data.range.to}</div>
+          {/* 업체명 — 개별 업체 선택 시 표시, 통합 시 '전체 업체' */}
+          <div className="text-center text-base font-extrabold text-ink mb-1">
+            {contractorId
+              ? contractorOpts.find((c) => c.id === contractorId)?.companyName ?? '위탁업체'
+              : '전체 업체 (통합)'}
+          </div>
           <div className="text-center text-[0.6875rem] font-mono text-slate-600 mb-6">
             출력자: {session.name} ({ROLE_LABEL[session.role]}) · 출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
