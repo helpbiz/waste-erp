@@ -1,125 +1,208 @@
 # 지자체 관리자(MUNI_ADMIN) 멀티업체 통합 관리
 
-> 작성일: 2026-06-01 | Phase 1 구현 완료
+> 최초 작성: 2026-06-01 | 최종 업데이트: 2026-06-01 | Phase 1·2·P0·P1·P2 전체 완료
+
+---
 
 ## 배경 및 목적
 
-지자체는 산하에 2~20여 개의 위탁업체를 운용한다. 기존 시스템은 데이터 격리(municipalityId 자동 필터)는 완성되어 있었으나, 지자체 관리자가 **업체를 통합적으로 모니터링**하거나 **업체별 비교 현황**을 한눈에 볼 수 있는 UI가 부재했다.
+지자체는 산하에 2~20여 개의 위탁업체를 운용한다. 기존 시스템은 데이터 격리(municipalityId 자동 필터)는 완성되어 있었으나, 지자체 관리자가 **업체를 통합적으로 모니터링**하거나 **업체별 비교 현황**을 한눈에 볼 수 있는 UI와 출력 기능이 부재했다.
+
+### 설계 원칙
+
+> MUNI_ADMIN은 **"감독자 + 보고자"** 역할 — 직접 처리가 아닌 전체 현황 모니터링과 보고서 생성이 본질.
+
+- 데이터 쓰기는 읽기 전용 기본 (`READ_ONLY_ROLES` in `lib/rbac.ts`)
+- 예외 화이트리스트: 민원 등록, 공지 작성, 안전 보고서 검토, 본인 계정 관리
+- 모든 데이터는 `municipalityId` 기반 자동 범위 격리
 
 ---
 
-## Phase 1 구현 내용 (2026-06-01)
+## 전체 구현 완료 목록
 
-### 1. 위탁업체 통합 현황판 (대시보드)
+| 단계 | 기능 | 파일 | 커밋 |
+|---|---|---|---|
+| Phase 1 | 대시보드 위탁업체 통합 현황판 | `_muni-aggregate-panel.tsx` | `6f05f94` |
+| Phase 1 | 관제모드 MUNI_ADMIN 접근 허용 | `api/dashboard/wall/route.ts` | `6f05f94` |
+| Phase 1 | contractors-aggregate pendingComplaints 추가 | `api/super-admin/contractors-aggregate` | `6f05f94` |
+| Phase 2 | 차트 시각화 4종 (recharts) | `_muni-charts-panel.tsx` | `e31d765` |
+| P0 | 민원관리 업체 탭 필터 (전체/개별) | `_complaints-client.tsx` | `1b44d91` |
+| P0 | 민원 Excel 출력 버튼 | `_complaints-client.tsx` | `1b44d91` |
+| P0 | 보고서 민원 Excel / 출근대장 Excel | `_reports-client.tsx` | `1b44d91` |
+| P1 | 산업안전 검토 권한 MUNI_ADMIN 허용 | `lib/safety.ts`, `middleware.ts` | `5816f14` |
+| P1 | 근태관리 Excel 출력 버튼 | `_attendance-client.tsx` | `5816f14` |
+| P2 | 안전 보고서 Excel 출력 신규 API | `api/safety/reports/export/route.ts` | `2797769` |
+| P2 | 차량 운행일지 Excel 출력 버튼 | `_vehicles-client.tsx` | `2797769` |
+| P2 | TBM 이력 MUNI_ADMIN 지원 | `api/tbm/history/route.ts`, `tbm-history/page.tsx` | `2797769` |
 
-**파일**: `app/(admin)/dashboard/_muni-aggregate-panel.tsx`  
-**진입점**: `app/(admin)/dashboard/page.tsx` — `MUNI_ADMIN` 역할일 때만 렌더링
+---
 
-#### 기능
-- **업체 탭 필터**: 전체 통합 보기 / 개별 업체 선택
-- **KPI 요약 카드** (전체 선택 시 상단 표시)
-  - 총 인원 / 오늘 출근(출근율) / 미처리 민원 / 운행 차량 / 안전 보고
-- **업체별 비교 테이블**
-  - 컬럼: 업체명 / 총 인원 / 오늘 출근 / 출근율 / 미처리 민원 / 운행 차량 / 안전 보고
-  - 출근율: 80% 이상 녹색, 60% 이상 황색, 미만 적색
-  - 미처리 민원 / 안전 보고 > 0 시 황색 강조
-  - 하단 합계 행 (전체 보기 시)
-- **바로가기 링크**: 통합 보고서 / 관제모드 / 민원관리
+## 메뉴별 MUNI_ADMIN 기능 현황
 
-#### 데이터 흐름
+### 대시보드 (`/dashboard`)
+
+| 기능 | 상태 |
+|---|---|
+| 위탁업체 통합 현황판 | ✅ KPI 카드 + 업체별 비교 테이블 |
+| 업체 탭 필터 (전체/개별) | ✅ |
+| 차트 시각화 4종 | ✅ 출근율·인원·민원·추이 |
+| 관제모드 바로가기 | ✅ |
+
+**차트 상세**
+- 업체별 오늘 출근율 BarChart
+- 업체별 인원 분포 PieChart (도넛)
+- 업체별 미처리 민원 BarChart
+- 월별 민원 추이 LineChart (최근 6개월)
+
+**데이터 소스**: `/api/super-admin/contractors-aggregate` + `/api/reports/master-stats`
+
+---
+
+### 관제모드 (`/dashboard/wall`)
+
+| 기능 | 상태 |
+|---|---|
+| 실시간 KPI 조회 | ✅ MUNI_ADMIN 접근 허용 (nocAccess 불필요) |
+| 시설별 운영 현황 | ✅ municipalityId 기반 자동 필터 |
+
+---
+
+### 민원관리 (`/complaints`)
+
+| 기능 | 상태 |
+|---|---|
+| 전체 업체 민원 조회 | ✅ |
+| 업체별 탭 필터 | ✅ 업체 2개 이상일 때 탭 자동 노출 |
+| 민원 등록 | ✅ 업체 선택 필수 |
+| 구역 필터 | ✅ 산하 업체 담당구역 |
+| Excel 내보내기 | ✅ 업체 필터 반영, `민원대장_날짜.xlsx` |
+| 상태 변경·처리·배정 | ❌ 위탁업체 담당 (설계 의도) |
+
+**업체 탭 필터 동작**
 ```
-MuniAggregatePanel (client component)
-  → GET /api/super-admin/contractors-aggregate?from=TODAY&to=TODAY
-  → 업체별 KPI 집계 반환
-  → 테이블 렌더링
+[전체 업체 N건] [A업체 n건] [B업체 n건] ...
+  → 클릭 시 해당 업체 민원만 클라이언트 필터링
+  → Excel 출력 시 필터 상태 반영
 ```
 
 ---
 
-### 2. 관제모드(Wall) MUNI_ADMIN 접근 허용
+### 산업안전보건 (`/safety`)
 
-**파일**: `app/api/dashboard/wall/route.ts`
+| 기능 | 상태 |
+|---|---|
+| 보고서 조회 | ✅ 산하 업체 전체 |
+| 보고서 검토 (REVIEWED) | ✅ MUNI_ADMIN 허용 |
+| 지자체 보고 완료 (MOL_REPORTED) | ✅ 정부 보고 역할 |
+| 종결 (RESOLVED) | ✅ |
+| 보고서 Excel 출력 | ✅ 연간 보고서, `안전보건보고서_날짜.xlsx` |
+| TBM 이력 조회 | ✅ 산하 업체 전체 TBM 세션 |
 
-#### 변경 전
-```javascript
-if (session.role !== 'SUPER_ADMIN') {
-  if (!session.contractorId) {
-    return NextResponse.json({ error: 'no_scope' }, { status: 403 });
-  }
-  // nocAccess 기능 검증 ...
-}
-```
-
-#### 변경 후
-```javascript
-// MUNI_ADMIN은 nocAccess 없이 바로 허용 (municipalityId 기반 자동 필터 적용)
-if (session.role !== 'SUPER_ADMIN' && session.role !== 'MUNI_ADMIN') {
-  if (!session.contractorId) {
-    return NextResponse.json({ error: 'no_scope' }, { status: 403 });
-  }
-  // nocAccess 기능 검증 ...
-}
-```
-
-기존 `facilityWhere.municipalityId` 분기가 이미 구현되어 있어 MUNI_ADMIN의 관할 시설만 자동으로 필터링된다.
-
----
-
-### 3. contractors-aggregate API — pendingComplaints 추가
-
-**파일**: `app/api/super-admin/contractors-aggregate/route.ts`
-
-업체별 **미처리 민원 수**(RECEIVED / ASSIGNED / IN_PROGRESS 상태)를 별도 집계하여 응답에 포함.
-
+**안전 검토 권한 변경**
 ```typescript
-// 추가된 쿼리
-prisma.complaint.groupBy({
-  by: ['contractorId'],
-  where: {
-    contractorId: { in: cIds },
-    status: { in: ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS'] },
-  },
-  _count: true,
-}),
+// lib/safety.ts
+export function isSafetyManager(role: string): boolean {
+  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'].includes(role);
+}
+```
 
-// 응답 필드 추가
-pendingComplaints: pendingComplaints.find(...)._count ?? 0,
+**미들웨어 화이트리스트 추가**
+```typescript
+// middleware.ts - isReadOnlyExempt()
+if (method === 'POST' && /^\/api\/safety\/reports\/\d+\/review$/.test(path)) return true;
 ```
 
 ---
 
-## 기존에 이미 구현된 기능 (Phase 1 확인)
+### 근태관리 (`/attendance`)
 
-| 기능 | 파일 | 비고 |
-|---|---|---|
-| 보고서 업체 선택기 | `_reports-client.tsx` | contractorId 선택 드롭다운 이미 구현 |
-| 전체 업체 통합 API | `/api/super-admin/contractors-aggregate` | MUNI_ADMIN 권한 이미 지원 |
-| 데이터 격리 | `lib/scopes.ts`, `lib/complaints.ts` 등 | municipalityId 자동 필터 |
-| MUNI_ADMIN 읽기 전용 | `middleware.ts` | POST/PUT/PATCH/DELETE 403 |
-
----
-
-## Phase 2 계획 (다음 단계)
-
-| 기능 | 설명 | 의존성 |
-|---|---|---|
-| 차트 시각화 | recharts 도입, 민원 추이·출근율 비교 차트 | `npm install recharts` |
-| 월별 추이 | 업체별 월간 KPI 변화 라인 차트 | recharts |
-| 통합 Excel 출력 | 전체 업체 시트 + 업체별 시트 구조 | ExcelJS (기존 활용) |
-| 통합 PDF 보고서 | 월간 KPI 요약 자동 생성 | Puppeteer (기존 활용) |
-| 근태 다중 업체 | `/api/attendance/month` 복수 contractorId 지원 | API 확장 |
+| 기능 | 상태 |
+|---|---|
+| 일별 출근 현황 조회 | ✅ 산하 업체 전체 |
+| 실시간 자동 새로고침 | ✅ 60초 |
+| Excel 출력 | ✅ 선택 월 기준 출근대장, `출근대장_YYYY-MM.xlsx` |
+| 근태 수정·승인 | ❌ 읽기 전용 (설계 의도) |
 
 ---
 
-## 아키텍처 참고
+### 차량 관리 (`/vehicles`)
+
+| 기능 | 상태 |
+|---|---|
+| 차량 현황 조회 | ✅ 산하 업체 전체 |
+| 운행일지 조회 | ✅ |
+| 운행일지 Excel 출력 | ✅ 당월 기준, `차량운행일지_YYYY-MM.xlsx` |
+| 차량 등록·수정 | ❌ 읽기 전용 (설계 의도) |
+
+---
+
+### 통합 보고서 (`/reports`)
+
+| 기능 | 상태 |
+|---|---|
+| 통합 운영 보고서 | ✅ 전체/개별 업체 선택 |
+| 업체 선택 드롭다운 | ✅ 이미 구현 (contractorId) |
+| 일일 처리실적 일보 (F02) | ✅ |
+| 민원 Excel 다운로드 | ✅ 기간+업체 반영 |
+| 출근대장 Excel 다운로드 | ✅ 선택 월 기준 |
+| 브라우저 인쇄 | ✅ |
+
+---
+
+## API 변경 내역
+
+### 신규 API
+
+| 엔드포인트 | 권한 | 설명 |
+|---|---|---|
+| `GET /api/safety/reports/export` | `isSafetyManager()` (MUNI_ADMIN 포함) | 안전 보고서 Excel 다운로드 |
+
+### 수정된 API
+
+| 엔드포인트 | 변경 내용 |
+|---|---|
+| `GET /api/dashboard/wall` | MUNI_ADMIN nocAccess 예외 처리 |
+| `GET /api/super-admin/contractors-aggregate` | `pendingComplaints` 필드 추가 |
+| `POST /api/safety/reports/[id]/review` | MUNI_ADMIN 미들웨어 화이트리스트 등록 |
+| `GET /api/tbm/history` | MUNI_ADMIN 지원, municipalityId 기반 필터 |
+
+---
+
+## 기술 스택 추가
+
+| 라이브러리 | 버전 | 용도 |
+|---|---|---|
+| `recharts` | 3.8.1 | 차트 시각화 (BarChart, PieChart, LineChart) |
+
+---
+
+## 아키텍처
 
 ```
 Municipality (1)
-  └── Contractor (N) ── 각 업체별 데이터 (complaints, attendance, vehicles, safety...)
+  └── Contractor (N) ── complaints, attendance, vehicles, safety, tbm...
         ↑
-   MUNI_ADMIN 세션의 municipalityId로 자동 범위 격리
+   MUNI_ADMIN session.municipalityId → 자동 범위 격리
+
+MUNI_ADMIN 세션: { role: 'MUNI_ADMIN', municipalityId: string, contractorId: null }
+권한 레벨: ROLE_RANK 80 (SUPER=100, CONTRACTOR_ADMIN=60)
+
+읽기 전용 예외 화이트리스트:
+  - POST /api/complaints          (민원 등록)
+  - POST /api/announcements       (공지 작성)
+  - PATCH/DELETE /api/announcements/[id]
+  - POST /api/safety/reports/[id]/review  ← P1 추가
+  - /api/auth/*                   (인증)
+  - /api/users/me/*               (본인 계정)
 ```
 
-- **MUNI_ADMIN 세션**: `{ role: 'MUNI_ADMIN', municipalityId: string, contractorId: null }`
-- **권한 레벨**: ROLE_RANK 80 (SUPER_ADMIN=100, CONTRACTOR_ADMIN=60)
-- **쓰기 제한**: middleware에서 전 API 읽기 전용 강제 (일부 화이트리스트 제외)
+---
+
+## 향후 개선 가능 항목 (미구현)
+
+| 기능 | 설명 | 예상 공수 |
+|---|---|---|
+| 통합 PDF 보고서 | 월간 KPI 요약 자동 생성 (Puppeteer) | 2일 |
+| 월별 업체 비교 차트 | recharts 추이 차트 확장 | 1일 |
+| 근태 다중 업체 집계 | `/api/attendance/month` 복수 contractorId | 1일 |
+| MuniAccessPolicy UI | 화면별 접근 권한 설정 (스키마 이미 존재) | 3일 |
