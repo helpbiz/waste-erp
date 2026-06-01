@@ -79,8 +79,27 @@ export default function SafetyClient({
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<Row | null>(null);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const from = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
+      const to   = new Date().toISOString().slice(0, 10);
+      const res  = await fetch(`/api/safety/reports/export?from=${from}&to=${to}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `안전보건보고서_${to}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    finally { setExporting(false); }
+  }
   const [reviewStatus, setReviewStatus] = useState<'REVIEWED' | 'MOL_REPORTED' | 'RESOLVED'>('REVIEWED');
   const [note, setNote] = useState('');
   const [tbmEdit, setTbmEdit] = useState(false);
@@ -253,13 +272,23 @@ export default function SafetyClient({
         <WeatherAlertCard workers={alertWorkers} hazardLevel={weather.hazardLevel} />
       )}
 
-      {/* 일자별 온도 바로가기 — 매니저만 노출 */}
+      {/* 일자별 온도 바로가기 + Excel 내보내기 — 매니저만 노출 */}
       {isManager && (
-        <div className="flex items-center gap-2 print:hidden">
+        <div className="flex items-center gap-2 flex-wrap print:hidden">
           <a href="/safety/temperature"
             className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm">
             🌡 일자별 온도조회
           </a>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm flex items-center gap-1 disabled:opacity-50"
+          >
+            <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting ? '생성 중…' : '보고서 Excel'}
+          </button>
           <span className="text-[10px] text-slate-400">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
         </div>
       )}

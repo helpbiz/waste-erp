@@ -80,6 +80,25 @@ export default function VehiclesClient({
   const router = useRouter();
   const [dateInput, setDateInput] = useState(selectedDate ?? todayLabel);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const from = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+      const to   = dateInput;
+      const res  = await fetch(`/api/vehicle-logs/export?from=${from}&to=${to}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `차량운행일지_${from.slice(0, 7)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    finally { setExporting(false); }
+  }
 
   function navigateDate(date: string) {
     router.push(`/vehicles?date=${date}`);
@@ -144,6 +163,16 @@ export default function VehiclesClient({
               📋 차량일지 현황
             </a>
           )}
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="px-3 py-1.5 rounded-md border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition flex items-center gap-1 disabled:opacity-50"
+          >
+            <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting ? '생성 중…' : '운행일지 Excel'}
+          </button>
           {isManager && (
             <button
               onClick={() => setEditing('NEW')}

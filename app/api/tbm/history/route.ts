@@ -9,7 +9,7 @@ import { readSession } from '@/lib/auth';
 export const runtime = 'nodejs';
 
 function isManager(role: string) {
-  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(role);
+  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'].includes(role);
 }
 
 function parseTbmContent(raw: string | null): { text: string | null; photoDataUrl: string | null } {
@@ -25,23 +25,30 @@ export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!isManager(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
+
+  /* MUNI_ADMIN: municipalityId 기반 산하 업체 전체 TBM 조회 */
+  const isMuni = session.role === 'MUNI_ADMIN';
+  if (!isMuni && !session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
 
   const url = new URL(req.url);
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
   const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 50)));
-  const contractorId = BigInt(session.contractorId);
 
   const dateFilter: { gte?: Date; lte?: Date } = {};
   if (from) dateFilter.gte = new Date(from);
   if (to) { const d = new Date(to); d.setDate(d.getDate() + 1); dateFilter.lte = d; }
 
+  /* 범위 조건 — MUNI_ADMIN은 산하 업체 전체, 그 외는 본인 업체 */
+  const scopeWhere = isMuni && session.municipalityId
+    ? { contractor: { municipalityId: BigInt(session.municipalityId) } }
+    : { contractorId: BigInt(session.contractorId!) };
+
   const [sessions, total] = await Promise.all([
     prisma.tbmSession.findMany({
       where: {
-        contractorId,
+        ...scopeWhere,
         ...(Object.keys(dateFilter).length > 0 ? { sessionDate: dateFilter } : {}),
       },
       include: {
@@ -58,7 +65,7 @@ export async function GET(req: Request) {
     }),
     prisma.tbmSession.count({
       where: {
-        contractorId,
+        ...scopeWhere,
         ...(Object.keys(dateFilter).length > 0 ? { sessionDate: dateFilter } : {}),
       },
     }),
