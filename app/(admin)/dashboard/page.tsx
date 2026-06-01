@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import MuniAggregatePanel from './_muni-aggregate-panel';
+import MuniChartsPanel from './_muni-charts-panel';
 import { complaintWhere, complaintTypeLabel, PENDING_STATUSES } from '@/lib/complaints';
 import { safetyWhere } from '@/lib/safety';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
@@ -167,8 +168,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-3.5 md:space-y-5">
-      {/* MUNI_ADMIN 전용 — 위탁업체 통합 현황판 */}
+      {/* MUNI_ADMIN 전용 — 위탁업체 통합 현황판 + 차트 */}
       {session.role === 'MUNI_ADMIN' && <MuniAggregatePanel />}
+      {session.role === 'MUNI_ADMIN' && <MuniChartsPanel />}
 
       {/* KPI — 민원 위주 3종 */}
       <section className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 md:gap-3.5">
