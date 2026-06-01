@@ -24,8 +24,8 @@ export async function GET(req: Request) {
   const [workers, records] = await Promise.all([
     prisma.user.findMany({
       where: { role: { in: ['WORKER', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'] }, status: 'ACTIVE', ...userScope(session) },
-      select: { id: true, name: true, employeeNo: true, department: { select: { name: true } } },
-      orderBy: [{ department: { name: 'asc' } }, { name: 'asc' }],
+      select: { id: true, name: true, employeeNo: true, department: { select: { name: true } }, contractor: { select: { companyName: true } } },
+      orderBy: [{ contractor: { companyName: 'asc' } }, { department: { name: 'asc' } }, { name: 'asc' }],
     }),
     prisma.attendanceRecord.findMany({
       where: { ...contractorScopeWhere(session), workDate: { gte: monthStart, lte: monthEnd } },
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     map.get(wid)!.set(r.workDate.getDate(), { checkIn: fmt(r.checkInTime), checkOut: fmt(r.checkOutTime) });
   }
 
-  const TOTAL_COLS = 4 + daysInMonth + 1; // No + 부서 + 성명 + 사번 + days + 출근일수
+  const TOTAL_COLS = 5 + daysInMonth + 1; // No + 위탁업체 + 부서 + 성명 + 사번 + days + 출근일수
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Clean ERP';
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
   ws.getRow(1).height = 28;
 
   /* ── 2행: 헤더 ── */
-  const hdrs: string[] = ['No', '부서', '성명', '사번'];
+  const hdrs: string[] = ['No', '위탁업체', '부서', '성명', '사번'];
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(year, month - 1, d).getDay();
     hdrs.push(`${d}(${DAY_NAMES[dow]})`);
@@ -73,8 +73,8 @@ export async function GET(req: Request) {
   hRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
   hRow.height = 22;
   hRow.eachCell((cell, col) => {
-    const dow = col >= 5 && col <= 4 + daysInMonth
-      ? new Date(year, month - 1, col - 4).getDay() : -1;
+    const dow = col >= 6 && col <= 5 + daysInMonth
+      ? new Date(year, month - 1, col - 5).getDay() : -1;
     cell.fill = {
       type: 'pattern', pattern: 'solid',
       fgColor: { argb: dow === 0 ? 'FFFEE2E2' : dow === 6 ? 'FFDBEAFE' : 'FFE2E8F0' },
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
   /* ── 데이터 행 ── */
   workers.forEach((w, idx) => {
     const dm = map.get(w.id.toString()) ?? new Map<number, DayRec>();
-    const vals: (string | number)[] = [idx + 1, w.department?.name ?? '', w.name, w.employeeNo ?? ''];
+    const vals: (string | number)[] = [idx + 1, w.contractor?.companyName ?? '', w.department?.name ?? '', w.name, w.employeeNo ?? ''];
     let cnt = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const rec = dm.get(d);
@@ -108,12 +108,13 @@ export async function GET(req: Request) {
   });
 
   /* ── 열 너비 ── */
-  ws.getColumn(1).width = 5;
-  ws.getColumn(2).width = 13;
-  ws.getColumn(3).width = 10;
-  ws.getColumn(4).width = 10;
-  for (let d = 1; d <= daysInMonth; d++) ws.getColumn(4 + d).width = 9;
-  ws.getColumn(4 + daysInMonth + 1).width = 8;
+  ws.getColumn(1).width = 5;   // No
+  ws.getColumn(2).width = 18;  // 위탁업체
+  ws.getColumn(3).width = 13;  // 부서
+  ws.getColumn(4).width = 10;  // 성명
+  ws.getColumn(5).width = 10;  // 사번
+  for (let d = 1; d <= daysInMonth; d++) ws.getColumn(5 + d).width = 9;
+  ws.getColumn(5 + daysInMonth + 1).width = 8; // 출근일수
 
   /* ── 테두리 (헤더+데이터 전체) ── */
   const lastDataRow = 2 + workers.length;

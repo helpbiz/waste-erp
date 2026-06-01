@@ -55,9 +55,14 @@ export async function GET(req: Request) {
     include: {
       reporter: { select: { name: true } },
       assignee: { select: { name: true } },
-      zone: { select: { zoneName: true } },
+      zone: { select: { zoneName: true, contractor: { select: { companyName: true } } } },
+      contractor: { select: { companyName: true } },
     },
-    orderBy: { reportedAt: 'asc' },
+    orderBy: [
+      { contractor: { companyName: 'asc' } },
+      { zone: { zoneName: 'asc' } },
+      { reportedAt: 'asc' },
+    ],
   });
 
   const items = rows.map((c, idx) => ({
@@ -70,14 +75,16 @@ export async function GET(req: Request) {
     reporter: c.reporter?.name ?? c.citizenName ?? '시민',
     complainantPhone: c.complainantPhone ?? '',
     assignee: c.assignee?.name ?? '',
-    zoneName: c.zone?.zoneName ?? '',
+    zoneName: c.zone
+      ? `${c.zone.contractor?.companyName ?? c.contractor?.companyName ?? ''}(${c.zone.zoneName})`
+      : (c.contractor?.companyName ?? ''),
     reportedAt: c.reportedAt.toLocaleString('ko-KR'),
     resolveNote: c.resolveNote ?? '',
     resolvedAt: c.resolvedAt?.toLocaleString('ko-KR') ?? '',
   }));
 
   if (format === 'csv') {
-    const headers = ['No', 'ID', '유형', '상태', '주소', '민원내용', '접수자', '연락처', '담당자', '구역', '접수일시', '처리내용', '완료일시'];
+    const headers = ['No', 'ID', '유형', '상태', '주소', '민원내용', '접수자', '연락처', '담당자', '업체(구역)', '접수일시', '처리내용', '완료일시'];
     const lines = ['﻿' + headers.join(',')];
     for (const r of items) {
       lines.push([
@@ -111,7 +118,7 @@ export async function GET(req: Request) {
   });
 
   // 4행: 컬럼 헤더
-  addHeaderRow(ws, ['No', 'ID', '유형', '상태', '주소', '민원내용', '접수자', '연락처', '담당자', '구역', '접수일시', '처리내용', '완료일시']);
+  addHeaderRow(ws, ['No', 'ID', '유형', '상태', '주소', '민원내용', '접수자', '연락처', '담당자', '업체(구역)', '접수일시', '처리내용', '완료일시']);
 
   // 5행~: 데이터
   items.forEach((r, idx) => {
@@ -126,6 +133,10 @@ export async function GET(req: Request) {
     [5, 6, 12].forEach((col) => {
       row.getCell(col).alignment = { horizontal: 'left', vertical: 'middle' };
     });
+    // 담당자(9) · 업체(구역)(10) 중앙 정렬
+    [9, 10].forEach((col) => {
+      row.getCell(col).alignment = { horizontal: 'center', vertical: 'middle' };
+    });
   });
 
   ws.columns = [
@@ -138,7 +149,7 @@ export async function GET(req: Request) {
     { width: 12 }, // 접수자
     { width: 14 }, // 연락처
     { width: 12 }, // 담당자
-    { width: 14 }, // 구역
+    { width: 22 }, // 업체(구역)
     { width: 20 }, // 접수일시
     { width: 40 }, // 처리내용
     { width: 20 }, // 완료일시
