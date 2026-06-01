@@ -86,6 +86,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/announcements', label: '📢 공지사항' },
           { href: '/complaints', label: '민원관리', badge: pendingComplaints > 0 ? String(pendingComplaints) : undefined },
           { href: '/safety', label: '산업안전보건', badge: pendingSafety > 0 ? String(pendingSafety) : undefined },
+          { href: '/safety/weather-notices', label: '🌡 날씨관리대장' },
           { href: '/attendance', label: '근태관리' },
           { href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' as string },
           { href: '/reports', label: '통합/보고서' },
@@ -129,6 +130,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: '/complaints', label: '민원관리', badge: pendingComplaints > 0 ? String(pendingComplaints) : undefined },
         { href: '/safety', label: '산업안전보건', badge: pendingSafety > 0 ? String(pendingSafety) : undefined },
+        { href: '/safety/weather-notices', label: '🌡 날씨관리대장' },
         ...(isInternal ? [{ href: '/health', label: '건강기록카드' }] : []),
         ...(feSkipForSuperOrMuni || feWorkerSuggestion
           ? [{ href: '/suggestions', label: '🗳 익명 건의함' }]

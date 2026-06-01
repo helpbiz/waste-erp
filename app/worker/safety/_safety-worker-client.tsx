@@ -842,9 +842,14 @@ export default function SafetyWorkerClient({
       {/* 날씨 안전 공지 + 휴식 인증 사진 */}
       {weatherNotices.length > 0 && (
         <section className="bg-red-50 rounded-xl border-2 border-red-300 shadow-card overflow-hidden">
-          <header className="px-4 py-3 bg-red-100 border-b-2 border-red-300">
-            <div className="text-base font-extrabold text-red-900">⚠ 기상 안전 공지</div>
-            <div className="text-sm font-semibold text-red-700 mt-0.5">아래 공지를 확인하고 휴식 인증 사진을 등록해 주세요.</div>
+          <header className="px-4 py-3 bg-red-100 border-b-2 border-red-300 flex items-center justify-between">
+            <div>
+              <div className="text-base font-extrabold text-red-900">⚠ 기상 안전 공지</div>
+              <div className="text-sm font-semibold text-red-700 mt-0.5">아래 공지를 확인하고 휴식 인증 사진을 등록해 주세요.</div>
+            </div>
+            <a href="/worker/safety/weather-notices" className="text-xs font-bold text-red-700 hover:underline whitespace-nowrap">
+              전체 이력 →
+            </a>
           </header>
           <div className="p-3 space-y-3">
             {weatherNotices.map((n) => {
