@@ -54,7 +54,7 @@ export async function GET(req: Request) {
   }
 
   /* 거래처별 핵심 지표 */
-  const [users, attendances, leaves, complaints, vehicles, vehicleLogs, waste, intakes, safety] = await Promise.all([
+  const [users, attendances, leaves, complaints, pendingComplaints, vehicles, vehicleLogs, waste, intakes, safety] = await Promise.all([
     prisma.user.groupBy({ by: ['contractorId'], where: { contractorId: { in: cIds } }, _count: true }),
     prisma.attendanceRecord.groupBy({
       by: ['contractorId'],
@@ -68,6 +68,12 @@ export async function GET(req: Request) {
     prisma.complaint.groupBy({
       by: ['contractorId'],
       where: { contractorId: { in: cIds }, reportedAt: { gte: fromDate, lte: toDate } },
+      _count: true,
+    }),
+
+    prisma.complaint.groupBy({
+      by: ['contractorId'],
+      where: { contractorId: { in: cIds }, status: { in: ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS'] } },
       _count: true,
     }),
     prisma.vehicle.groupBy({ by: ['contractorId'], where: { contractorId: { in: cIds } }, _count: true }),
@@ -138,6 +144,7 @@ export async function GET(req: Request) {
       leaves: leaveItems.length,
       leavesApproved: leaveItems.filter((l) => l.status === 'APPROVED').length,
       complaints: complaints.find((u) => u.contractorId.toString() === cid)?._count ?? 0,
+      pendingComplaints: pendingComplaints.find((u) => u.contractorId.toString() === cid)?._count ?? 0,
       vehicles: vehicles.find((u) => u.contractorId.toString() === cid)?._count ?? 0,
       vehicleLogs: logItems.length,
       vehicleWasteKg: Math.round(logItems.reduce((s, l) => s + Number(l.wasteWeightKg ?? 0), 0)),

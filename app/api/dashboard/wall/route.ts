@@ -27,8 +27,8 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (session.role === 'WORKER') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  /* 권한: SUPER 외에는 nocAccess 필수 */
-  if (session.role !== 'SUPER_ADMIN') {
+  /* 권한: SUPER/MUNI_ADMIN 은 무조건 허용. 업체 관리자는 nocAccess 기능 필수 */
+  if (session.role !== 'SUPER_ADMIN' && session.role !== 'MUNI_ADMIN') {
     if (!session.contractorId) {
       return NextResponse.json({ error: 'no_scope' }, { status: 403 });
     }
