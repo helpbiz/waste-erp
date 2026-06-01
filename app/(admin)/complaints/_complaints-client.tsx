@@ -65,6 +65,9 @@ export default function ComplaintsClient({
   workers,
   contractorOpts,
   zoneOpts = [],
+  from: initFrom = '',
+  to: initTo = '',
+  total = 0,
 }: {
   role: string;
   userId: string;
@@ -72,14 +75,48 @@ export default function ComplaintsClient({
   workers: Worker[];
   contractorOpts: ContractorOpt[];
   zoneOpts?: ZoneOpt[];
+  from?: string;
+  to?: string;
+  total?: number;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('ALL');
   const [zoneFilter, setZoneFilter] = useState<string>('');
   const [contractorFilter, setContractorFilter] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState(initFrom);
+  const [dateTo, setDateTo] = useState(initTo);
   const [exporting, setExporting] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  function navigate(from: string, to: string) {
+    const p = new URLSearchParams();
+    if (from) p.set('from', from);
+    if (to) p.set('to', to);
+    router.push(`/complaints?${p.toString()}`);
+  }
+
+  function quickRange(kind: 'thisMonth' | 'lastMonth' | 'last3') {
+    const n = new Date();
+    let f: string, t: string;
+    if (kind === 'thisMonth') {
+      f = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+      t = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    } else if (kind === 'lastMonth') {
+      const d = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+      f = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      t = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    } else {
+      const d3 = new Date(n.getFullYear(), n.getMonth() - 2, 1);
+      f = `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, '0')}-01`;
+      const last = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+      t = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    }
+    setDateFrom(f); setDateTo(t);
+    navigate(f, t);
+  }
   const [openAssignId, setOpenAssignId] = useState<string | null>(null);
   const [openCompleteId, setOpenCompleteId] = useState<string | null>(null);
   const [openRejectId, setOpenRejectId] = useState<string | null>(null);
@@ -143,6 +180,8 @@ export default function ComplaintsClient({
     try {
       const params = new URLSearchParams({ format: 'xlsx' });
       if (contractorFilter) params.set('contractorId', contractorFilter);
+      if (initFrom) params.set('from', initFrom);
+      if (initTo)   params.set('to',   initTo);
       const res = await fetch(`/api/complaints/export?${params}`);
       if (!res.ok) { toast.error('내보내기 실패'); return; }
       const blob = await res.blob();
@@ -205,6 +244,35 @@ export default function ComplaintsClient({
           )}
         </div>
       </header>
+
+      {/* 날짜 필터 */}
+      <div className="bg-surface border border-line rounded-xl p-3 flex flex-wrap items-center gap-2 shadow-sm">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-extrabold text-ink-muted whitespace-nowrap">기간</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+          <span className="text-xs text-ink-muted">~</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={() => quickRange('thisMonth')}
+            className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">이번달</button>
+          <button onClick={() => quickRange('lastMonth')}
+            className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">전월</button>
+          <button onClick={() => quickRange('last3')}
+            className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">최근 3개월</button>
+        </div>
+        <button
+          onClick={() => navigate(dateFrom, dateTo)}
+          className="px-4 py-1.5 rounded bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95"
+        >조회</button>
+        <span className="ml-auto text-[0.6875rem] font-mono text-ink-muted">
+          {initFrom} ~ {initTo}
+          {total > 500 && <span className="ml-1 text-warn font-extrabold">· 최대 500건 표시 (전체 {total}건)</span>}
+          {total <= 500 && <span className="ml-1">· {total}건</span>}
+        </span>
+      </div>
 
       {/* MUNI_ADMIN / SUPER — 업체 탭 필터 */}
       {contractorOpts.length >= 1 && (

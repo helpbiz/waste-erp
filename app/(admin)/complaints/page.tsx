@@ -5,22 +5,48 @@ import ComplaintsClient, { type Row, type Worker, type ContractorOpt, type ZoneO
 
 export const dynamic = 'force-dynamic';
 
-export default async function ComplaintsPage() {
+export default async function ComplaintsPage({
+  searchParams,
+}: {
+  searchParams?: { from?: string; to?: string };
+}) {
   const session = (await readSession())!;
+
+  /* 기본 기간: 이번 달 */
+  const now = new Date();
+  const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const defaultTo   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  const fromStr = /^\d{4}-\d{2}-\d{2}$/.test(searchParams?.from ?? '') ? searchParams!.from! : defaultFrom;
+  const toStr   = /^\d{4}-\d{2}-\d{2}$/.test(searchParams?.to   ?? '') ? searchParams!.to!   : defaultTo;
+  const fromDate = new Date(fromStr + 'T00:00:00');
+  const toDate   = new Date(toStr   + 'T23:59:59');
 
   const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
     ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
     : false;
 
-  const rawItems = await prisma.complaint.findMany({
-    where: complaintWhere(session, workerIsManager),
-    orderBy: { reportedAt: 'desc' },
-    include: {
-      reporter: { select: { id: true, name: true } },
-      assignee: { select: { id: true, name: true } },
-      zone: { select: { zoneName: true } },
-    },
-  });
+  const baseWhere = { ...complaintWhere(session, workerIsManager), reportedAt: { gte: fromDate, lte: toDate } };
+
+  const [rawItems, total] = await Promise.all([
+    prisma.complaint.findMany({
+      where: baseWhere,
+      orderBy: [
+        { contractor: { companyName: 'asc' } },
+        { zone: { zoneName: 'asc' } },
+        { reportedAt: 'desc' },
+      ],
+      take: 500,
+      include: {
+        reporter: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true } },
+        zone: { select: { zoneName: true, contractor: { select: { companyName: true } } } },
+        contractor: { select: { companyName: true } },
+      },
+    }),
+    prisma.complaint.count({ where: baseWhere }),
+  ]);
 
   const items: Row[] = rawItems.map((c) => ({
     id: c.id.toString(),
@@ -38,7 +64,9 @@ export default async function ComplaintsPage() {
       : { id: '0', name: c.citizenName ?? '시민' },
     assignee: c.assignee ? { id: c.assignee.id.toString(), name: c.assignee.name } : null,
     zoneId: c.zoneId?.toString() ?? null,
-    zoneName: c.zone?.zoneName ?? null,
+    zoneName: c.zone
+      ? `${c.zone.contractor?.companyName ?? c.contractor?.companyName ?? ''}(${c.zone.zoneName})`
+      : (c.contractor?.companyName ?? ''),
     resolveNote: c.resolveNote,
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
     complainantPhone: c.complainantPhone ?? null,
@@ -97,6 +125,9 @@ export default async function ComplaintsPage() {
       workers={workers}
       contractorOpts={contractorOpts}
       zoneOpts={zoneOpts}
+      from={fromStr}
+      to={toStr}
+      total={total}
     />
   );
 }
