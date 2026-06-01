@@ -140,6 +140,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       items: [
         { href: '/approvals', label: '📋 결재관리', badge: pendingApprovals > 0 ? String(pendingApprovals) : undefined },
         { href: '/attendance', label: '근태관리' },
+        ...(isInternal && (feSkipForSuperOrMuni || fePayslip)
+          ? [{ href: '/payroll', label: '💰 급여관리' }]
+          : []),
         { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
         { href: '/vehicles', label: '차량관리' },
         { href: '/performance', label: '실적관리' },
@@ -148,9 +151,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           : []),
         { href: '/reports', label: '통계/보고서' },
         { href: '/print', label: '🖨 출력 센터' },
-        ...(isInternal && (feSkipForSuperOrMuni || fePayslip)
-          ? [{ href: '/payroll', label: '💰 급여관리' }]
-          : []),
       ],
     },
     ...(isInternal

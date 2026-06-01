@@ -7,6 +7,7 @@ import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
 import { hasFeature } from '@/lib/features';
+import { getPayrollPolicy } from '@/lib/payroll-policy';
 
 export const runtime = 'nodejs';
 
@@ -121,6 +122,16 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
+
+  /* 급여 정책 기반 야간근무 자동 감지
+     KST 기준 nightStartHour(기본 22) 이후 또는 nightEndHour(기본 6) 이전 출근 시 NIGHT */
+  const policy = await getPayrollPolicy(contractorId).catch(() => null);
+  const kstHour = new Date(now.getTime() + 9 * 3600_000).getUTCHours();
+  const ns = policy?.nightStartHour ?? 22;
+  const ne = policy?.nightEndHour ?? 6;
+  const isNightCheckin = kstHour >= ns || kstHour < ne;
+  const autoWorkType = isNightCheckin ? 'NIGHT' : 'NORMAL';
+
   const record = await prisma.attendanceRecord.upsert({
     where: { workerId_workDate: { workerId, workDate: today } },
     create: {
@@ -130,7 +141,7 @@ export async function POST(req: Request) {
       checkInTime: now,
       checkInLat: lat,
       checkInLng: lng,
-      workType: 'NORMAL',
+      workType: autoWorkType,
       zoneId: (zoneId !== undefined && zoneId !== '') ? BigInt(zoneId) : null,
       status: 'PENDING',
     },
