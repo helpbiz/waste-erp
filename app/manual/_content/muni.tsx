@@ -114,25 +114,55 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     kind: 'standard',
     num: '04',
     title: '메인 대시보드',
-    lead: '관할 모든 위탁업체의 운영 현황을 한 화면에 모은 페이지입니다. 매일 아침 첫 클릭이며, 30초 만에 오늘 상황 파악이 가능합니다.',
+    lead: '관할 모든 위탁업체의 운영 현황을 한 화면에 모은 페이지입니다. 매일 아침 첫 클릭이며, 30초 만에 오늘 상황 파악이 가능합니다. 2026-06-01 업데이트로 화면 최상단에 "위탁업체 통합 현황판"이 추가되었습니다.',
     steps: [
       {
-        title: '4개 KPI 카드로 종합 현황을 확인합니다',
-        body: '관할 위탁업체 수 / 총 출근율 / 미처리 민원 / 이번달 누적 수집량 4가지가 가장 위에 표시됩니다.',
+        title: '위탁업체 통합 현황판(최상단)으로 빠르게 업체별 상태를 비교합니다',
+        body: '대시보드 맨 위에 위탁업체 탭 필터(전체 업체 / 개별 업체)가 나타납니다. 탭을 전환하면 KPI 카드·비교 테이블·차트가 모두 선택한 업체 기준으로 바뀝니다.',
         screenshot: (
-          <DesktopShot active="메인 대시보드" variant="muni" caption="4개 KPI — 관할 산하 모든 위탁업체 합산.">
-            <div className="mock-h2">용산구 통합 현황</div>
+          <DesktopShot active="메인 대시보드" variant="muni" caption="위탁업체 통합 현황판 — 탭 전환으로 전체/개별 업체 조회.">
+            <div className="mock-h2">위탁업체 통합 현황판</div>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="용산청소" variant="secondary" fullWidth={false} />
+              <ButtonMock label="한남환경" variant="secondary" fullWidth={false} />
+              <ButtonMock label="이태원위생" variant="secondary" fullWidth={false} />
+            </div>
             <div className="mock-kpi-grid">
-              <KpiCardMock label="관할 업체" value="3" sub="용산청소·한남환경·이태원위생" />
-              <KpiCardMock label="출근율" value="92" unit="%" tone="success" />
-              <KpiCardMock label="미처리 민원" value="14" sub="기한초과 3" tone="warn" />
-              <KpiCardMock label="이번달 수집" value="1,240" unit="t" />
+              <KpiCardMock label="총 인원" value="87" sub="3개 업체 합산" />
+              <KpiCardMock label="오늘 출근" value="80" sub="출근율 92%" tone="success" />
+              <KpiCardMock label="미처리 민원" value="14" sub="기한초과 3건" tone="warn" />
+              <KpiCardMock label="운행 차량" value="21" sub="전체 24대 중" />
+              <KpiCardMock label="안전 보고" value="2" sub="이번달 접수" />
             </div>
           </DesktopShot>
         ),
       },
-      { title: '위탁업체별 상세 현황을 표에서 봅니다', body: '하단 표에 관할 위탁업체별 출근율·민원 처리율·차량 가동률이 행으로 정리됩니다. 행을 클릭하시면 해당 업체로 필터링된 상세 화면으로 이동합니다.' },
-      { title: '미처리·기한초과 항목은 빨간색 강조됩니다', body: '운영 이슈가 있는 위탁업체는 즉시 눈에 띄도록 강조 표시됩니다. 클릭으로 즉시 상세 확인 가능.' },
+      {
+        title: '업체별 비교 테이블로 출근율을 한눈에 비교합니다',
+        body: '통합 현황판 하단에 위탁업체별 출근율이 색상으로 구분됩니다. 80% 이상은 녹색, 60~79%는 황색, 60% 미만은 적색으로 즉시 이상 여부를 파악할 수 있습니다.',
+        screenshot: (
+          <DesktopShot active="메인 대시보드" variant="muni" caption="업체별 비교 테이블 — 출근율 색상 구분.">
+            <div className="mock-h2">업체별 현황 비교</div>
+            <TableMock
+              headers={['업체', '총 인원', '출근율', '미처리 민원', '운행 차량']}
+              rows={[
+                { cells: ['용산청소', '35명', <StatusChipMock label="94%" tone="success" />, '5건', '9대'] },
+                { cells: ['한남환경', '28명', <StatusChipMock label="71%" tone="warn" />, '6건', '7대'], highlighted: true },
+                { cells: ['이태원위생', '24명', <StatusChipMock label="95%" tone="success" />, '3건', '5대'] },
+              ]}
+            />
+            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
+              ● 80%↑ 녹색 &nbsp;● 60~79% 황색 &nbsp;● 60%↓ 적색
+            </div>
+          </DesktopShot>
+        ),
+      },
+      {
+        title: '차트 4종으로 추이를 분석합니다',
+        body: '현황판 하단에 차트 4종이 자동 표시됩니다: ① 업체별 출근율 막대차트(BarChart) ② 인원 분포 원형차트(PieChart) ③ 미처리 민원 현황 ④ 월별 출근율 추이. 각 차트는 탭 필터와 연동됩니다.',
+      },
+      { title: '미처리·기한초과 항목은 빨간색으로 강조됩니다', body: '운영 이슈가 있는 위탁업체는 즉시 눈에 띄도록 강조 표시됩니다. 클릭으로 해당 업체 상세 화면으로 바로 이동합니다.' },
     ],
     tip: { title: '데이터는 5분마다 자동 갱신', body: '직접 새로고침하지 않아도 출근·민원·차량 정보가 최신 상태로 유지됩니다. 화면을 띄워두고 다른 업무를 하셔도 됩니다.' },
     nextHref: '#05',
@@ -143,30 +173,52 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     kind: 'standard',
     num: '05',
     title: '민원 조회 + 직접 입력',
-    lead: '관할 위탁업체에 배정된 민원의 처리 진행을 추적합니다. 시민이 구청에 직접 전화한 민원은 본 콘솔에서 직접 입력하실 수 있습니다 (지자체 고유 권한).',
+    lead: '관할 위탁업체에 배정된 민원의 처리 진행을 추적합니다. 시민이 구청에 직접 전화한 민원은 본 콘솔에서 직접 입력하실 수 있습니다 (지자체 고유 권한). 2026-06-01 업데이트로 날짜 필터·업체 탭 필터·Excel 출력이 추가되었습니다.',
     steps: [
       {
+        title: '날짜 필터와 업체 탭으로 조회 범위를 먼저 설정합니다',
+        body: '민원 목록 상단에 날짜 기간 입력란과 빠른 버튼(이번달 / 전월 / 최근3개월)이 표시됩니다. 업체 탭에서 "전체 업체" 또는 특정 위탁업체를 선택하면 해당 업체 민원만 필터링됩니다.',
+        screenshot: (
+          <DesktopShot url="wci.helpbiz.kr/complaints" active="민원관리" variant="muni" caption="날짜 필터 + 업체 탭 — 기간·업체별 민원 조회.">
+            <div className="mock-h2">민원 관리</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <FormRowMock label="기간" value="2026-05-01 ~ 2026-05-31" />
+              <ButtonMock label="이번달" variant="secondary" fullWidth={false} highlighted />
+              <ButtonMock label="전월" variant="secondary" fullWidth={false} />
+              <ButtonMock label="최근3개월" variant="secondary" fullWidth={false} />
+            </div>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="용산청소" variant="secondary" fullWidth={false} />
+              <ButtonMock label="한남환경" variant="secondary" fullWidth={false} />
+            </div>
+          </DesktopShot>
+        ),
+      },
+      {
         title: '"민원관리" 메뉴에서 민원 목록을 봅니다',
-        body: '관할 모든 위탁업체의 민원이 시간순으로 표시됩니다. 위탁업체별·유형별·기한초과 등으로 필터링 가능.',
+        body: '관할 모든 위탁업체의 민원이 시간순으로 표시됩니다. 위탁업체별·유형별·기한초과 등으로 필터링 가능하며, 업체(구역) 형식으로 구역 정보도 함께 표시됩니다.',
         screenshot: (
           <DesktopShot url="wci.helpbiz.kr/complaints" active="민원관리" variant="muni" caption="관할 위탁업체 민원 통합 조회.">
-            <div className="mock-h2">민원 관리</div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="mock-h2">민원 목록</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <ButtonMock label="+ 민원 입력 (시민 대신)" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="Excel" variant="secondary" fullWidth={false} />
               <StatusChipMock label="기한초과 3" tone="danger" />
             </div>
             <TableMock
-              headers={['ID', '업체', '유형', '위치', '상태']}
+              headers={['ID', '업체(구역)', '유형', '위치', '상태']}
               rows={[
-                { cells: ['#0428', '용산청소', '대형폐기물', '이태원동', <StatusChipMock label="처리중" tone="info" />] },
-                { cells: ['#0427', '한남환경', '음식물 미수거', '한남동', <StatusChipMock label="기한초과" tone="danger" />], highlighted: true },
-                { cells: ['#0426', '이태원위생', '재활용 위반', '후암동', <StatusChipMock label="완료" tone="success" />] },
+                { cells: ['#0428', '용산청소 (이태원권)', '대형폐기물', '이태원동', <StatusChipMock label="처리중" tone="info" />] },
+                { cells: ['#0427', '한남환경 (한남권)', '음식물 미수거', '한남동', <StatusChipMock label="기한초과" tone="danger" />], highlighted: true },
+                { cells: ['#0426', '이태원위생 (후암권)', '재활용 위반', '후암동', <StatusChipMock label="완료" tone="success" />] },
               ]}
             />
           </DesktopShot>
         ),
       },
       { title: '"+ 민원 입력" 버튼으로 시민 민원을 직접 등록합니다', body: '시민이 구청 환경과로 직접 전화한 민원을 본 콘솔에서 입력하실 수 있습니다. 유형·위치·내용·신고자 연락처 입력 후 저장하시면 자동으로 관할 위탁업체에 배정됩니다.' },
+      { title: '"Excel" 버튼으로 민원 목록을 엑셀로 내려받습니다', body: '현재 필터 조건(기간·업체 탭)이 그대로 적용된 데이터가 엑셀 파일로 출력됩니다. 업체(구역) 컬럼이 포함되어 구역별 분류가 편리합니다.' },
       { title: '민원 상세를 클릭해 처리 진행을 확인합니다', body: '도착 시각·처리 사진·완료 시각이 자동 기록되어 있어 위탁업체의 응대 품질을 객관적으로 평가하실 수 있습니다. 단, 본인이 배정·완료 처리는 불가합니다 (위탁업체 권한).' },
     ],
     tip: { title: '직접 입력한 민원은 누가 처리하나요?', body: '본인의 관할 지자체 내 위탁업체 중 해당 행정동을 담당하는 업체에 자동 배정됩니다. 배정 즉시 알림이 가서 위탁업체가 즉시 처리에 들어갑니다.' },
@@ -178,28 +230,60 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     kind: 'standard',
     num: '06',
     title: '산업안전보건 조회',
-    lead: '관할 위탁업체에서 발생한 안전사고·재해 보고와 일일점검 이력을 확인합니다. 중대재해 발생 시 24시간 이내 고용노동부 보고가 진행되는지 점검할 수 있습니다.',
+    lead: '관할 위탁업체에서 발생한 안전사고·재해 보고와 일일점검 이력을 확인합니다. 중대재해 발생 시 24시간 이내 고용노동부 보고가 진행되는지 점검할 수 있습니다. 2026-06-01 업데이트로 날짜·업체 필터, 검토 처리 권한, TBM 이력 조회, Excel 출력이 추가되었습니다.',
     steps: [
+      {
+        title: '날짜 필터와 업체 탭으로 조회 범위를 설정합니다',
+        body: '안전 보고 목록 상단에 기간 입력란과 빠른 버튼(이번달 / 전월 / 최근3개월), 업체 탭 필터가 나타납니다. 탭 전환 시 보고 목록·통계가 해당 업체 기준으로 갱신됩니다.',
+        screenshot: (
+          <DesktopShot url="wci.helpbiz.kr/safety" active="산업안전보건" variant="muni" caption="날짜·업체 필터 — 기간·업체별 안전 보고 조회.">
+            <div className="mock-h2">산업안전보건</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <FormRowMock label="기간" value="2026-05-01 ~ 2026-05-31" />
+              <ButtonMock label="이번달" variant="secondary" fullWidth={false} highlighted />
+              <ButtonMock label="전월" variant="secondary" fullWidth={false} />
+              <ButtonMock label="최근3개월" variant="secondary" fullWidth={false} />
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="용산청소" variant="secondary" fullWidth={false} />
+              <ButtonMock label="한남환경" variant="secondary" fullWidth={false} />
+            </div>
+          </DesktopShot>
+        ),
+      },
       {
         title: '"산업안전보건" 메뉴에서 보고 목록을 봅니다',
         body: '일자·업체·심각도별로 안전 보고가 정리됩니다. 중상·사망 발생 시 빨간색으로 강조되며 MOL(고용노동부) 보고 상태도 함께 표시됩니다.',
         screenshot: (
           <DesktopShot url="wci.helpbiz.kr/safety" active="산업안전보건" variant="muni" caption="관할 위탁업체 안전 보고 통합 조회.">
-            <div className="mock-h2">산업안전보건</div>
+            <div className="mock-h2">안전 보고 목록</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <ButtonMock label="Excel" variant="secondary" fullWidth={false} />
+            </div>
             <TableMock
-              headers={['일자', '업체', '유형', '심각도', 'MOL']}
+              headers={['일자', '업체', '유형', '심각도', 'MOL', '검토']}
               rows={[
-                { cells: ['05.02', '용산청소', '아차사고', <StatusChipMock label="경미" tone="warn" />, '—'] },
-                { cells: ['04.30', '한남환경', '재해', <StatusChipMock label="부상" tone="danger" />, <StatusChipMock label="보고완료" tone="success" />], highlighted: true },
-                { cells: ['04.28', '이태원위생', '일일점검', '—', '—'] },
+                { cells: ['05.02', '용산청소', '아차사고', <StatusChipMock label="경미" tone="warn" />, '—', <ButtonMock label="검토 처리" variant="secondary" fullWidth={false} />] },
+                { cells: ['04.30', '한남환경', '재해', <StatusChipMock label="부상" tone="danger" />, <StatusChipMock label="보고완료" tone="success" />, <StatusChipMock label="REVIEWED" tone="success" />], highlighted: true },
+                { cells: ['04.28', '이태원위생', '일일점검', '—', '—', '—'] },
               ]}
             />
           </DesktopShot>
         ),
       },
+      {
+        title: '"검토 처리" 버튼으로 지자체 검토 완료 처리를 합니다',
+        body: 'MUNI_ADMIN은 안전 보고 건에 대해 "검토 처리" 버튼을 누를 수 있습니다. 처리 시 상태가 REVIEWED(지자체 보고 완료/종결)로 변경됩니다. 중상 이상 건에 대해 구청 내부 보고 완료 후 처리해 주세요.',
+      },
+      {
+        title: 'TBM 이력 조회 탭을 확인합니다',
+        body: '안전 메뉴 내 "TBM 이력" 탭(/safety/tbm-history)에서 관할 위탁업체가 실시한 일일 TBM(Tool Box Meeting) 이력을 날짜·업체별로 조회할 수 있습니다. 빈도가 낮은 업체는 안전 관리 점검이 필요합니다.',
+      },
       { title: '재해 보고는 24시간 카운트다운을 함께 봅니다', body: '중상·사망 보고는 산안법§54에 따라 24시간 이내 고용노동부 보고가 의무입니다. 카운트다운이 임박한 보고는 위탁업체에 즉시 확인 부탁드립니다.' },
-      { title: '일일점검 이력으로 안전 활동 빈도를 확인합니다', body: '관할 위탁업체별로 일일점검 제출 빈도가 그래프로 표시됩니다. 빈도가 낮은 업체는 안전 관리 미흡으로 판단하실 수 있습니다.' },
+      { title: '"Excel" 버튼으로 안전 보고 목록을 출력합니다', body: '현재 필터 조건(기간·업체 탭)이 적용된 안전 보고 데이터가 엑셀로 출력됩니다. 월간 보고서 제출 전 확인용으로 활용하실 수 있습니다.' },
     ],
+    tip: { title: 'TBM 이력 메뉴가 보이지 않을 때', body: '권한 매트릭스 프리셋에 따라 TBM 이력 탭이 숨겨질 수 있습니다. 필요하시면 운영팀에 접근 허용 요청 부탁드립니다.' },
     nextHref: '#07',
   },
 
@@ -208,26 +292,40 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     kind: 'standard',
     num: '07',
     title: '근태·차량·실적 조회',
-    lead: '운영 관련 3개 메뉴를 한 챕터에 묶어 안내합니다. 모두 조회 전용이며 데이터 수정·승인은 위탁업체 권한입니다.',
+    lead: '운영 관련 3개 메뉴를 한 챕터에 묶어 안내합니다. 모두 조회 전용이며 데이터 수정·승인은 위탁업체 권한입니다. 2026-06-01 업데이트로 업체 탭 필터·날짜 연동·Excel 출근대장 출력이 추가되었습니다.',
     steps: [
       {
-        title: '"근태관리" — 위탁업체 출근 현황 조회',
-        body: '일자별·업체별 출근/지각/결근/조정필요 4종 상태 합계가 표시됩니다. 특정 업체의 결근율이 비정상적으로 높으면 운영 점검 신호일 수 있습니다.',
+        title: '"근태관리" — 업체 탭 필터로 원하는 업체만 조회합니다',
+        body: '근태 화면 상단에 업체 탭(전체 업체 / 개별 업체)이 표시됩니다. 날짜(월)를 변경해도 선택한 contractorId 탭이 그대로 유지되어 같은 업체의 다른 월을 연속으로 비교할 수 있습니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/attendance" active="근태관리" variant="muni" caption="관할 위탁업체 근태 통합 조회.">
+          <DesktopShot url="wci.helpbiz.kr/attendance" active="근태관리" variant="muni" caption="업체 탭 필터 — 날짜 변경 시에도 선택 업체 유지.">
             <div className="mock-h2">근태 — 2026.05</div>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="용산청소" variant="secondary" fullWidth={false} />
+              <ButtonMock label="한남환경" variant="secondary" fullWidth={false} />
+              <ButtonMock label="이태원위생" variant="secondary" fullWidth={false} />
+            </div>
             <div className="mock-kpi-grid">
               <KpiCardMock label="용산청소" value="92%" tone="success" />
-              <KpiCardMock label="한남환경" value="88%" tone="warn" />
+              <KpiCardMock label="한남환경" value="71%" tone="warn" />
               <KpiCardMock label="이태원위생" value="95%" tone="success" />
-              <KpiCardMock label="평균" value="92%" />
+              <KpiCardMock label="평균" value="86%" />
+            </div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <ButtonMock label="Excel (출근대장)" variant="secondary" fullWidth={false} highlighted />
             </div>
           </DesktopShot>
         ),
       },
-      { title: '"차량관리" — 보유 차량과 가동 상태', body: '관할 위탁업체별 보유 차량 수와 운행/정비/대기 상태를 확인하실 수 있습니다. 정비 차량 비율이 높은 업체는 차량 관리 현황 점검 필요.' },
+      { title: '"Excel (출근대장)" 버튼으로 해당 월 출근대장을 다운로드합니다', body: '현재 선택된 월과 업체 탭 기준의 출근대장이 엑셀로 출력됩니다. 현장 보고·감사 자료로 활용하실 수 있습니다.' },
+      {
+        title: '"차량관리" — 실시간 차량조회에서 업체 탭 필터를 사용합니다',
+        body: '실시간 차량조회 화면에도 업체 탭 필터가 추가되었습니다. 여러 위탁업체 차량이 섞여 있을 때 특정 업체 차량만 선택해 지도와 목록을 볼 수 있습니다.',
+      },
       { title: '"실적관리" — 일·월 처리·반입 실적', body: '근로자가 입력한 처리실적·반입실적이 자동 집계됩니다. 통계/보고서 메뉴에서 더 자세한 분석이 가능합니다.' },
     ],
+    tip: { title: '업체 탭 선택이 초기화될 때', body: '페이지를 완전히 새로고침하면 "전체 업체" 탭으로 초기화됩니다. 특정 업체를 집중 모니터링할 때는 탭을 다시 선택해 주세요.' },
     nextHref: '#08',
   },
 
@@ -236,20 +334,83 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     kind: 'standard',
     num: '08',
     title: '실시간 차량 조회',
-    lead: '관할 위탁업체가 실시간 GPS 추적 기능을 활성화한 경우, 차량의 현재 위치와 노선을 지도에서 확인하실 수 있습니다.',
+    lead: '관할 위탁업체가 실시간 GPS 추적 기능을 활성화한 경우, 차량의 현재 위치와 노선을 지도에서 확인하실 수 있습니다. 2026-06-01 업데이트로 업체 탭 필터가 추가되었습니다.',
     steps: [
       { title: '"실시간 차량조회" 메뉴를 누릅니다', body: '메뉴가 보이지 않으면 본인 지자체 또는 관할 위탁업체가 이 기능을 활성화하지 않은 경우입니다. 관심 있으시면 운영팀에 도입 문의 부탁드립니다.' },
+      {
+        title: '업체 탭 필터로 원하는 업체 차량만 조회합니다',
+        body: '화면 상단의 업체 탭(전체 업체 / 개별 업체)에서 탭을 선택하면 지도 마커와 차량 목록이 해당 업체 차량만 표시됩니다. 여러 위탁업체 차량이 섞여 있을 때 특히 유용합니다.',
+        screenshot: (
+          <DesktopShot url="wci.helpbiz.kr/vehicles/live" active="실시간 차량조회" variant="muni" caption="업체 탭 필터 — 선택 업체 차량만 지도에 표시.">
+            <div className="mock-h2">실시간 차량조회</div>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="용산청소" variant="secondary" fullWidth={false} />
+              <ButtonMock label="한남환경" variant="secondary" fullWidth={false} />
+              <ButtonMock label="이태원위생" variant="secondary" fullWidth={false} />
+            </div>
+            <TableMock
+              headers={['차량번호', '소속 업체', '운전자', '상태']}
+              rows={[
+                { cells: ['서울 가 1234', '용산청소', '박청소', <StatusChipMock label="운행중" tone="success" />] },
+                { cells: ['서울 나 5678', '한남환경', '이환경', <StatusChipMock label="정비중" tone="warn" />] },
+                { cells: ['서울 다 9012', '이태원위생', '최위생', <StatusChipMock label="운행중" tone="success" />] },
+              ]}
+            />
+          </DesktopShot>
+        ),
+      },
       { title: '지도에서 차량 위치를 확인합니다', body: '관할 위탁업체 차량들이 색상별로 마커로 표시됩니다. 30초마다 자동 갱신되며 마커 클릭 시 차량번호·소속 업체·운전자가 보입니다.' },
-      { title: '특정 업체 차량만 필터링합니다', body: '여러 위탁업체가 있는 경우 상단 필터에서 특정 업체만 선택해 그 업체의 차량만 보실 수 있습니다.' },
     ],
     tip: { title: '기능이 보이지 않을 때', body: '실시간 GPS 추적은 회사·지자체별 옵션 기능입니다. 도입 문의는 운영팀(공비Lab) — 02-XXXX-XXXX.' },
     nextHref: '#09',
   },
 
-  /* ─── 09 통합·개별 보고서 ─── */
+  /* ─── 09 날씨관리대장 조회 ─── */
   {
     kind: 'standard',
     num: '09',
+    title: '날씨관리대장 조회',
+    lead: '관할 위탁업체 근로자가 작성한 기상·온열 안전 기록을 조회하는 메뉴입니다. MUNI_ADMIN은 공지 등록 없이 근로자 기록만 열람할 수 있습니다.',
+    steps: [
+      {
+        title: '"날씨관리대장" 메뉴에서 기록 목록을 봅니다',
+        body: '근로자가 현장에서 입력한 기상 기록이 날짜순으로 표시됩니다. 직원명·기록시간·체감온도·조치사항·담당자 정보가 열로 정리됩니다.',
+        screenshot: (
+          <DesktopShot url="wci.helpbiz.kr/weather-log" active="날씨관리대장" variant="muni" caption="근로자 기상 안전 기록 조회 — 공지 등록 불가, 조회 전용.">
+            <div className="mock-h2">날씨관리대장</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <ButtonMock label="Excel (텍스트)" variant="secondary" fullWidth={false} highlighted />
+              <ButtonMock label="Excel (이미지 포함)" variant="secondary" fullWidth={false} />
+            </div>
+            <TableMock
+              headers={['일자', '직원명', '기록시간', '체감온도', '조치사항', '담당자']}
+              rows={[
+                { cells: ['06.01', '홍길동', '08:30', '38°C', '10분 휴식 지시', '박현장'] },
+                { cells: ['06.01', '김작업', '10:15', '41°C', <StatusChipMock label="작업중지" tone="danger" />, '이팀장'], highlighted: true },
+                { cells: ['05.31', '이청소', '09:00', '35°C', '수분 보충 권고', '박현장'] },
+              ]}
+            />
+          </DesktopShot>
+        ),
+      },
+      {
+        title: '사진이 첨부된 기록은 상세 클릭으로 확인합니다',
+        body: '근로자가 현장 사진을 첨부한 기록은 목록에서 사진 아이콘이 표시됩니다. 행 클릭 시 첨부 사진과 상세 기록을 함께 볼 수 있습니다.',
+      },
+      {
+        title: '"Excel (텍스트)" 또는 "Excel (이미지 포함)" 버튼으로 출력합니다',
+        body: 'Excel (텍스트): 기록 내용만 빠르게 출력합니다. 텍스트 기반 통계·보고용으로 적합합니다. Excel (이미지 포함): 첨부 사진이 포함된 엑셀 파일로 출력됩니다. 현장 사진 증빙이 필요한 감사·보고 자료에 활용하세요. 파일 크기가 크므로 필요한 경우에만 사용 권장합니다.',
+      },
+    ],
+    tip: { title: 'MUNI_ADMIN은 공지 등록이 없습니다', body: '날씨관리대장 공지(온열 경보 등)는 회사관리자(OWNER/ADMIN)가 등록합니다. MUNI_ADMIN은 근로자가 작성한 기록을 조회·출력만 할 수 있습니다.' },
+    nextHref: '#10',
+  },
+
+  /* ─── 10 통합·개별 보고서 ─── */
+  {
+    kind: 'standard',
+    num: '10',
     title: '통합·개별 보고서 다운로드',
     lead: '월간·분기·연간 보고서를 위탁업체별 또는 지자체 통합으로 출력하는 메뉴입니다. 가장 자주 사용하시는 기능이며, 별도 양식 작성 없이 클릭 한 번으로 PDF·엑셀이 생성됩니다.',
     steps: [
@@ -275,13 +436,13 @@ export const MUNI_CHAPTERS: ChapterData[] = [
       { title: 'PDF·엑셀 형식으로 출력합니다', body: 'PDF는 즉시 보고용·인쇄용으로, 엑셀은 추가 분석용으로 활용하실 수 있습니다. CSV 출력도 지원됩니다.' },
       { title: '필요시 일괄(bulk) 다운로드를 사용합니다', body: '"전체 공개 프리셋"이 적용된 지자체는 모든 위탁업체 보고서를 zip으로 한 번에 다운로드하실 수 있습니다. 상위 권한이 필요하시면 운영팀에 문의 부탁드립니다.' },
     ],
-    nextHref: '#10',
+    nextHref: '#11',
   },
 
-  /* ─── 10 공지사항 작성 (MUNI 고유 권한) ─── */
+  /* ─── 11 공지사항 작성 (MUNI 고유 권한) ─── */
   {
     kind: 'standard',
-    num: '10',
+    num: '11',
     title: '공지사항 작성 — 지자체 고유 권한',
     lead: '본 콘솔에서 작성하신 공지는 관할 모든 위탁업체와 근로자에게 즉시 전달됩니다. 일괄 발송이 가능한 유일한 mutate 기능입니다.',
     steps: [
@@ -304,13 +465,50 @@ export const MUNI_CHAPTERS: ChapterData[] = [
       { title: '본인이 작성한 공지만 수정·삭제 가능합니다', body: '다른 사용자(SUPER_ADMIN 운영팀 또는 위탁업체 관리자)가 작성한 공지는 보기만 가능하며 수정·삭제는 불가합니다.' },
     ],
     warn: { title: '한 번 발송된 공지는 즉시 모든 대상에게 전달됩니다', body: '게시 전에 제목·본문·대상층을 한 번 더 확인 부탁드립니다. 잘못 발송된 경우 신속히 수정하시거나 삭제하시면 알림 노출이 중단됩니다.' },
-    nextHref: '#11',
+    nextHref: '#12',
   },
 
-  /* ─── 11 본인 계정 관리 ─── */
+  /* ─── 12 관제모드 설정 ─── */
   {
     kind: 'standard',
-    num: '11',
+    num: '12',
+    title: '관제모드 설정',
+    lead: '지자체관리자(MUNI_ADMIN)는 본인 지자체의 관제 화면을 직접 설정할 수 있습니다. 저장된 설정은 지자체 전용으로 적용되며 위탁업체 관제 설정과 독립적으로 관리됩니다.',
+    steps: [
+      {
+        title: '"관제모드 설정" 메뉴에서 현재 구성을 확인합니다',
+        body: '메뉴가 보이지 않으면 해당 기능이 본인 지자체 프리셋에 포함되지 않은 경우입니다. 운영팀에 활성화 요청 부탁드립니다.',
+        screenshot: (
+          <DesktopShot url="wci.helpbiz.kr/settings/kiosk" active="관제모드 설정" variant="muni" caption="지자체 전용 관제 화면 설정 — 위탁업체 설정과 독립.">
+            <div className="mock-h2">관제모드 설정 — 용산구청</div>
+            <FormRowMock label="표시 레이아웃" value="4분할 ▼" />
+            <FormRowMock label="자동 전환 간격" value="30초 ▼" />
+            <FormRowMock label="표시 항목" value="출근현황 · 미처리민원 · 차량현황 · 안전보고" />
+            <FormRowMock label="설정 범위" value="지자체 전용 (위탁업체 설정 무관)" />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <ButtonMock label="저장" variant="primary" fullWidth={false} highlighted />
+              <ButtonMock label="미리보기" variant="secondary" fullWidth={false} />
+            </div>
+          </DesktopShot>
+        ),
+      },
+      {
+        title: '표시 항목과 레이아웃을 선택합니다',
+        body: '관제 화면에 표시할 KPI 항목(출근현황·미처리민원·차량현황·안전보고 등)과 레이아웃(4분할·2분할·전체화면)을 선택합니다. 변경사항은 "저장" 버튼을 누를 때 반영됩니다.',
+      },
+      {
+        title: '지자체 전용으로 저장합니다',
+        body: '저장된 설정은 본인 지자체 관제 화면에만 적용됩니다. 관할 위탁업체가 별도로 설정한 관제 화면과는 완전히 독립적으로 동작하므로 서로 영향을 주지 않습니다.',
+      },
+    ],
+    tip: { title: '관제 화면을 TV·모니터에 띄워두는 방법', body: '설정 완료 후 "미리보기" 버튼으로 관제 화면을 열고, 해당 URL을 TV·모니터에 연결된 PC에서 전체화면(F11)으로 띄워두시면 됩니다. 자동 갱신으로 별도 조작 없이 항상 최신 상태를 유지합니다.' },
+    nextHref: '#13',
+  },
+
+  /* ─── 13 본인 계정 관리 ─── */
+  {
+    kind: 'standard',
+    num: '13',
     title: '본인 계정 관리',
     lead: '본인의 비밀번호·프로필 사진·서명(도장)을 관리합니다. 다른 계정의 정보는 수정하실 수 없으며 운영팀에 요청해야 합니다.',
     steps: [
@@ -332,13 +530,13 @@ export const MUNI_CHAPTERS: ChapterData[] = [
       },
     ],
     tip: { title: '서명을 새로 등록하고 싶을 때', body: '운영팀(공비Lab)에 요청하시면 기존 서명을 비활성화 후 다시 등록하실 수 있습니다. 본인 확인 후 처리됩니다.' },
-    nextHref: '#12',
+    nextHref: '#14',
   },
 
-  /* ─── 12 자주 묻는 질문 ─── */
+  /* ─── 14 자주 묻는 질문 ─── */
   {
     kind: 'faq',
-    num: '12',
+    num: '14',
     title: '자주 묻는 질문',
     lead: '지자체관리자 역할에서 자주 나오는 질문들을 모았습니다.',
     faqs: [
@@ -351,6 +549,10 @@ export const MUNI_CHAPTERS: ChapterData[] = [
       { q: '비밀번호를 잊었어요', a: '본 콘솔의 사용자관리 메뉴는 본인 계정만 가능하므로 본인 비밀번호 재발급은 운영팀(공비Lab)에 요청하셔야 합니다 — 02-XXXX-XXXX / contact@helpbiz.kr.' },
       { q: '관할 위탁업체에 신규 도입을 권하려면?', a: '운영팀에 도입 문의 연결 부탁드립니다. 시연·견적·셋업까지 운영팀이 직접 진행해 드리며, 지자체 차원에서 협조해 주시면 신규 위탁업체 셋업이 30분 안에 끝납니다.' },
       { q: 'CleanERP 도입 효과를 평가하려면?', a: '월간 보고서의 KPI(처리 민원 수·기한 초과율·안전사고·수집량 등)를 도입 전후로 비교하시면 됩니다. 6개월 이상 누적되면 통계적 유의미한 비교가 가능하며, 운영팀에서도 평가 자료 작성을 도와드립니다.' },
+      { q: '안전 보고에서 "검토 처리" 버튼이 보이지 않아요', a: 'MUNI_ADMIN 계정이 맞는지, 그리고 해당 안전 보고의 상태가 이미 REVIEWED 처리된 건이 아닌지 확인해 주세요. 버튼이 여전히 보이지 않으면 운영팀에 권한 설정 확인을 요청 부탁드립니다.' },
+      { q: 'TBM 이력 탭이 보이지 않아요', a: '권한 매트릭스 프리셋에 따라 TBM 이력(/safety/tbm-history) 접근이 제한될 수 있습니다. 운영팀에 접근 허용 요청 부탁드립니다.' },
+      { q: '날씨관리대장에서 공지를 등록하고 싶어요', a: 'MUNI_ADMIN은 날씨관리대장에서 근로자 기록 조회만 가능합니다. 온열 경보·기상 공지는 관할 위탁업체 회사관리자(OWNER/ADMIN)가 등록합니다. 긴급 공지가 필요하면 공지사항 메뉴를 이용해 주세요.' },
+      { q: '관제모드 설정이 위탁업체 설정에 영향을 주나요?', a: '아닙니다. MUNI_ADMIN이 저장한 관제 설정은 지자체 전용으로 저장되며 관할 위탁업체의 관제 화면 설정과 완전히 독립적입니다. 서로 덮어쓰지 않습니다.' },
     ],
   },
 ];

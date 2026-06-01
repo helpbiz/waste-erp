@@ -5,6 +5,7 @@
 
    .ts → .tsx 확장: step 마다 ScreenShot JSX 인라인 가능.
    2026-05-02 수정: 매뉴얼 ↔ 실 UI 불일치 3건 보정 (Ch.04 휴가 진입 / Ch.09 민원 탭 / Ch.12 추천경로 진입).
+   2026-06-01 수정: Ch.03 야간 2교대 안내 추가(workType 자동설정·관리자수정 갱신버튼·새벽퇴근 연결) / Ch.05 날씨관리대장 기록 기능 추가(폭염한파 공지 → 안전조치 기록 → 이력조회).
 */
 
 import type { ChapterData } from '../_components/Chapter';
@@ -134,8 +135,31 @@ export const WORKER_CHAPTERS: ChapterData[] = [
         ),
       },
       { title: '퇴근 시에도 같은 방법으로', body: '근무 종료 후 같은 화면에서 "퇴근하기" 버튼을 눌러주시면 됩니다. 출근 기록이 있어야 퇴근 버튼이 활성화됩니다.' },
+      {
+        title: '야간 근무(22:00 이후 ~ 06:00 이전) — 자동 야간 설정',
+        body: '밤 10시 이후 또는 새벽 6시 이전에 출근 버튼을 누르시면 근무 유형이 자동으로 "야간"으로 설정됩니다. 새벽에 퇴근할 때는 이전날 출근 기록에 자동으로 연결되므로 별도로 날짜를 맞추실 필요가 없습니다.',
+        screenshot: (
+          <ScreenShot appBar={{ title: '출퇴근', role: 'worker', showBack: true }} activeTab="clock" caption="야간 시간대 출근 시 workType이 '야간'으로 자동 표시됩니다.">
+            <FormRowMock label="현재 시각" value="23:10" />
+            <FormRowMock label="근무 유형" value={<StatusChipMock label="야간" tone="info" />} />
+            <FormRowMock label="GPS 상태" value={<StatusChipMock label="준비 완료 ✓" tone="success" />} />
+            <ButtonMock label="출근하기" variant="success" highlighted />
+          </ScreenShot>
+        ),
+      },
+      {
+        title: '관리자가 출근 시간을 수정했다면 — 상태 갱신 버튼',
+        body: '관리자가 본인의 출근 시간을 조정한 경우, 화면 하단의 "🔄 관리자 수정 후 상태 갱신" 버튼을 눌러 최신 기록을 불러오세요. 버튼을 누르기 전까지는 이전 시간이 그대로 보일 수 있습니다.',
+        screenshot: (
+          <ScreenShot appBar={{ title: '출퇴근', role: 'worker', showBack: true }} activeTab="clock" caption="관리자 수정 후 갱신 버튼 — 하단에 위치합니다.">
+            <FormRowMock label="출근 시각 (현재 표시)" value="07:03" />
+            <FormRowMock label="상태" value={<StatusChipMock label="출근 완료" tone="success" />} />
+            <ButtonMock label="🔄 관리자 수정 후 상태 갱신" variant="secondary" highlighted />
+          </ScreenShot>
+        ),
+      },
     ],
-    tip: { title: 'GPS 신호가 잘 안 잡힐 때', body: '실내·지하라면 차고지 마당으로 잠깐 나오시면 신호가 빨리 잡힙니다. 그래도 안 되면 화면의 "다시 시도" 버튼을 눌러 주세요. 폰의 위치 서비스가 꺼져 있는 경우도 있으니 설정에서 켜져 있는지 확인 부탁드립니다.' },
+    tip: { title: 'GPS 신호가 잘 안 잡힐 때 / 야간 2교대 유의사항', body: '실내·지하라면 차고지 마당으로 잠깐 나오시면 신호가 빨리 잡힙니다. 그래도 안 되면 화면의 "다시 시도" 버튼을 눌러 주세요. 폰의 위치 서비스가 꺼져 있는 경우도 있으니 설정에서 켜져 있는지 확인 부탁드립니다. 야간 2교대 근무자는 새벽 퇴근 시 이전날 출근 기록에 자동 연결되므로, 날짜가 바뀌어도 걱정 없이 퇴근 버튼을 누르시면 됩니다.' },
     warn: { title: '차고지 반경 밖에서는 출근이 등록되지 않습니다', body: '회사가 등록한 차고지 GPS 반경(보통 100m) 안에서만 출근이 가능합니다. 외근 등으로 차고지 외부에서 시작하는 경우 회사 관리자에게 미리 말씀해 주세요.' },
     nextHref: '#04',
     nextDesc: '출퇴근에 익숙해지셨다면 휴가 신청도 폰에서 바로 해보세요.',
@@ -226,6 +250,25 @@ export const WORKER_CHAPTERS: ChapterData[] = [
             <ButtonMock label="제출" variant="success" highlighted />
           </ScreenShot>
         ),
+      },
+      {
+        title: '폭염·한파 공지가 오면 — 날씨관리대장 기록하기',
+        body: '안전 탭 → 날씨 안전 공지 섹션에 폭염·한파 경보가 표시되면 "📝 안전 조치 기록하기" 버튼이 나타납니다. 버튼을 눌러 아래 항목을 입력해 주세요: 시간, 체감온도(℃), 조치사항(프리셋 버튼 또는 직접 입력), 담당자 이름, 휴식 인증 사진(선택). 기록 완료 후 요약이 화면에 표시되며, 내용 수정도 가능합니다.',
+        screenshot: (
+          <ScreenShot appBar={{ title: '날씨 안전 공지', role: 'worker', showBack: true }} caption="폭염 공지 수신 시 '📝 안전 조치 기록하기' 버튼이 나타납니다.">
+            <ListItemMock title="🌡️ 폭염 특보 발효" sub="체감온도 37°C 예상 · 야외 작업 주의" right={<StatusChipMock label="경보" tone="danger" />} />
+            <ButtonMock label="📝 안전 조치 기록하기" variant="primary" highlighted />
+            <FormRowMock label="시간" placeholder="예: 13:30" type="input" />
+            <FormRowMock label="체감온도(℃)" placeholder="예: 37" type="input" />
+            <FormRowMock label="조치사항" placeholder="프리셋 또는 직접 입력" type="input" />
+            <FormRowMock label="담당자" placeholder="이름 입력" type="input" />
+            <ButtonMock label="저장" variant="success" highlighted />
+          </ScreenShot>
+        ),
+      },
+      {
+        title: '날씨관리대장 이력 조회',
+        body: '안전 탭 → 날씨 안전 공지 섹션 하단의 "전체 이력 →" 링크를 누르시면 지금까지 기록한 날씨 안전 조치 이력을 모두 확인하실 수 있습니다.',
       },
     ],
     warn: { title: '체크하지 않은 항목은 작업 전 점검이 필요합니다', body: '안전모·신발 등 빠진 항목은 즉시 보충해 주세요. 미점검 상태로 작업하시면 안전사고 시 본인과 회사 모두에게 책임이 따릅니다.' },
