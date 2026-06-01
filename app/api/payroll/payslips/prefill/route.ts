@@ -13,6 +13,16 @@ import { readSession } from '@/lib/auth';
 import { canManageUsers } from '@/lib/users';
 import { getPayrollPolicy } from '@/lib/payroll-policy';
 import { aggregateWorkerMonth } from '@/lib/attendance-aggregate';
+import { DEFAULT_TEMPLATE } from '@/lib/payslip-template';
+
+/** payDayLabel("매월 15일") + yearMonth("2026-05") → "2026-05-15" */
+function derivePayDate(payDayLabel: string | undefined, yearMonth: string): string | null {
+  if (!payDayLabel) return null;
+  const m = payDayLabel.match(/(\d{1,2})일/);
+  if (!m) return null;
+  const day = String(parseInt(m[1])).padStart(2, '0');
+  return `${yearMonth}-${day}`;
+}
 
 export async function POST(req: Request) {
   const session = await readSession();
@@ -67,6 +77,17 @@ export async function POST(req: Request) {
   }
 
   const policy = await getPayrollPolicy(contractorId);
+
+  /* 템플릿에서 payDayLabel 읽어 payDate 자동 계산 */
+  const tmplRow = await prisma.contractorFeature.findUnique({
+    where: { contractorId_featureKey: { contractorId, featureKey: 'payslipTemplate' } },
+    select: { config: true },
+  });
+  const tmplConfig = (tmplRow?.config && typeof tmplRow.config === 'object' && !Array.isArray(tmplRow.config))
+    ? (tmplRow.config as Record<string, unknown>) : {};
+  const payDayLabel = (tmplConfig.payDayLabel as string | undefined) ?? DEFAULT_TEMPLATE.payDayLabel;
+  const autoPayDate = derivePayDate(payDayLabel, yearMonth);
+
   let createdCount = 0;
   let skippedCount = 0;
 
@@ -85,6 +106,7 @@ export async function POST(req: Request) {
 
     const draftData = {
       workDays: agg.totalWorkDays,
+      payDate: autoPayDate,
       hourlyRate: null,
       earnings: {
         기본급: 0,

@@ -36,7 +36,14 @@ type PublishedRecord = {
   id: string; workerId: string; workerName: string; employeeNo: string | null;
   yearMonth: string; isPublished: boolean; publishedAt: string | null;
   approvedAt: string | null;
-  data: { totals: PayslipTotals };
+  data: {
+    totals: PayslipTotals;
+    workDays?: number;
+    payDate?: string | null;
+    earnings?: Record<string, number>;
+    deductions?: Record<string, number>;
+    extras?: Record<string, number>;
+  };
 };
 
 type ApproverInfo = {
@@ -125,6 +132,35 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
     } catch { return 0; }
   });
   const [published,   setPublished]   = useState<PublishedRecord[]>([]);
+  const [expandedId,  setExpandedId]  = useState<string | null>(null);
+
+  function printPayslip(r: PublishedRecord) {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const d = r.data;
+    const rows = (entries: Record<string, number> | undefined) =>
+      Object.entries(entries ?? {}).map(([k, v]) => `<tr><td>${k}</td><td>${v.toLocaleString()}원</td></tr>`).join('');
+    win.document.write([
+      '<html><head><meta charset="utf-8"><title>임금명세서</title>',
+      '<style>body{font-family:\'맑은 고딕\',sans-serif;padding:20px}',
+      'table{width:100%;border-collapse:collapse;margin-bottom:12px}',
+      'td,th{border:1px solid #ccc;padding:6px 10px}th{background:#f5f5f5;font-weight:700}',
+      '.net{background:#dbeafe;font-weight:900;font-size:1.1em}</style></head><body>',
+      `<h2>${r.workerName} (${r.yearMonth}) 임금명세서</h2>`,
+      d.workDays != null ? `<p>출근일수: ${d.workDays}일</p>` : '',
+      d.payDate ? `<p>급여지급일: ${d.payDate}</p>` : '',
+      '<table><thead><tr><th>지급항목</th><th>금액</th></tr></thead><tbody>',
+      rows(d.earnings), rows(d.extras),
+      '</tbody></table>',
+      '<table><thead><tr><th>공제항목</th><th>금액</th></tr></thead><tbody>',
+      rows(d.deductions),
+      '</tbody></table>',
+      `<p class="net">실수령액: ${getNetPay(d.totals).toLocaleString()}원</p>`,
+      '</body></html>',
+    ].join(''));
+    win.document.close();
+    win.print();
+  }
   const [loadingList, setLoadingList] = useState(false);
   const [expandRow,   setExpandRow]   = useState<number | null>(null);
 
@@ -341,13 +377,13 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
               <table className="w-full text-[0.8125rem]">
                 <thead>
                   <tr className="bg-surface-soft border-b-2 border-line-strong">
-                    {(needsApproval ? ['이름', '직원번호', '실수령액', '결재', '발송상태'] : ['이름', '직원번호', '실수령액', '발송상태']).map((h) => (
+                    {(needsApproval ? ['이름', '직원번호', '실수령액', '결재', '발송상태', ''] : ['이름', '직원번호', '실수령액', '발송상태', '']).map((h) => (
                       <th key={h} className="text-left px-3 py-2 text-xs font-extrabold text-ink uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {published.map((r, i) => (
+                  {published.map((r, i) => (<>
                     <tr key={r.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                       <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName}</td>
                       <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
@@ -366,8 +402,27 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                           : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-extrabold bg-amber-100 text-warn border border-amber-200">미발송</span>
                         }
                       </td>
-                    </tr>
-                  ))}
+                      <td className="px-3 py-2 border-b border-line">
+                        <button
+                          onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                          className="text-xs font-extrabold text-accent hover:underline"
+                        >
+                          {expandedId === r.id ? '닫기' : '내용보기'}
+                        </button>
+                      </td>
+                    </tr>,
+                    {expandedId === r.id && (
+                      <tr key={r.id + '-detail'}>
+                        <td colSpan={needsApproval ? 6 : 5} className="px-4 py-3 bg-slate-50 border-b border-line">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-extrabold text-ink">{r.workerName} ({r.yearMonth}) 임금명세서</span>
+                            <button onClick={() => printPayslip(r)} className="text-xs font-extrabold text-emerald-700 hover:underline">🖨 인쇄</button>
+                          </div>
+                          <PublishedPayslipDetail data={r.data} />
+                        </td>
+                      </tr>
+                    )}
+                  </>))}
                 </tbody>
               </table>
             </div>
@@ -416,6 +471,49 @@ function PayslipPreview({ data }: { data: NonNullable<ImportResult['preview']> }
           <span className="font-bold">{data.payDate}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── 발송된 명세서 상세 뷰 ──────────────────────────────────────── */
+function PublishedPayslipDetail({ data }: { data: PublishedRecord['data'] }) {
+  const net = getNetPay(data.totals);
+  return (
+    <div className="grid grid-cols-2 gap-3 text-xs">
+      {data.workDays != null && (
+        <div className="col-span-2 flex gap-4 text-ink-muted">
+          <span>출근일수: <b className="text-ink">{data.workDays}일</b></span>
+          {data.payDate && <span>지급일: <b className="text-ink">{data.payDate}</b></span>}
+        </div>
+      )}
+      <div>
+        <div className="font-extrabold text-ink mb-1">지급 항목</div>
+        {Object.entries(data.earnings ?? {}).map(([k, v]) => (
+          <div key={k} className="flex justify-between py-0.5 border-b border-line">
+            <span className="text-ink-muted">{k}</span>
+            <span className="font-mono font-bold">{(v as number).toLocaleString('ko-KR')}</span>
+          </div>
+        ))}
+        {Object.entries(data.extras ?? {}).filter(([, v]) => (v as number) > 0).map(([k, v]) => (
+          <div key={k} className="flex justify-between py-0.5 border-b border-line">
+            <span className="text-ink-muted">{k}</span>
+            <span className="font-mono font-bold">{(v as number).toLocaleString('ko-KR')}</span>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="font-extrabold text-ink mb-1">공제 항목</div>
+        {Object.entries(data.deductions ?? {}).map(([k, v]) => (
+          <div key={k} className="flex justify-between py-0.5 border-b border-line">
+            <span className="text-ink-muted">{k}</span>
+            <span className="font-mono font-bold">{(v as number).toLocaleString('ko-KR')}</span>
+          </div>
+        ))}
+      </div>
+      <div className="col-span-2 bg-accent/10 rounded-lg px-3 py-1.5 flex items-center justify-between">
+        <span className="font-extrabold text-accent text-sm">실수령액</span>
+        <span className="font-mono font-black text-accent">{net.toLocaleString('ko-KR')}원</span>
+      </div>
     </div>
   );
 }
