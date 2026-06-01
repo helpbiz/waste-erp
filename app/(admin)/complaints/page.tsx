@@ -43,6 +43,7 @@ export default async function ComplaintsPage() {
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
     complainantPhone: c.complainantPhone ?? null,
     requestImage: c.requestImage ?? null,
+    contractorId: c.contractorId?.toString() ?? null,
   }));
 
   /* 매니저(역할 또는 플래그)는 담당자 dropdown 위해 worker 목록 prefetch */

@@ -142,6 +142,39 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
   }
   function printNow() { if (typeof window !== 'undefined') window.print(); }
 
+  async function exportComplaints() {
+    try {
+      const params = new URLSearchParams({ format: 'xlsx', from, to });
+      if (contractorId) params.set('contractorId', contractorId);
+      const res = await fetch(`/api/complaints/export?${params}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `민원대장_${from}_${to}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+  }
+
+  async function exportAttendance() {
+    try {
+      const ym = from.slice(0, 7);
+      const params = new URLSearchParams({ ym });
+      if (contractorId) params.set('contractorId', contractorId);
+      const res = await fetch(`/api/print/attendance-excel?${params}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `출근대장_${ym}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+  }
+
   const max = (arr: number[]) => Math.max(1, ...arr);
 
   return (
@@ -185,10 +218,26 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
           className="px-4 py-1.5 rounded text-sm font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-50">
           {loading ? '조회 중…' : '조회'}
         </button>
-        <button onClick={printNow}
-          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
-          🖨 보고서 출력 (전체 영역)
-        </button>
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
+          <button onClick={exportComplaints}
+            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5">
+            <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            민원 Excel
+          </button>
+          <button onClick={exportAttendance}
+            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5">
+            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            출근대장 Excel
+          </button>
+          <button onClick={printNow}
+            className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
+            🖨 보고서 출력
+          </button>
+        </div>
       </div>
 
       {!data && <div className="text-center py-12 text-slate-700 font-bold">조회 중…</div>}

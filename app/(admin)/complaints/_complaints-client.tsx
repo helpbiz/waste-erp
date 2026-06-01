@@ -45,6 +45,7 @@ export type Row = {
   resolvedAt: string | null;
   complainantPhone: string | null;
   requestImage: string | null;
+  contractorId: string | null;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -76,6 +77,8 @@ export default function ComplaintsClient({
   const toast = useToast();
   const [tab, setTab] = useState<Tab>('ALL');
   const [zoneFilter, setZoneFilter] = useState<string>('');
+  const [contractorFilter, setContractorFilter] = useState<string>('');
+  const [exporting, setExporting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [openAssignId, setOpenAssignId] = useState<string | null>(null);
   const [openCompleteId, setOpenCompleteId] = useState<string | null>(null);
@@ -93,12 +96,13 @@ export default function ComplaintsClient({
 
   const filtered = useMemo(() => {
     let base = items;
+    if (contractorFilter) base = base.filter((i) => i.contractorId === contractorFilter);
     if (zoneFilter) base = base.filter((i) => i.zoneId === zoneFilter);
     if (tab === 'ALL') return base;
     if (tab === 'PENDING') return base.filter((i) => ['RECEIVED', 'ASSIGNED', 'IN_PROGRESS'].includes(i.status));
     if (tab === 'OVERDUE') return base.filter((i) => i.overdue);
     return base.filter((i) => i.status === tab);
-  }, [items, tab, zoneFilter]);
+  }, [items, tab, zoneFilter, contractorFilter]);
 
   const counts = useMemo(() => ({
     ALL: items.length,
@@ -134,6 +138,24 @@ export default function ComplaintsClient({
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ format: 'xlsx' });
+      if (contractorFilter) params.set('contractorId', contractorFilter);
+      const res = await fetch(`/api/complaints/export?${params}`);
+      if (!res.ok) { toast.error('내보내기 실패'); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `민원대장_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('내보내기 오류'); }
+    finally { setExporting(false); }
+  }
+
   const tabs: { key: Tab; label: string }[] = [
     { key: 'ALL',        label: '전체' },
     { key: 'PENDING',    label: '미처리' },
@@ -154,11 +176,24 @@ export default function ComplaintsClient({
             Plan §3-3 — 업체담당자 / 관리자 / 지자체 공무원 / 근로자 모두 입력 가능
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {isMuni && (
             <span className="px-3 py-1 rounded-full text-[0.625rem] font-mono font-extrabold bg-amber-100 text-warn border border-amber-300">
               MUNI_ADMIN — 입력만 허용 (처리는 위탁업체)
             </span>
+          )}
+          {/* Excel 내보내기 */}
+          {(isManager || isMuni) && (
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="px-3 py-2 rounded-md border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              {exporting ? '생성 중…' : 'Excel'}
+            </button>
           )}
           {canCreate && (
             <button
@@ -170,6 +205,36 @@ export default function ComplaintsClient({
           )}
         </div>
       </header>
+
+      {/* MUNI_ADMIN / SUPER — 업체 탭 필터 */}
+      {contractorOpts.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button
+            onClick={() => setContractorFilter('')}
+            className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              contractorFilter === '' ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+            }`}
+          >
+            전체 업체
+            <span className="ml-1 font-mono opacity-70">{items.length}</span>
+          </button>
+          {contractorOpts.map((c) => {
+            const cnt = items.filter((i) => i.contractorId === c.id).length;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setContractorFilter(c.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                  contractorFilter === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+                }`}
+              >
+                {c.name}
+                <span className="ml-1 font-mono opacity-70">{cnt}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* MUNI_ADMIN 구역 필터 */}
       {zoneOpts.length > 0 && (
