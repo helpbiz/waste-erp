@@ -57,6 +57,8 @@ function isReadOnlyExempt(method: string, path: string): boolean {
   if (path.startsWith('/api/announcements/') && (method === 'PATCH' || method === 'DELETE')) return true;
   /* 안전 보고서 검토 — MUNI_ADMIN 감독 역할로 REVIEWED/MOL_REPORTED/RESOLVED 전이 허용 */
   if (method === 'POST' && /^\/api\/safety\/reports\/\d+\/review$/.test(path)) return true;
+  /* 관제모드 설정 저장 — MUNI_ADMIN 자기 지자체 설정 */
+  if (method === 'PATCH' && path === '/api/dashboard/wall/settings') return true;
   return false;
 }
 

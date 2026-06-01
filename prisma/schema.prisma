@@ -1138,6 +1138,7 @@ model MuniAccessPolicy {
   exportEnabled     Boolean  @default(true) @map("export_enabled")
   bulkExportEnabled Boolean  @default(false) @map("bulk_export_enabled")
   note              String?  @db.Text
+  wallConfig        Json?    @map("wall_config")
   updatedBy         BigInt   @map("updated_by")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")

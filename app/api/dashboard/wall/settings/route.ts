@@ -58,7 +58,7 @@ async function resolveContractorId(req: Request, session: Awaited<ReturnType<typ
 
 async function checkAdminPerm(session: Awaited<ReturnType<typeof readSession>>): Promise<boolean> {
   if (!session) return false;
-  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(session.role);
+  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'].includes(session.role);
 }
 
 /* ─────────── GET ─────────── */
@@ -68,6 +68,18 @@ export async function GET(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!(await checkAdminPerm(session))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  /* MUNI_ADMIN: MuniAccessPolicy.wallConfig 에서 로드 */
+  if (session.role === 'MUNI_ADMIN') {
+    if (!session.municipalityId) return NextResponse.json({ settings: DEFAULTS });
+    const policy = await prisma.muniAccessPolicy.findUnique({
+      where: { municipalityId: BigInt(session.municipalityId) },
+      select: { wallConfig: true },
+    });
+    const stored = (policy?.wallConfig && typeof policy.wallConfig === 'object' && !Array.isArray(policy.wallConfig))
+      ? (policy.wallConfig as Record<string, unknown>) : {};
+    return NextResponse.json({ settings: { ...DEFAULTS, ...(stored as Partial<WallSettings>) } });
   }
 
   const cId = await resolveContractorId(req, session);
@@ -96,6 +108,26 @@ export async function PATCH(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
   if (!(await checkAdminPerm(session))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  /* MUNI_ADMIN: MuniAccessPolicy.wallConfig 에 저장 */
+  if (session.role === 'MUNI_ADMIN') {
+    if (!session.municipalityId) return NextResponse.json({ error: 'no_municipality' }, { status: 400 });
+    const parsed = Settings.partial().safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+    const muniId = BigInt(session.municipalityId);
+    const existing = await prisma.muniAccessPolicy.findUnique({
+      where: { municipalityId: muniId }, select: { wallConfig: true },
+    });
+    const current = (existing?.wallConfig && typeof existing.wallConfig === 'object' && !Array.isArray(existing.wallConfig))
+      ? (existing.wallConfig as Record<string, unknown>) : {};
+    const next = { ...DEFAULTS, ...current, ...parsed.data };
+    await prisma.muniAccessPolicy.upsert({
+      where: { municipalityId: muniId },
+      create: { municipalityId: muniId, wallConfig: next, updatedBy: BigInt(session.userId) },
+      update: { wallConfig: next, updatedBy: BigInt(session.userId) },
+    });
+    return NextResponse.json({ ok: true, settings: next });
   }
 
   const cId = await resolveContractorId(req, session);

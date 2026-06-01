@@ -150,7 +150,9 @@ export default function WallSettingsClient({ sessionRole }: { sessionRole: strin
       </div>
 
       <div className="text-xs text-ink-muted text-center pt-4 border-t border-line">
-        설정은 자기 회사에만 적용됩니다 · {sessionRole}
+        {sessionRole === 'MUNI_ADMIN'
+          ? '지자체 관제 화면에 적용됩니다 · MUNI_ADMIN'
+          : `설정은 자기 회사에만 적용됩니다 · ${sessionRole}`}
       </div>
     </div>
   );
