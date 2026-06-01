@@ -548,6 +548,14 @@ function SettingsTab() {
     if (field === 'key') cols[idx].label = cols[idx].label || String(val);
     setTemplate({ ...template, [section]: cols });
   }
+  function moveCol(section: ColSection, idx: number, dir: -1 | 1) {
+    if (!template) return;
+    const cols = [...template[section]];
+    const target = idx + dir;
+    if (target < 0 || target >= cols.length) return;
+    [cols[idx], cols[target]] = [cols[target], cols[idx]];
+    setTemplate({ ...template, [section]: cols });
+  }
   function setFlag(field: 'showWorkHours' | 'showCalcMethod', val: boolean) {
     if (!template) return;
     setTemplate({ ...template, [field]: val });
@@ -579,15 +587,18 @@ function SettingsTab() {
     <div className="space-y-5">
       <ColSection title="임금구성항목 (지급)" section="earnings" cols={template.earnings}
         onAdd={() => addCol('earnings')} onRemove={(i) => removeCol('earnings', i)}
-        onChange={(i, f, v) => updateCol('earnings', i, f, v)} />
+        onChange={(i, f, v) => updateCol('earnings', i, f, v)}
+        onMoveUp={(i) => moveCol('earnings', i, -1)} onMoveDown={(i) => moveCol('earnings', i, 1)} />
 
       <ColSection title="공제내역" section="deductions" cols={template.deductions}
         onAdd={() => addCol('deductions')} onRemove={(i) => removeCol('deductions', i)}
-        onChange={(i, f, v) => updateCol('deductions', i, f, v)} />
+        onChange={(i, f, v) => updateCol('deductions', i, f, v)}
+        onMoveUp={(i) => moveCol('deductions', i, -1)} onMoveDown={(i) => moveCol('deductions', i, 1)} />
 
       <ColSection title="별도항목 (급식비·생일축하금 등)" section="extras" cols={template.extras}
         onAdd={() => addCol('extras')} onRemove={(i) => removeCol('extras', i)}
-        onChange={(i, f, v) => updateCol('extras', i, f, v)} />
+        onChange={(i, f, v) => updateCol('extras', i, f, v)}
+        onMoveUp={(i) => moveCol('extras', i, -1)} onMoveDown={(i) => moveCol('extras', i, 1)} />
 
       {/* 표시 설정 */}
       <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
@@ -646,39 +657,76 @@ type ColSectionProps = {
   title: string; section: ColSection; cols: PayslipColumn[];
   onAdd: () => void; onRemove: (i: number) => void;
   onChange: (i: number, f: keyof PayslipColumn, v: string | boolean) => void;
+  onMoveUp?: (i: number) => void;
+  onMoveDown?: (i: number) => void;
 };
-function ColSection({ title, cols, onAdd, onRemove, onChange }: ColSectionProps) {
+function ColSection({ title, cols, onAdd, onRemove, onChange, onMoveUp, onMoveDown }: ColSectionProps) {
   return (
     <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
       <div className="px-4 py-3 border-b border-line flex items-center justify-between bg-surface-soft">
-        <h4 className="text-sm font-extrabold text-ink">{title}</h4>
+        <div>
+          <h4 className="text-sm font-extrabold text-ink">{title}</h4>
+          <p className="text-[0.625rem] text-ink-muted font-mono mt-0.5">출력 순서 = 목록 순서 · ↑↓ 로 변경</p>
+        </div>
         <button onClick={onAdd} className="px-3 py-1 rounded-md bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95">+ 추가</button>
       </div>
-      <div className="p-3 space-y-2">
+      {/* 컬럼 헤더 */}
+      <div className="px-3 pt-2 pb-1 grid grid-cols-[28px_1fr_1fr_56px_48px_32px] gap-2 text-[0.625rem] font-extrabold text-ink-muted uppercase tracking-wide">
+        <span className="text-center">순서</span>
+        <span>항목 키 (엑셀 헤더)</span>
+        <span>출력 표시명</span>
+        <span className="text-center">필수</span>
+        <span className="text-center">이동</span>
+        <span></span>
+      </div>
+      <div className="px-3 pb-3 space-y-1.5">
         {cols.map((col, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-center">
+          <div key={i} className="grid grid-cols-[28px_1fr_1fr_56px_48px_32px] gap-2 items-center bg-surface-soft/50 rounded-lg px-2 py-1.5">
+            {/* 순서 번호 */}
+            <span className="text-center text-[0.75rem] font-mono font-extrabold text-ink-muted">{i + 1}</span>
+            {/* 항목 키 */}
             <input
               value={col.key}
               onChange={(e) => onChange(i, 'key', e.target.value)}
-              placeholder="항목 키 (엑셀 헤더)"
-              className="px-2.5 py-1.5 rounded-md border border-line text-xs font-bold focus:outline-none focus:border-accent"
+              placeholder="기본급"
+              className="px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white"
             />
+            {/* 표시명 */}
             <input
               value={col.label}
               onChange={(e) => onChange(i, 'label', e.target.value)}
-              placeholder="표시명"
-              className="px-2.5 py-1.5 rounded-md border border-line text-xs focus:outline-none focus:border-accent"
+              placeholder="기본급"
+              className="px-2 py-1 rounded border border-line text-xs focus:outline-none focus:border-accent bg-white"
             />
-            <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+            {/* 필수 */}
+            <label className="flex items-center justify-center gap-1 cursor-pointer">
               <input type="checkbox" checked={col.required} onChange={(e) => onChange(i, 'required', e.target.checked)}
                 className="accent-accent w-3.5 h-3.5" />
-              <span className="text-xs font-semibold text-ink-muted">필수</span>
+              <span className={`text-[0.625rem] font-extrabold ${col.required ? 'text-danger' : 'text-ink-muted'}`}>
+                {col.required ? '필수' : '선택'}
+              </span>
             </label>
-            <button onClick={() => onRemove(i)} className="text-danger text-xs font-extrabold hover:underline px-1">삭제</button>
+            {/* ↑↓ 이동 */}
+            <div className="flex gap-0.5 justify-center">
+              <button
+                onClick={() => onMoveUp?.(i)}
+                disabled={i === 0}
+                className="w-5 h-5 rounded text-[0.75rem] font-bold text-ink-muted hover:bg-surface hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                title="위로"
+              >↑</button>
+              <button
+                onClick={() => onMoveDown?.(i)}
+                disabled={i === cols.length - 1}
+                className="w-5 h-5 rounded text-[0.75rem] font-bold text-ink-muted hover:bg-surface hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                title="아래로"
+              >↓</button>
+            </div>
+            {/* 삭제 */}
+            <button onClick={() => onRemove(i)} className="text-danger text-xs font-extrabold hover:underline text-center" title="삭제">✕</button>
           </div>
         ))}
         {cols.length === 0 && (
-          <p className="text-xs text-ink-muted font-semibold text-center py-2">항목 없음 — 추가 버튼으로 항목을 넣으세요.</p>
+          <p className="text-xs text-ink-muted font-semibold text-center py-3">항목 없음 — 추가 버튼으로 항목을 넣으세요.</p>
         )}
       </div>
     </section>
