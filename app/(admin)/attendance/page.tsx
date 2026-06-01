@@ -7,15 +7,38 @@ import AttendanceClient from './_attendance-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AttendancePage({ searchParams }: { searchParams: { date?: string } }) {
+export type ContractorOpt = { id: string; name: string };
+
+export default async function AttendancePage({ searchParams }: { searchParams: { date?: string; contractorId?: string } }) {
   const session = (await readSession())!;
   const rawDate = searchParams.date ?? '';
   const dateStr = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : todayKstDate().toISOString().slice(0, 10);
   const date = new Date(dateStr + 'T00:00:00');
 
-  /* 가시범위 — 사용자 진단 2026-04-29: MUNI_ADMIN 은 본인 지자체 산하만, contractorId=null 폴백 금지 */
-  const recordScope = contractorScopeWhere(session);
-  const userWhere = userScope(session);
+  /* MUNI_ADMIN 업체 탭 필터 */
+  let contractorOpts: ContractorOpt[] = [];
+  let pickedContractorId: bigint | null = null;
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    const cs = await prisma.contractor.findMany({
+      where: { municipalityId: BigInt(session.municipalityId), status: 'ACTIVE' },
+      select: { id: true, companyName: true },
+      orderBy: { companyName: 'asc' },
+    });
+    contractorOpts = cs.map((c) => ({ id: c.id.toString(), name: c.companyName }));
+    const raw = searchParams.contractorId;
+    if (raw && /^\d+$/.test(raw)) {
+      const candidate = BigInt(raw);
+      if (cs.find((c) => c.id === candidate)) pickedContractorId = candidate;
+    }
+  }
+
+  /* 가시범위 — MUNI_ADMIN 업체 선택 시 해당 업체만, 미선택 시 산하 전체 */
+  const recordScope = pickedContractorId
+    ? { contractorId: pickedContractorId }
+    : contractorScopeWhere(session);
+  const userWhere = pickedContractorId
+    ? { contractorId: pickedContractorId }
+    : userScope(session);
 
   const [records, workers] = await Promise.all([
     prisma.attendanceRecord.findMany({
@@ -75,6 +98,8 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       rows={rows}
       summary={summary}
       canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
+      contractorOpts={contractorOpts}
+      selectedContractorId={pickedContractorId?.toString() ?? ''}
       selfRecord={adminSelfRecord ? {
         recordId: adminSelfRecord.id.toString(),
         checkInTime: adminSelfRecord.checkInTime?.toISOString() ?? null,

@@ -48,7 +48,17 @@ type Config = {
   updatedAt: string;
 };
 
-export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin = false }: { canManage: boolean; isSuperAdmin?: boolean }) {
+type ContractorOpt = { id: string; name: string };
+
+export default function LiveVehiclesClient({
+  canManage: _canManage,
+  isSuperAdmin = false,
+  muniContractorOpts = [],
+}: {
+  canManage: boolean;
+  isSuperAdmin?: boolean;
+  muniContractorOpts?: ContractorOpt[];
+}) {
   const [data, setData] = useState<PositionsResponse | null>(null);
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -80,6 +90,8 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
   /* SUPER_ADMIN: 조회할 업체 ID */
   const [superAdminCid, setSuperAdminCid] = useState('');
   const [contractorList, setContractorList] = useState<Array<{ id: string; companyName: string }>>([]);
+  /* MUNI_ADMIN: 선택된 업체 ID (props로 전달된 목록 활용) */
+  const [muniCid, setMuniCid] = useState('');
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -133,8 +145,8 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
   };
 
   function positionsUrl(cid?: string) {
-    const id = cid ?? superAdminCid;
-    return isSuperAdmin && id ? `/api/live-tracking/positions?contractorId=${id}` : '/api/live-tracking/positions';
+    const id = cid ?? superAdminCid ?? muniCid;
+    return id ? `/api/live-tracking/positions?contractorId=${id}` : '/api/live-tracking/positions';
   }
 
   async function load(cid?: string) {
@@ -142,8 +154,8 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
     if (r.ok) setData(await r.json());
   }
   async function loadConfig(cid?: string) {
-    const id = cid ?? superAdminCid;
-    const qs = isSuperAdmin && id ? `?contractorId=${id}` : '';
+    const id = cid ?? superAdminCid ?? muniCid;
+    const qs = id ? `?contractorId=${id}` : '';
     const r = await fetch(`/api/live-tracking/config${qs}`);
     if (r.ok) {
       const d = await r.json();
@@ -162,7 +174,7 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
       timer.current = setInterval(() => load(), (data.refreshSec ?? 5) * 1000);
     }
     return () => { if (timer.current) clearInterval(timer.current); };
-  }, [data?.refreshSec, superAdminCid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data?.refreshSec, superAdminCid, muniCid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const movingCount = data?.vehicles.filter((v) => v.operationalStatus === 'MOVING').length ?? 0;
   const stoppedCount = data?.vehicles.filter((v) => v.operationalStatus === 'STOP').length ?? 0;
@@ -191,6 +203,26 @@ export default function LiveVehiclesClient({ canManage: _canManage, isSuperAdmin
           >
             조회
           </button>
+        </div>
+      )}
+
+      {/* MUNI_ADMIN 업체 탭 필터 */}
+      {muniContractorOpts.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button
+            onClick={() => { setMuniCid(''); load(''); loadConfig(''); }}
+            className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              !muniCid ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+            }`}
+          >전체 업체</button>
+          {muniContractorOpts.map((c) => (
+            <button key={c.id}
+              onClick={() => { setMuniCid(c.id); load(c.id); loadConfig(c.id); }}
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                muniCid === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+              }`}
+            >{c.name}</button>
+          ))}
         </div>
       )}
       <div className="flex items-center gap-3">

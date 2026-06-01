@@ -8,13 +8,32 @@ import SafetyClient, { type Row } from './_safety-client';
 
 export const dynamic = 'force-dynamic';
 
+export type ContractorOpt = { id: string; name: string };
+
 export default async function SafetyPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string };
+  searchParams?: { tab?: string; contractorId?: string };
 }) {
   const session = (await readSession())!;
   const today = todayKstDate();
+
+  /* MUNI_ADMIN 업체 탭 필터 — 산하 업체 목록 + 선택된 업체로 범위 제한 */
+  let contractorOpts: ContractorOpt[] = [];
+  let pickedContractorId: bigint | null = null;
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    const cs = await prisma.contractor.findMany({
+      where: { municipalityId: BigInt(session.municipalityId), status: 'ACTIVE' },
+      select: { id: true, companyName: true },
+      orderBy: { companyName: 'asc' },
+    });
+    contractorOpts = cs.map((c) => ({ id: c.id.toString(), name: c.companyName }));
+    const raw = searchParams?.contractorId;
+    if (raw && /^\d+$/.test(raw)) {
+      const candidate = BigInt(raw);
+      if (cs.find((c) => c.id === candidate)) pickedContractorId = candidate;
+    }
+  }
 
   /* 본인 서명 (일별 보고서 결재란용) */
   const me = await prisma.user.findUnique({
@@ -24,9 +43,15 @@ export default async function SafetyPage({
   const meSignatureUrl = me?.activeSignature?.asset.contentRef ?? null;
   const isTbmManager = me?.isTbmManager ?? false;
 
+  /* 실제 조회 범위 — 업체 선택 시 해당 업체만 */
+  const baseWhere = pickedContractorId
+    ? { contractorId: pickedContractorId }
+    : safetyWhere(session);
+  const scopedContractorId = pickedContractorId ?? (session.contractorId ? BigInt(session.contractorId) : null);
+
   const [items, todayWorkers, todayChecklist, tbm, workersList] = await Promise.all([
     prisma.safetyReport.findMany({
-      where: safetyWhere(session),
+      where: baseWhere,
       orderBy: { createdAt: 'desc' },
       take: 200,
       include: {
@@ -35,33 +60,33 @@ export default async function SafetyPage({
       },
     }),
     /* 오늘 점검 대상 근로자 (가시범위) */
-    session.contractorId
+    scopedContractorId
       ? prisma.user.count({
-          where: { role: 'WORKER', status: 'ACTIVE', contractorId: BigInt(session.contractorId) },
+          where: { role: 'WORKER', status: 'ACTIVE', contractorId: scopedContractorId },
         })
       : Promise.resolve(0),
-    session.contractorId
+    scopedContractorId
       ? prisma.safetyReport.count({
           where: {
-            contractorId: BigInt(session.contractorId),
+            contractorId: scopedContractorId,
             reportType: 'DAILY_CHECKLIST',
             reportDate: today,
           },
         })
       : Promise.resolve(0),
-    session.contractorId
+    scopedContractorId
       ? prisma.tbmSession.findFirst({
-          where: { contractorId: BigInt(session.contractorId), facilityId: null, sessionDate: today },
+          where: { contractorId: scopedContractorId, facilityId: null, sessionDate: today },
           include: {
             signatures: { include: { worker: { select: { id: true, name: true, employeeNo: true } } } },
             creator: { select: { name: true } },
           },
         })
       : Promise.resolve(null),
-    /* 알림톡 발송 대상 — 본인 위탁업체 활성 워커 */
-    session.contractorId
+    /* 알림톡 발송 대상 — 해당 업체 활성 워커 */
+    scopedContractorId
       ? prisma.user.findMany({
-          where: { contractorId: BigInt(session.contractorId), role: 'WORKER', status: 'ACTIVE' },
+          where: { contractorId: scopedContractorId, role: 'WORKER', status: 'ACTIVE' },
           select: { id: true, name: true },
           orderBy: { name: 'asc' },
         })
@@ -88,9 +113,9 @@ export default async function SafetyPage({
   }));
 
   /* 거래처(위탁업체) 주소/좌표로 지역 날씨 적용 */
-  const contractorInfo = session.contractorId
+  const contractorInfo = scopedContractorId
     ? await prisma.contractor.findUnique({
-        where: { id: BigInt(session.contractorId) },
+        where: { id: scopedContractorId },
         select: { garageAddress: true, garageLat: true, garageLng: true },
       })
     : null;
@@ -104,10 +129,9 @@ export default async function SafetyPage({
     ? { region: contractorInfo.garageAddress }
     : undefined;
 
-  const contractorBigId = session.contractorId ? BigInt(session.contractorId) : null;
   const [hasNearMiss, hasIncident] = await Promise.all([
-    contractorBigId ? hasFeature(contractorBigId, 'safetyNearMiss') : Promise.resolve(true),
-    contractorBigId ? hasFeature(contractorBigId, 'safetyIncident') : Promise.resolve(true),
+    scopedContractorId ? hasFeature(scopedContractorId, 'safetyNearMiss') : Promise.resolve(true),
+    scopedContractorId ? hasFeature(scopedContractorId, 'safetyIncident') : Promise.resolve(true),
   ]);
 
   const defaultTab = searchParams?.tab === 'DAILY' ? 'DAILY' : 'ALL';
@@ -117,6 +141,8 @@ export default async function SafetyPage({
       rows={rows}
       isManager={isSafetyManager(session.role) || isTbmManager}
       defaultTab={defaultTab as 'DAILY' | 'ALL'}
+      contractorOpts={contractorOpts}
+      selectedContractorId={pickedContractorId?.toString() ?? ''}
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
       weather={await fetchWeatherCached(weatherLocation)}

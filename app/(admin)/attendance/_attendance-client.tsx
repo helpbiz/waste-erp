@@ -21,14 +21,18 @@ type Row = {
 
 type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
 
+type ContractorOpt = { id: string; name: string };
+
 export default function AttendanceClient({
-  date, rows, summary, canManage, selfRecord,
+  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '',
 }: {
   date: string;
   rows: Row[];
   summary: { total: number; checkedIn: number; checkedOut: number; notCheckedIn: number; earlyLeave: number; pendingApproval: number };
   canManage: boolean;
   selfRecord?: SelfRecord;
+  contractorOpts?: ContractorOpt[];
+  selectedContractorId?: string;
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -69,7 +73,8 @@ export default function AttendanceClient({
 
   function changeDate(v: string) {
     setSelectedDate(v);
-    router.push(`/attendance?date=${v}`);
+    const cid = selectedContractorId ? `&contractorId=${selectedContractorId}` : '';
+    router.push(`/attendance?date=${v}${cid}`);
   }
 
   function fmtTime(iso: string | null) {
@@ -83,6 +88,26 @@ export default function AttendanceClient({
       {selfRecord !== undefined && <AdminPunchWidget selfRecord={selfRecord} onSuccess={() => router.refresh()} />}
       <div>
         <h2 className="text-xl font-extrabold text-ink">근태관리</h2>
+        {/* MUNI_ADMIN 업체 탭 필터 */}
+        {contractorOpts.length > 1 && (
+          <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5">
+            <button
+              onClick={() => router.push(`/attendance?date=${selectedDate}`)}
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                !selectedContractorId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+              }`}
+            >전체 업체</button>
+            {contractorOpts.map((c) => (
+              <button key={c.id}
+                onClick={() => router.push(`/attendance?date=${selectedDate}&contractorId=${c.id}`)}
+                className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                  selectedContractorId === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+                }`}
+              >{c.name}</button>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <input type="date" value={selectedDate} onChange={(e) => changeDate(e.target.value)}
             aria-label="기준일"

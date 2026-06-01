@@ -49,6 +49,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 type Tab = 'ALL' | 'INCIDENT' | 'NEAR_MISS' | 'CHECKLIST' | 'PENDING' | 'DAILY' | 'ABNORMAL';
 
+export type ContractorOpt = { id: string; name: string };
+
 export default function SafetyClient({
   rows,
   isManager,
@@ -62,6 +64,8 @@ export default function SafetyClient({
   defaultTab = 'ALL',
   hasNearMiss = true,
   hasIncident = true,
+  contractorOpts = [],
+  selectedContractorId = '',
 }: {
   rows: Row[];
   isManager: boolean;
@@ -75,6 +79,8 @@ export default function SafetyClient({
   defaultTab?: Tab;
   hasNearMiss?: boolean;
   hasIncident?: boolean;
+  contractorOpts?: ContractorOpt[];
+  selectedContractorId?: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
@@ -229,6 +235,31 @@ export default function SafetyClient({
           </span>
         )}
       </header>
+
+      {/* MUNI_ADMIN 업체 탭 필터 */}
+      {contractorOpts.length > 1 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button
+            onClick={() => router.push('/safety')}
+            className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              !selectedContractorId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+            }`}
+          >
+            전체 업체
+          </button>
+          {contractorOpts.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => router.push(`/safety?contractorId=${c.id}`)}
+              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                selectedContractorId === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 기상 + TBM 카드 row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
