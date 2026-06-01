@@ -12,7 +12,7 @@ export default async function LiveVehiclesPage() {
   /* MUNI_ADMIN 산하 업체 목록 */
   const muniContractorOpts = session.role === 'MUNI_ADMIN' && session.municipalityId
     ? (await prisma.contractor.findMany({
-        where: { municipalityId: BigInt(session.municipalityId), status: 'ACTIVE' },
+        where: { municipalityId: BigInt(session.municipalityId), status: { in: ['ACTIVE', 'SETUP'] } },
         select: { id: true, companyName: true },
         orderBy: { companyName: 'asc' },
       })).map((c) => ({ id: c.id.toString(), name: c.companyName }))

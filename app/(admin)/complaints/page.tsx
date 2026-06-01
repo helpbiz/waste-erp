@@ -71,7 +71,7 @@ export default async function ComplaintsPage() {
     contractorOpts = cs.map((c) => ({ id: c.id.toString(), name: `${c.companyName} (${c.municipality.name})` }));
   } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
     const cs = await prisma.contractor.findMany({
-      where: { municipalityId: BigInt(session.municipalityId), status: 'ACTIVE' },
+      where: { municipalityId: BigInt(session.municipalityId), status: { in: ['ACTIVE', 'SETUP'] } },
       select: { id: true, companyName: true },
       orderBy: { companyName: 'asc' },
     });

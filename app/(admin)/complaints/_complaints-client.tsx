@@ -207,7 +207,7 @@ export default function ComplaintsClient({
       </header>
 
       {/* MUNI_ADMIN / SUPER — 업체 탭 필터 */}
-      {contractorOpts.length > 1 && (
+      {contractorOpts.length >= 1 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => setContractorFilter('')}

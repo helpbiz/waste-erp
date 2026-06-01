@@ -237,7 +237,7 @@ export default function SafetyClient({
       </header>
 
       {/* MUNI_ADMIN 업체 탭 필터 */}
-      {contractorOpts.length > 1 && (
+      {contractorOpts.length >= 1 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => router.push('/safety')}

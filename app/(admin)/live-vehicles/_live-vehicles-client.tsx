@@ -207,7 +207,7 @@ export default function LiveVehiclesClient({
       )}
 
       {/* MUNI_ADMIN 업체 탭 필터 */}
-      {muniContractorOpts.length > 1 && (
+      {muniContractorOpts.length >= 1 && (
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => { setMuniCid(''); load(''); loadConfig(''); }}
