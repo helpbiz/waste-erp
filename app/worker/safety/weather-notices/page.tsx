@@ -13,8 +13,8 @@ export default async function WorkerWeatherNoticesPage() {
 
   const today = todayKstDate();
   const contractorId = BigInt(session.contractorId);
+  const workerId = BigInt(session.userId);
 
-  /* 오늘 공지 목록 + 내 사진 업로드 여부 */
   const notices = await prisma.weatherSafetyNotice.findMany({
     where: {
       contractorId,
@@ -26,8 +26,11 @@ export default async function WorkerWeatherNoticesPage() {
     orderBy: { createdAt: 'desc' },
     include: {
       photos: {
-        where: { workerId: BigInt(session.userId) },
-        select: { id: true, photoData: true, uploadedAt: true },
+        where: { workerId },
+        select: {
+          id: true, uploadedAt: true,
+          recordTime: true, feelsLike: true, actionTaken: true, managerName: true,
+        },
       },
     },
   });
@@ -39,7 +42,14 @@ export default async function WorkerWeatherNoticesPage() {
     content: n.content,
     noticeDate: n.noticeDate.toISOString().slice(0, 10),
     myPhoto: n.photos[0]
-      ? { id: n.photos[0].id.toString(), uploadedAt: n.photos[0].uploadedAt.toISOString() }
+      ? {
+          id: n.photos[0].id.toString(),
+          uploadedAt: n.photos[0].uploadedAt.toISOString(),
+          recordTime:  n.photos[0].recordTime  ?? null,
+          feelsLike:   n.photos[0].feelsLike   ?? null,
+          actionTaken: n.photos[0].actionTaken ?? null,
+          managerName: n.photos[0].managerName ?? null,
+        }
       : null,
   }));
 

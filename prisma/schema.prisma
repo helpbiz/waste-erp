@@ -1526,6 +1526,11 @@ model WeatherSafetyPhoto {
   photoData  String   @map("photo_data") @db.Text  // base64 Data URL (JPEG, max ~200KB)
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
+  recordTime   String?  @map("record_time") @db.VarChar(5)   // HH:MM
+  feelsLike    Int?     @map("feels_like")                   // 체감온도(℃)
+  actionTaken  String?  @map("action_taken") @db.Text        // 조치사항
+  managerName  String?  @map("manager_name") @db.VarChar(50) // 담당자
+
   notice WeatherSafetyNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
   worker User                @relation("WorkerWeatherPhotos", fields: [workerId], references: [id])
 
