@@ -34,7 +34,25 @@ export default function AttendanceClient({
   const [selectedDate, setSelectedDate] = useState(date);
   const [editing, setEditing] = useState<Row | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [exporting, setExporting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  async function handleExportExcel() {
+    setExporting(true);
+    try {
+      const ym = selectedDate.slice(0, 7);
+      const res = await fetch(`/api/print/attendance-excel?ym=${ym}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `출근대장_${ym}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    finally { setExporting(false); }
+  }
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const isToday = selectedDate === todayStr;
@@ -71,6 +89,16 @@ export default function AttendanceClient({
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold w-[200px]" />
           <button onClick={() => changeDate(todayStr)}
             className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 shrink-0">오늘</button>
+          <button
+            onClick={handleExportExcel}
+            disabled={exporting}
+            className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 flex items-center gap-1 disabled:opacity-50"
+          >
+            <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting ? '생성 중…' : `${selectedDate.slice(0, 7)} 출근대장 Excel`}
+          </button>
           {isToday && (
             <>
               <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[0.6875rem] font-extrabold border border-green-300 animate-pulse">

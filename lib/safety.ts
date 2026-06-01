@@ -36,7 +36,8 @@ export function safetyWhere(session: SessionPayload): Prisma.SafetyReportWhereIn
 }
 
 export function isSafetyManager(role: string): boolean {
-  return role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
+  /* MUNI_ADMIN: 감독 역할로 검토(REVIEWED) / 지자체 보고(MOL_REPORTED) / 종결(RESOLVED) 허용 */
+  return role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN' || role === 'MUNI_ADMIN';
 }
 
 /** 사고 발생 시각 + 심각도로 고용노동부 보고 기한 계산 */

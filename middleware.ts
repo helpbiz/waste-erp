@@ -55,6 +55,8 @@ function isReadOnlyExempt(method: string, path: string): boolean {
      실제 audience 정책은 API 핸들러에서 강제 (lib/announcement-audience). */
   if (path === '/api/announcements' && (method === 'POST')) return true;
   if (path.startsWith('/api/announcements/') && (method === 'PATCH' || method === 'DELETE')) return true;
+  /* 안전 보고서 검토 — MUNI_ADMIN 감독 역할로 REVIEWED/MOL_REPORTED/RESOLVED 전이 허용 */
+  if (method === 'POST' && /^\/api\/safety\/reports\/\d+\/review$/.test(path)) return true;
   return false;
 }
 
