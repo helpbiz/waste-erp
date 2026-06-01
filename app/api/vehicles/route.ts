@@ -20,7 +20,7 @@ const PostBody = z.object({
   vehicleType: z.enum(VEHICLE_TYPE_VALUES),
   vehicleTon: z.string().trim().max(8).optional(),
   capacityTon: z.number().min(0).max(99).optional(),
-  fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG']),
+  fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG', 'GASOLINE']),
   yearManufactured: z.number().int().min(1990).max(2099).optional(),
   driverId: z.union([z.string(), z.number()]).nullable().optional(),
   passenger1Id: z.union([z.string(), z.number()]).nullable().optional(),

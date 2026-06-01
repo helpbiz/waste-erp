@@ -3,6 +3,18 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
+const BAG_MACHINE_LABEL: Record<string, string> = {
+  food_1L: '음식물 1L', food_2L: '음식물 2L', food_3L: '음식물 3L', food_5L: '음식물 5L', food_10L: '음식물 10L',
+  living_5L: '생활 5L', living_10L: '생활 10L', living_20L: '생활 20L', living_30L: '생활 30L',
+  living_50L: '생활 50L', living_75L: '생활 75L',
+  reuse_10L: '재사용 10L', reuse_20L: '재사용 20L',
+  illegal_20: '불법투기 20L', special: '특수', deadAnimal: '동물사체',
+};
+const LARGE_WASTE_LABEL: Record<string, string> = {
+  furniture: '가구류', chair: '의자', sofa: '소파', bed: '침대', appliance: '가전',
+  extinguisher: '소화기', household: '생활용품', other: '기타', illegalTotal: '불법투기',
+};
+
 /* ─── 타입 ─── */
 
 type Vehicle = {
@@ -973,7 +985,7 @@ function VehicleLogPreview({
                     <span className="font-extrabold text-green-800">B — 종량제봉투: </span>
                     {Object.entries(form.bagMachineWork)
                       .filter(([, v]) => Number(v) > 0)
-                      .map(([k, v]) => `${k.replace(/_/g, ' ')} ${v}`)
+                      .map(([k, v]) => `${BAG_MACHINE_LABEL[k] ?? k.replace(/_/g, ' ')} ${v}`)
                       .join(' / ')}
                   </div>
                 )}
@@ -982,7 +994,7 @@ function VehicleLogPreview({
                     <span className="font-extrabold text-amber-800">C — 대형폐기물: </span>
                     {Object.entries(form.largeWasteWork)
                       .filter(([, v]) => Number(v) > 0)
-                      .map(([k, v]) => `${k} ${v}점`)
+                      .map(([k, v]) => `${LARGE_WASTE_LABEL[k] ?? k} ${v}점`)
                       .join(' / ')}
                   </div>
                 )}

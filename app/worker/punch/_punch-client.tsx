@@ -189,6 +189,18 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
         </button>
       </div>
 
+      {/* 야간 2교대 — 관리자 수정 후 재출근 허용 */}
+      {phase === 'done' && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => router.refresh()}
+            className="text-xs font-bold text-ink-muted hover:text-accent underline"
+          >
+            🔄 관리자 수정 후 상태 갱신
+          </button>
+        </div>
+      )}
+
       {phase === 'done' && (
         <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-2xl px-5 py-4 text-center">
           <div className="text-lg font-extrabold text-success">오늘 근무 완료 ✓</div>

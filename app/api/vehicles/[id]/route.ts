@@ -22,7 +22,7 @@ const PatchBody = z.object({
   vehicleType: z.enum(VEHICLE_TYPE_VALUES).optional(),
   vehicleTon: z.string().trim().max(8).nullable().optional(),
   capacityTon: z.number().min(0).max(99).nullable().optional(),
-  fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG']).optional(),
+  fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG', 'GASOLINE']).optional(),
   yearManufactured: z.number().int().min(1990).max(2099).nullable().optional(),
   status: z.enum(['ACTIVE', 'MAINTENANCE']).optional(), // RETIRED는 /retire endpoint 전용
   driverId: z.union([z.string(), z.number()]).nullable().optional(),

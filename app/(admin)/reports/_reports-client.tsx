@@ -550,6 +550,12 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
           /* 섹션 페이지 구분 */
           .page-break { page-break-before: always; break-before: page; }
 
+          /* 테이블 헤더 반복 + 행 분리 방지 */
+          thead { display: table-header-group; }
+          tbody tr { break-inside: avoid; page-break-inside: avoid; }
+          /* 그리드/통계 박스 분리 방지 */
+          .grid > div, .overflow-x-auto { break-inside: avoid; page-break-inside: avoid; }
+
           /* BarRow 텍스트 크기 */
           .text-\\[0\\.625rem\\] { font-size: 7pt !important; }
           .text-\\[0\\.5625rem\\] { font-size: 6.5pt !important; }

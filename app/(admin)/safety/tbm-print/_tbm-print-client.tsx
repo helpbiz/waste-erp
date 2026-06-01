@@ -256,6 +256,10 @@ export default function TbmPrintClient({
             font-size: 9pt !important;
             background: white !important;
           }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
 
           /* 글자 크기 통일 */
           .tbm-body, .tbm-body * { font-size: 9pt !important; }
