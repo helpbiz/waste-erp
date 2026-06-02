@@ -31,7 +31,7 @@ export const WORKER_CHAPTERS: ChapterData[] = [
     lead: 'CleanERP로 무엇을 할 수 있는지 한눈에 보여드립니다. 이 안내서는 폰을 처음 다루시는 분도 막힘없이 따라오실 수 있도록 단계별로 정리되어 있습니다.',
     intro: 'CleanERP 워커앱은 여러분이 매일 하시는 일들 — 출퇴근, 작업 확인, 휴가 신청, 안전 보고, 민원 처리 — 을 폰 하나로 빠르게 처리할 수 있도록 돕습니다.',
     hero: (
-      <ScreenShot appBar={{ title: '워커앱 홈', role: 'worker' }} activeTab="home" caption="앱을 열면 첫 화면 — 하단 5개 탭으로 모든 기능에 접근합니다.">
+      <ScreenShot appBar={{ title: '워커앱 홈', role: 'worker' }} activeTab="home" caption="앱을 열면 첫 화면 — 하단 6개 탭(홈·출퇴근·민원·안전·실적·공지)으로 모든 기능에 접근합니다.">
         <FormRowMock label="안녕하세요" value="김운전 님" type="header" />
         <ListItemMock title="오늘 출근" sub="07:00 차고지 도착" right={<StatusChipMock label="대기" tone="warn" />} />
         <ListItemMock title="배정된 민원" sub="대형폐기물 3건" right={<StatusChipMock label="3건" tone="info" />} />
@@ -102,7 +102,7 @@ export const WORKER_CHAPTERS: ChapterData[] = [
     steps: [
       {
         title: '워커앱을 열고 "출퇴근" 탭을 누릅니다',
-        body: '하단 다섯 개 탭 중 가운데에 가까운 시계 모양 아이콘이 "출퇴근"입니다. 누르시면 오늘 날짜·시각과 함께 출근 화면이 나옵니다.',
+        body: '하단 6개 탭(홈·출퇴근·민원·안전·실적·공지) 중 두 번째, 시계 모양 아이콘이 "출퇴근"입니다. 누르시면 오늘 날짜·시각과 함께 출근 화면이 나옵니다.',
         screenshot: (
           <ScreenShot appBar={{ title: '워커앱', role: 'worker' }} activeTab="clock" caption="하단 두 번째 시계 아이콘이 '출퇴근' 탭입니다.">
             <ListItemMock title="안녕하세요 김운전 님" sub="2026년 5월 2일 (금)" />
@@ -501,10 +501,26 @@ export const WORKER_CHAPTERS: ChapterData[] = [
     nextHref: '#13',
   },
 
-  /* ─── 13 자주 묻는 질문 ─── */
+  /* ─── 13 급여명세서 확인 ─── */
+  {
+    kind: 'standard',
+    num: '13',
+    title: '급여명세서 확인',
+    lead: '회사 관리자가 발송한 임금명세서를 폰에서 바로 확인하고 인쇄할 수 있습니다. 하단 "홈" 탭 → 메뉴 카드 중 "내 급여명세서"를 누르시면 됩니다.',
+    steps: [
+      { title: '홈 화면 메뉴 카드에서 "내 급여명세서"를 누릅니다', body: '관리자가 발송한 명세서 목록이 최신순으로 표시됩니다. 회사에서 아직 발송하지 않은 달은 목록에 보이지 않습니다.' },
+      { title: '월별 명세서를 선택해 상세 내용을 확인합니다', body: '지급 항목(기본급·수당 등)과 공제 항목(4대보험·세금 등), 실수령액이 항목별로 표시됩니다. 급여지급일도 함께 확인하실 수 있습니다.' },
+      { title: '"인쇄 / PDF 저장" 버튼으로 출력합니다', body: '브라우저 인쇄 기능이 열립니다. PDF로 저장하시면 이후에도 파일로 보관하실 수 있습니다.' },
+    ],
+    tip: { title: '명세서가 아직 안 보일 때', body: '회사에서 해당 월 명세서를 아직 발송하지 않은 경우입니다. 매월 급여지급일 전후로 발송되며, 더 오래 기다려도 안 오면 회사 관리자에게 확인 요청해 주세요.' },
+    nextHref: '#14',
+    nextDesc: '자주 묻는 질문',
+  },
+
+  /* ─── 14 자주 묻는 질문 ─── */
   {
     kind: 'faq',
-    num: '13',
+    num: '14',
     title: '자주 묻는 질문',
     lead: '현장에서 자주 받는 질문들을 모았습니다. 더 궁금한 내용이 있으시면 회사 관리자에게 언제든지 말씀해 주세요.',
     faqs: [
