@@ -71,3 +71,44 @@ export async function GET(req: Request) {
     })),
   });
 }
+
+/**
+ * DELETE /api/payroll/payslips?id=xxx  — 명세서 단건 삭제 (관리자/급여담당자)
+ * DELETE /api/payroll/payslips?yearMonth=2026-05&workerId=123  — 특정 근로자 월 삭제
+ */
+export async function DELETE(req: Request) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  const isManagerRole = canManageUsers(session.role);
+  let isPayrollManagerWorker = false;
+  if (!isManagerRole && session.role === 'WORKER') {
+    const flag = await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isPayrollManager: true } });
+    isPayrollManagerWorker = flag?.isPayrollManager === true;
+  }
+  if (!isManagerRole && !isPayrollManagerWorker) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const url      = new URL(req.url);
+  const id       = url.searchParams.get('id');
+  const ym       = url.searchParams.get('yearMonth');
+  const workerIdStr = url.searchParams.get('workerId');
+
+  if (id) {
+    const rec = await prisma.payslipRecord.findUnique({ where: { id: BigInt(id) } });
+    if (!rec) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    if (session.contractorId && rec.contractorId.toString() !== session.contractorId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    await prisma.payslipRecord.delete({ where: { id: BigInt(id) } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (ym && workerIdStr) {
+    if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
+    const contractorId = BigInt(session.contractorId);
+    const workerId     = BigInt(workerIdStr);
+    await prisma.payslipRecord.deleteMany({ where: { contractorId, workerId, yearMonth: ym } });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: 'id_or_yearMonth_workerId_required' }, { status: 400 });
+}

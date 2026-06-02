@@ -14,6 +14,7 @@ const ALLOWED = new Set(['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'SUPER_ADMIN']);
 
 const PatchBody = z.object({
   name: z.string().trim().min(1).max(50).optional(),
+  address: z.string().trim().max(255).nullable().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
@@ -41,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     data: parsed.data,
   });
 
-  return NextResponse.json({ ok: true, item: { id: updated.id.toString(), name: updated.name, isActive: updated.isActive, sortOrder: updated.sortOrder } });
+  return NextResponse.json({ ok: true, item: { id: updated.id.toString(), name: updated.name, address: updated.address, isActive: updated.isActive, sortOrder: updated.sortOrder } });
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

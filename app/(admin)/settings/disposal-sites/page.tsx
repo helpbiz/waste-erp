@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-type Site = { id: string; name: string; isActive: boolean; sortOrder: number };
+type Site = { id: string; name: string; address: string | null; isActive: boolean; sortOrder: number };
 
 const PRESETS = ['매립지', '처리장', '소각장', '압축기', '연계작업'];
 
@@ -10,9 +10,11 @@ export default function DisposalSitesPage() {
   const [items, setItems] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
+  const [newAddress, setNewAddress] = useState('');
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editAddress, setEditAddress] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -32,10 +34,10 @@ export default function DisposalSitesPage() {
     const r = await fetch('/api/admin/disposal-sites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), sortOrder: items.length }),
+      body: JSON.stringify({ name: name.trim(), address: newAddress.trim() || undefined, sortOrder: items.length }),
     });
     setSaving(false);
-    if (r.ok) { setNewName(''); load(); }
+    if (r.ok) { setNewName(''); setNewAddress(''); load(); }
     else {
       const j = await r.json().catch(() => ({}));
       setError(j.error === 'already_exists' ? '이미 등록된 이름입니다.' : '추가 실패');
@@ -56,7 +58,7 @@ export default function DisposalSitesPage() {
     await fetch(`/api/admin/disposal-sites/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editName.trim() }),
+      body: JSON.stringify({ name: editName.trim(), address: editAddress.trim() || null }),
     });
     setEditId(null);
     load();
@@ -107,7 +109,7 @@ export default function DisposalSitesPage() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add(newName)}
-            placeholder="반입장소 이름 입력 (예: 자원순환센터)"
+            placeholder="반입장소 이름 (예: 자원순환센터)"
             maxLength={50}
             className="flex-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
           />
@@ -119,6 +121,14 @@ export default function DisposalSitesPage() {
             추가
           </button>
         </div>
+        <input
+          type="text"
+          value={newAddress}
+          onChange={(e) => setNewAddress(e.target.value)}
+          placeholder="주소 (선택, 예: 경기도 파주시 탄현면 xxx)"
+          maxLength={255}
+          className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+        />
         {error && <p className="text-xs text-red-600 font-bold">{error}</p>}
       </div>
 
@@ -145,15 +155,27 @@ export default function DisposalSitesPage() {
             <span className="text-xs font-mono text-ink-muted w-5 text-right">{idx + 1}</span>
 
             {editId === site.id ? (
-              <input
-                autoFocus
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(site.id); if (e.key === 'Escape') setEditId(null); }}
-                className="flex-1 px-2 py-1 rounded border-2 border-accent text-sm focus:outline-none"
-              />
+              <div className="flex-1 space-y-1">
+                <input
+                  autoFocus
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(site.id); if (e.key === 'Escape') setEditId(null); }}
+                  placeholder="이름"
+                  className="w-full px-2 py-1 rounded border-2 border-accent text-sm focus:outline-none"
+                />
+                <input
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  placeholder="주소 (선택)"
+                  className="w-full px-2 py-1 rounded border border-line text-xs focus:outline-none focus:border-accent"
+                />
+              </div>
             ) : (
-              <span className="flex-1 text-sm font-bold text-ink">{site.name}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-ink">{site.name}</div>
+                {site.address && <div className="text-xs text-ink-muted truncate">{site.address}</div>}
+              </div>
             )}
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -173,7 +195,7 @@ export default function DisposalSitesPage() {
                     {site.isActive ? '활성' : '비활성'}
                   </button>
                   <button
-                    onClick={() => { setEditId(site.id); setEditName(site.name); }}
+                    onClick={() => { setEditId(site.id); setEditName(site.name); setEditAddress(site.address ?? ''); }}
                     className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
                   >
                     수정

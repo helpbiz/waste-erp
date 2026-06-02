@@ -49,21 +49,30 @@ export async function GET(req: Request) {
     include: {
       creator: { select: { name: true } },
       _count: { select: { photos: true } },
+      ...(session.role === 'WORKER' ? {
+        photos: { where: { workerId: BigInt(session.userId) }, select: { id: true }, take: 1 },
+      } : {}),
     },
   });
 
   return NextResponse.json({
-    notices: notices.map((n) => ({
-      id: n.id.toString(),
-      noticeDate: n.noticeDate.toISOString().slice(0, 10),
-      alertType: n.alertType,
-      alertLabel: ALERT_LABELS[n.alertType] ?? n.alertType,
-      title: n.title,
-      content: n.content ?? null,
-      createdBy: n.creator.name,
-      createdAt: n.createdAt.toISOString(),
-      photoCount: n._count.photos,
-    })),
+    notices: notices.map((n) => {
+      const myPhoto = session.role === 'WORKER' && 'photos' in n && Array.isArray(n.photos) && n.photos.length > 0
+        ? { id: (n.photos as Array<{ id: bigint }>)[0].id.toString() }
+        : null;
+      return {
+        id: n.id.toString(),
+        noticeDate: n.noticeDate.toISOString().slice(0, 10),
+        alertType: n.alertType,
+        alertLabel: ALERT_LABELS[n.alertType] ?? n.alertType,
+        title: n.title,
+        content: n.content ?? null,
+        createdBy: n.creator.name,
+        createdAt: n.createdAt.toISOString(),
+        photoCount: n._count.photos,
+        myPhoto,
+      };
+    }),
   });
 }
 

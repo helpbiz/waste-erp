@@ -192,13 +192,13 @@ export default function AttendanceClient({
                 </td>
                 <td className="px-3 py-2">
                   {r.status ? (
-                    <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border-2 ${
+                    <span className={`text-sm font-extrabold px-2 py-0.5 rounded border-2 ${
                       r.status === 'APPROVED' ? 'bg-emerald-200 text-emerald-900 border-emerald-600' :
                       r.status === 'REJECTED' ? 'bg-red-200 text-red-900 border-red-500' :
                       r.status === 'ADJUSTED' ? 'bg-blue-200 text-blue-900 border-blue-500' :
                       'bg-amber-200 text-amber-900 border-amber-500'
                     }`}>{STATUS_LABEL[r.status]}</span>
-                  ) : <span className="text-[0.625rem] font-mono text-slate-500">미기록</span>}
+                  ) : <span className="text-sm font-mono text-slate-500">미기록</span>}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2">

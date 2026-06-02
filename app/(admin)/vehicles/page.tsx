@@ -32,7 +32,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
       where: { logDate: selectedDate, ...vehicleLogWhere(session) },
       orderBy: [{ status: 'asc' }, { id: 'desc' }],
       include: {
-        vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true } },
+        vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true, fuelType: true } },
         driver: { select: { name: true } },
       },
     }),
@@ -77,6 +77,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
     vehicleNo: l.vehicle.vehicleNo,
     vehicleType: l.vehicle.vehicleType,
     vehicleTon: l.vehicle.vehicleTon,
+    fuelType: l.vehicle.fuelType,
     driverName: l.driver.name,
     startMileage: l.startMileage,
     endMileage: l.endMileage,

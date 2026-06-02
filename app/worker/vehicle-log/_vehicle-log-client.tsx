@@ -498,6 +498,11 @@ export default function VehicleLogClient({
         {showFuel && (
           <Card title={showUrea ? '주유 / 요소수' : '주유'}>
             <div className="space-y-3">
+              {selectedVehicle && (
+                <div className="bg-surface-soft rounded-lg px-3 py-2 text-xs font-mono text-ink-muted">
+                  유종: <span className="text-ink font-bold">{selectedVehicle.fuelType === 'DIESEL' ? '경유' : selectedVehicle.fuelType === 'LPG' ? 'LPG' : selectedVehicle.fuelType === 'ELECTRIC' ? '전기' : selectedVehicle.fuelType === 'CNG' ? 'CNG' : selectedVehicle.fuelType === 'GASOLINE' ? '휘발유' : selectedVehicle.fuelType}</span>
+                </div>
+              )}
               <Field label="주유량 (ℓ)">
                 <input type="number" inputMode="decimal" step="0.1" min="0"
                   value={form.fuelUsed} onChange={(e) => setField('fuelUsed', e.target.value)}
@@ -1199,6 +1204,7 @@ function translateVehicleLogError(code?: string): string | null {
   switch (code) {
     case 'invalid_vehicle': return '차량이 소속 업체에 등록되지 않았습니다.';
     case 'vehicle_retired': return '폐차 처리된 차량입니다.';
+    case 'duplicate_log_today': return '오늘 이미 제출된 차량일지가 있습니다. 반려 처리 후 재작성하세요.';
     case 'mileage_required': return '금일누적거리를 입력해 주세요.';
     case 'unauthenticated': return '로그인이 만료되었습니다.';
     default: return null;

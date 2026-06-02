@@ -16,6 +16,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const ym = url.searchParams.get('ym') ?? new Date().toISOString().slice(0, 7);
   const [year, month] = ym.split('-').map(Number);
+  const deptsParam = url.searchParams.get('departments');
+  const deptFilter = deptsParam ? new Set(deptsParam.split(',').map((d) => d.trim()).filter(Boolean)) : null;
 
   const monthStart = new Date(year, month - 1, 1);
   const monthEnd   = new Date(year, month, 0);
@@ -32,6 +34,14 @@ export async function GET(req: Request) {
       select: { workerId: true, workDate: true, checkInTime: true, checkOutTime: true },
     }),
   ]);
+
+  /* 부서 필터 적용 */
+  const filteredWorkers = deptFilter
+    ? workers.filter((w) => {
+        const deptName = w.department?.name ?? '(부서 없음)';
+        return deptFilter.has(deptName);
+      })
+    : workers;
 
   type DayRec = { checkIn: string | null; checkOut: string | null };
   const map = new Map<string, Map<number, DayRec>>();
@@ -55,7 +65,8 @@ export async function GET(req: Request) {
   /* ── 1행: 타이틀 ── */
   ws.mergeCells(1, 1, 1, TOTAL_COLS);
   const t = ws.getCell(1, 1);
-  t.value = `월별 출퇴근 현황 — ${year}년 ${month}월 · 총 ${workers.length}명`;
+  const deptSuffix = deptFilter ? ` · ${[...deptFilter].join(', ')}` : '';
+  t.value = `월별 출퇴근 현황 — ${year}년 ${month}월${deptSuffix} · 총 ${filteredWorkers.length}명`;
   t.font = { bold: true, size: 14 };
   t.alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getRow(1).height = 28;
@@ -82,7 +93,7 @@ export async function GET(req: Request) {
   });
 
   /* ── 데이터 행 ── */
-  workers.forEach((w, idx) => {
+  filteredWorkers.forEach((w, idx) => {
     const dm = map.get(w.id.toString()) ?? new Map<number, DayRec>();
     const vals: (string | number)[] = [idx + 1, w.contractor?.companyName ?? '', w.department?.name ?? '', w.name, w.employeeNo ?? ''];
     let cnt = 0;
@@ -117,7 +128,7 @@ export async function GET(req: Request) {
   ws.getColumn(5 + daysInMonth + 1).width = 8; // 출근일수
 
   /* ── 테두리 (헤더+데이터 전체) ── */
-  const lastDataRow = 2 + workers.length;
+  const lastDataRow = 2 + filteredWorkers.length;
   for (let r = 2; r <= lastDataRow; r++) {
     for (let c = 1; c <= TOTAL_COLS; c++) {
       ws.getCell(r, c).border = {
@@ -137,7 +148,7 @@ export async function GET(req: Request) {
     margins: { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 },
   };
   ws.headerFooter = {
-    oddHeader: `&C&B월별 출퇴근 현황 — ${year}년 ${month}월 · 총 ${workers.length}명`,
+    oddHeader: `&C&B월별 출퇴근 현황 — ${year}년 ${month}월${deptSuffix} · 총 ${filteredWorkers.length}명`,
     oddFooter: '&R&P / &N',
   };
 

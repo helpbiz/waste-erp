@@ -51,6 +51,7 @@ export type LogRow = {
   vehicleNo: string;
   vehicleType: string;
   vehicleTon: string | null;
+  fuelType: string | null;
   driverName: string;
   startMileage: number | null;
   endMileage: number | null;
@@ -61,6 +62,9 @@ export type LogRow = {
 };
 
 const TYPE_LABEL = VEHICLE_TYPE_LABEL as Record<string, string>;
+const FUEL_TYPE_LABEL: Record<string, string> = {
+  DIESEL: '경유', LPG: 'LPG', ELECTRIC: '전기', CNG: 'CNG', GASOLINE: '휘발유',
+};
 
 export default function VehiclesClient({
   vehicles,
@@ -307,7 +311,7 @@ export default function VehiclesClient({
         <table className="w-full min-w-[640px] text-[0.8125rem]">
           <thead>
             <tr>
-              {['차량', '기사', '주행거리', '연료', '수거량', '회', '상태', '상세', '액션'].map((h) => (
+              {['차량', '기사', '주행거리', '주유량', '유종', '회', '상태', '상세', '액션'].map((h) => (
                 <th key={h} className="text-left px-3 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
                   {h}
                 </th>
@@ -338,8 +342,8 @@ export default function VehiclesClient({
                   <td className="px-3 py-2.5 border-b border-line font-mono font-bold text-ink">
                     {l.fuelUsed != null ? `${l.fuelUsed.toFixed(1)} L` : <span className="text-ink-faint">—</span>}
                   </td>
-                  <td className="px-3 py-2.5 border-b border-line font-mono font-extrabold text-accent">
-                    {l.wasteWeightKg != null ? `${l.wasteWeightKg.toLocaleString()} kg` : <span className="text-ink-faint">—</span>}
+                  <td className="px-3 py-2.5 border-b border-line font-mono font-bold text-ink">
+                    {l.fuelType ? FUEL_TYPE_LABEL[l.fuelType] ?? l.fuelType : <span className="text-ink-faint">—</span>}
                   </td>
                   <td className="px-3 py-2.5 border-b border-line font-mono font-bold text-ink">
                     {l.tripCount ?? <span className="text-ink-faint">—</span>}

@@ -51,8 +51,8 @@ type Log = {
   id: string; vehicleNo: string; vehicleType: string; vehicleTon: string | null;
   contractorName: string | null; driverName: string; driverEmployeeNo: string | null;
   zoneName: string | null; startMileage: number | null; endMileage: number | null;
-  fuelUsed: number | null; wasteWeightKg: number | null; tripCount: number | null;
-  routeDetail: string | null; status: string;
+  fuelUsed: number | null; fuelTypeName: string | null; wasteWeightKg: number | null;
+  tripCount: number | null; routeDetail: string | null; status: string;
 };
 
 function parseDetail(raw: string | null): Detail {
@@ -137,10 +137,10 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
             <td colSpan={3}>{dist}</td>
           </tr>
           <tr>
-            <th>연료 사용</th>
+            <th>주&nbsp;유&nbsp;량</th>
             <td colSpan={3}>{log.fuelUsed != null ? `${log.fuelUsed.toFixed(2)} ℓ` : ''}</td>
-            <th>수&nbsp;거&nbsp;량</th>
-            <td colSpan={3}>{log.wasteWeightKg != null ? `${log.wasteWeightKg.toLocaleString()} ㎏` : ''}</td>
+            <th>유&nbsp;&nbsp;종</th>
+            <td colSpan={3}>{log.fuelTypeName ?? ''}</td>
             <th>동&nbsp;승&nbsp;자</th>
             <td colSpan={3}>
               {d.passengers ?? ''}

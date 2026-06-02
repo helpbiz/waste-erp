@@ -24,7 +24,7 @@ export async function GET() {
   const items = await prisma.disposalSite.findMany({
     where: { contractorId: BigInt(session.contractorId) },
     orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-    select: { id: true, name: true, isActive: true, sortOrder: true },
+    select: { id: true, name: true, address: true, isActive: true, sortOrder: true },
   });
 
   return NextResponse.json({
@@ -34,6 +34,7 @@ export async function GET() {
 
 const PostBody = z.object({
   name: z.string().trim().min(1).max(50),
+  address: z.string().trim().max(255).optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
 
@@ -52,9 +53,10 @@ export async function POST(req: Request) {
     data: {
       contractorId: BigInt(session.contractorId),
       name: parsed.data.name,
+      address: parsed.data.address ?? null,
       sortOrder: parsed.data.sortOrder ?? 0,
     },
   });
 
-  return NextResponse.json({ ok: true, item: { id: item.id.toString(), name: item.name, isActive: item.isActive, sortOrder: item.sortOrder } }, { status: 201 });
+  return NextResponse.json({ ok: true, item: { id: item.id.toString(), name: item.name, address: item.address, isActive: item.isActive, sortOrder: item.sortOrder } }, { status: 201 });
 }

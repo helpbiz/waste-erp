@@ -16,6 +16,17 @@ type Announcement = {
   attachmentUrls: string[] | null;
 };
 
+type WeatherNotice = {
+  id: string; alertType: string; alertLabel: string; title: string;
+  content: string | null; noticeDate: string;
+  myPhoto: { id: string } | null;
+};
+
+const WEATHER_CLS: Record<string, string> = {
+  HEATWAVE: 'bg-red-50 border-red-500 text-red-900',
+  COLDWAVE: 'bg-blue-50 border-blue-500 text-blue-900',
+};
+
 const SEVERITY_CLS: Record<string, string> = {
   INFO:     'bg-blue-50 border-blue-300 text-blue-900',
   WARNING:  'bg-amber-50 border-amber-300 text-amber-900',
@@ -34,15 +45,20 @@ function fmt(iso: string) {
 
 export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNoticeManager: boolean }) {
   const [items, setItems] = useState<Announcement[]>([]);
+  const [weatherNotices, setWeatherNotices] = useState<WeatherNotice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/announcements', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((d) => setItems(d.items ?? []))
-      .catch(() => setError('공지사항을 불러오지 못했습니다'))
+    const today = new Date().toISOString().slice(0, 10);
+    Promise.all([
+      fetch('/api/announcements', { cache: 'no-store' }).then((r) => r.json()).catch(() => ({})),
+      fetch(`/api/safety/weather-notices?date=${today}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({})),
+    ]).then(([ann, wx]) => {
+      setItems(ann.items ?? []);
+      setWeatherNotices(wx.notices ?? []);
+    }).catch(() => setError('공지사항을 불러오지 못했습니다'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -67,6 +83,42 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
       {error && (
         <div className="mx-4 mt-2 bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-700 font-bold">{error}</div>
       )}
+      {/* 날씨 공지 (폭염·한파) — 오늘 등록된 날씨 경보 */}
+      {weatherNotices.length > 0 && (
+        <div className="px-4 pt-2 space-y-2">
+          <div className="text-xs font-extrabold text-red-700 tracking-wider flex items-center gap-1.5">
+            <span>🌡 날씨 안전 공지</span>
+            <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full text-[0.6rem]">{weatherNotices.length}건</span>
+          </div>
+          {weatherNotices.map((wx) => {
+            const cls = WEATHER_CLS[wx.alertType] ?? 'bg-amber-50 border-amber-500 text-amber-900';
+            const responded = !!wx.myPhoto;
+            return (
+              <article key={wx.id} className={`rounded-xl border-2 overflow-hidden ${cls}`}>
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-extrabold border border-current/40 px-1.5 py-0.5 rounded">{wx.alertLabel}</span>
+                    {responded ? (
+                      <span className="text-[0.625rem] font-extrabold bg-emerald-600 text-white px-1.5 py-0.5 rounded">✓ 대응완료</span>
+                    ) : (
+                      <span className="text-[0.625rem] font-extrabold bg-red-600 text-white px-1.5 py-0.5 rounded">! 대응필요</span>
+                    )}
+                  </div>
+                  <div className="text-sm font-extrabold">{wx.title}</div>
+                  {wx.content && <div className="text-xs mt-1 text-current/70 line-clamp-2">{wx.content}</div>}
+                  <Link
+                    href="/worker/safety/weather-notices"
+                    className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/70 text-current text-xs font-extrabold active:scale-95"
+                  >
+                    {responded ? '📋 대응 내역 확인' : '📸 사진·온도 기록하기 →'}
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
       {!loading && !error && items.length === 0 && (
         <div className="px-4 py-16 text-center">
           <div className="text-4xl mb-2">📢</div>

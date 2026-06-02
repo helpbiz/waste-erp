@@ -98,6 +98,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'vehicle_retired' }, { status: 409 });
   }
 
+  /* 1일 1회 제출 제한 — SUBMITTED/APPROVED 기록이 있으면 중복 차단 */
+  const todayLog = await prisma.vehicleLog.findFirst({
+    where: {
+      vehicleId: vehicle.id,
+      logDate: todayKstDate(),
+      status: { in: ['SUBMITTED', 'APPROVED'] },
+    },
+    select: { id: true, status: true },
+  });
+  if (todayLog) {
+    return NextResponse.json({ error: 'duplicate_log_today', status: todayLog.status }, { status: 409 });
+  }
+
   const log = await prisma.vehicleLog.create({
     data: {
       vehicleId: vehicle.id,

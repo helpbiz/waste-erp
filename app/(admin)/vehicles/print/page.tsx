@@ -46,10 +46,14 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
         ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
       };
 
+  const FUEL_LABEL: Record<string, string> = {
+    DIESEL: '경유', LPG: 'LPG', ELECTRIC: '전기', CNG: 'CNG', GASOLINE: '휘발유',
+  };
+
   const logs = await prisma.vehicleLog.findMany({
     where: logWhere,
     include: {
-      vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true, contractor: { select: { companyName: true } } } },
+      vehicle: { select: { vehicleNo: true, vehicleType: true, vehicleTon: true, fuelType: true, contractor: { select: { companyName: true } } } },
       driver: { select: { name: true, employeeNo: true } },
       zone: { select: { zoneName: true } },
     },
@@ -83,6 +87,7 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
         startMileage: l.startMileage,
         endMileage: l.endMileage,
         fuelUsed: l.fuelUsed ? Number(l.fuelUsed) : null,
+        fuelTypeName: FUEL_LABEL[l.vehicle.fuelType] ?? l.vehicle.fuelType,
         wasteWeightKg: l.wasteWeightKg ? Number(l.wasteWeightKg) : null,
         tripCount: l.tripCount,
         routeDetail: l.routeDetail,

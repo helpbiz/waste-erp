@@ -209,7 +209,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={3} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
+              <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
             )}
           </tbody>
         </table>

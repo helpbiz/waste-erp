@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useMemo } from 'react';
+
 type DayRecord = { checkIn: string | null; checkOut: string | null; rejected: boolean };
 type WorkerRow = {
   workerId: string; name: string; employeeNo: string;
@@ -16,52 +18,126 @@ export default function AttendancePrintClient({
   const SUN = 0, SAT = 6;
   const getDow = (day: number) => new Date(year, month - 1, day).getDay();
 
-  function handleExcel() {
-    window.location.href = `/api/print/attendance-excel?ym=${ym}`;
-  }
+  /* 부서 목록 (원래 순서 유지) */
+  const departments = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const r of rows) {
+      const d = r.department || '(부서 없음)';
+      if (!seen.has(d)) { seen.add(d); list.push(d); }
+    }
+    return list;
+  }, [rows]);
 
-  const TITLE = `월별 출퇴근 현황 — ${year}년 ${month}월 · 총 ${rows.length}명`;
+  /* 선택된 부서 — 기본값: 전체 선택 */
+  const [selectedDepts, setSelectedDepts] = useState<Set<string>>(() => new Set(
+    rows.map((r) => r.department || '(부서 없음)')
+  ));
+
+  function toggleDept(d: string) {
+    setSelectedDepts((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d); else next.add(d);
+      return next;
+    });
+  }
+  function selectAll()  { setSelectedDepts(new Set(departments)); }
+  function clearAll()   { setSelectedDepts(new Set()); }
+
+  const filtered = useMemo(
+    () => rows.filter((r) => selectedDepts.has(r.department || '(부서 없음)')),
+    [rows, selectedDepts]
+  );
+
+  const deptLabel = selectedDepts.size === departments.length
+    ? '전체'
+    : [...selectedDepts].join(', ') || '(없음)';
+
+  const TITLE = `월별 출퇴근 현황 — ${year}년 ${month}월 · ${deptLabel} · ${filtered.length}명`;
   const TOTAL_COLS = 4 + daysInMonth + 1;
+
+  function handleExcel() {
+    const depts = [...selectedDepts].join(',');
+    window.location.href = `/api/print/attendance-excel?ym=${ym}&departments=${encodeURIComponent(depts)}`;
+  }
 
   return (
     <div className="bg-white min-h-screen">
       {/* 화면 전용 컨트롤 — 인쇄 시 숨김 */}
-      <div className="print:hidden flex items-center gap-3 px-6 py-4 border-b bg-slate-50">
-        <span className="text-sm font-bold text-ink">{TITLE}</span>
+      <div className="print:hidden flex items-center gap-3 px-6 py-4 border-b bg-slate-50 flex-wrap">
+        <span className="text-sm font-bold text-ink flex-shrink-0">{TITLE}</span>
         <button
           onClick={() => window.print()}
-          className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+          className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 flex-shrink-0"
         >
           🖨 인쇄
         </button>
         <button
           onClick={handleExcel}
-          className="px-5 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700"
+          className="px-5 py-2 rounded-lg text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 flex-shrink-0"
         >
           📊 엑셀 출력
         </button>
-        <a href="/print" className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 border border-line hover:bg-slate-200">
+        <a href="/print" className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 border border-line hover:bg-slate-200 flex-shrink-0">
           🖨 출력센터
         </a>
         <button
           onClick={() => window.close()}
-          className="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-line hover:bg-slate-50"
+          className="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-line hover:bg-slate-50 flex-shrink-0"
         >
           닫기
         </button>
       </div>
+
+      {/* 부서 선택 패널 — 인쇄 시 숨김 */}
+      {departments.length > 1 && (
+        <div className="print:hidden px-6 py-3 border-b bg-white">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-extrabold text-slate-600 flex-shrink-0">📂 부서 선택</span>
+            <button onClick={selectAll} className="px-2 py-0.5 rounded text-xs font-bold border border-slate-300 hover:bg-slate-50">
+              전체 선택
+            </button>
+            <button onClick={clearAll} className="px-2 py-0.5 rounded text-xs font-bold border border-slate-300 hover:bg-slate-50">
+              전체 해제
+            </button>
+            <div className="flex flex-wrap gap-1.5">
+              {departments.map((d) => {
+                const on = selectedDepts.has(d);
+                return (
+                  <button
+                    key={d}
+                    onClick={() => toggleDept(d)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold border transition ${
+                      on
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-white text-slate-500 border-slate-300 hover:border-accent hover:text-accent'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="text-xs text-slate-400 ml-auto">
+              {filtered.length}명 / 전체 {rows.length}명
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="px-4 py-4 print:px-2 print:py-2">
         {/* 화면 전용 제목 — 인쇄 시 숨김 (thead 에서 반복 출력) */}
         <div className="print:hidden border-t-4 border-double border-slate-800 pt-3 mb-4">
           <h1 className="text-xl font-black text-center tracking-tight">월별 출퇴근 현황</h1>
           <div className="text-center text-sm font-bold text-slate-600 mt-1">
-            {year}년 {month}월 · 총 {rows.length}명
+            {year}년 {month}월 · {deptLabel} · {filtered.length}명
           </div>
         </div>
 
-        {rows.length === 0 ? (
-          <div className="text-center py-20 text-ink-muted font-bold">등록된 근로자가 없습니다.</div>
+        {filtered.length === 0 ? (
+          <div className="text-center py-20 text-ink-muted font-bold">
+            {rows.length === 0 ? '등록된 근로자가 없습니다.' : '선택된 부서에 해당하는 근로자가 없습니다.'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="text-[9px] border-collapse min-w-full">
@@ -100,7 +176,7 @@ export default function AttendancePrintClient({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, idx) => (
+                {filtered.map((r, idx) => (
                   <tr key={r.workerId} className={idx % 2 === 1 ? 'bg-slate-50/60' : ''}>
                     <td className="border border-slate-300 px-1 py-1 text-center text-slate-400">{idx + 1}</td>
                     <td className="border border-slate-300 px-1 py-1 whitespace-nowrap">{r.department}</td>

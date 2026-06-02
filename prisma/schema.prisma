@@ -1461,6 +1461,7 @@ model DisposalSite {
   id           BigInt  @id @default(autoincrement())
   contractorId BigInt  @map("contractor_id")
   name         String  @db.VarChar(50)
+  address      String? @db.VarChar(255)
   isActive     Boolean @default(true) @map("is_active")
   sortOrder    Int     @default(0) @map("sort_order")
 

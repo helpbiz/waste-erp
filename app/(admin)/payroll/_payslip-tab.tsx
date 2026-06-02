@@ -32,6 +32,11 @@ type ImportResult = {
 
 type PayslipTotals = Record<string, number>;
 
+type WorkHours = {
+  연장기본?: number; 연장추가?: number; 야간기본?: number; 야간추가?: number;
+  overtimeBasic?: number; overtimeExtra?: number; nightBasic?: number; nightExtra?: number;
+};
+
 type PublishedRecord = {
   id: string; workerId: string; workerName: string; employeeNo: string | null;
   yearMonth: string; isPublished: boolean; publishedAt: string | null;
@@ -43,6 +48,7 @@ type PublishedRecord = {
     earnings?: Record<string, number>;
     deductions?: Record<string, number>;
     extras?: Record<string, number>;
+    workHours?: WorkHours;
   };
 };
 
@@ -119,6 +125,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
   const [busy,        setBusy]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [info,        setInfo]        = useState<string | null>(null);
+  const [tmpl,        setTmpl]        = useState<Template | null>(null);
   const [results,     setResults]     = useState<ImportResult[] | null>(() => {
     try {
       const saved = sessionStorage.getItem(`payslip_preview_${ym}`);
@@ -166,10 +173,17 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
-    const res = await fetch(`/api/payroll/payslips?yearMonth=${ym}`).catch(() => null);
-    if (res?.ok) {
-      const d = await res.json();
+    const [listRes, tmplRes] = await Promise.all([
+      fetch(`/api/payroll/payslips?yearMonth=${ym}`).catch(() => null),
+      fetch('/api/payroll/payslip-template').catch(() => null),
+    ]);
+    if (listRes?.ok) {
+      const d = await listRes.json();
       setPublished(d.items ?? []);
+    }
+    if (tmplRes?.ok) {
+      const d = await tmplRes.json();
+      setTmpl(d.template ?? DEFAULT_TEMPLATE);
     }
     setLoadingList(false);
   }, [ym]);
@@ -403,12 +417,25 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                         }
                       </td>
                       <td className="px-3 py-2 border-b border-line">
-                        <button
-                          onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                          className="text-xs font-extrabold text-accent hover:underline"
-                        >
-                          {expandedId === r.id ? '닫기' : '내용보기'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                            className="text-xs font-extrabold text-accent hover:underline"
+                          >
+                            {expandedId === r.id ? '닫기' : '내용보기'}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`${r.workerName}(${r.yearMonth}) 명세서를 삭제하시겠습니까?`)) return;
+                              const res = await fetch(`/api/payroll/payslips?id=${r.id}`, { method: 'DELETE' });
+                              if (res.ok) { await loadList(); }
+                              else { const d = await res.json().catch(()=>({})); alert(d.error ?? '삭제 실패'); }
+                            }}
+                            className="text-xs font-extrabold text-danger hover:underline"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </td>
                     </tr>,
                     {expandedId === r.id && (
@@ -418,7 +445,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                             <span className="text-xs font-extrabold text-ink">{r.workerName} ({r.yearMonth}) 임금명세서</span>
                             <button onClick={() => printPayslip(r)} className="text-xs font-extrabold text-emerald-700 hover:underline">🖨 인쇄</button>
                           </div>
-                          <PublishedPayslipDetail data={r.data} />
+                          <PublishedPayslipDetail data={r.data} template={tmpl} />
                         </td>
                       </tr>
                     )}
@@ -476,19 +503,36 @@ function PayslipPreview({ data }: { data: NonNullable<ImportResult['preview']> }
 }
 
 /* ─── 발송된 명세서 상세 뷰 ──────────────────────────────────────── */
-function PublishedPayslipDetail({ data }: { data: PublishedRecord['data'] }) {
+function sortByTemplate(entries: [string, number][], cols?: PayslipColumn[]): [string, number][] {
+  if (!cols || cols.length === 0) return entries;
+  const order = new Map(cols.map((c, i) => [c.key, i]));
+  return [...entries].sort(([a], [b]) => {
+    const ia = order.get(a) ?? 999;
+    const ib = order.get(b) ?? 999;
+    return ia - ib;
+  });
+}
+
+function PublishedPayslipDetail({ data, template }: { data: PublishedRecord['data']; template?: Template | null }) {
   const net = getNetPay(data.totals);
+  const wh = data.workHours;
+  const overtimeH = (wh?.연장기본 ?? wh?.overtimeBasic ?? 0) + (wh?.연장추가 ?? wh?.overtimeExtra ?? 0);
+  const nightH    = (wh?.야간기본 ?? wh?.nightBasic ?? 0)    + (wh?.야간추가 ?? wh?.nightExtra ?? 0);
+
+  const earningEntries = sortByTemplate(Object.entries(data.earnings ?? {}) as [string, number][], template?.earnings);
+  const deductEntries  = sortByTemplate(Object.entries(data.deductions ?? {}) as [string, number][], template?.deductions);
+
   return (
     <div className="grid grid-cols-2 gap-3 text-xs">
-      {data.workDays != null && (
-        <div className="col-span-2 flex gap-4 text-ink-muted">
-          <span>출근일수: <b className="text-ink">{data.workDays}일</b></span>
+      {(data.workDays != null || data.payDate) && (
+        <div className="col-span-2 flex gap-4 text-ink-muted flex-wrap">
+          {data.workDays != null && <span>출근일수: <b className="text-ink">{data.workDays}일</b></span>}
           {data.payDate && <span>지급일: <b className="text-ink">{data.payDate}</b></span>}
         </div>
       )}
       <div>
         <div className="font-extrabold text-ink mb-1">지급 항목</div>
-        {Object.entries(data.earnings ?? {}).map(([k, v]) => (
+        {earningEntries.map(([k, v]) => (
           <div key={k} className="flex justify-between py-0.5 border-b border-line">
             <span className="text-ink-muted">{k}</span>
             <span className="font-mono font-bold">{(v as number).toLocaleString('ko-KR')}</span>
@@ -503,7 +547,7 @@ function PublishedPayslipDetail({ data }: { data: PublishedRecord['data'] }) {
       </div>
       <div>
         <div className="font-extrabold text-ink mb-1">공제 항목</div>
-        {Object.entries(data.deductions ?? {}).map(([k, v]) => (
+        {deductEntries.map(([k, v]) => (
           <div key={k} className="flex justify-between py-0.5 border-b border-line">
             <span className="text-ink-muted">{k}</span>
             <span className="font-mono font-bold">{(v as number).toLocaleString('ko-KR')}</span>
@@ -514,6 +558,12 @@ function PublishedPayslipDetail({ data }: { data: PublishedRecord['data'] }) {
         <span className="font-extrabold text-accent text-sm">실수령액</span>
         <span className="font-mono font-black text-accent">{net.toLocaleString('ko-KR')}원</span>
       </div>
+      {wh && (overtimeH > 0 || nightH > 0) && (
+        <div className="col-span-2 grid grid-cols-2 gap-2 text-xs border border-line rounded-lg px-3 py-2">
+          <span className="text-ink-muted">연장근로: <b className="text-ink font-mono">{overtimeH}시간</b></span>
+          <span className="text-ink-muted">야간근로: <b className="text-ink font-mono">{nightH}시간</b></span>
+        </div>
+      )}
     </div>
   );
 }

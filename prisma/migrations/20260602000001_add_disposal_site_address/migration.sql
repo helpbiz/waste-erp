@@ -1,0 +1,1 @@
+ALTER TABLE "disposal_sites" ADD COLUMN IF NOT EXISTS "address" VARCHAR(255);
