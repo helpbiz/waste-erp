@@ -328,7 +328,7 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
 
 /* ── 메인 클라이언트 컴포넌트 ── */
 export default function VehiclePrintClient({
-  date, selectedVehicleId, vehicles, logs, isSuperAdmin = false, autoprint = false,
+  date, selectedVehicleId, vehicles, logs: initialLogs, isSuperAdmin = false, autoprint = false,
 }: {
   date: string;
   selectedVehicleId: string | null;
@@ -340,6 +340,26 @@ export default function VehiclePrintClient({
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
   const [vehicleId, setVehicleId] = useState(selectedVehicleId ?? '');
+  const [logs, setLogs] = useState<Log[]>(initialLogs);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(logId: string, vehicleNo: string) {
+    if (!confirm(`${vehicleNo} 차량일지를 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+    setDeletingId(logId);
+    try {
+      const res = await fetch(`/api/vehicle-logs/${logId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.message ?? d.error ?? '삭제 실패');
+        return;
+      }
+      setLogs((prev) => prev.filter((l) => l.id !== logId));
+    } catch {
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     if (autoprint && logs.length > 0) {
@@ -409,7 +429,19 @@ export default function VehiclePrintClient({
         ) : (
           <div>
             {logs.map((l) => (
-              <PrintArticle key={l.id} log={l} dateLabel={dateLabel} isSuperAdmin={isSuperAdmin} />
+              <div key={l.id} className="relative">
+                {/* 삭제 버튼 — 인쇄 시 숨김 */}
+                <div className="print:hidden flex justify-end mb-1 px-1">
+                  <button
+                    onClick={() => handleDelete(l.id, l.vehicleNo)}
+                    disabled={deletingId === l.id}
+                    className="px-3 py-1 rounded text-xs font-extrabold bg-red-50 border border-red-300 text-red-700 hover:bg-red-100 active:scale-95 disabled:opacity-50 transition"
+                  >
+                    {deletingId === l.id ? '삭제 중…' : `🗑 ${l.vehicleNo} 삭제`}
+                  </button>
+                </div>
+                <PrintArticle log={l} dateLabel={dateLabel} isSuperAdmin={isSuperAdmin} />
+              </div>
             ))}
           </div>
         )}

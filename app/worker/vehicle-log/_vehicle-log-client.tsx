@@ -1096,14 +1096,34 @@ function HistoryPanel() {
   const [items, setItems] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
+    setLoading(true);
     fetch('/api/vehicle-logs?limit=30')
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .catch(() => null)
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleDelete(id: string) {
+    if (!confirm('이 차량일지를 삭제하시겠습니까?\n삭제 후 새로 작성할 수 있습니다.')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/vehicle-logs/${id}`, { method: 'DELETE' });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { alert(d.message ?? d.error ?? '삭제 실패'); return; }
+      setItems((prev) => prev.filter((l) => l.id !== id));
+      if (expanded === id) setExpanded(null);
+    } catch {
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="px-4">
@@ -1131,6 +1151,17 @@ function HistoryPanel() {
                   <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${LOG_STATUS_COLOR[log.status] ?? 'bg-slate-100 text-slate-700 border-slate-300'}`}>
                     {LOG_STATUS_LABEL[log.status] ?? log.status}
                   </span>
+                  {/* DRAFT·REJECTED 상태만 삭제 가능 */}
+                  {(log.status === 'DRAFT' || log.status === 'REJECTED') && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(log.id); }}
+                      disabled={deletingId === log.id}
+                      className="text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-300 active:scale-95 disabled:opacity-50 ml-auto"
+                    >
+                      {deletingId === log.id ? '…' : '삭제'}
+                    </button>
+                  )}
                 </div>
                 <div className="text-xs font-mono text-ink-muted mt-0.5">
                   {log.vehicle.no} · {log.vehicle.type}{log.vehicle.ton ? ` ${log.vehicle.ton}t` : ''}
@@ -1205,6 +1236,7 @@ function translateVehicleLogError(code?: string): string | null {
     case 'invalid_vehicle': return '차량이 소속 업체에 등록되지 않았습니다.';
     case 'vehicle_retired': return '폐차 처리된 차량입니다.';
     case 'duplicate_log_today': return '오늘 이미 제출된 차량일지가 있습니다. 반려 처리 후 재작성하세요.';
+    case 'not_deletable': return '제출 완료·승인된 일지는 삭제할 수 없습니다.';
     case 'mileage_required': return '금일누적거리를 입력해 주세요.';
     case 'unauthenticated': return '로그인이 만료되었습니다.';
     default: return null;
