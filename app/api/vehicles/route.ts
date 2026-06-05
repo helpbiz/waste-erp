@@ -22,6 +22,7 @@ const PostBody = z.object({
   capacityTon: z.number().min(0).max(99).optional(),
   fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG', 'GASOLINE']),
   yearManufactured: z.number().int().min(1990).max(2099).optional(),
+  registrationDate: z.string().nullable().optional(), // 'YYYY-MM-DD'
   driverId: z.union([z.string(), z.number()]).nullable().optional(),
   passenger1Id: z.union([z.string(), z.number()]).nullable().optional(),
   passenger2Id: z.union([z.string(), z.number()]).nullable().optional(),
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
       driverId: v.driverId?.toString() ?? null,
       passenger1Id: v.passenger1Id?.toString() ?? null,
       passenger2Id: v.passenger2Id?.toString() ?? null,
+      registrationDate: v.registrationDate?.toISOString().slice(0, 10) ?? null,
       operationStartDate: v.operationStartDate?.toISOString().slice(0, 10) ?? null,
       initialMileage: v.initialMileage,
       totalMileage: v.totalMileage,
@@ -133,6 +135,7 @@ export async function POST(req: Request) {
     fuelType: b.fuelType,
     yearManufactured: b.yearManufactured ?? null,
     status: 'ACTIVE',
+    registrationDate: b.registrationDate ? new Date(b.registrationDate) : null,
     operationStartDate: b.operationStartDate ? new Date(b.operationStartDate) : null,
     initialMileage: b.initialMileage ?? null,
     totalMileage: b.initialMileage ?? null,
@@ -141,7 +144,14 @@ export async function POST(req: Request) {
     ...(passenger2Id ? { passenger2: { connect: { id: passenger2Id } } } : {}),
   };
 
-  const created = await prisma.vehicle.create({ data });
+  let created: Awaited<ReturnType<typeof prisma.vehicle.create>>;
+  try {
+    created = await prisma.vehicle.create({ data });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[VEHICLE_CREATE_ERROR]', msg);
+    return NextResponse.json({ error: 'db_error', message: msg }, { status: 500 });
+  }
 
   await prisma.auditLog.create({
     data: {

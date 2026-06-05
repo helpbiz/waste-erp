@@ -5,7 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 type PosRow = { id: string; name: string; category: string; sortOrder: number; active: boolean; userCount: number };
 type RankRow = { id: string; name: string; level: number; sortOrder: number; active: boolean; userCount: number };
-type DeptRow = { id: string; name: string; sortOrder: number; parentId: string | null; excludeFromTbm: boolean };
+type DeptRow = { id: string; name: string; sortOrder: number; parentId: string | null; excludeFromTbm: boolean; headUserId: string | null; headUserName: string | null };
+type WorkerOpt = { id: string; name: string };
 type SubTab = 'positions' | 'ranks' | 'departments';
 
 const CATEGORY_LABEL: Record<string, string> = { MANAGER: '관리자', FIELD: '현장', ADMIN: '임원·사무' };
@@ -16,6 +17,7 @@ export default function OrgSettingsTab() {
   const [positions, setPositions] = useState<PosRow[]>([]);
   const [ranks, setRanks] = useState<RankRow[]>([]);
   const [departments, setDepartments] = useState<DeptRow[]>([]);
+  const [workers, setWorkers] = useState<WorkerOpt[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,14 +25,16 @@ export default function OrgSettingsTab() {
     setLoading(true);
     setError('');
     try {
-      const [pr, rr, dr] = await Promise.all([
+      const [pr, rr, dr, wr] = await Promise.all([
         fetch('/api/contractor/positions?active=all').then((r) => r.json()),
         fetch('/api/contractor/ranks?active=all').then((r) => r.json()),
         fetch('/api/departments').then((r) => r.json()),
+        fetch('/api/users?role=WORKER&status=ACTIVE').then((r) => r.json()).catch(() => ({})),
       ]);
       setPositions(pr.positions ?? []);
       setRanks(rr.ranks ?? []);
       setDepartments(dr.departments ?? []);
+      setWorkers((wr.items ?? []).map((u: { id: string; name: string }) => ({ id: u.id, name: u.name })));
     } catch {
       setError('불러오기 실패');
     } finally {
@@ -52,7 +56,7 @@ export default function OrgSettingsTab() {
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {!loading && sub === 'departments' && (
-        <DepartmentsPanel rows={departments} onRefresh={load} />
+        <DepartmentsPanel rows={departments} workers={workers} onRefresh={load} />
       )}
       {!loading && sub === 'positions' && (
         <PositionsPanel rows={positions} onRefresh={load} />
@@ -79,7 +83,7 @@ function SubTabBtn({ active, onClick, children }: { active: boolean; onClick: ()
 
 /* ─────────────────────────── Departments Panel ─────────────────────────── */
 
-function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () => void }) {
+function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; workers: WorkerOpt[]; onRefresh: () => void }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -101,7 +105,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
     onRefresh();
   }
 
-  async function handleSave(id: string, data: { name?: string; sortOrder?: number; excludeFromTbm?: boolean }) {
+  async function handleSave(id: string, data: { name?: string; sortOrder?: number; excludeFromTbm?: boolean; headUserId?: string | null }) {
     await fetch(`/api/departments/${id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -168,9 +172,10 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
         <table className="min-w-full text-sm border-collapse">
           <thead>
             <tr className="bg-slate-100 text-xs text-slate-500">
-              <th className="px-3 py-2 text-center font-semibold w-20">표시순서</th>
+              <th className="px-3 py-2 text-center font-semibold w-16">순서</th>
               <th className="px-3 py-2 text-left font-semibold">부서명</th>
-              <th className="px-3 py-2 text-center font-semibold w-28">TBM 대상</th>
+              <th className="px-3 py-2 text-center font-semibold w-24">TBM 대상</th>
+              <th className="px-3 py-2 text-left font-semibold min-w-[160px]">TBM 담당자</th>
               <th className="px-3 py-2 text-center font-semibold w-24">작업</th>
             </tr>
           </thead>
@@ -178,7 +183,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
             {sorted.map((row) => (
               <tr key={row.id} className="border-t border-line">
                 {editId === row.id ? (
-                  <EditDeptRow row={row} onSave={(d) => handleSave(row.id, d)} onCancel={() => setEditId(null)} />
+                  <EditDeptRow row={row} onSave={(d) => handleSave(row.id, d)} onCancel={() => setEditId(null)} colSpan={5} />
                 ) : (
                   <>
                     <td className="px-3 py-2 text-center font-mono text-slate-500">{row.sortOrder}</td>
@@ -196,6 +201,24 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
                         {row.excludeFromTbm ? '제외' : '대상'}
                       </button>
                     </td>
+                    <td className="px-3 py-2">
+                      {/* TBM 담당자 인라인 선택 드롭다운 */}
+                      <select
+                        value={row.headUserId ?? ''}
+                        onChange={(e) => handleSave(row.id, { headUserId: e.target.value || null })}
+                        className="w-full px-2 py-1 rounded border border-line text-xs bg-white focus:outline-none focus:border-accent"
+                        disabled={row.excludeFromTbm}
+                        title={row.excludeFromTbm ? 'TBM 제외 부서는 담당자 지정 불가' : 'TBM 담당자 선택'}
+                      >
+                        <option value="">— 미지정 —</option>
+                        {workers.map((w) => (
+                          <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                      </select>
+                      {row.headUserName && (
+                        <div className="text-[0.625rem] text-emerald-700 font-semibold mt-0.5">✓ {row.headUserName}</div>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditId(row.id)}
@@ -209,7 +232,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
+              <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
             )}
           </tbody>
         </table>
@@ -218,7 +241,7 @@ function DepartmentsPanel({ rows, onRefresh }: { rows: DeptRow[]; onRefresh: () 
   );
 }
 
-function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { name: string; sortOrder: number; excludeFromTbm: boolean }) => void; onCancel: () => void }) {
+function EditDeptRow({ row, onSave, onCancel, colSpan: _cs }: { row: DeptRow; onSave: (d: { name: string; sortOrder: number; excludeFromTbm: boolean }) => void; onCancel: () => void; colSpan?: number }) {
   const [name, setName] = useState(row.name);
   const [sortOrder, setSortOrder] = useState(row.sortOrder);
   const [excludeFromTbm, setExcludeFromTbm] = useState(row.excludeFromTbm);
@@ -239,6 +262,8 @@ function EditDeptRow({ row, onSave, onCancel }: { row: DeptRow; onSave: (d: { na
           {excludeFromTbm ? '제외' : '대상'}
         </button>
       </td>
+      {/* TBM 담당자는 인라인 드롭다운으로 처리 — 수정 행에서는 빈 셀 */}
+      <td className="px-3 py-1 text-xs text-slate-400 italic">인라인 드롭다운으로 변경</td>
       <td className="px-3 py-1">
         <div className="flex gap-1 justify-center">
           <button onClick={() => onSave({ name, sortOrder, excludeFromTbm })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>

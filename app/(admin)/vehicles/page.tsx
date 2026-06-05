@@ -56,6 +56,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
       capacityTon: v.capacityTon ? Number(v.capacityTon) : null,
       fuelType: v.fuelType,
       yearManufactured: v.yearManufactured,
+      registrationDate: v.registrationDate?.toISOString().slice(0, 10) ?? null,
       status: v.status,
       driverId: v.driverId?.toString() ?? null,
       driverName: v.driver?.name ?? null,

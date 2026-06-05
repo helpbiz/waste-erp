@@ -560,6 +560,7 @@ model Vehicle {
   status           VehicleStatus @default(ACTIVE)
 
   // 운영 정보 (Phase 1A-3)
+  registrationDate   DateTime? @map("registration_date") @db.Date
   driverId           BigInt?   @map("driver_id")
   passenger1Id       BigInt?   @map("passenger1_id")
   passenger2Id       BigInt?   @map("passenger2_id")

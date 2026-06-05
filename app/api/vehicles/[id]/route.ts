@@ -24,6 +24,7 @@ const PatchBody = z.object({
   capacityTon: z.number().min(0).max(99).nullable().optional(),
   fuelType: z.enum(['DIESEL', 'LPG', 'ELECTRIC', 'CNG', 'GASOLINE']).optional(),
   yearManufactured: z.number().int().min(1990).max(2099).nullable().optional(),
+  registrationDate: z.string().nullable().optional(), // 'YYYY-MM-DD'
   status: z.enum(['ACTIVE', 'MAINTENANCE']).optional(), // RETIRED는 /retire endpoint 전용
   driverId: z.union([z.string(), z.number()]).nullable().optional(),
   passenger1Id: z.union([z.string(), z.number()]).nullable().optional(),
@@ -115,6 +116,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(b.driverId !== undefined && { driverId: b.driverId === null ? null : BigInt(b.driverId) }),
       ...(b.passenger1Id !== undefined && { passenger1Id: b.passenger1Id === null ? null : BigInt(b.passenger1Id) }),
       ...(b.passenger2Id !== undefined && { passenger2Id: b.passenger2Id === null ? null : BigInt(b.passenger2Id) }),
+      ...(b.registrationDate !== undefined && {
+        registrationDate: b.registrationDate ? new Date(b.registrationDate) : null,
+      }),
       ...(b.operationStartDate !== undefined && {
         operationStartDate: b.operationStartDate ? new Date(b.operationStartDate) : null,
       }),

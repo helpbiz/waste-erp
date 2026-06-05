@@ -42,6 +42,7 @@ export async function GET(req: Request) {
 
   const items = await prisma.department.findMany({
     where,
+    include: { head: { select: { id: true, name: true } } },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
   });
   return NextResponse.json({
@@ -52,6 +53,8 @@ export async function GET(req: Request) {
       name: d.name,
       sortOrder: d.sortOrder,
       excludeFromTbm: d.excludeFromTbm,
+      headUserId: d.headUserId?.toString() ?? null,
+      headUserName: d.head?.name ?? null,
     })),
   });
 }

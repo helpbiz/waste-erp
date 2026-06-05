@@ -29,6 +29,7 @@ export type VehicleRow = {
   capacityTon: number | null;
   fuelType: string;
   yearManufactured: number | null;
+  registrationDate: string | null; // 'YYYY-MM-DD'
   status: string;        // ACTIVE / MAINTENANCE / RETIRED
   driverId: string | null;
   driverName: string | null;
@@ -523,6 +524,7 @@ type VehicleFormPayload = {
   capacityTon: number | null;
   fuelType: 'DIESEL' | 'LPG' | 'ELECTRIC' | 'CNG' | 'GASOLINE';
   yearManufactured: number | null;
+  registrationDate: string | null;
   status?: 'ACTIVE' | 'MAINTENANCE';
   driverId: string | null;
   passenger1Id: string | null;
@@ -563,6 +565,9 @@ function VehicleFormModal({
   const [yearManufactured, setYearManufactured] = useState<string>(
     initial?.yearManufactured != null ? String(initial.yearManufactured) : ''
   );
+  const [registrationDate, setRegistrationDate] = useState<string>(
+    initial?.registrationDate ?? ''
+  );
   const [status, setStatus] = useState<VehicleFormPayload['status']>(
     (initial?.status === 'MAINTENANCE' ? 'MAINTENANCE' : 'ACTIVE')
   );
@@ -589,6 +594,7 @@ function VehicleFormModal({
       capacityTon: capacityTon ? Number(capacityTon) : null,
       fuelType,
       yearManufactured: yearManufactured ? Number(yearManufactured) : null,
+      registrationDate: registrationDate || null,
       driverId: driverId || null,
       passenger1Id: passenger1Id || null,
       passenger2Id: passenger2Id || null,
@@ -668,6 +674,14 @@ function VehicleFormModal({
                 placeholder="2024"
                 min={1990}
                 max={2099}
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+              />
+            </Field>
+            <Field label="등록일자">
+              <input
+                type="date"
+                value={registrationDate}
+                onChange={(e) => setRegistrationDate(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
               />
             </Field>
@@ -827,6 +841,7 @@ function translateError(code?: string): string | null {
     case 'not_found': return '차량을 찾을 수 없습니다.';
     case 'already_retired': return '이미 폐차 처리된 차량입니다.';
     case 'has_active_logs': return '진행 중인 운행일지가 있어 삭제할 수 없습니다.';
+    case 'db_error': return null; // message 필드에 상세 메시지가 있음
     default: return null;
   }
 }
