@@ -63,6 +63,7 @@ export async function GET(req: Request) {
       passenger1Id: v.passenger1Id?.toString() ?? null,
       passenger2Id: v.passenger2Id?.toString() ?? null,
       registrationDate: v.registrationDate?.toISOString().slice(0, 10) ?? null,
+      updatedAt: v.updatedAt.toISOString().slice(0, 10),
       operationStartDate: v.operationStartDate?.toISOString().slice(0, 10) ?? null,
       initialMileage: v.initialMileage,
       totalMileage: v.totalMileage,

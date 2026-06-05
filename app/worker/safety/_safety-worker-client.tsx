@@ -29,6 +29,7 @@ export default function SafetyWorkerClient({
   facilities = [],
   isFacilityOperator = false,
   isTbmManager = false,
+  defaultTbmLeader = '',
   operatorFacility = null,
   hasNearMiss = true,
   hasIncident = true,
@@ -44,6 +45,7 @@ export default function SafetyWorkerClient({
   facilities?: FacilityOption[];
   isFacilityOperator?: boolean;
   isTbmManager?: boolean;
+  defaultTbmLeader?: string;
   operatorFacility?: FacilityOption | null;
   hasNearMiss?: boolean;
   hasIncident?: boolean;
@@ -164,7 +166,7 @@ export default function SafetyWorkerClient({
   // 시설 담당자 / TBM 매니저: TBM 작성 폼 상태
   const [opTbmTopic, setOpTbmTopic] = useState('');
   const [opTbmContent, setOpTbmContent] = useState('');
-  const [opTbmLeader, setOpTbmLeader] = useState('');
+  const [opTbmLeader, setOpTbmLeader] = useState(defaultTbmLeader);
   const [opTbmLocation, setOpTbmLocation] = useState('');
   const [opTbmHazards, setOpTbmHazards] = useState('');
   const [opTbmSaving, setOpTbmSaving] = useState(false);

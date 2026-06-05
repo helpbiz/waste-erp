@@ -30,6 +30,7 @@ export type VehicleRow = {
   fuelType: string;
   yearManufactured: number | null;
   registrationDate: string | null; // 'YYYY-MM-DD'
+  updatedAt: string | null;
   status: string;        // ACTIVE / MAINTENANCE / RETIRED
   driverId: string | null;
   driverName: string | null;
@@ -615,7 +616,13 @@ function VehicleFormModal({
           </svg>
           <div className="flex-1">
             <h3 className="text-base font-extrabold text-ink">{isEdit ? '차량 수정' : '차량 등록'}</h3>
-            {isEdit && <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">#{initial.id} · {initial.vehicleNo}</div>}
+            {isEdit && (
+              <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">
+                #{initial.id} · {initial.vehicleNo}
+                {initial.registrationDate && ` · 등록 ${initial.registrationDate}`}
+                {initial.updatedAt && ` · 수정 ${initial.updatedAt}`}
+              </div>
+            )}
           </div>
           <button onClick={onCancel} className="text-ink-muted hover:text-ink text-2xl font-bold leading-none px-2">&times;</button>
         </header>

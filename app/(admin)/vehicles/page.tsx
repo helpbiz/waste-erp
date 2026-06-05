@@ -57,6 +57,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
       fuelType: v.fuelType,
       yearManufactured: v.yearManufactured,
       registrationDate: v.registrationDate?.toISOString().slice(0, 10) ?? null,
+      updatedAt: v.updatedAt.toISOString().slice(0, 10),
       status: v.status,
       driverId: v.driverId?.toString() ?? null,
       driverName: v.driver?.name ?? null,

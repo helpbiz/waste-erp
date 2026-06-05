@@ -52,7 +52,12 @@ export default async function SafetyWorkerPage() {
       : Promise.resolve([] as { id: bigint; name: string; type: string }[]),
     prisma.user.findUnique({
       where: { id: BigInt(session.userId) },
-      select: { isFacilityOperator: true, primaryFacilityId: true, primaryFacility: { select: { id: true, name: true } }, isTbmManager: true },
+      select: {
+        isFacilityOperator: true, primaryFacilityId: true,
+        primaryFacility: { select: { id: true, name: true } },
+        isTbmManager: true, name: true,
+        department: { select: { head: { select: { name: true } } } },
+      },
     }),
   ]);
 
@@ -92,6 +97,7 @@ export default async function SafetyWorkerPage() {
       facilities={facilities.map((f): FacilityOption => ({ id: f.id.toString(), name: f.name }))}
       isFacilityOperator={userDetail?.isFacilityOperator ?? false}
       isTbmManager={userDetail?.isTbmManager ?? false}
+      defaultTbmLeader={userDetail?.department?.head?.name ?? userDetail?.name ?? ''}
       operatorFacility={userDetail?.primaryFacility
         ? { id: userDetail.primaryFacility.id.toString(), name: userDetail.primaryFacility.name }
         : null}

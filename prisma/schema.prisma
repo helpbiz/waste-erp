@@ -559,6 +559,8 @@ model Vehicle {
   yearManufactured Int?          @map("year_manufactured") @db.SmallInt
   status           VehicleStatus @default(ACTIVE)
 
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
   // 운영 정보 (Phase 1A-3)
   registrationDate   DateTime? @map("registration_date") @db.Date
   driverId           BigInt?   @map("driver_id")
