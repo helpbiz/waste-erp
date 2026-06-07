@@ -35,6 +35,19 @@ const SEV_TONE: Record<string, string> = {
   CRITICAL: 'border-rose-500 bg-rose-50 text-rose-900',
 };
 
+type WeatherNotice = {
+  id: string; noticeDate: string; alertType: string; alertLabel: string;
+  title: string; content: string | null; createdBy: string; createdAt: string; photoCount: number;
+};
+
+const WEATHER_COLOR: Record<string, string> = {
+  HEATWAVE: 'border-red-400 bg-red-50 text-red-900',
+  COLDWAVE: 'border-blue-400 bg-blue-50 text-blue-900',
+  TYPHOON:  'border-purple-400 bg-purple-50 text-purple-900',
+  STORM:    'border-slate-400 bg-slate-50 text-slate-900',
+  OTHER:    'border-amber-400 bg-amber-50 text-amber-900',
+};
+
 export default function AnnouncementsClient({
   session,
   isAvac = false,
@@ -44,12 +57,19 @@ export default function AnnouncementsClient({
   isAvac?: boolean;
   facilities?: FacilityOption[];
 }) {
+  const [tab, setTab] = useState<'general' | 'weather'>('general');
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Announcement | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  /* 날씨관리대장 state */
+  const today = new Date().toISOString().slice(0, 10);
+  const [weatherDate, setWeatherDate] = useState(today);
+  const [weatherItems, setWeatherItems] = useState<WeatherNotice[]>([]);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   function load() {
     setLoading(true);
@@ -58,7 +78,18 @@ export default function AnnouncementsClient({
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
   }
+
+  function loadWeather(date: string) {
+    setWeatherLoading(true);
+    fetch(`/api/safety/weather-notices?date=${date}`)
+      .then((r) => r.json())
+      .then((d) => setWeatherItems(d.notices ?? []))
+      .catch(() => setWeatherItems([]))
+      .finally(() => setWeatherLoading(false));
+  }
+
   useEffect(() => { load(); }, []);
+  useEffect(() => { if (tab === 'weather') loadWeather(weatherDate); }, [tab, weatherDate]);
 
   async function del(id: string, title: string) {
     if (!confirm(`⚠ 공지 삭제\n\n'${title}'\n\n이 공지를 영구 삭제합니다. 복구 불가.\n진행하시겠습니까?`)) return;
@@ -90,11 +121,37 @@ export default function AnnouncementsClient({
             🔊 음성 설정
           </button>
         )}
+        {tab === 'general' && (
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+          >
+            ＋ 일반 공지 작성
+          </button>
+        )}
+        {tab === 'weather' && (
+          <a
+            href="/safety/weather-notices"
+            className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+          >
+            ＋ 날씨관리대장 등록
+          </a>
+        )}
+      </div>
+
+      {/* 탭 — 일반공지 / 날씨관리대장 */}
+      <div className="flex gap-1 bg-surface-soft border border-line rounded-xl p-1 max-w-xs">
         <button
-          onClick={() => setCreateOpen(true)}
-          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+          onClick={() => setTab('general')}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${tab === 'general' ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-surface'}`}
         >
-          ＋ 신규 공지 작성
+          📢 일반 공지
+        </button>
+        <button
+          onClick={() => setTab('weather')}
+          className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold transition ${tab === 'weather' ? 'bg-red-600 text-white shadow-sm' : 'text-ink hover:bg-surface'}`}
+        >
+          🌡 날씨관리대장
         </button>
       </div>
 
@@ -123,14 +180,74 @@ export default function AnnouncementsClient({
         </div>
       )}
 
-      {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
-      {!loading && items.length === 0 && (
-        <div className="bg-surface border border-line rounded-lg py-16 text-center text-slate-500 font-bold">
-          등록된 공지가 없습니다. [＋ 신규 공지 작성] 클릭하여 첫 공지를 등록하세요.
+      {/* ── 날씨관리대장 탭 ── */}
+      {tab === 'weather' && (
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm font-semibold text-red-800">
+            폭염·한파·태풍 등 기상 안전공지를 등록하고 근로자 휴식 인증 사진을 관리합니다.
+            근로자는 안전관리 페이지에서 해당 공지를 확인하고 사진을 업로드할 수 있습니다.
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-xs font-extrabold text-ink-muted">날짜 조회</label>
+            <input type="date" value={weatherDate} onChange={(e) => setWeatherDate(e.target.value)}
+              className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
+            <a href="/safety/weather-notices"
+              className="px-3 py-1.5 rounded text-xs font-bold bg-white border border-line hover:bg-slate-50">
+              날씨관리대장 전체 관리 →
+            </a>
+          </div>
+          {weatherLoading && <div className="text-center py-8 text-slate-500 text-sm">로딩 중…</div>}
+          {!weatherLoading && weatherItems.length === 0 && (
+            <div className="bg-surface border border-line rounded-lg py-12 text-center">
+              <div className="text-slate-500 font-bold text-sm mb-3">{weatherDate} 날씨관리대장 공지가 없습니다.</div>
+              <a href="/safety/weather-notices"
+                className="inline-block px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">
+                ＋ 날씨관리대장 등록하러 가기
+              </a>
+            </div>
+          )}
+          <div className="space-y-3">
+            {weatherItems.map((n) => (
+              <article key={n.id} className={`border-2 rounded-lg p-4 ${WEATHER_COLOR[n.alertType] ?? 'border-slate-300 bg-white'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-white border border-current">
+                        🌡 {n.alertLabel}
+                      </span>
+                      <span className="text-[0.6875rem] font-mono text-ink-muted">{n.noticeDate}</span>
+                      {n.photoCount > 0 && (
+                        <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-green-100 text-green-800 border border-green-300">
+                          📷 사진 {n.photoCount}건
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-black text-ink">{n.title}</h3>
+                    {n.content && <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1.5">{n.content}</p>}
+                    <div className="text-[0.6875rem] font-mono text-slate-500 mt-2">
+                      {n.createdBy} · {new Date(n.createdAt).toLocaleString('ko-KR')}
+                    </div>
+                  </div>
+                  <a href={`/api/safety/weather-notices/${n.id}/export?images=true`}
+                    className="flex-shrink-0 px-2.5 py-1 rounded text-xs font-extrabold bg-white border border-current hover:bg-slate-50 active:scale-95">
+                    📥 출력
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="space-y-3">
+      {/* ── 일반 공지 탭 ── */}
+      {tab === 'general' && loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
+      {tab === 'general' && !loading && items.length === 0 && (
+        <div className="bg-surface border border-line rounded-lg py-16 text-center text-slate-500 font-bold">
+          등록된 공지가 없습니다. [＋ 일반 공지 작성] 클릭하여 첫 공지를 등록하세요.
+        </div>
+      )}
+
+      {tab === 'general' && <div className="space-y-3">
         {items.map((a) => {
           const expired = a.expiresAt && new Date(a.expiresAt) < new Date();
           return (
@@ -188,7 +305,7 @@ export default function AnnouncementsClient({
             </article>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 }

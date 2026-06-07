@@ -80,7 +80,18 @@ export default function WeatherNoticesClient() {
         <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}
           className="px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
         <span className="text-xs font-mono text-ink-muted">{notices.length}건</span>
-        <span className="ml-auto text-[0.6875rem] text-ink-muted">공지 등록은 공지사항 메뉴에서 진행하세요.</span>
+        <a
+          href={`/safety/weather-notices/print?from=${filterDate}&to=${filterDate}`}
+          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 ml-auto"
+        >
+          🖨 일자별 출력
+        </a>
+        <a
+          href="/safety/weather-notices/print"
+          className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-bold hover:bg-slate-50"
+        >
+          📅 기간별 출력
+        </a>
       </div>
 
       {/* 공지 목록 */}

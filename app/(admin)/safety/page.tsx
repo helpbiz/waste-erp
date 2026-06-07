@@ -95,10 +95,18 @@ export default async function SafetyPage({
           },
         })
       : Promise.resolve(null),
-    /* 알림톡 발송 대상 — 해당 업체 활성 워커 */
+    /* TBM 대상 워커 — 사무직(excludeFromTbm) 부서 제외, TBM 미서명 계산·알림톡 발송에 사용 */
     scopedContractorId
       ? prisma.user.findMany({
-          where: { contractorId: scopedContractorId, role: 'WORKER', status: 'ACTIVE' },
+          where: {
+            contractorId: scopedContractorId,
+            role: 'WORKER',
+            status: 'ACTIVE',
+            OR: [
+              { departmentId: null },
+              { department: { excludeFromTbm: false } },
+            ],
+          },
           select: { id: true, name: true },
           orderBy: { name: 'asc' },
         })

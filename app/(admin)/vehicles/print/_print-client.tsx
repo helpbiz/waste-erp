@@ -93,8 +93,8 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
     ? (log.endMileage - log.startMileage).toLocaleString() + ' km'
     : '';
 
-  const bmVal = (key: string) => (bm[key] && Number(bm[key]) > 0 ? String(bm[key]) : '');
-  const lwVal = (key: string) => (lw[key] && Number(lw[key]) > 0 ? String(lw[key]) : '');
+  const bmVal = (key: string) => (bm[key] && Number(bm[key]) > 0 ? Number(bm[key]).toLocaleString() : '');
+  const lwVal = (key: string) => (lw[key] && Number(lw[key]) > 0 ? Number(lw[key]).toLocaleString() : '');
   const iv    = (key: string) => insp[key] ?? '';
   const isAb  = (key: string) => { const v = insp[key]; return v && v !== '양호' && v !== '예'; };
 
@@ -586,7 +586,10 @@ export default function VehiclePrintClient({
           /* space-y 마진 제거 — 첫 페이지와 후속 페이지 title 간격 통일 */
           .vl-print-wrap { margin-top: 0 !important; }
 
-          /* 차량 1대 = 1페이지 */
+          /* 차량 1대 = 1페이지
+           래퍼 div를 투명화하여 :last-child 선택자가 전체 목록 기준으로 동작 */
+          .vl-print-wrap .relative { display: contents; }
+
           .vl-sheet {
             page-break-after: always !important;
             break-after: page !important;

@@ -191,7 +191,7 @@ export default function AttendancePrintClient({
                         } ${d?.rejected ? 'bg-red-50' : ''} ${d?.checkIn ? '' : 'text-slate-300'}`}>
                           {d?.rejected ? (
                             <div>
-                              <div className="text-red-600 font-bold leading-tight text-[0.75rem]">[반려]</div>
+                              <div className="text-red-600 font-bold leading-tight">[반려]</div>
                               <div className="text-red-400 leading-tight">{d.checkIn ?? '—'}</div>
                             </div>
                           ) : d?.checkIn ? (

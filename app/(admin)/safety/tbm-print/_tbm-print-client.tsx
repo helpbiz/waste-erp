@@ -125,7 +125,7 @@ export default function TbmPrintClient({
                   <article key={s.id} className="tbm-sheet border-2 border-slate-700 mb-6">
 
                     {/* 인쇄 전용 반복 헤더 */}
-                    <div className="screen-hidden border-b-2 border-double border-slate-700 px-3 py-2 text-center" style={{ backgroundColor: '#f1f5f9' }}>
+                    <div className="screen-hidden border-b-2 border-double border-slate-700 px-3 py-2 text-center">
                       <div className="font-black underline underline-offset-2 tracking-tight" style={{ fontSize: '14pt' }}>
                         TBM 안전교육
                       </div>
@@ -142,7 +142,7 @@ export default function TbmPrintClient({
                     </header>
 
                     {/* 인쇄용 날짜 헤더 — 팀·등록자 포함 */}
-                    <header className="screen-hidden border-b border-slate-700 px-3 py-1.5 grid grid-cols-3 gap-2" style={{ backgroundColor: '#e2e8f0' }}>
+                    <header className="screen-hidden border-b border-slate-700 px-3 py-1.5 grid grid-cols-3 gap-2">
                       <div><span className="font-bold">날짜:</span> {dateLabel}</div>
                       {s.department
                         ? <div><span className="font-bold">팀:</span> {s.department}</div>
@@ -187,7 +187,7 @@ export default function TbmPrintClient({
 
                       {/* 미서명자 이름만 */}
                       {unsigned.length > 0 && (
-                        <div className="border border-red-300 rounded px-2 py-1.5" style={{ backgroundColor: '#fef2f2' }}>
+                        <div className="border border-red-300 rounded px-2 py-1.5">
                           <span className="font-bold text-red-700">미서명자: </span>
                           <span className="text-red-800">{unsigned.map((w) => w.name).join(', ')}</span>
                         </div>

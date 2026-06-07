@@ -146,7 +146,7 @@ export async function POST(req: Request) {
     const birthDate  = (obj['생년월일'] ?? '').trim() || null;
     const hireDate   = (obj['입사년월일'] ?? '').trim() || null;
     let workDays   = toNum(obj['출근일수'] ?? '');
-    const payDate    = (obj['지급일']   ?? '').trim() || null;
+    const payDate    = (obj['지급일']   ?? '').trim() || (tmpl.payDayLabel ?? null);
     /* 출근일수 미기재 시 MonthlyAttendanceSummary에서 자동 조회 */
     if (workDays === 0) {
       const summary = await prisma.monthlyAttendanceSummary.findUnique({
