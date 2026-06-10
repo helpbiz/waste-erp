@@ -21,6 +21,14 @@ type PhotoRecord = {
   actionTaken: string | null; managerName: string | null;
 };
 
+const ALERT_TYPES = [
+  { value: 'HEATWAVE', label: '폭염' },
+  { value: 'COLDWAVE', label: '한파' },
+  { value: 'TYPHOON',  label: '태풍' },
+  { value: 'STORM',    label: '강풍·폭우' },
+  { value: 'OTHER',    label: '기타' },
+];
+
 export default function WeatherNoticesClient() {
   const today = new Date().toISOString().slice(0, 10);
   const [filterDate, setFilterDate] = useState(today);
@@ -31,6 +39,15 @@ export default function WeatherNoticesClient() {
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  /* 공지 등록 */
+  const [showForm, setShowForm] = useState(false);
+  const [formAlertType, setFormAlertType] = useState('HEATWAVE');
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
+  const [formDate, setFormDate] = useState(today);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const load = useCallback(async (date: string) => {
     setLoading(true);
@@ -53,6 +70,21 @@ export default function WeatherNoticesClient() {
     } finally { setRecordsLoading(false); }
   }
 
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formTitle.trim()) { setSaveError('제목을 입력하세요.'); return; }
+    setSaving(true); setSaveError(null);
+    const r = await fetch('/api/safety/weather-notices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alertType: formAlertType, title: formTitle.trim(), content: formContent.trim() || undefined, noticeDate: formDate }),
+    });
+    setSaving(false);
+    if (!r.ok) { const j = await r.json().catch(() => ({})); setSaveError(j.error ?? '등록 실패'); return; }
+    setShowForm(false); setFormTitle(''); setFormContent('');
+    load(filterDate);
+  }
+
   async function handleExport(noticeId: string, withImages: boolean) {
     setExporting(true);
     try {
@@ -70,10 +102,64 @@ export default function WeatherNoticesClient() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-black text-ink">날씨관리대장</h2>
-        <p className="text-xs font-bold text-ink-muted mt-1">폭염·한파 등 기상 안전 — 근로자 기록 조회 및 Excel 출력</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-xl font-black text-ink">날씨관리대장</h2>
+          <p className="text-xs font-bold text-ink-muted mt-1">폭염·한파 등 기상 안전 — 근로자 기록 조회 및 Excel 출력</p>
+        </div>
+        <button onClick={() => { setShowForm((v) => !v); setSaveError(null); }}
+          className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95 flex-shrink-0">
+          {showForm ? '취소' : '+ 공지 등록'}
+        </button>
       </div>
+
+      {/* 공지 등록 폼 */}
+      {showForm && (
+        <form onSubmit={handleCreate} className="bg-surface border-2 border-accent rounded-xl p-5 space-y-3">
+          <div className="text-sm font-extrabold text-ink">새 기상 안전 공지 등록</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-extrabold text-ink-muted">경보 유형</label>
+              <select value={formAlertType} onChange={(e) => setFormAlertType(e.target.value)}
+                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+                {ALERT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-extrabold text-ink-muted">공지 날짜</label>
+              <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)}
+                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-extrabold text-ink-muted">제목 *</label>
+            <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
+              placeholder="예: 6월 10일 폭염주의보 발령"
+              maxLength={100}
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-extrabold text-ink-muted">내용 (선택)</label>
+            <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)}
+              placeholder="근로자에게 전달할 안전 조치 내용을 입력하세요."
+              rows={3} maxLength={2000}
+              className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:border-accent" />
+          </div>
+          {saveError && <p className="text-xs font-bold text-red-600">{saveError}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving}
+              className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-extrabold disabled:opacity-50">
+              {saving ? '등록 중…' : '등록'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft">
+              취소
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* 날짜 필터 */}
       <div className="flex flex-wrap items-center gap-3">

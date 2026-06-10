@@ -20,31 +20,12 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
   const vehicleId = searchParams.vehicleId;
   const autoprint = searchParams.autoprint === '1';
 
-  /*
-   * 차량일지 출력 필터 — 26→14 누락 버그 수정 (2026-05-21)
-   * 기존: vehicle.contractorId = session.contractorId 만 조건 → 차량이 타 업체 소속이거나
-   *   재배정된 경우 누락.
-   * 수정: 차량 소속 OR 운전자 소속 중 하나라도 이 업체면 포함.
-   * SUPER_ADMIN/MUNI_ADMIN은 기존 vehicleLogWhere 그대로 사용.
-   */
-  const isAdminWithContractor =
-    session.contractorId &&
-    ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(session.role);
-
-  const logWhere = isAdminWithContractor
-    ? {
-        logDate: date,
-        ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
-        OR: [
-          { vehicle: { contractorId: BigInt(session.contractorId!) } },
-          { driver: { contractorId: BigInt(session.contractorId!) } },
-        ],
-      }
-    : {
-        ...vehicleLogWhere(session),
-        logDate: date,
-        ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
-      };
+  /* 출력과 엑셀 export가 동일한 범위를 보여주도록 vehicleLogWhere 단일화 */
+  const logWhere = {
+    ...vehicleLogWhere(session),
+    logDate: date,
+    ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
+  };
 
   const FUEL_LABEL: Record<string, string> = {
     DIESEL: '경유', LPG: 'LPG', ELECTRIC: '전기', CNG: 'CNG', GASOLINE: '휘발유',
@@ -77,6 +58,7 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
       vehicles={vehicles.map((v) => ({ id: v.id.toString(), vehicleNo: v.vehicleNo, type: vehicleTypeLabel(v.vehicleType) }))}
       logs={logs.map((l) => ({
         id: l.id.toString(),
+        logDate: l.logDate.toISOString().slice(0, 10),
         vehicleNo: l.vehicle.vehicleNo,
         vehicleType: vehicleTypeLabel(l.vehicle.vehicleType),
         vehicleTon: l.vehicle.vehicleTon,

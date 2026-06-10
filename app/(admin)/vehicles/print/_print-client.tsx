@@ -48,7 +48,7 @@ type Detail = {
 };
 
 type Log = {
-  id: string; vehicleNo: string; vehicleType: string; vehicleTon: string | null;
+  id: string; logDate: string; vehicleNo: string; vehicleType: string; vehicleTon: string | null;
   contractorName: string | null; driverName: string; driverEmployeeNo: string | null;
   zoneName: string | null; startMileage: number | null; endMileage: number | null;
   fuelUsed: number | null; fuelTypeName: string | null; wasteWeightKg: number | null;
@@ -62,7 +62,8 @@ function parseDetail(raw: string | null): Detail {
 }
 
 /* ── 인쇄 양식 컴포넌트 ── */
-function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: string; isSuperAdmin: boolean }) {
+function PrintArticle({ log, isSuperAdmin }: { log: Log; isSuperAdmin: boolean }) {
+  const dateLabel = formatDateKr(log.logDate);
   const d = parseDetail(log.routeDetail);
 
   /* 항상 4차 — 데이터 있으면 채움, 없으면 빈 칸 */
@@ -77,9 +78,9 @@ function PrintArticle({ log, dateLabel, isSuperAdmin }: { log: Log; dateLabel: s
     const fd = Number(r?.food ?? 0);
     const rc = Number(r?.recycle ?? 0);
     return {
-      general: gn > 0 ? String(gn) : '',
-      food:    fd > 0 ? String(fd) : '',
-      recycle: rc > 0 ? String(rc) : '',
+      general: gn > 0 ? gn.toLocaleString() : '',
+      food:    fd > 0 ? fd.toLocaleString() : '',
+      recycle: rc > 0 ? rc.toLocaleString() : '',
       site: typeof r?.disposalSite === 'string' ? r.disposalSite : '',
       note: typeof r?.note === 'string' ? r.note : '',
     };
@@ -342,6 +343,7 @@ export default function VehiclePrintClient({
   const [vehicleId, setVehicleId] = useState(selectedVehicleId ?? '');
   const [logs, setLogs] = useState<Log[]>(initialLogs);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   async function handleDelete(logId: string, vehicleNo: string) {
     if (!confirm(`${vehicleNo} 차량일지를 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
@@ -380,7 +382,29 @@ export default function VehiclePrintClient({
     router.push(`/vehicles/print?${params}`);
   }
 
-  const dateLabel = formatDateKr(date);
+  async function handlePdfDownload() {
+    setPdfLoading(true);
+    try {
+      const params = new URLSearchParams({ date: selectedDate });
+      if (vehicleId) params.set('vehicleId', vehicleId);
+      const res = await fetch(`/api/vehicle-logs/pdf?${params}`);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.message ?? j.error ?? 'PDF 생성 실패');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const suffix = vehicleId ? `_${logs.find((l) => l.vehicleNo)?.vehicleNo ?? ''}` : '_전체';
+      a.download = `차량운행일지${suffix}_${selectedDate}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -407,6 +431,10 @@ export default function VehiclePrintClient({
         <button onClick={handlePrint}
           className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
           🖨 인쇄
+        </button>
+        <button onClick={handlePdfDownload} disabled={pdfLoading || logs.length === 0}
+          className="px-5 py-1.5 rounded text-sm font-extrabold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50">
+          {pdfLoading ? 'PDF 생성 중…' : '📄 PDF 저장'}
         </button>
         <a href={`/api/vehicle-logs/export?from=${selectedDate}&to=${selectedDate}`}
           download={`차량운행일지_${selectedDate}.xlsx`}
@@ -440,7 +468,7 @@ export default function VehiclePrintClient({
                     {deletingId === l.id ? '삭제 중…' : `🗑 ${l.vehicleNo} 삭제`}
                   </button>
                 </div>
-                <PrintArticle log={l} dateLabel={dateLabel} isSuperAdmin={isSuperAdmin} />
+                <PrintArticle log={l} isSuperAdmin={isSuperAdmin} />
               </div>
             ))}
           </div>
@@ -548,7 +576,7 @@ export default function VehiclePrintClient({
         .vl-ab { color: #c00000; font-weight: 700; }
 
         /* 하단 */
-        .vl-footer-tbl { margin-top: 4px; }
+        .vl-footer-tbl { margin-top: 4px; page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; break-before: avoid; }
         .wd-cmp      { width: 75px; }
         .wd-sig      { width: 50px; }
         .wd-sig-val  { width: 90px; min-height: 28px; }

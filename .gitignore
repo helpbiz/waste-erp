@@ -30,3 +30,6 @@ tsconfig.tsbuildinfo
 # 로컬 HTTPS dev 인증서 (mkcert) — 절대 커밋 금지
 /certificates/
 *.pem
+
+# 서버 생성 파일 (PDF, 스크린샷 등)
+/storage/

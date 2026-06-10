@@ -25,6 +25,28 @@ function Label({ children }: { children: React.ReactNode }) {
 export default function PrintHubPage() {
   /* 차량일지 */
   const [vDate, setVDate] = useState(today());
+  const [vPdfLoading, setVPdfLoading] = useState(false);
+
+  async function handleVehiclePdf() {
+    setVPdfLoading(true);
+    try {
+      const res = await fetch(`/api/vehicle-logs/pdf?date=${vDate}`);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.message ?? j.error ?? 'PDF 생성 실패');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `차량운행일지_전체_${vDate}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setVPdfLoading(false);
+    }
+  }
   const [vExFrom, setVExFrom] = useState(thisMonth() + '-01');
   const [vExTo, setVExTo] = useState(today());
 
@@ -70,6 +92,10 @@ export default function PrintHubPage() {
               🖨 화면 인쇄
             </a>
           </div>
+          <button onClick={handleVehiclePdf} disabled={vPdfLoading}
+            className="w-full px-4 py-2 rounded-lg text-sm font-extrabold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+            {vPdfLoading ? '⏳ PDF 생성 중…' : '📄 PDF 저장'}
+          </button>
         </Card>
 
         {/* 1-B. 차량일지 Excel */}

@@ -50,9 +50,10 @@ export async function POST(req: Request) {
   try { formData = await req.formData(); }
   catch { return NextResponse.json({ error: 'multipart_required' }, { status: 400 }); }
 
-  const file      = formData.get('file') as File | null;
-  const yearMonth = (formData.get('yearMonth') as string | null)?.trim() ?? '';
-  const rawCid    = formData.get('contractorId') as string | null;
+  const file         = formData.get('file') as File | null;
+  const yearMonth    = (formData.get('yearMonth') as string | null)?.trim() ?? '';
+  const rawCid       = formData.get('contractorId') as string | null;
+  const payDateParam = (formData.get('payDate') as string | null)?.trim() || null;
 
   if (!file)          return NextResponse.json({ error: 'no_file' },          { status: 400 });
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(yearMonth))
@@ -146,7 +147,7 @@ export async function POST(req: Request) {
     const birthDate  = (obj['생년월일'] ?? '').trim() || null;
     const hireDate   = (obj['입사년월일'] ?? '').trim() || null;
     let workDays   = toNum(obj['출근일수'] ?? '');
-    const payDate    = (obj['지급일']   ?? '').trim() || (tmpl.payDayLabel ?? null);
+    const payDate    = payDateParam || (obj['지급일'] ?? '').trim() || (tmpl.payDayLabel ?? null);
     /* 출근일수 미기재 시 MonthlyAttendanceSummary에서 자동 조회 */
     if (workDays === 0) {
       const summary = await prisma.monthlyAttendanceSummary.findUnique({

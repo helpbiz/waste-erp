@@ -243,6 +243,7 @@ model Contractor {
   payslipRecords      PayslipRecord[]      @relation("ContractorPayslips")
   weatherNotices      WeatherSafetyNotice[]
   payrollPolicy       PayrollPolicy?
+  vehiclePdfArchives  VehiclePdfArchive[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -412,6 +413,7 @@ model User {
   contractorRanksCreated     ContractorRank[]     @relation("ContractorRankCreator")
   weatherNoticesCreated      WeatherSafetyNotice[] @relation("WeatherNoticeCreator")
   weatherSafetyPhotos        WeatherSafetyPhoto[]  @relation("WorkerWeatherPhotos")
+  vehiclePdfArchives         VehiclePdfArchive[]   @relation("VehiclePdfCreator")
   punchRestrictionsCreated   PunchRestriction[]   @relation("PunchRestrictionCreator")
   payslips                   PayslipRecord[]      @relation("WorkerPayslips")
   payslipsCreated            PayslipRecord[]      @relation("PayslipCreator")
@@ -1540,4 +1542,24 @@ model WeatherSafetyPhoto {
 
   @@unique([noticeId, workerId])
   @@map("weather_safety_photos")
+}
+
+/// 차량일지 PDF 보관 이력
+model VehiclePdfArchive {
+  id           BigInt    @id @default(autoincrement())
+  contractorId BigInt    @map("contractor_id")
+  logDate      DateTime  @map("log_date") @db.Date
+  vehicleId    BigInt?   @map("vehicle_id")
+  vehicleNo    String?   @map("vehicle_no")   @db.VarChar(20)
+  filePath     String    @map("file_path")    @db.VarChar(500)
+  fileSize     Int       @map("file_size")
+  pageCount    Int       @default(0)          @map("page_count")
+  createdAt    DateTime  @default(now())      @map("created_at")
+  createdBy    BigInt    @map("created_by")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+  creator    User       @relation("VehiclePdfCreator", fields: [createdBy], references: [id])
+
+  @@index([contractorId, logDate])
+  @@map("vehicle_pdf_archives")
 }

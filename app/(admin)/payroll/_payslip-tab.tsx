@@ -122,6 +122,7 @@ export default function PayslipTab({ ym, approverInfo }: { ym: string; approverI
 function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo }) {
   const fileRef  = useRef<HTMLInputElement>(null);
   const STORAGE_KEY = `payslip_preview_${ym}`;
+  const [payDateInput, setPayDateInput] = useState('');
   const [busy,        setBusy]        = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [info,        setInfo]        = useState<string | null>(null);
@@ -197,6 +198,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
     const fd = new FormData();
     fd.append('file', file);
     fd.append('yearMonth', ym);
+    if (payDateInput.trim()) fd.append('payDate', payDateInput.trim());
     const res  = await fetch('/api/payroll/payslips/import', { method: 'POST', body: fd });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
@@ -291,6 +293,18 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
         <p className="text-xs text-ink-muted font-semibold">
           헤더 행: <code className="bg-surface-soft px-1 rounded text-[0.7rem]">직원번호 | 이름 | 기본급 | 연장수당 | ... | 실수령액</code>
         </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <label className="text-[0.6875rem] font-extrabold text-ink-muted">지급일 <span className="text-ink-faint font-normal">(미입력 시 템플릿 기본값)</span></label>
+            <input
+              type="text"
+              value={payDateInput}
+              onChange={(e) => setPayDateInput(e.target.value)}
+              placeholder="예) 2026년 6월 12일"
+              className="px-3 py-1.5 rounded-md border border-line text-sm font-mono w-44 focus:outline-none focus:border-accent"
+            />
+          </div>
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           <input ref={fileRef} type="file" accept=".xlsx,.xls" className="text-sm font-semibold text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-line file:text-xs file:font-extrabold file:bg-surface-soft file:text-ink hover:file:bg-surface" />
           <button onClick={handleImport} disabled={busy}

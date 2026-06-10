@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 /* ─── 타입 ──────────────────────────────────────────────────────── */
-type WorkHours = { overtimeBasic: number; overtimeExtra: number; nightBasic: number; nightExtra: number };
+type WorkHours = Record<string, number>;
 type PayslipData = {
   employeeNo:   string | null;
   position:     string | null;
@@ -19,6 +19,9 @@ type PayslipData = {
   totals: Record<string, number>;
 };
 
+type PayslipColumn = { key: string; label: string; required: boolean };
+type Template = { earnings: PayslipColumn[]; deductions: PayslipColumn[] };
+
 /* 구 필드명(지급합계/실수령액) → 신 필드명(임금소계/실지급액) 정규화 */
 function normTotals(t: Record<string, number>) {
   return {
@@ -28,6 +31,22 @@ function normTotals(t: Record<string, number>) {
     총계:     t['총계']    ?? t['실수령액'] ?? t['실지급액'] ?? 0,
   };
 }
+
+/* 템플릿 순서대로 정렬 */
+function sortByTemplate(entries: [string, number][], cols?: PayslipColumn[]): [string, number][] {
+  if (!cols || cols.length === 0) return entries;
+  const order = new Map(cols.map((c, i) => [c.key, i]));
+  return [...entries].sort(([a], [b]) => (order.get(a) ?? 999) - (order.get(b) ?? 999));
+}
+
+/* workHours — prefill은 영문(overtimeBasic), import는 한글(연장기본) 필드 모두 처리 */
+function getOvertimeH(wh: WorkHours): number {
+  return (wh['연장기본'] ?? wh['overtimeBasic'] ?? 0) + (wh['연장추가'] ?? wh['overtimeExtra'] ?? 0);
+}
+function getNightH(wh: WorkHours): number {
+  return (wh['야간기본'] ?? wh['nightBasic'] ?? 0) + (wh['야간추가'] ?? wh['nightExtra'] ?? 0);
+}
+
 type PayslipItem = { id: string; yearMonth: string; publishedAt: string | null; data: PayslipData };
 
 const fmt   = (n: number) => n ? n.toLocaleString('ko-KR') : '-';
@@ -36,14 +55,18 @@ const dash  = (n: number | null | undefined) => (n && n !== 0) ? n.toLocaleStrin
 /* ─── 메인 ──────────────────────────────────────────────────────── */
 export default function PayslipClient({ workerName }: { workerName: string }) {
   const [items,    setItems]    = useState<PayslipItem[]>([]);
+  const [template, setTemplate] = useState<Template | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/payroll/payslips')
-      .then((r) => r.json())
-      .then((d) => setItems(d.items ?? []))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch('/api/payroll/payslips').then((r) => r.json()),
+      fetch('/api/payroll/payslip-template').then((r) => r.json()).catch(() => null),
+    ]).then(([payslips, tmplData]) => {
+      setItems(payslips.items ?? []);
+      if (tmplData?.template) setTemplate(tmplData.template);
+    }).finally(() => setLoading(false));
   }, []);
 
   return (
@@ -89,7 +112,7 @@ export default function PayslipClient({ workerName }: { workerName: string }) {
               {/* 펼침: 명세서 전체 */}
               {isOpen && (
                 <div className="border-t border-line">
-                  <PayslipDetail item={item} workerName={workerName} month={m} year={y} />
+                  <PayslipDetail item={item} workerName={workerName} month={m} year={y} template={template} />
                 </div>
               )}
             </article>
@@ -101,9 +124,11 @@ export default function PayslipClient({ workerName }: { workerName: string }) {
 }
 
 /* ─── 명세서 상세 ────────────────────────────────────────────────── */
-function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; workerName: string; month: string; year: string }) {
+function PayslipDetail({ item, workerName, month, year, template }: { item: PayslipItem; workerName: string; month: string; year: string; template: Template | null }) {
   const d = item.data;
   const totals = normTotals(d.totals);
+  const earningEntries = sortByTemplate(Object.entries(d.earnings ?? {}) as [string, number][], template?.earnings);
+  const deductEntries  = sortByTemplate(Object.entries(d.deductions ?? {}) as [string, number][], template?.deductions);
 
   function handlePrint() {
     const win = window.open('', '_blank', 'width=780,height=1100');
@@ -138,7 +163,7 @@ function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; w
       <div>
         <SectionHeader>임금구성항목</SectionHeader>
         <div className="border border-line rounded-b-lg overflow-hidden">
-          {Object.entries(d.earnings).map(([k, v]) => (
+          {earningEntries.map(([k, v]) => (
             <Row key={k} label={k} value={dash(v)} />
           ))}
           <TotalRow label="임금 소계①" value={fmt(totals.임금소계)} accent />
@@ -149,7 +174,7 @@ function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; w
       <div>
         <SectionHeader>공 제 내 역</SectionHeader>
         <div className="border border-line rounded-b-lg overflow-hidden">
-          {Object.entries(d.deductions).map(([k, v]) => (
+          {deductEntries.map(([k, v]) => (
             <Row key={k} label={k} value={dash(v)} />
           ))}
           <TotalRow label="공제 소계②" value={fmt(totals.공제소계)} danger />
@@ -181,18 +206,22 @@ function PayslipDetail({ item, workerName, month, year }: { item: PayslipItem; w
       )}
 
       {/* 근로시간 */}
-      {d.workHours && (
+      {d.workHours && (getOvertimeH(d.workHours) > 0 || getNightH(d.workHours) > 0) && (
         <div className="border border-line rounded-lg overflow-hidden text-xs">
           <SectionHeader>근 로 시 간</SectionHeader>
           <div className="divide-y divide-line">
+            {getOvertimeH(d.workHours) > 0 && (
             <div className="flex justify-between px-3 py-2">
               <span className="text-ink-muted font-semibold">연장근로시간</span>
-              <span className="font-mono font-bold text-ink">{(d.workHours.overtimeBasic + d.workHours.overtimeExtra) || 0} 시간</span>
+              <span className="font-mono font-bold text-ink">{getOvertimeH(d.workHours)} 시간</span>
             </div>
+            )}
+            {getNightH(d.workHours) > 0 && (
             <div className="flex justify-between px-3 py-2">
               <span className="text-ink-muted font-semibold">야간근로시간</span>
-              <span className="font-mono font-bold text-ink">{(d.workHours.nightBasic + d.workHours.nightExtra) || 0} 시간</span>
+              <span className="font-mono font-bold text-ink">{getNightH(d.workHours)} 시간</span>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -222,19 +251,21 @@ function buildPrintHtml({ item, workerName, month, year }: { item: PayslipItem; 
     `<tr><td class="label">${k}</td><td class="val">${fmt(v)}</td></tr>`).join('');
 
   const wh = d.workHours;
-  const workHoursSection = wh ? `
+  const otH = wh ? getOvertimeH(wh) : 0;
+  const ntH = wh ? getNightH(wh) : 0;
+  const workHoursSection = (wh && (otH > 0 || ntH > 0)) ? `
     <table class="main-table" style="margin-top:12px">
       <tr><td colspan="2" class="section-header">근 로 시 간</td></tr>
-      <tr><td class="label">연장근로시간</td><td class="val bold">${(wh.overtimeBasic+wh.overtimeExtra)||0} 시간</td></tr>
-      <tr><td class="label">야간근로시간</td><td class="val bold">${(wh.nightBasic+wh.nightExtra)||0} 시간</td></tr>
+      ${otH > 0 ? `<tr><td class="label">연장근로시간</td><td class="val bold">${otH} 시간</td></tr>` : ''}
+      ${ntH > 0 ? `<tr><td class="label">야간근로시간</td><td class="val bold">${ntH} 시간</td></tr>` : ''}
     </table>` : '';
 
-  const calcSection = (d.hourlyRate && wh) ? `
+  const calcSection = (d.hourlyRate && wh && (otH > 0 || ntH > 0)) ? `
     <table class="main-table" style="margin-top:12px">
       <tr><td class="section-header" colspan="3">계산방법</td></tr>
       <tr><td class="sub-header">구분</td><td class="sub-header">산출방법</td><td class="sub-header">계산금액</td></tr>
-      <tr><td class="label">연장근로수당</td><td class="label">${(wh.overtimeBasic+wh.overtimeExtra)||0}시간 × ${d.hourlyRate.toLocaleString('ko-KR')} × 150%</td><td class="val">${fmt(d.earnings['연장근로수당']||0)}</td></tr>
-      <tr><td class="label">야간근로수당</td><td class="label">${(wh.nightBasic+wh.nightExtra)||0}시간 × ${d.hourlyRate.toLocaleString('ko-KR')} × 50%</td><td class="val">${fmt(d.earnings['야간근로수당']||0)}</td></tr>
+      ${otH > 0 ? `<tr><td class="label">연장근로수당</td><td class="label">${otH}시간 × ${d.hourlyRate.toLocaleString('ko-KR')} × 150%</td><td class="val">${fmt(d.earnings['연장근로수당']||0)}</td></tr>` : ''}
+      ${ntH > 0 ? `<tr><td class="label">야간근로수당</td><td class="label">${ntH}시간 × ${d.hourlyRate.toLocaleString('ko-KR')} × 50%</td><td class="val">${fmt(d.earnings['야간근로수당']||0)}</td></tr>` : ''}
     </table>` : '';
 
   return `<!DOCTYPE html><html lang="ko"><head>

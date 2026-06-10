@@ -73,16 +73,22 @@ async function getBrowser(): Promise<Browser> {
   return browserPromise;
 }
 
-export async function renderPdf(html: string): Promise<Buffer> {
+export interface PdfOptions {
+  landscape?: boolean;
+  margin?: string;
+}
+
+export async function renderPdf(html: string, options: PdfOptions = {}): Promise<Buffer> {
+  const { landscape = true, margin = '10mm' } = options;
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
     const pdf = await page.pdf({
       format: 'A4',
-      landscape: true,
+      landscape,
       printBackground: true,
-      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      margin: { top: margin, right: margin, bottom: margin, left: margin },
     });
     return Buffer.from(pdf);
   } finally {

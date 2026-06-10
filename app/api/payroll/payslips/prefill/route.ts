@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
   /* 템플릿에서 payDayLabel 읽어 payDate 자동 계산 */
   const tmplRow = await prisma.contractorFeature.findUnique({
-    where: { contractorId_featureKey: { contractorId, featureKey: 'payslipTemplate' } },
+    where: { contractorId_featureKey: { contractorId, featureKey: 'payslip' } },
     select: { config: true },
   });
   const tmplConfig = (tmplRow?.config && typeof tmplRow.config === 'object' && !Array.isArray(tmplRow.config))

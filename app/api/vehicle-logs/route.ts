@@ -13,6 +13,7 @@ export const runtime = 'nodejs';
 
 const PostBody = z.object({
   vehicleId: z.union([z.string(), z.number()]),
+  logDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   zoneId: z.union([z.string(), z.number()]).optional(),
   startMileage: z.number().int().min(0).max(9_999_999).optional(),
   endMileage: z.number().int().min(0).max(9_999_999).optional(),
@@ -98,11 +99,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'vehicle_retired' }, { status: 409 });
   }
 
-  /* 1일 1회 제출 제한 — SUBMITTED/APPROVED 기록이 있으면 중복 차단 */
+  const logDate = b.logDate ? new Date(b.logDate + 'T00:00:00.000Z') : todayKstDate();
+
+  /* 1일 1회 제출 제한 — 해당 날짜에 SUBMITTED/APPROVED 기록이 있으면 중복 차단 */
   const todayLog = await prisma.vehicleLog.findFirst({
     where: {
       vehicleId: vehicle.id,
-      logDate: todayKstDate(),
+      logDate,
       status: { in: ['SUBMITTED', 'APPROVED'] },
     },
     select: { id: true, status: true },
@@ -115,7 +118,7 @@ export async function POST(req: Request) {
     data: {
       vehicleId: vehicle.id,
       driverId: BigInt(session.userId),
-      logDate: todayKstDate(),
+      logDate,
       zoneId: b.zoneId !== undefined ? BigInt(b.zoneId) : null,
       startMileage: b.startMileage,
       endMileage: b.endMileage,

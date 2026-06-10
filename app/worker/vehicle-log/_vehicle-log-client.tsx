@@ -240,6 +240,7 @@ export default function VehicleLogClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vehicleId,
+          logDate: form.logDate,
           startMileage: Number(form.prevMileage) || undefined,
           endMileage: Number(form.todayMileage),
           fuelUsed: form.fuelUsed.trim() !== '' ? Number(form.fuelUsed) : undefined,
