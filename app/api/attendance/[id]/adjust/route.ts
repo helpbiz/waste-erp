@@ -91,6 +91,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const adjustedCheckIn = b.adjustedCheckIn === undefined ? record.checkInTime : b.adjustedCheckIn ? new Date(b.adjustedCheckIn) : null;
   const adjustedCheckOut = b.adjustedCheckOut === undefined ? record.checkOutTime : b.adjustedCheckOut ? new Date(b.adjustedCheckOut) : null;
   const adjustedWorkType = b.adjustedWorkType ?? record.workType;
+
+  /* 출퇴근 시각 순서 검증: 퇴근이 출근보다 이를 수 없음 */
+  if (adjustedCheckIn && adjustedCheckOut && adjustedCheckOut <= adjustedCheckIn) {
+    return NextResponse.json(
+      { error: 'invalid_time_range', message: '퇴근 시각이 출근 시각보다 이르거나 같습니다.' },
+      { status: 400 }
+    );
+  }
   const now = new Date();
 
   const payload = {
