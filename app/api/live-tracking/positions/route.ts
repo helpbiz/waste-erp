@@ -34,12 +34,36 @@ export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  /* SUPER_ADMIN: ?contractorId=<id> 로 특정 업체 조회 가능 */
+  /* contractorId 해석:
+   * - SUPER_ADMIN: ?contractorId=<id> 파라미터 우선, 없으면 null
+   * - CONTRACTOR 계열: session.contractorId
+   * - MUNI_ADMIN: ?contractorId=<id> 지정 가능(municipality 소속 검증),
+   *               미지정 시 소속 첫 번째 위탁업체 자동 선택 */
   const url = new URL(req.url);
   const cidParam = url.searchParams.get('contractorId');
-  const contractorIdResolved = cidParam && session.role === 'SUPER_ADMIN'
-    ? (() => { try { return BigInt(cidParam); } catch { return null; } })()
-    : session.contractorId ? BigInt(session.contractorId) : null;
+
+  let contractorIdResolved: bigint | null = null;
+  if (cidParam && session.role === 'SUPER_ADMIN') {
+    try { contractorIdResolved = BigInt(cidParam); } catch { /* ignore */ }
+  } else if (session.contractorId) {
+    contractorIdResolved = BigInt(session.contractorId);
+  } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    const muniId = BigInt(session.municipalityId);
+    if (cidParam) {
+      const c = await prisma.contractor.findFirst({
+        where: { id: BigInt(cidParam), municipalityId: muniId },
+        select: { id: true },
+      });
+      contractorIdResolved = c?.id ?? null;
+    } else {
+      const c = await prisma.contractor.findFirst({
+        where: { municipalityId: muniId },
+        select: { id: true },
+        orderBy: { id: 'asc' },
+      });
+      contractorIdResolved = c?.id ?? null;
+    }
+  }
 
   if (!contractorIdResolved) {
     return NextResponse.json({
