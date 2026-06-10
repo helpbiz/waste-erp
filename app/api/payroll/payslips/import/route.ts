@@ -166,15 +166,15 @@ export async function POST(req: Request) {
       야간추가: toNum(obj['야간추가'] ?? ''),
     };
 
-    /* 합계: 엑셀값 우선, 없으면 자동계산 */
+    /* 합계: 엑셀값 우선, 없으면 자동계산 (실수령액 = 임금+기타-공제) */
     const grossRaw  = toNum(obj['지급합계'] ?? '');
     const deductRaw = toNum(obj['공제합계'] ?? '');
     const netRaw    = toNum(obj['실수령액'] ?? '');
-    const gross  = grossRaw  || Object.values(earnings).reduce((a, b) => a + b, 0);
-    const deduct = deductRaw || Object.values(deductions).reduce((a, b) => a + b, 0);
-    const net    = netRaw    || gross - deduct;
-
+    const gross       = grossRaw  || Object.values(earnings).reduce((a, b) => a + b, 0);
+    const deduct      = deductRaw || Object.values(deductions).reduce((a, b) => a + b, 0);
     const extrasTotal = Object.values(extras).reduce((a, b) => a + b, 0);
+    const net         = netRaw    || gross + extrasTotal - deduct;
+
     const data = {
       employeeNo: worker.employeeNo ?? employeeNo ?? null,
       position,

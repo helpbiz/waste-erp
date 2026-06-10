@@ -22,13 +22,16 @@ type PayslipData = {
 type PayslipColumn = { key: string; label: string; required: boolean };
 type Template = { earnings: PayslipColumn[]; deductions: PayslipColumn[] };
 
-/* 구 필드명(지급합계/실수령액) → 신 필드명(임금소계/실지급액) 정규화 */
+/* 구 필드명(지급합계/실수령액) → 신 필드명(임금소계/실지급액) 정규화
+ * 실지급액은 항상 ①-②로 계산 (extras 미포함), 총계는 extras 포함 최종 수령액 */
 function normTotals(t: Record<string, number>) {
+  const 임금소계 = t['임금소계'] ?? t['지급합계'] ?? 0;
+  const 공제소계 = t['공제소계'] ?? t['공제합계'] ?? 0;
   return {
-    임금소계: t['임금소계'] ?? t['지급합계'] ?? 0,
-    공제소계: t['공제소계'] ?? t['공제합계'] ?? 0,
-    실지급액: t['실지급액'] ?? t['실수령액'] ?? 0,
-    총계:     t['총계']    ?? t['실수령액'] ?? t['실지급액'] ?? 0,
+    임금소계,
+    공제소계,
+    실지급액: 임금소계 - 공제소계,
+    총계:     t['총계'] ?? t['실수령액'] ?? t['실지급액'] ?? (임금소계 - 공제소계),
   };
 }
 
