@@ -102,6 +102,8 @@ export default function LeafletMap({
   routeOrder,
   routePolyline,
   baseTile = 'osm',
+  selectedVehicleId,
+  onVehicleClick,
 }: {
   mode: LeafletMapMode;
   center: { lat: number; lng: number };
@@ -111,6 +113,8 @@ export default function LeafletMap({
   routeOrder?: number[];
   routePolyline?: Array<[number, number]>; // ORS/OSRM 도로 스냅 [lng,lat] 배열
   baseTile?: BaseTile;
+  selectedVehicleId?: string;
+  onVehicleClick?: (id: string) => void;
 }) {
   const tile = TILE_PROVIDERS[baseTile] ?? TILE_PROVIDERS.osm;
   return (
@@ -128,28 +132,33 @@ export default function LeafletMap({
         {...(tile.subdomains ? { subdomains: tile.subdomains } : {})}
       />
 
-      {mode === 'vehicles' && vehicles && vehicles.map((v) => (
-        <CircleMarker
-          key={v.id}
-          center={[v.lat, v.lng]}
-          radius={9}
-          pathOptions={{
-            color: v.status === 'MOVING' ? '#10b981' : v.status === 'STOP' ? '#f59e0b' : v.status === 'MAINTENANCE' ? '#ef4444' : '#94a3b8',
-            fillColor: v.status === 'MOVING' ? '#10b981' : v.status === 'STOP' ? '#f59e0b' : v.status === 'MAINTENANCE' ? '#ef4444' : '#94a3b8',
-            fillOpacity: 0.85,
-            weight: 2,
-          }}
-        >
-          <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={false}>
-            <span className="font-extrabold text-xs">{v.label}</span>
-          </Tooltip>
-          <Popup>
-            <div className="font-extrabold">{v.label}</div>
-            {v.speed != null && <div>속도: {v.speed} km/h</div>}
-            <div>상태: {v.status}</div>
-          </Popup>
-        </CircleMarker>
-      ))}
+      {mode === 'vehicles' && vehicles && vehicles.map((v) => {
+        const isSel = selectedVehicleId === v.id;
+        const baseColor = v.status === 'MOVING' ? '#10b981' : v.status === 'STOP' ? '#f59e0b' : v.status === 'MAINTENANCE' ? '#ef4444' : '#94a3b8';
+        return (
+          <CircleMarker
+            key={v.id}
+            center={[v.lat, v.lng]}
+            radius={isSel ? 13 : 9}
+            pathOptions={{
+              color: isSel ? '#1e40af' : baseColor,
+              fillColor: baseColor,
+              fillOpacity: 0.85,
+              weight: isSel ? 3 : 2,
+            }}
+            eventHandlers={{ click: () => onVehicleClick?.(v.id) }}
+          >
+            <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={isSel}>
+              <span className="font-extrabold text-xs">{v.label}</span>
+            </Tooltip>
+            <Popup>
+              <div className="font-extrabold">{v.label}</div>
+              {v.speed != null && <div>속도: {v.speed} km/h</div>}
+              <div>상태: {v.status}</div>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
 
       {mode === 'heatmap' && heatPoints && heatPoints.length > 0 && <HeatLayer points={heatPoints} />}
 

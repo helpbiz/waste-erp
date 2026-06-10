@@ -87,6 +87,26 @@ export default function LiveVehiclesClient({
   /* 베이스 타일 */
   const [baseTile, setBaseTile] = useState<'osm' | 'osm-hot' | 'cartodb-light' | 'cartodb-dark' | 'esri-sat' | 'esri-topo' | 'opentopomap'>('osm');
 
+  /* 전체화면 */
+  const [fullscreen, setFullscreen] = useState(false);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      mapWrapRef.current?.requestFullscreen();
+      setFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setFullscreen(false);
+    }
+  }
+
+  useEffect(() => {
+    function onFsChange() { if (!document.fullscreenElement) setFullscreen(false); }
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
   /* SUPER_ADMIN: 조회할 업체 ID */
   const [superAdminCid, setSuperAdminCid] = useState('');
   const [contractorList, setContractorList] = useState<Array<{ id: string; companyName: string }>>([]);
@@ -371,29 +391,106 @@ export default function LiveVehiclesClient({
       )}
 
       {tab === 'realmap' && data && (
-        <div className="space-y-3">
-          <div className="bg-surface border border-line rounded-lg p-3 flex items-center gap-2">
-            <span className="text-xs font-extrabold text-ink">🗺 베이스 타일:</span>
+        <div className="flex flex-col gap-2">
+          {/* 컨트롤 바 */}
+          <div className="bg-surface border border-line rounded-lg px-3 py-2 flex items-center gap-2">
+            <span className="text-xs font-extrabold text-ink shrink-0">베이스 타일:</span>
             <select value={baseTile} onChange={(e) => setBaseTile(e.target.value as typeof baseTile)}
-              className="px-3 py-1 rounded border-2 border-line text-xs font-bold bg-white">
+              className="px-2 py-1 rounded border-2 border-line text-xs font-bold bg-white">
               {Object.entries(TILE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <span className="text-[0.625rem] font-mono text-slate-600 ml-auto">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
+            <span className="text-[0.625rem] font-mono text-slate-500">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
+            <button type="button" onClick={toggleFullscreen}
+              title={fullscreen ? '전체화면 해제' : '지도 전체화면'}
+              className="ml-auto px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50 flex items-center gap-1.5">
+              {fullscreen ? (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M15 9h4.5M15 9V4.5M9 15v4.5M9 15H4.5M15 15h4.5M15 15v4.5" />
+                </svg>축소</>
+              ) : (
+                <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                </svg>전체화면</>
+              )}
+            </button>
           </div>
-          <div className="bg-surface border border-line rounded-lg overflow-hidden" style={{ height: 600, position: 'relative', zIndex: 0 }}>
-            <LeafletMap
-              mode="vehicles"
-              center={data.center}
-              baseTile={baseTile}
-              vehicles={data.vehicles.map((v) => ({
-                id: v.vehicleId,
-                lat: v.lat,
-                lng: v.lng,
-                label: `${v.vehicleNo} (${VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType})`,
-                status: v.operationalStatus,
-                speed: v.speed,
-              }))}
-            />
+
+          {/* Split View — 차량 목록 + 지도 */}
+          <div ref={mapWrapRef} className="flex gap-0 border border-line rounded-lg overflow-hidden bg-surface"
+            style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}>
+            {/* 좌측 차량 목록 */}
+            <div className="w-[230px] shrink-0 flex flex-col border-r border-line bg-white">
+              <div className="px-3 py-2 bg-slate-100 border-b border-line text-xs font-extrabold text-ink shrink-0">
+                차량 목록 ({data.vehicles.length})
+              </div>
+              <div className="overflow-y-auto flex-1">
+                {data.vehicles.length === 0 && (
+                  <div className="px-3 py-10 text-center text-slate-500 text-sm">활성 차량 없음</div>
+                )}
+                {data.vehicles.map((v) => (
+                  <button key={v.vehicleId} type="button"
+                    onClick={() => setSelectedId((prev) => prev === v.vehicleId ? null : v.vehicleId)}
+                    className={`w-full text-left px-3 py-2 border-b border-line transition hover:bg-slate-50 ${
+                      selectedId === v.vehicleId ? 'bg-accent-soft border-l-[3px] border-l-accent' : ''
+                    }`}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-bold text-ink text-sm truncate flex-1">{v.vehicleNo}</span>
+                      <StatusDot status={v.operationalStatus} />
+                    </div>
+                    <div className="text-[0.625rem] font-mono text-slate-600 truncate">
+                      {VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType}
+                      {v.driverName ? ` · ${v.driverName}` : ' · 미배정'}
+                    </div>
+                    <div className="text-[0.5625rem] font-mono text-slate-400 flex items-center gap-1 mt-0.5">
+                      <span>{v.speed} km/h</span>
+                      {v.updatedAt && <><span>·</span><span>{new Date(v.updatedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* 선택 차량 상세 패널 */}
+              {selectedId && (() => {
+                const sel = data.vehicles.find((v) => v.vehicleId === selectedId);
+                if (!sel) return null;
+                return (
+                  <div className="border-t-2 border-accent bg-accent-soft px-3 py-2 shrink-0">
+                    <div className="text-[0.625rem] font-extrabold text-accent mb-1">선택 차량</div>
+                    <div className="font-extrabold text-ink text-sm">{sel.vehicleNo}</div>
+                    <div className="text-[0.625rem] font-mono text-slate-700 space-y-0.5 mt-1">
+                      <div>{VEHICLE_TYPE_LABEL[sel.vehicleType] ?? sel.vehicleType}</div>
+                      <div>운전자: {sel.driverName ?? '미배정'}</div>
+                      <div>속도: {sel.speed} km/h</div>
+                      <div>좌표: {sel.lat.toFixed(5)}, {sel.lng.toFixed(5)}</div>
+                      <div className="pt-0.5"><StatusDot status={sel.operationalStatus} /></div>
+                    </div>
+                    <button type="button" onClick={() => setSelectedId(null)}
+                      className="mt-1.5 text-[0.625rem] font-bold text-slate-500 hover:text-ink">
+                      선택 해제
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 우측 지도 */}
+            <div className="flex-1" style={{ position: 'relative', zIndex: 0 }}>
+              <LeafletMap
+                mode="vehicles"
+                center={data.center}
+                baseTile={baseTile}
+                selectedVehicleId={selectedId ?? undefined}
+                onVehicleClick={(id) => setSelectedId((prev) => prev === id ? null : id)}
+                vehicles={data.vehicles.map((v) => ({
+                  id: v.vehicleId,
+                  lat: v.lat,
+                  lng: v.lng,
+                  label: `${v.vehicleNo} (${VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType})`,
+                  status: v.operationalStatus,
+                  speed: v.speed,
+                }))}
+              />
+            </div>
           </div>
         </div>
       )}
