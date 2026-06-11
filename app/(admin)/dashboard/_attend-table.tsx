@@ -229,7 +229,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
                 type="datetime-local"
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="조정 퇴근 시각 (KST)">
@@ -237,11 +237,11 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
                 type="datetime-local"
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="근무 유형">
-              <select value={workType} onChange={(e) => setWorkType(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={workType} onChange={(e) => setWorkType(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="NORMAL">정상</option>
                 <option value="EARLY">조기출근</option>
                 <option value="EXTENDED">연장</option>
@@ -251,7 +251,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
               </select>
             </Field>
             <Field label="조정 유형">
-              <select value={adjustmentType} onChange={(e) => setAdjustmentType(e.target.value as 'CORRECTION' | 'ADDITION' | 'DELETION' | 'LEAVE')} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={adjustmentType} onChange={(e) => setAdjustmentType(e.target.value as 'CORRECTION' | 'ADDITION' | 'DELETION' | 'LEAVE')} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="CORRECTION">정정 (시간/유형 수정)</option>
                 <option value="ADDITION">추가 (대리등록·결근확인)</option>
                 <option value="DELETION">삭제</option>
@@ -266,7 +266,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="기기 오류 / 망각 / 외부 행사 등 구체적 사유"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
             />
           </Field>
 
@@ -289,11 +289,8 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합 (label className 보존)
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.625rem] font-extrabold text-ink-muted tracking-wider mb-1'} />;
-}
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'block text-[0.625rem] font-extrabold text-ink-muted tracking-wider mb-1'} />;
 
 function hm(iso: string) {
   const k = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);

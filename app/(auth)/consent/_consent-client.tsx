@@ -94,7 +94,7 @@ export default function ConsentClient({
             <div className="text-xs font-extrabold text-ink tracking-wide">📋 안내사항 (개인정보보호법 §15·22 / 근로기준법 §42 / 산업안전보건법 §165)</div>
           </div>
 
-          <div tabIndex={0} role="region" aria-label="개인정보 처리방침 본문" className="px-5 py-4 max-h-[55vh] overflow-y-auto text-[0.78125rem] leading-relaxed text-ink space-y-4 focus:outline-none focus:ring-2 focus:ring-accent">
+          <div tabIndex={0} role="region" aria-label="개인정보 처리방침 본문" className="px-5 py-4 max-h-[55vh] overflow-y-auto text-[0.78125rem] leading-relaxed text-ink space-y-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-accent">
             <Section title="1. 수집하는 개인정보 항목">
               <ul className="list-disc pl-5 space-y-0.5">
                 <li><b>필수</b>: 성명, 생년월일, 성별, 휴대전화번호, 주소, 사번, 직책, 부서, 입·퇴사일</li>

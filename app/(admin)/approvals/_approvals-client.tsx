@@ -208,7 +208,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="이름으로 검색…"
-          className="flex-1 min-w-[140px] max-w-[240px] px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
+          className="flex-1 min-w-[140px] max-w-[240px] px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
         <span className="text-sm font-mono text-ink-muted ml-auto">{items.length}건</span>
       </div>
@@ -233,7 +233,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
                   value={bulkNote}
                   onChange={(e) => setBulkNote(e.target.value)}
                   placeholder="안전보고서 검토 의견 (2자 이상 필수)"
-                  className="flex-1 min-w-[200px] px-3 py-1.5 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent"
+                  className="flex-1 min-w-[200px] px-3 py-1.5 rounded border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               )}
               {bulkError && <span className="text-sm font-bold text-danger">{bulkError}</span>}
@@ -519,7 +519,7 @@ function ApprovalDetailModal({
                 onChange={(e) => setReviewNote(e.target.value)}
                 placeholder="검토 의견을 입력하세요… (예: 이상 없음 확인)"
                 rows={2}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent resize-none"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
               />
             </div>
           )}
@@ -532,7 +532,7 @@ function ApprovalDetailModal({
                 onChange={(e) => setRejectNote(e.target.value)}
                 placeholder="반려 사유를 입력하세요…"
                 rows={3}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-danger resize-none"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-danger resize-none"
               />
             </div>
           )}

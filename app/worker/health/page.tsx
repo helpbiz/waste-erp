@@ -25,7 +25,7 @@ function Inp({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-const cls = 'w-full px-3 py-2 rounded-lg border-2 border-line bg-white text-sm focus:outline-none focus:border-accent';
+const cls = 'w-full px-3 py-2 rounded-lg border-2 border-line bg-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent';
 
 export default function WorkerHealthPage() {
   const [rec, setRec] = useState<Record | null>(null);

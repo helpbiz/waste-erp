@@ -204,7 +204,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
             <select
               value={contractorId}
               onChange={(e) => setContractorId(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-blue-400"
             >
               {contractors.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -258,7 +258,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
               <select
                 value={sheetIdx}
                 onChange={(e) => handleSheetChange(Number(e.target.value))}
-                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-blue-400"
               >
                 {sheets.map((s, i) => (
                   <option key={i} value={i}>{s.name}</option>
@@ -281,7 +281,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
                     onChange={(e) =>
                       setColMap((prev) => ({ ...prev, [f.key]: e.target.value || null }))
                     }
-                    className="border border-gray-300 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="border border-gray-300 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="">(없음)</option>
                     {sheet.headers.map((h) => (

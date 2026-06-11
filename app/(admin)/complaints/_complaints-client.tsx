@@ -250,10 +250,10 @@ export default function ComplaintsClient({
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-extrabold text-ink-muted whitespace-nowrap">기간</span>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           <span className="text-sm text-ink-muted">~</span>
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => quickRange('thisMonth')}
@@ -311,7 +311,7 @@ export default function ComplaintsClient({
           <select
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border-2 border-line text-sm bg-white focus:outline-none focus:border-accent"
+            className="px-3 py-1.5 rounded-lg border-2 border-line text-sm bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           >
             <option value="">전체 구역</option>
             {zoneOpts.map((z) => (
@@ -764,7 +764,7 @@ function AssignForm({
       <div className="flex flex-wrap gap-2 items-end">
         <div className="flex-1 min-w-[140px]">
           <label className="block text-[0.625rem] font-bold text-ink-muted mb-1">담당자</label>
-          <select value={w} onChange={(e) => setW(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+          <select value={w} onChange={(e) => setW(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
             {workers.length === 0 && <option value="">근로자 없음</option>}
             {workers.map((wk) => (
               <option key={wk.id} value={wk.id}>{wk.name}</option>
@@ -777,7 +777,7 @@ function AssignForm({
             type="date"
             value={due}
             onChange={(e) => setDue(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold bg-surface focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
         </div>
         <button
@@ -819,7 +819,7 @@ function NoteForm({
         onChange={(e) => setNote(e.target.value)}
         placeholder={placeholder}
         rows={2}
-        className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold bg-surface focus:outline-none focus:border-accent resize-none"
+        className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
       />
       <div className="flex gap-2">
         <button
@@ -859,7 +859,7 @@ function CompleteNoteForm({
         onChange={(e) => setNote(e.target.value)}
         placeholder="처리 내용을 기록해 주세요 (최소 2자)"
         rows={2}
-        className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold bg-surface focus:outline-none focus:border-accent resize-none"
+        className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
       />
       {workers.length > 0 && (
         <div>
@@ -869,7 +869,7 @@ function CompleteNoteForm({
           <select
             value={taggedWorker}
             onChange={(e) => setTaggedWorker(e.target.value)}
-            className="w-full px-3 py-1.5 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
+            className="w-full px-3 py-1.5 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           >
             <option value="">— 태그 없음 —</option>
             {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -1023,7 +1023,7 @@ function CreateComplaintModal({
               <select
                 value={contractorId}
                 onChange={(e) => setContractorId(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               >
                 <option value="">— 위탁업체 선택 —</option>
                 {contractorOpts.map((c) => (
@@ -1068,7 +1068,7 @@ function CreateComplaintModal({
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="상세 주소를 직접 입력하세요 (전화·카톡 민원 등)"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 autoFocus
               />
             ) : (
@@ -1120,7 +1120,7 @@ function CreateComplaintModal({
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
-                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </>
             )}
@@ -1133,7 +1133,7 @@ function CreateComplaintModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="민원 내용·현장 상황을 구체적으로 기록해 주세요"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
             />
           </div>
 
@@ -1146,7 +1146,7 @@ function CreateComplaintModal({
               onChange={(e) => setPhone(formatKoreanPhone(e.target.value))}
               placeholder="010-0000-0000"
               maxLength={13}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-semibold focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
 

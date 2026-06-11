@@ -206,7 +206,7 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
                       <select
                         value={row.headUserId ?? ''}
                         onChange={(e) => handleSave(row.id, { headUserId: e.target.value || null })}
-                        className="w-full px-2 py-1 rounded border border-line text-sm bg-white focus:outline-none focus:border-accent"
+                        className="w-full px-2 py-1 rounded border border-line text-sm bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                         disabled={row.excludeFromTbm}
                         title={row.excludeFromTbm ? 'TBM 제외 부서는 담당자 지정 불가' : 'TBM 담당자 선택'}
                       >

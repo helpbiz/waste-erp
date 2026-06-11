@@ -96,24 +96,24 @@ export default function PolicyTab({ initialPolicy }: Props) {
           근로시간 기준
         </h3>
 
-        <Field label="1일 기본 근무시간" note="연장근로 기산점 (근로기준법 §56: 8시간 초과)">
+        <PolicyField label="1일 기본 근무시간" note="연장근로 기산점 (근로기준법 §56: 8시간 초과)">
           <div className="flex items-center gap-2">
             <input
               type="number" min={1} max={12} step={0.5}
               value={form.dailyWorkHours}
               onChange={(e) => set('dailyWorkHours', parseFloat(e.target.value) || 8)}
-              className="w-24 px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink focus:outline-none focus:border-accent"
+              className="w-24 px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
             <span className="text-sm font-bold text-ink-muted">시간</span>
           </div>
-        </Field>
+        </PolicyField>
 
-        <Field label="야간근로 시간대" note={`현재 설정: ${nightLabel}`}>
+        <PolicyField label="야간근로 시간대" note={`현재 설정: ${nightLabel}`}>
           <div className="flex items-center gap-2 flex-wrap">
             <select
               value={form.nightStartHour}
               onChange={(e) => set('nightStartHour', parseInt(e.target.value))}
-              className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink bg-surface focus:outline-none focus:border-accent"
+              className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             >
               {HOUR_OPTS.map((h) => (
                 <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
@@ -123,7 +123,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
             <select
               value={form.nightEndHour}
               onChange={(e) => set('nightEndHour', parseInt(e.target.value))}
-              className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink bg-surface focus:outline-none focus:border-accent"
+              className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             >
               {HOUR_OPTS.map((h) => (
                 <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
@@ -134,7 +134,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
           <p className="text-[0.6875rem] text-info mt-1 font-semibold">
             출퇴근 시각에서 이 구간에 해당하는 시간을 자동으로 야간근로로 계산합니다.
           </p>
-        </Field>
+        </PolicyField>
       </section>
 
       {/* ── 2. 가산율 ─────────────────────────────────────── */}
@@ -181,11 +181,11 @@ export default function PolicyTab({ initialPolicy }: Props) {
           승인권자를 지정하면 해당 담당자의 결재 없이는 급여명세서를 발송할 수 없습니다.<br />
           지정하지 않으면 관리자가 즉시 발송할 수 있습니다.
         </p>
-        <Field label="결재승인권자">
+        <PolicyField label="결재승인권자">
           <select
             value={form.payslipApproverId ?? ''}
             onChange={(e) => set('payslipApproverId', e.target.value || null)}
-            className="w-full px-3 py-2 rounded-md border border-line font-bold text-sm text-ink bg-surface focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2 rounded-md border border-line font-bold text-sm text-ink bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           >
             <option value="">없음 (승인 없이 즉시 발송)</option>
             {candidates.map((c) => (
@@ -197,7 +197,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
           {candidates.length === 0 && (
             <p className="text-[0.6875rem] text-ink-muted mt-1">이 업체에 관리자 계정이 없습니다.</p>
           )}
-        </Field>
+        </PolicyField>
       </section>
 
       {/* ── 저장 버튼 ─────────────────────────────────────── */}
@@ -231,7 +231,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
             type="month"
             value={prefillYm}
             onChange={(e) => setPrefillYm(e.target.value)}
-            className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink focus:outline-none focus:border-accent"
+            className="px-3 py-2 rounded-md border border-line font-mono font-bold text-sm text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           <button
             onClick={handlePrefill}
@@ -258,7 +258,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
   );
 }
 
-function Field({ label, note, children }: { label: string; note?: string; children: React.ReactNode }) {
+function PolicyField({ label, note, children }: { label: string; note?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <div className="flex items-baseline gap-2">
@@ -280,7 +280,7 @@ function MultiplierField({
         type="number" min={0} max={3} step={0.05}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className="w-full text-center px-2 py-1.5 rounded-md border border-line font-mono font-extrabold text-lg text-ink focus:outline-none focus:border-accent bg-surface"
+        className="w-full text-center px-2 py-1.5 rounded-md border border-line font-mono font-extrabold text-lg text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-surface"
       />
       <div className="text-[0.6875rem] font-mono text-ink-faint">{note}</div>
     </div>

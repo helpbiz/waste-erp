@@ -549,7 +549,7 @@ export default function SafetyWorkerClient({
                     value={item.reason}
                     onChange={(e) => setReason(item.key, e.target.value)}
                     placeholder={`${item.label} 이상 사유 입력 (예: 파손 확인)`}
-                    className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 bg-amber-50 text-sm font-semibold focus:outline-none focus:border-warn text-ink"
+                    className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 bg-amber-50 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-warn text-ink"
                   />
                 </div>
               )}
@@ -624,8 +624,8 @@ export default function SafetyWorkerClient({
                 </div>
               </>
             )}
-            <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="발생 상황을 구체적으로 기록해 주세요 (5자 이상)" className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
-            <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="발생 위치" className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
+            <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="발생 상황을 구체적으로 기록해 주세요 (5자 이상)" className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
+            <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="발생 위치" className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             <div className="flex gap-2">
               <button onClick={submitIncident} disabled={busy || description.trim().length < 5} className={`flex-1 py-3 rounded-lg text-white text-sm font-black shadow-card active:scale-[0.98] disabled:opacity-50 ${reportType === 'INCIDENT' ? 'bg-danger' : 'bg-warn'}`}>
                 {busy ? '제출 중…' : '보고 제출'}

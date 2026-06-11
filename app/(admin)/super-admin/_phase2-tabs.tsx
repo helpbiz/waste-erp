@@ -806,7 +806,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as RoleKey)}
-              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             >
               {CREATE_ROLE_OPTIONS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
             </select>
@@ -825,7 +825,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 value={muniQuery}
                 onChange={(e) => setMuniQuery(e.target.value)}
                 placeholder="🔍 지자체 검색 (예: 용산구)"
-                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent mb-1.5"
               />
               <div className="border border-line rounded max-h-44 overflow-y-auto">
                 {filteredMunis.length === 0 && <div className="px-3 py-3 text-center text-sm text-ink-faint">{muniList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
@@ -855,7 +855,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 value={contractorQuery}
                 onChange={(e) => setContractorQuery(e.target.value)}
                 placeholder="🔍 회사 검색 (회사명 또는 지자체)"
-                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent mb-1.5"
               />
               <div className="border border-line rounded max-h-44 overflow-y-auto">
                 {filteredContractors.length === 0 && <div className="px-3 py-3 text-center text-sm text-ink-faint">{contractorList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
@@ -880,17 +880,17 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           <div>
             <div className="text-sm font-extrabold text-ink mb-1">이름 *</div>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="홍길동" className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="홍길동" className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
           <div>
             <div className="text-sm font-extrabold text-ink mb-1">아이디 *</div>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="muni-yongsan-01" className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
+            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="muni-yongsan-01" className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             <UsernameLivenStatus username={username} onPick={setUsername} />
           </div>
           <div>
             <div className="text-sm font-extrabold text-ink mb-1">임시 비밀번호 (자동 생성)</div>
             <div className="flex gap-1.5">
-              <input value={password} onChange={(e) => setPassword(e.target.value)} className="flex-1 px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
+              <input value={password} onChange={(e) => setPassword(e.target.value)} className="flex-1 px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               <button type="button" onClick={() => setPassword(genTempPw())} className="px-3 rounded border border-line text-sm font-bold bg-slate-50 hover:bg-slate-100">🎲 재생성</button>
             </div>
           </div>
@@ -902,7 +902,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
               placeholder="010-1234-5678"
               inputMode="numeric"
               maxLength={13}
-              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
 

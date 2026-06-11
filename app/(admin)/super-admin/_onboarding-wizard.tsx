@@ -13,6 +13,8 @@ import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { formatKoreanPhone } from '@/lib/phone';
 import { formatBusinessNo, validateBusinessNo } from '@/lib/business-no';
 import { useUsernameCheck } from '@/lib/use-username-check';
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'block text-sm font-extrabold text-ink mb-1'} />;
 
 type Muni = { id: string; name: string; code: string; region: string | null; status: string };
 
@@ -427,7 +429,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 onKeyDown={onMuniKey}
                 placeholder="🔍 지자체명/지역/코드 (예: '강' 입력 시 강남/강동/강서 후보)"
                 autoFocus
-                className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
               <div className="border border-line rounded-md max-h-64 overflow-y-auto">
                 {filteredMunis.length === 0 && (
@@ -827,14 +829,6 @@ function BusinessNoStatus({ value }: { value: string }) {
     : <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ {v.reason}</div>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="block text-sm font-extrabold text-ink mb-1">{label}</span>
-      {children}
-    </label>
-  );
-}
 
 function Input({
   value,
@@ -856,7 +850,7 @@ function Input({
       placeholder={placeholder}
       inputMode={inputMode}
       maxLength={maxLength}
-      className="w-full px-3 py-1.5 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+      className="w-full px-3 py-1.5 rounded border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
     />
   );
 }

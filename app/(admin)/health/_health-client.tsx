@@ -370,25 +370,25 @@ function HealthFormModal({
         <div className="p-5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="최근 건강검진일">
-              <input type="date" value={lastCheckupDate} onChange={(e) => setLastCheckupDate(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+              <input type="date" value={lastCheckupDate} onChange={(e) => setLastCheckupDate(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="혈액형">
-              <select value={bt} onChange={(e) => setBt(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={bt} onChange={(e) => setBt(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="">— 선택 —</option>
                 {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </Field>
             <Field label="혈압 수축기 (mmHg)">
-              <input type="number" min={50} max={250} value={bps} onChange={(e) => setBps(e.target.value)} placeholder="120" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+              <input type="number" min={50} max={250} value={bps} onChange={(e) => setBps(e.target.value)} placeholder="120" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="혈압 이완기 (mmHg)">
-              <input type="number" min={30} max={180} value={bpd} onChange={(e) => setBpd(e.target.value)} placeholder="80" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+              <input type="number" min={30} max={180} value={bpd} onChange={(e) => setBpd(e.target.value)} placeholder="80" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="심박수 (bpm)">
-              <input type="number" min={30} max={220} value={hr} onChange={(e) => setHr(e.target.value)} placeholder="72" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+              <input type="number" min={30} max={220} value={hr} onChange={(e) => setHr(e.target.value)} placeholder="72" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="혈당 (mg/dL)">
-              <input type="number" min={40} max={600} value={bs} onChange={(e) => setBs(e.target.value)} placeholder="95" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+              <input type="number" min={40} max={600} value={bs} onChange={(e) => setBs(e.target.value)} placeholder="95" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="시력 (좌)">
               {/* 입력 종료 시 소수점 1자리로 정규화 — 사용자가 "1" 입력해도 "1.0" 으로 표시 */}
@@ -398,7 +398,7 @@ function HealthFormModal({
                 onChange={(e) => setVl(e.target.value)}
                 onBlur={(e) => { const v = e.target.value; if (v) setVl(parseFloat(v).toFixed(1)); }}
                 placeholder="1.0"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="시력 (우)">
@@ -408,7 +408,7 @@ function HealthFormModal({
                 onChange={(e) => setVr(e.target.value)}
                 onBlur={(e) => { const v = e.target.value; if (v) setVr(parseFloat(v).toFixed(1)); }}
                 placeholder="1.0"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
           </div>
@@ -418,7 +418,7 @@ function HealthFormModal({
               <select
                 value={emRel}
                 onChange={(e) => setEmRel(e.target.value)}
-                className="px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
+                className="px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 aria-label="관계"
               >
                 <option value="">— 관계 —</option>
@@ -432,7 +432,7 @@ function HealthFormModal({
                 onChange={(e) => setEmName(e.target.value)}
                 placeholder="이름"
                 aria-label="이름"
-                className="px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                className="px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
               <input
                 type="tel"
@@ -442,18 +442,18 @@ function HealthFormModal({
                 placeholder="010-0000-0000"
                 aria-label="전화번호"
                 maxLength={13}
-                className="px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </div>
           </Field>
           <Field label="알레르기">
-            <textarea rows={2} value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="페니실린 / 갑각류 등" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <textarea rows={2} value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="페니실린 / 갑각류 등" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
           </Field>
           <Field label="만성질환">
-            <textarea rows={2} value={chronic} onChange={(e) => setChronic(e.target.value)} placeholder="고혈압 / 당뇨 등" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <textarea rows={2} value={chronic} onChange={(e) => setChronic(e.target.value)} placeholder="고혈압 / 당뇨 등" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
           </Field>
           <Field label="비고">
-            <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
           </Field>
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
@@ -468,8 +468,4 @@ function HealthFormModal({
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide'} />;
-}
+import { Field } from '@/components/Field';

@@ -109,7 +109,7 @@ export default function CitizenHomeClient() {
             onChange={(e) => setPhone(formatKoreanPhone(e.target.value))}
             placeholder="010-1234-5678"
             maxLength={13}
-            className="w-full px-4 py-3 rounded-lg border-2 border-line text-base font-mono font-bold focus:outline-none focus:border-accent"
+            className="w-full px-4 py-3 rounded-lg border-2 border-line text-base font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           <label className="block text-xs font-extrabold text-ink">성함 (선택)</label>
           <input
@@ -117,7 +117,7 @@ export default function CitizenHomeClient() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="홍길동"
-            className="w-full px-4 py-3 rounded-lg border-2 border-line text-base font-semibold focus:outline-none focus:border-accent"
+            className="w-full px-4 py-3 rounded-lg border-2 border-line text-base font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           <button onClick={register} className="w-full py-3.5 rounded-lg bg-accent text-white text-base font-black shadow-card active:scale-[0.98]">
             시작하기

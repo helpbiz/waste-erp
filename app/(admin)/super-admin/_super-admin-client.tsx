@@ -8,6 +8,8 @@ import OnboardingWizardModal from './_onboarding-wizard';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { UsersGlobalTab, SystemStatsTab, AuditLogTab, OrgTreeTab, ContractorTrashTab } from './_phase2-tabs';
 import ContractorFeaturesTab from './_features-tab';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { DateRangePresets } from '@/components/ui/date-range-presets';
 
 const ALL_SCREENS = [
   { code: 'dashboard',     label: '메인 대시보드' },
@@ -281,7 +283,7 @@ function MunicipalitiesTab() {
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') load(); }}
           placeholder="이름·코드 검색"
-          className="px-3 py-1.5 rounded-md border-2 border-line text-sm font-semibold w-44 focus:outline-none focus:border-accent"
+          className="px-3 py-1.5 rounded-md border-2 border-line text-sm font-semibold w-44 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
         <select value={region} onChange={(e) => setRegion(e.target.value)} className="px-3 py-1.5 rounded-md border-2 border-line text-sm font-semibold">
           <option value="">전체 광역</option>
@@ -645,7 +647,7 @@ function MuniEditModal({
                 }}
                 onFocus={() => isNew && name && setShowSuggestions(true)}
                 placeholder={isNew ? '예: 강남, 서울특별시 강남구, 11680' : ''}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
               {matchedExisting && (
                 <button
@@ -708,7 +710,7 @@ function MuniEditModal({
               disabled={!isNew || !!matchedExisting}
               onChange={(e) => setCode(e.target.value)}
               placeholder={isNew && !matchedExisting ? '5자리 숫자 (예: 11680)' : ''}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-semibold disabled:bg-surface-soft disabled:text-ink-muted focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-semibold disabled:bg-surface-soft disabled:text-ink-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </Field>
           <Field label="광역단체">
@@ -717,7 +719,7 @@ function MuniEditModal({
               value={region}
               onChange={(e) => setRegion(e.target.value)}
               placeholder="예: 서울특별시"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
             <datalist id="regions-list">
               {regions.map((r) => <option key={r} value={r} />)}
@@ -885,7 +887,7 @@ function CompanyInfoTab() {
           id="company-muni-picker"
           value={selectedMuniId}
           onChange={(e) => setSelectedMuniId(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500 min-h-[40px]"
+          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-purple-500 min-h-[40px]"
         >
           {munis.length === 0 && <option value="">— 지자체 없음 —</option>}
           {munis.map((m) => (
@@ -904,7 +906,7 @@ function CompanyInfoTab() {
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
           disabled={!selectedMuniId || contractorOpts.length === 0}
-          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-purple-500 disabled:bg-slate-100 min-h-[40px]"
+          className="flex-1 px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-purple-500 disabled:bg-slate-100 min-h-[40px]"
         >
           {contractorOpts.length === 0 && <option value="">— 산하 위탁업체 없음 —</option>}
           {contractorOpts.map((o) => (
@@ -1260,6 +1262,24 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
 }
 
 /* ─────────────  탭 2: 관할 거래처 일괄 조회  ───────────── */
+const RECENT_QUERY_KEY = 'super-admin:recent-queries';
+type RecentQuery = { muniId: string; muniName: string; from: string; to: string };
+
+function saveRecentQuery(q: RecentQuery) {
+  try {
+    const prev: RecentQuery[] = JSON.parse(localStorage.getItem(RECENT_QUERY_KEY) ?? '[]');
+    const next = [
+      q,
+      ...prev.filter((r) => !(r.muniId === q.muniId && r.from === q.from && r.to === q.to)),
+    ].slice(0, 5);
+    localStorage.setItem(RECENT_QUERY_KEY, JSON.stringify(next));
+  } catch {}
+}
+
+function loadRecentQueries(): RecentQuery[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_QUERY_KEY) ?? '[]'); } catch { return []; }
+}
+
 function AggregateTab() {
   const [munis, setMunis] = useState<Muni[]>([]);
   const [muniId, setMuniId] = useState('');
@@ -1269,6 +1289,8 @@ function AggregateTab() {
   const [to, setTo] = useState(ymEnd);
   const [data, setData] = useState<Aggregate | null>(null);
   const [loading, setLoading] = useState(false);
+  const [recentQueries, setRecentQueries] = useState<RecentQuery[]>([]);
+  useEffect(() => { setRecentQueries(loadRecentQueries()); }, []);
   /* 사용자 요청 2026-04-29: 거래처별 체크박스 다중 선택 + 그룹 발송 (이메일/SMS) */
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [broadcastOpen, setBroadcastOpen] = useState(false);
@@ -1297,48 +1319,62 @@ function AggregateTab() {
     setLoading(true);
     try {
       const r = await fetch(`/api/super-admin/contractors-aggregate?municipalityId=${muniId}&from=${from}&to=${to}`);
-      setData(await r.json());
+      const result = await r.json();
+      setData(result);
+      const muniName = munis.find((m) => m.id === muniId)?.name ?? '';
+      saveRecentQuery({ muniId, muniName, from, to });
+      setRecentQueries(loadRecentQueries());
     } finally { setLoading(false); }
   }
 
   function printNow() { if (typeof window !== 'undefined') window.print(); }
 
+  const muniOptions = munis.map((m) => ({ value: m.id, label: `${m.name} (${m.contractorCount}개 거래처)` }));
+
   return (
     <div className="space-y-4">
-      <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
-        <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">지자체</div>
-          <select value={muniId} onChange={(e) => setMuniId(e.target.value)}
-            className="px-3 py-1.5 rounded border border-line text-sm font-bold min-w-[180px]">
-            {munis.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.contractorCount}개 거래처)</option>)}
-          </select>
+      <div className="bg-surface border border-line rounded-lg p-4 space-y-3 print:hidden">
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">지자체</div>
+            <SearchableSelect
+              options={muniOptions}
+              value={muniId}
+              onChange={setMuniId}
+              placeholder="지자체 선택"
+            />
+          </div>
+          <div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+              className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
+          </div>
+          <div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+              className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
+          </div>
+          <button onClick={load} disabled={loading || !muniId}
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
+            {loading ? '조회 중…' : '🔍 조회'}
+          </button>
+          <button onClick={printNow} disabled={!data}
+            className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+            🖨 일괄 출력
+          </button>
+          <button
+            onClick={() => setBroadcastOpen(true)}
+            disabled={!data || selectedIds.size === 0}
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            title="선택한 거래처 관리자에게 이메일/SMS 그룹 발송"
+          >
+            📧 그룹 발송 ({selectedIds.size})
+          </button>
         </div>
-        <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-            className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
+        <div className="flex items-center gap-2">
+          <span className="text-[0.625rem] font-mono font-extrabold text-ink-faint shrink-0">빠른 선택</span>
+          <DateRangePresets onApply={(f, t) => { setFrom(f); setTo(t); }} />
         </div>
-        <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-            className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
-        </div>
-        <button onClick={load} disabled={loading || !muniId}
-          className="px-4 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
-          {loading ? '조회 중…' : '🔍 조회'}
-        </button>
-        <button onClick={printNow} disabled={!data}
-          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
-          🖨 일괄 출력
-        </button>
-        <button
-          onClick={() => setBroadcastOpen(true)}
-          disabled={!data || selectedIds.size === 0}
-          className="px-4 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-          title="선택한 거래처 관리자에게 이메일/SMS 그룹 발송"
-        >
-          📧 그룹 발송 ({selectedIds.size})
-        </button>
       </div>
 
       {broadcastOpen && data && (
@@ -1349,7 +1385,28 @@ function AggregateTab() {
         />
       )}
 
-      {!data && <div className="text-center py-12 text-ink-faint">지자체 선택 후 조회</div>}
+      {!data && (
+        <div className="py-12 text-center">
+          <p className="text-ink-faint">지자체 선택 후 조회</p>
+          {recentQueries.length > 0 && (
+            <div className="mt-6">
+              <p className="text-[0.625rem] font-mono font-extrabold text-ink-faint tracking-widest uppercase mb-3">최근 조회</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {recentQueries.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setMuniId(q.muniId); setFrom(q.from); setTo(q.to); }}
+                    className="px-3 py-2 rounded-lg bg-surface border border-line text-left hover:border-purple-400 hover:bg-purple-50 transition"
+                  >
+                    <div className="text-sm font-extrabold text-ink">{q.muniName}</div>
+                    <div className="text-[0.625rem] font-mono text-ink-faint">{q.from} ~ {q.to}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {data && (
         <div className="bg-white border-t-4 border-double border-purple-700 pt-4 px-4 print:px-2">
@@ -1512,13 +1569,8 @@ function BroadcastModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-3 print:hidden">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-[640px] w-full max-h-[92vh] flex flex-col">
-        <div className="px-5 py-3 border-b border-line flex items-center justify-between">
-          <h2 className="text-base font-black text-ink">📧 그룹 발송 ({contractors.length}개 거래처)</h2>
-          <button onClick={onClose} className="text-ink-faint hover:text-ink-muted text-xl">✕</button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+    <BottomSheet open={true} onClose={onClose} title={`📧 그룹 발송 (${contractors.length}개 거래처)`} desktopMaxWidth="640px">
+      <div className="px-5 py-4 space-y-3">
           <div className="bg-blue-50 border border-blue-300 rounded-md px-3 py-2 text-sm">
             <b>📮 발송 방식:</b>
             <div className="mt-1 flex gap-3">
@@ -1591,12 +1643,11 @@ function BroadcastModal({
               </div>
             </>
           )}
-        </div>
-        <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end">
-          <button onClick={onClose} className="px-4 py-1.5 rounded bg-slate-200 text-ink-muted text-sm font-bold">닫기</button>
-        </div>
       </div>
-    </div>
+      <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end">
+        <button onClick={onClose} className="px-4 py-1.5 rounded bg-slate-200 text-ink-muted text-sm font-bold">닫기</button>
+      </div>
+    </BottomSheet>
   );
 }
 
@@ -1843,11 +1894,8 @@ function GisConfigTab() {
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
-}
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
 
 /* 위탁업체 수정 모달 — SUPER_ADMIN 전용
    신규 등록과 동일한 필드 레이아웃. PATCH 2건 통합:
@@ -2422,7 +2470,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
         step="0.01"
         value={form[key]}
         onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-        className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+        className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-purple-400"
       />
     </label>
   );
@@ -2465,7 +2513,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
             onChange={(e) => setForm((p) => ({ ...p, downtimeReason: e.target.value }))}
             maxLength={200}
             placeholder="선택사항"
-            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-purple-400"
           />
         </label>
         {numField('일반처리(t)', 'generalWasteTon')}
@@ -2483,7 +2531,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
             maxLength={1000}
             placeholder="선택사항"
-            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="border border-line rounded px-2 py-1.5 text-sm w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-purple-400"
           />
         </label>
       </div>
@@ -2812,7 +2860,7 @@ function DataResetTab() {
         <label className="block">
           <span className="text-sm font-extrabold text-ink block mb-1">대상 위탁업체 *</span>
           <select value={contractorId} onChange={(e) => setContractorId(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-red-400">
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-red-400">
             <option value="">— 회사 선택 —</option>
             {contractors.map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
           </select>
@@ -2824,7 +2872,7 @@ function DataResetTab() {
           </span>
           <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
             placeholder="RESET"
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-red-400" />
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-red-400" />
         </label>
 
         {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>}

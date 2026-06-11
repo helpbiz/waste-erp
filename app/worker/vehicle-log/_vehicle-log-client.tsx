@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'text-sm font-mono font-extrabold text-ink-faint'} />;
 
 const BAG_MACHINE_LABEL: Record<string, string> = {
   food_1L: '음식물 1L', food_2L: '음식물 2L', food_3L: '음식물 3L', food_5L: '음식물 5L', food_10L: '음식물 10L',
@@ -468,23 +470,23 @@ export default function VehicleLogClient({
                         <td className="border border-slate-300 p-0.5">
                           <input type="time" value={row.startTime}
                             onChange={(e) => setOperationRow(i, 'startTime', e.target.value)}
-                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="time" value={row.endTime}
                             onChange={(e) => setOperationRow(i, 'endTime', e.target.value)}
-                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.zone}
                             onChange={(e) => setOperationRow(i, 'zone', e.target.value)}
                             placeholder="구간/경로"
-                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.note}
                             onChange={(e) => setOperationRow(i, 'note', e.target.value)}
-                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
                       </tr>
                     ))}
@@ -551,19 +553,19 @@ export default function VehicleLogClient({
                       <input type="number" inputMode="numeric" min="0" placeholder="0"
                         value={form.bagWork[idx].general}
                         onChange={(e) => setBagWorkRow(idx, 'general', e.target.value)}
-                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white" />
                     </td>
                     <td className="px-1 py-1 border border-line">
                       <input type="number" inputMode="numeric" min="0" placeholder="0"
                         value={form.bagWork[idx].food}
                         onChange={(e) => setBagWorkRow(idx, 'food', e.target.value)}
-                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white" />
                     </td>
                     <td className="px-1 py-1 border border-line">
                       <input type="number" inputMode="numeric" min="0" placeholder="0"
                         value={form.bagWork[idx].recycle}
                         onChange={(e) => setBagWorkRow(idx, 'recycle', e.target.value)}
-                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white" />
+                        className="w-full px-2 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white" />
                     </td>
                     <td className="px-1 py-1 border border-line">
                       <input
@@ -572,7 +574,7 @@ export default function VehicleLogClient({
                         value={form.bagWork[idx].disposalSite}
                         onChange={(e) => setBagWorkRow(idx, 'disposalSite', e.target.value)}
                         placeholder="직접 입력"
-                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white min-w-[72px]"
+                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white min-w-[72px]"
                       />
                     </td>
                     <td className="px-1 py-1 border border-line">
@@ -581,7 +583,7 @@ export default function VehicleLogClient({
                         value={form.bagWork[idx].note}
                         onChange={(e) => setBagWorkRow(idx, 'note', e.target.value)}
                         placeholder="비고"
-                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white min-w-[64px]"
+                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white min-w-[64px]"
                       />
                     </td>
                   </tr>
@@ -637,7 +639,7 @@ export default function VehicleLogClient({
                           <input type="number" inputMode="numeric" min="0" placeholder="0"
                             value={form.bagMachineWork[k]}
                             onChange={(e) => setBagMachine(k, e.target.value)}
-                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white min-w-[44px]" />
+                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white min-w-[44px]" />
                         </td>
                       ))}
                     </tr>
@@ -665,7 +667,7 @@ export default function VehicleLogClient({
                           <input type="number" inputMode="numeric" min="0" placeholder="0"
                             value={form.bagMachineWork[k]}
                             onChange={(e) => setBagMachine(k, e.target.value)}
-                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus:border-accent bg-white min-w-[44px]" />
+                            className="w-full px-1 py-1 rounded border border-line text-center text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white min-w-[44px]" />
                         </td>
                       ))}
                     </tr>
@@ -740,7 +742,7 @@ export default function VehicleLogClient({
             <input type="number" inputMode="numeric" min="0" placeholder="0"
               value={form.largeWasteWork.illegalTotal}
               onChange={(e) => setLargeWaste('illegalTotal', e.target.value)}
-              className="w-20 px-2 py-1 rounded border-2 border-line text-center text-sm font-mono font-bold focus:outline-none focus:border-accent bg-white" />
+              className="w-20 px-2 py-1 rounded border-2 border-line text-center text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white" />
             <span className="text-sm font-bold text-ink-muted">점</span>
           </div>
         </Card>
@@ -1264,7 +1266,7 @@ async function handleReceiptPhoto(file: File): Promise<string> {
 }
 
 const INPUT_CLS =
-  'w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono focus:outline-none focus:border-accent bg-white';
+  'w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white';
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -1277,14 +1279,6 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-sm font-mono font-extrabold text-ink-faint">{label}</span>
-      {children}
-    </label>
-  );
-}
 
 function BottomSheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (

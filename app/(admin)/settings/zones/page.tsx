@@ -211,7 +211,7 @@ export default function ZonesPage() {
                 onChange={(e) => setNewZoneName(e.target.value)}
                 placeholder="예: 1구역"
                 maxLength={100}
-                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </div>
             <div>
@@ -221,7 +221,7 @@ export default function ZonesPage() {
                 onChange={(e) => setNewZoneCode(e.target.value)}
                 placeholder="예: Z01"
                 maxLength={20}
-                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -233,7 +233,7 @@ export default function ZonesPage() {
                 placeholder="행정동 추가 후 자동 합산"
                 min={0}
                 step={0.0001}
-                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
               <p className="text-[0.625rem] text-ink-muted mt-0.5">비워두면 소속 행정동 면적 합산으로 표시됩니다.</p>
             </div>
@@ -285,7 +285,7 @@ export default function ZonesPage() {
                       value={editZoneName}
                       onChange={(e) => setEditZoneName(e.target.value)}
                       maxLength={100}
-                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
                     />
                   </div>
                   <div>
@@ -294,7 +294,7 @@ export default function ZonesPage() {
                       value={editZoneCode}
                       onChange={(e) => setEditZoneCode(e.target.value)}
                       maxLength={20}
-                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
                     />
                   </div>
                   <div>
@@ -305,7 +305,7 @@ export default function ZonesPage() {
                       onChange={(e) => setEditAreaKm2(e.target.value)}
                       min={0}
                       step={0.0001}
-                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none"
+                      className="w-full px-3 py-1.5 rounded-lg border-2 border-accent text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
                     />
                   </div>
                 </div>
@@ -409,7 +409,7 @@ export default function ZonesPage() {
                                 onChange={(e) => setNewDongCode(e.target.value)}
                                 placeholder="1171010100"
                                 maxLength={20}
-                                className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 text-sm focus:outline-none focus:border-amber-500"
+                                className="w-full px-3 py-1.5 rounded-lg border-2 border-amber-300 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-amber-500"
                               />
                             </div>
                           )}
@@ -423,7 +423,7 @@ export default function ZonesPage() {
                             value={dongSearch}
                             onChange={(e) => setDongSearch(e.target.value)}
                             placeholder="동 이름 또는 코드 입력"
-                            className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent bg-white"
+                            className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white"
                           />
                           {dongSearch.length > 0 && (
                             <div className="mt-1 bg-white border border-line rounded-lg shadow-md max-h-48 overflow-y-auto">
@@ -460,7 +460,7 @@ export default function ZonesPage() {
                           onChange={(e) => setNewDongName(e.target.value)}
                           placeholder="예: 중앙동"
                           maxLength={50}
-                          className="w-full px-3 py-1.5 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                          className="w-full px-3 py-1.5 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                         />
                       </div>
                       <div className="flex-1">
@@ -470,7 +470,7 @@ export default function ZonesPage() {
                           onChange={(e) => setNewDongCode(e.target.value)}
                           placeholder="예: 4511310100"
                           maxLength={20}
-                          className="w-full px-3 py-1.5 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                          className="w-full px-3 py-1.5 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                         />
                       </div>
                     </div>

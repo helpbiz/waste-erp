@@ -212,7 +212,7 @@ export default function ContractorInfoSettingsPage() {
               onChange={(e) => setForm({ ...form, companyName: e.target.value })}
               placeholder="회사명"
               maxLength={100}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
@@ -223,7 +223,7 @@ export default function ContractorInfoSettingsPage() {
               onChange={(e) => setForm({ ...form, ceoName: e.target.value })}
               placeholder="홍길동"
               maxLength={50}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
@@ -234,7 +234,7 @@ export default function ContractorInfoSettingsPage() {
               onChange={(e) => setForm({ ...form, phoneMain: e.target.value })}
               placeholder="02-1234-5678"
               maxLength={20}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
           <div className="col-span-2">
@@ -245,7 +245,7 @@ export default function ContractorInfoSettingsPage() {
               onChange={(e) => setForm({ ...form, emailMain: e.target.value })}
               placeholder="info@company.co.kr"
               maxLength={100}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
           <div className="col-span-2">
@@ -320,7 +320,7 @@ export default function ContractorInfoSettingsPage() {
             onChange={(e) => setNewGarageName(e.target.value)}
             placeholder="이름 (선택) — 예: 본사 차고지"
             maxLength={50}
-            className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           <AddressSearchInput
             value={newGarageAddress}

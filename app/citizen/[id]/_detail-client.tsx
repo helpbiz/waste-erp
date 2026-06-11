@@ -180,7 +180,7 @@ export default function DetailClient({ detail }: { detail: Detail }) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="처리 결과에 대한 의견 (선택)"
-            className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+            className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
           />
           {error && <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
           <button

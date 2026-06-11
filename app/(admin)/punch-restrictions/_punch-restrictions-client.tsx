@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Field } from '@/components/Field';
 
 export type RestrictionRow = {
   id: string;
@@ -298,11 +299,11 @@ function RestrictionFormModal({
         <div className="p-5 space-y-4">
           <Field label="규칙명 *">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 차고지 근무조 시간 제한"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </Field>
           <Field label="대상 부서 (비워두면 전체 적용)">
             <select value={deptId} onChange={(e) => setDeptId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
               <option value="">— 전체 (부서 무관) —</option>
               {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -331,19 +332,19 @@ function RestrictionFormModal({
           {!blockAll && <div className="grid grid-cols-2 gap-3">
             <Field label="출근 허용 시작">
               <input type="time" value={checkInFrom} onChange={(e) => setCheckInFrom(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="출근 허용 종료">
               <input type="time" value={checkInUntil} onChange={(e) => setCheckInUntil(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="퇴근 허용 시작">
               <input type="time" value={checkOutFrom} onChange={(e) => setCheckOutFrom(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
             <Field label="퇴근 허용 종료">
               <input type="time" value={checkOutUntil} onChange={(e) => setCheckOutUntil(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </Field>
           </div>}
           {!blockAll && (
@@ -388,20 +389,20 @@ function RestrictionFormModal({
               <>
                 <Field label="장소 이름 (안내용)">
                   <input value={locationLabel} onChange={(e) => setLocationLabel(e.target.value)} placeholder="예: 차고지 정문"
-                    className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
+                    className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                 </Field>
                 <div className="grid grid-cols-3 gap-2">
                   <Field label="위도">
                     <input type="number" step="0.0001" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="37.4979"
-                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                   <Field label="경도">
                     <input type="number" step="0.0001" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="127.0276"
-                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                   <Field label="허용 반경(m)">
                     <input type="number" min={10} max={5000} value={radius} onChange={(e) => setRadius(e.target.value)} placeholder="200"
-                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                 </div>
                 <p className="text-sm font-mono text-ink-muted">지정 좌표를 모르면 Google Maps에서 우클릭 → 좌표 복사</p>
@@ -429,11 +430,3 @@ function RestrictionFormModal({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide">{label}</span>
-      {children}
-    </label>
-  );
-}

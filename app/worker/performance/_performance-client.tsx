@@ -177,7 +177,7 @@ function WasteTab() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
       </Section>
 
@@ -228,9 +228,9 @@ function WasteTab() {
                     placeholder="0.00"
                     value={draft.weight}
                     onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, weight: e.target.value } }))}
-                    className="flex-1 px-3 py-2 rounded-md border border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                    className="flex-1 px-3 py-2 rounded-md border border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                   />
-                  <span className="self-center text-sm font-mono font-bold text-ink-muted">톤</span>
+                  <span className="self-center text-xs font-mono font-bold text-ink-muted">톤</span>
                   <button
                     type="button"
                     onClick={() => save(m.code)}
@@ -246,7 +246,7 @@ function WasteTab() {
                       <select
                         value={draft.siteId}
                         onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, siteId: e.target.value } }))}
-                        className="w-full px-3 py-1.5 rounded-md border border-line text-sm font-bold focus:outline-none focus:border-accent"
+                        className="w-full px-3 py-1.5 rounded-md border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                       >
                         <option value="">— 처리장소 선택 (선택사항) —</option>
                         {disposalSites.map((s) => (
@@ -259,7 +259,7 @@ function WasteTab() {
                       placeholder="비고 (선택)"
                       value={draft.note}
                       onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, note: e.target.value } }))}
-                      className="w-full px-3 py-1.5 rounded-md border border-line text-sm focus:outline-none focus:border-accent"
+                      className="w-full px-3 py-1.5 rounded-md border border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                     />
                   </div>
                 )}
@@ -353,7 +353,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
       </Section>
 
@@ -380,7 +380,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
               <select
                 value={vehicleId}
                 onChange={(e) => setVehicleId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               >
                 {vehicles.map((v) => (
                   <option key={v.id} value={v.id}>{v.vehicleNo} ({v.vehicleType})</option>
@@ -394,7 +394,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </Field>
               <Field label="무게(톤)">
@@ -406,7 +406,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </Field>
             </div>
@@ -436,7 +436,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                 <select
                   value={selectedSiteId}
                   onChange={(e) => setSelectedSiteId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus:border-accent"
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 >
                   <option value="">— 선택 안함 —</option>
                   {disposalSites.map((s) => (
@@ -452,7 +452,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="예: 지역 표시, 특이사항"
-                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
 
@@ -506,11 +506,8 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-sm font-mono font-extrabold text-ink-faint mb-1'} />;
-}
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'block text-sm font-mono font-extrabold text-ink-faint mb-1'} />;
 
 /* ────────────────  운전기록 이력  ──────────────── */
 

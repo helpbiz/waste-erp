@@ -126,7 +126,7 @@ export default function DataCleanupClient() {
               type="date"
               value={cutoffDate}
               onChange={(e) => { setCutoffDate(e.target.value); setPreviewCount(null); setConfirm(''); }}
-              className="flex-1 px-3 py-2 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+              className="flex-1 px-3 py-2 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
             <button
               onClick={handlePreview}
@@ -166,7 +166,7 @@ export default function DataCleanupClient() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="삭제확인"
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-danger"
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-danger"
             />
           </div>
         )}

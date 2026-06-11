@@ -178,7 +178,7 @@ export default function WeatherNoticesWorkerClient({
                         <span className="text-[0.6875rem] font-extrabold text-ink-muted">시간 *</span>
                         <input type="time" value={f.recordTime}
                           onChange={(e) => updateForm(n.id, 'recordTime', e.target.value)}
-                          className="px-3 py-2 rounded-xl border-2 border-line text-sm font-mono bg-white focus:outline-none focus:border-accent" />
+                          className="px-3 py-2 rounded-xl border-2 border-line text-sm font-mono bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                       </label>
                       {/* 체감온도 */}
                       <label className="flex flex-col gap-1">
@@ -186,7 +186,7 @@ export default function WeatherNoticesWorkerClient({
                         <input type="number" value={f.feelsLike} min="-50" max="60"
                           placeholder="예: 38"
                           onChange={(e) => updateForm(n.id, 'feelsLike', e.target.value)}
-                          className="px-3 py-2 rounded-xl border-2 border-line text-sm font-mono bg-white focus:outline-none focus:border-accent" />
+                          className="px-3 py-2 rounded-xl border-2 border-line text-sm font-mono bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                       </label>
                     </div>
 
@@ -196,7 +196,7 @@ export default function WeatherNoticesWorkerClient({
                       <input type="text" value={f.managerName}
                         placeholder="담당자 이름"
                         onChange={(e) => updateForm(n.id, 'managerName', e.target.value)}
-                        className="px-3 py-2 rounded-xl border-2 border-line text-sm bg-white focus:outline-none focus:border-accent" />
+                        className="px-3 py-2 rounded-xl border-2 border-line text-sm bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                     </label>
 
                     {/* 조치사항 */}
@@ -214,7 +214,7 @@ export default function WeatherNoticesWorkerClient({
                       <textarea rows={3} value={f.actionTaken}
                         placeholder="조치사항을 입력하거나 위 버튼을 클릭하세요"
                         onChange={(e) => updateForm(n.id, 'actionTaken', e.target.value)}
-                        className="px-3 py-2 rounded-xl border-2 border-line text-sm bg-white focus:outline-none focus:border-accent resize-none" />
+                        className="px-3 py-2 rounded-xl border-2 border-line text-sm bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
                     </div>
 
                     {/* 사진 */}

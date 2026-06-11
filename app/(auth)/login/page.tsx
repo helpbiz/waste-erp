@@ -242,7 +242,7 @@ function LoginInner() {
               spellCheck={false}
               placeholder="아이디"
               aria-label="아이디"
-              className="w-full pl-10 pr-9 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full pl-10 pr-9 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             {username && (
               <button
@@ -275,7 +275,7 @@ function LoginInner() {
               autoComplete="current-password"
               placeholder="비밀번호"
               aria-label="비밀번호"
-              className="w-full pl-10 pr-10 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full pl-10 pr-10 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"

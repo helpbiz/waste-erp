@@ -457,18 +457,18 @@ function AdjustModal({
               <label className="block">
                 <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">출근 시각</span>
                 <input type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </label>
               <label className="block">
                 <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">퇴근 시각</span>
                 <input type="time" value={checkOut} onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
+                  className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </label>
             </div>
             <label className="block">
               <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">근무 유형</span>
               <select value={workType} onChange={(e) => setWorkType(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 {WORK_TYPE_OPTIONS.map((wt) => (
                   <option key={wt} value={wt}>{WORK_TYPE_LABEL[wt]}</option>
                 ))}
@@ -480,7 +480,7 @@ function AdjustModal({
               </span>
               <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
                 placeholder="예: 출근 지문 인식 실패로 09:15 → 08:50 정정"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
             </label>
 
             {shiftComplete && (
@@ -788,7 +788,7 @@ function _PendingApprovalModal_REMOVED({
             <p className="text-base font-medium text-ink-mid">사유는 audit_log 에 영구 기록됩니다 (2자 이상).</p>
             <textarea rows={3} autoFocus value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
               placeholder="예: 출근지문 미인식 / 위치 이탈 등"
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-base font-semibold focus:outline-none focus:border-accent resize-none" />
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-base font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setConfirmReject(null)}
                 className="min-h-11 px-5 py-3 rounded-lg bg-white text-ink-mid border-2 border-line-strong text-base font-bold hover:bg-surface-soft">

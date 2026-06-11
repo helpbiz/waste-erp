@@ -161,7 +161,7 @@ export default function ContractorFeaturesTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="회사명·지자체 검색"
-            className="w-full px-3 py-2 mb-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2 mb-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           {!list && <div className="text-sm text-ink-faint text-center py-6">로딩 중…</div>}
           {list && filtered.length === 0 && (

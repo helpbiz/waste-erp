@@ -296,7 +296,7 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
               rows={2}
               maxLength={4000}
               placeholder="공식 답변 (작성자 외 회사 전체에 공개됩니다)"
-              className="flex-1 text-sm border border-line rounded-md p-2 focus:border-indigo-500 focus:outline-none"
+              className="flex-1 text-sm border border-line rounded-md p-2 focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
             />
             <button onClick={submitReply} disabled={busy}
               className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm font-extrabold disabled:opacity-50">

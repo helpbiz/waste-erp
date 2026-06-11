@@ -1640,7 +1640,7 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
             onChange={(e) => setNewDeptName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') createDept(newDeptName); if (e.key === 'Escape') { setAddingNew(false); setNewDeptName(''); } }}
             placeholder="새 부서명 (예: 안전환경팀)"
-            className="flex-1 px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none" />
+            className="flex-1 px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1" />
           <button onClick={() => createDept(newDeptName)}
             className="px-4 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800">
             저장
@@ -1762,10 +1762,10 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
           <input type="text" autoFocus placeholder="직책명 (예: 팀장)" value={newPos.label}
             onChange={(e) => setNewPos({ ...newPos, label: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Enter') createPos(); if (e.key === 'Escape') { setAdding(false); setNewPos({ label: '', category: 'OFFICE' }); } }}
-            className="flex-1 min-w-[160px] px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none" />
+            className="flex-1 min-w-[160px] px-3 py-2 rounded-md border-2 border-accent bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1" />
           <select value={newPos.category}
             onChange={(e) => setNewPos({ ...newPos, category: e.target.value as 'OFFICE' | 'FIELD' | 'OTHER' })}
-            className="px-3 py-2 rounded-md border-2 border-accent text-sm font-bold bg-white focus:outline-none">
+            className="px-3 py-2 rounded-md border-2 border-accent text-sm font-bold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1">
             <option value="OFFICE">사무직</option>
             <option value="FIELD">현장직</option>
             <option value="OTHER">기타</option>
@@ -1793,7 +1793,7 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
                           if (e.key === 'Enter') renamePos(p.id, labelDraft);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
-                        className="flex-1 px-2 py-0.5 rounded border-2 border-accent text-sm font-bold focus:outline-none" />
+                        className="flex-1 px-2 py-0.5 rounded border-2 border-accent text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1" />
                       <button onClick={() => renamePos(p.id, labelDraft)}
                         className="text-[0.625rem] font-extrabold text-accent hover:underline">저장</button>
                       <button onClick={() => setEditingId(null)}
@@ -1856,7 +1856,7 @@ function OrgDeptCard({
                 if (e.key === 'Enter') renameDept(node.id, nameDraft);
                 if (e.key === 'Escape') { setEditDeptId(null); setNameDraft(node.name); }
               }}
-              className="px-2 py-1 rounded border-2 border-accent bg-white text-sm font-bold focus:outline-none w-[200px]" />
+              className="px-2 py-1 rounded border-2 border-accent bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 w-[200px]" />
             <button onClick={() => renameDept(node.id, nameDraft)}
               className="text-[0.6875rem] font-extrabold text-accent hover:underline">저장</button>
             <button onClick={() => { setEditDeptId(null); setNameDraft(node.name); }}
@@ -2833,6 +2833,8 @@ function Section({ title, children, colSpan }: { title: string; children: React.
   );
 }
 
+/* ⚠️  field-label-refactor 예외: label 선택적(optional) + <div> 래퍼 의도적 유지.
+   canvas/file input은 <label> 클릭 이벤트 전파 이슈 → shared Field로 교체 불가. */
 function Field({ label, children, colSpan }: { label?: string; children: React.ReactNode; colSpan?: number }) {
   /* 사용자 요청 2026-04-29: 필드명 폰트 1단계 업 (text-[0.625rem] → text-sm 12px).
      canvas/file input은 <label> 내부에서 click forwarding 깨짐 → <div> 유지. */

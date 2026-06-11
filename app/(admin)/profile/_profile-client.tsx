@@ -61,7 +61,7 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
               onChange={(e) => setPw({ ...pw, current: e.target.value })}
               autoComplete="current-password"
               required
-              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
           <label className="block">
@@ -72,7 +72,7 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
               onChange={(e) => setPw({ ...pw, next: e.target.value })}
               autoComplete="new-password"
               required
-              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
           <label className="block">
@@ -83,7 +83,7 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
               onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
               autoComplete="new-password"
               required
-              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </label>
 

@@ -108,7 +108,7 @@ export default function WeatherAlertCard({
         tabIndex={0}
         aria-expanded={open}
         aria-controls="weather-alert-panel"
-        className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3 cursor-pointer hover:bg-surface-alt transition focus:outline-none focus:ring-2 focus:ring-accent"
+        className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3 cursor-pointer hover:bg-surface-alt transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:ring-2 focus:ring-accent"
         onClick={() => setOpen(!open)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -231,7 +231,7 @@ export default function WeatherAlertCard({
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={type === 'ETC' ? '발송할 메시지를 직접 입력해 주세요.' : ''}
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none whitespace-pre-wrap"
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none whitespace-pre-wrap"
                 />
                 <div className="flex justify-between mt-1.5 text-[0.625rem] font-mono font-bold text-ink-muted">
                   <span>{message.length} 자</span>

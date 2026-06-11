@@ -165,7 +165,7 @@ export default function WeatherNoticesClient() {
             <div className="space-y-1">
               <label className="text-sm font-extrabold text-ink-muted">경보 유형</label>
               <select value={formAlertType} onChange={(e) => setFormAlertType(e.target.value)}
-                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 {ALERT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
@@ -174,7 +174,7 @@ export default function WeatherNoticesClient() {
             <div className="space-y-1">
               <label className="text-sm font-extrabold text-ink-muted">공지 날짜</label>
               <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)}
-                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
+                className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </div>
           </div>
           <div className="space-y-1">
@@ -182,14 +182,14 @@ export default function WeatherNoticesClient() {
             <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
               placeholder="예: 6월 10일 폭염주의보 발령"
               maxLength={100}
-              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent" />
+              className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-extrabold text-ink-muted">내용 (선택)</label>
             <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)}
               placeholder="근로자에게 전달할 안전 조치 내용을 입력하세요."
               rows={3} maxLength={2000}
-              className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:border-accent" />
+              className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
           {saveError && <p className="text-sm font-bold text-red-600">{saveError}</p>}
           <div className="flex gap-2">
@@ -208,7 +208,7 @@ export default function WeatherNoticesClient() {
       {/* 날짜 필터 */}
       <div className="flex flex-wrap items-center gap-3">
         <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
+          className="px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
         <span className="text-sm font-mono text-ink-muted">{notices.length}건</span>
         <a
           href={`/safety/weather-notices/print?from=${filterDate}&to=${filterDate}`}
@@ -277,7 +277,7 @@ export default function WeatherNoticesClient() {
                 <div className="space-y-1">
                   <label className="text-sm font-extrabold text-ink-muted">경보 유형</label>
                   <select value={editAlertType} onChange={(e) => setEditAlertType(e.target.value)}
-                    className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+                    className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                     {ALERT_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
@@ -294,13 +294,13 @@ export default function WeatherNoticesClient() {
                 <label className="text-sm font-extrabold text-ink-muted">제목 *</label>
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
                   maxLength={100}
-                  className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent" />
+                  className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-extrabold text-ink-muted">내용 (선택)</label>
                 <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
                   rows={3} maxLength={2000}
-                  className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:border-accent" />
+                  className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </div>
               {editError && <p className="text-sm font-bold text-red-600">{editError}</p>}
               <div className="flex gap-2">

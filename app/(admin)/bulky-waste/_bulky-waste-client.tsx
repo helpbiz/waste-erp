@@ -335,8 +335,5 @@ export default function BulkyWasteClient({
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합 (colSpan 호환)
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
-}
+import { Field as _F } from '@/components/Field';
+const Field = (p: React.ComponentProps<typeof _F>) => <_F {...p} labelClassName={p.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;

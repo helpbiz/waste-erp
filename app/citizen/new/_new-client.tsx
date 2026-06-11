@@ -230,7 +230,7 @@ export default function NewComplaintClient() {
                 value={urgentNote}
                 onChange={(e) => setUrgentNote(e.target.value)}
                 placeholder="긴급 사유를 직접 입력해 주세요"
-                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-danger"
+                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-danger"
               />
             )}
           </div>
@@ -281,7 +281,7 @@ export default function NewComplaintClient() {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
       </section>
 
@@ -293,7 +293,7 @@ export default function NewComplaintClient() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="발생 상황을 자유롭게 적어 주세요"
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
         />
       </section>
 

@@ -13,6 +13,7 @@ type AppBarProps = {
   leading?: ReactNode;
   trailing?: ReactNode;
   variant?: AppBarVariant;
+  manualHref?: string;
   userName?: string;
 };
 
@@ -47,6 +48,7 @@ export function AppBar({
   leading,
   trailing,
   variant = 'dark',
+  manualHref,
   userName: _userName,
 }: AppBarProps) {
   const bgCls =
@@ -70,7 +72,7 @@ export function AppBar({
         </div>
         {trailing ?? (
           <div className="flex items-center gap-1.5">
-            <HelpButton href="/manual/worker" variant={variant} />
+            <HelpButton href={manualHref ?? (variant === 'dark' ? '/manual/worker' : '/manual/contractor')} variant={variant} />
             <LogoutButton variant="compact" />
           </div>
         )}

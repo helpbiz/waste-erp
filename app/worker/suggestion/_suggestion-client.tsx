@@ -281,7 +281,7 @@ function WriteForm({
           rows={6}
           maxLength={4000}
           placeholder="개선이 필요한 사항, 좋은 아이디어, 어려움 등 자유롭게 작성해 주세요."
-          className="w-full text-sm border-2 border-line rounded-lg p-2.5 focus:border-indigo-500 focus:outline-none"
+          className="w-full text-sm border-2 border-line rounded-lg p-2.5 focus:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
         />
         <div className="text-[0.625rem] text-ink-muted text-right mt-0.5">{content.length}/4000</div>
       </div>

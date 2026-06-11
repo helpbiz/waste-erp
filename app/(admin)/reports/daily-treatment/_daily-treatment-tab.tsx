@@ -110,7 +110,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent min-h-[44px]"
+            className="px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent min-h-[44px]"
           />
         </div>
         {needsContractorPicker && (
@@ -120,7 +120,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
               id="f02-contractor"
               value={contractorId}
               onChange={(e) => setContractorId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent min-h-[44px]"
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent min-h-[44px]"
             >
               {contractorOpts.length === 0 && <option value="">— 선택 —</option>}
               {contractorOpts.map((c) => (

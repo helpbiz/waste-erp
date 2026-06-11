@@ -323,7 +323,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
               value={payDateInput}
               onChange={(e) => setPayDateInput(e.target.value)}
               placeholder="예) 2026년 6월 12일"
-              className="px-3 py-1.5 rounded-md border border-line text-sm font-mono w-44 focus:outline-none focus:border-accent"
+              className="px-3 py-1.5 rounded-md border border-line text-sm font-mono w-44 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
         </div>
@@ -715,13 +715,13 @@ function SettingsTab() {
             <input value={template.payDayLabel}
               onChange={(e) => setStr('payDayLabel', e.target.value)}
               placeholder="예: 매월 15일"
-              className="px-2.5 py-1.5 rounded-md border border-line text-sm focus:outline-none focus:border-accent" />
+              className="px-2.5 py-1.5 rounded-md border border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
           <div className="grid grid-cols-[auto_1fr] items-start gap-3">
             <label className="text-sm font-semibold text-ink whitespace-nowrap mt-1.5">하단 고지문</label>
             <textarea value={template.footer} rows={3}
               onChange={(e) => setStr('footer', e.target.value)}
-              className="px-2.5 py-1.5 rounded-md border border-line text-sm font-semibold resize-y focus:outline-none focus:border-accent" />
+              className="px-2.5 py-1.5 rounded-md border border-line text-sm font-semibold resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
         </div>
       </section>
@@ -781,14 +781,14 @@ function ColSection({ title, cols, onAdd, onRemove, onChange, onMoveUp, onMoveDo
               value={col.key}
               onChange={(e) => onChange(i, 'key', e.target.value)}
               placeholder="기본급"
-              className="px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white"
+              className="px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white"
             />
             {/* 표시명 */}
             <input
               value={col.label}
               onChange={(e) => onChange(i, 'label', e.target.value)}
               placeholder="기본급"
-              className="px-2 py-1 rounded border border-line text-sm focus:outline-none focus:border-accent bg-white"
+              className="px-2 py-1 rounded border border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent bg-white"
             />
             {/* 필수 */}
             <label className="flex items-center justify-center gap-1 cursor-pointer">

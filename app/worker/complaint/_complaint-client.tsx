@@ -289,7 +289,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="상세 주소 (지도 클릭 시 자동 입력 · 수정 가능)"
-              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </>
         )}
@@ -301,7 +301,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="예: 서울시 용산구 한강대로 1길 23"
-              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               autoFocus
             />
             <p className="text-[0.625rem] text-ink-faint font-mono px-1">
@@ -317,7 +317,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="현장 상황 / 신고 내용"
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
         />
       </Section>
 
@@ -329,7 +329,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
           onChange={(e) => setPhone(formatKoreanPhone(e.target.value))}
           placeholder="010-0000-0000"
           maxLength={13}
-          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-semibold focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
       </Section>
 
@@ -342,7 +342,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
           <select
             value={assigneeId}
             onChange={(e) => setAssigneeId(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold bg-white focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           >
             <option value="">— 자동 배정 —</option>
             {coworkers.map((w) => (
@@ -654,7 +654,7 @@ function CompleteModal({
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               placeholder={mode === 'complete' ? '예: 청소 완료' : '예: 중복 신고, 관할 외 위치'}
-              className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent"
+              className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
           </div>
 
@@ -675,7 +675,7 @@ function CompleteModal({
                   <select
                     value={taggedUserId}
                     onChange={(e) => setTaggedUserId(e.target.value)}
-                    className="w-full px-3 py-2 rounded border-2 border-line text-sm font-bold focus:outline-none focus:border-accent"
+                    className="w-full px-3 py-2 rounded border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                   >
                     <option value="">— 태그 없음 —</option>
                     {coworkers.map((w) => (

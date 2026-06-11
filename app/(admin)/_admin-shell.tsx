@@ -160,7 +160,7 @@ function SidebarBody({
       <nav className="flex-1 py-3 text-sm overflow-y-auto">
         {groups.map((g) => (
           <div key={g.group}>
-            <div className="px-5 pt-4 pb-1.5 text-[0.6875rem] font-mono font-semibold text-ink-faint tracking-widest first:pt-2">
+            <div className="px-5 pt-4 pb-1.5 text-[0.6875rem] font-mono font-semibold text-slate-300/70 tracking-widest first:pt-2">
               {g.group}
             </div>
             {g.items.map((it) => {

@@ -280,10 +280,10 @@ export default function SafetyClient({
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-extrabold text-ink-muted whitespace-nowrap">기간</span>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           <span className="text-sm text-ink-muted">~</span>
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => quickRange('thisMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">이번달</button>
@@ -645,7 +645,7 @@ export default function SafetyClient({
             </header>
             <div className="p-5 space-y-3">
               <label className="block text-sm font-extrabold text-ink mb-2">처리 결과</label>
-              <select value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value as 'REVIEWED' | 'MOL_REPORTED' | 'RESOLVED')} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value as 'REVIEWED' | 'MOL_REPORTED' | 'RESOLVED')} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="REVIEWED">검토 완료</option>
                 <option value="MOL_REPORTED">지자체 보고 완료</option>
                 <option value="RESOLVED">종결</option>
@@ -660,7 +660,7 @@ export default function SafetyClient({
                 placeholder={reviewing?.reportType === 'DAILY_CHECKLIST'
                   ? '조치 내용을 입력하세요 (예: 5/15 새 안전모 교체 완료)'
                   : '조치 내역 / 후속 행동 / MOL 보고 첨부 등'}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
               />
             </div>
             <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
@@ -845,14 +845,14 @@ function TbmWidget({
       <div className="p-4">
         {editing ? (
           <div className="space-y-2">
-            <input value={topic} onChange={(e) => onTopicChange(e.target.value)} placeholder="오늘의 안전 주제 (예: 폭염 대비 수분 섭취) *" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus:border-accent" />
+            <input value={topic} onChange={(e) => onTopicChange(e.target.value)} placeholder="오늘의 안전 주제 (예: 폭염 대비 수분 섭취) *" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             <div className="grid grid-cols-2 gap-2">
-              <input value={leader} onChange={(e) => onLeaderChange(e.target.value)} placeholder="리더 (예: 홍길동)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
-              <input value={location} onChange={(e) => onLocationChange(e.target.value)} placeholder="교육 장소 (예: 차고지)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
+              <input value={leader} onChange={(e) => onLeaderChange(e.target.value)} placeholder="리더 (예: 홍길동)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+              <input value={location} onChange={(e) => onLocationChange(e.target.value)} placeholder="교육 장소 (예: 차고지)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </div>
-            <textarea rows={2} value={hazards} onChange={(e) => onHazardsChange(e.target.value)} placeholder="위험요인 (예: 폭염, 탈수, 교통사고)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
-            <input value={dept} onChange={(e) => onDeptChange(e.target.value)} placeholder="팀명 (선택, 예: 1팀)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
-            <textarea rows={2} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="기타 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
+            <textarea rows={2} value={hazards} onChange={(e) => onHazardsChange(e.target.value)} placeholder="위험요인 (예: 폭염, 탈수, 교통사고)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
+            <input value={dept} onChange={(e) => onDeptChange(e.target.value)} placeholder="팀명 (선택, 예: 1팀)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+            <textarea rows={2} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="기타 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
             <div className="flex items-center gap-2">
               <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md border-2 border-dashed border-line cursor-pointer hover:border-accent transition">
                 <span className="text-sm font-bold text-ink-muted">📷 TBM 사진</span>

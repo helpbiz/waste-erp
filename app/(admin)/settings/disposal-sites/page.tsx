@@ -111,7 +111,7 @@ export default function DisposalSitesPage() {
             onKeyDown={(e) => e.key === 'Enter' && add(newName)}
             placeholder="반입장소 이름 (예: 자원순환센터)"
             maxLength={50}
-            className="flex-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+            className="flex-1 px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
           />
           <button
             disabled={!newName.trim() || saving}
@@ -127,7 +127,7 @@ export default function DisposalSitesPage() {
           onChange={(e) => setNewAddress(e.target.value)}
           placeholder="주소 (선택, 예: 경기도 파주시 탄현면 xxx)"
           maxLength={255}
-          className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
         />
         {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
       </div>
@@ -162,13 +162,13 @@ export default function DisposalSitesPage() {
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(site.id); if (e.key === 'Escape') setEditId(null); }}
                   placeholder="이름"
-                  className="w-full px-2 py-1 rounded border-2 border-accent text-sm focus:outline-none"
+                  className="w-full px-2 py-1 rounded border-2 border-accent text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
                 />
                 <input
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
                   placeholder="주소 (선택)"
-                  className="w-full px-2 py-1 rounded border border-line text-sm focus:outline-none focus:border-accent"
+                  className="w-full px-2 py-1 rounded border border-line text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </div>
             ) : (

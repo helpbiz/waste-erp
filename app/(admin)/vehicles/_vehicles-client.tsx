@@ -293,7 +293,7 @@ export default function VehiclesClient({
               type="date"
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
-              className="px-2 py-1 rounded border border-line bg-white text-sm font-mono font-bold focus:outline-none focus:border-accent"
+              className="px-2 py-1 rounded border border-line bg-white text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
             />
             <button
               onClick={() => navigateDate(dateInput)}
@@ -635,7 +635,7 @@ function VehicleFormModal({
                 value={vehicleNo}
                 onChange={(e) => setVehicleNo(e.target.value)}
                 placeholder="11가1234"
-                className={`w-full px-3 py-2 rounded-md border-2 text-sm font-mono font-bold focus:outline-none ${
+                className={`w-full px-3 py-2 rounded-md border-2 text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 ${
                   vehicleNo && !validNo ? 'border-danger' : 'border-line focus:border-accent'
                 }`}
               />
@@ -645,18 +645,18 @@ function VehicleFormModal({
                 value={vehicleTon}
                 onChange={(e) => setVehicleTon(e.target.value)}
                 placeholder="4.5t"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="차종 *">
-              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value as VehicleFormPayload['vehicleType'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value as VehicleFormPayload['vehicleType'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 {VEHICLE_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </Field>
             <Field label="연료 *">
-              <select value={fuelType} onChange={(e) => setFuelType(e.target.value as VehicleFormPayload['fuelType'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={fuelType} onChange={(e) => setFuelType(e.target.value as VehicleFormPayload['fuelType'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="DIESEL">경유</option>
                 <option value="LPG">LPG</option>
                 <option value="GASOLINE">휘발유</option>
@@ -671,7 +671,7 @@ function VehicleFormModal({
                 value={capacityTon}
                 onChange={(e) => setCapacityTon(e.target.value)}
                 placeholder="4.5"
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="연식">
@@ -682,7 +682,7 @@ function VehicleFormModal({
                 placeholder="2024"
                 min={1990}
                 max={2099}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="등록일자">
@@ -690,19 +690,19 @@ function VehicleFormModal({
                 type="date"
                 value={registrationDate}
                 onChange={(e) => setRegistrationDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             {isEdit && (
               <Field label="가동 상태">
-                <select value={status} onChange={(e) => setStatus(e.target.value as VehicleFormPayload['status'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+                <select value={status} onChange={(e) => setStatus(e.target.value as VehicleFormPayload['status'])} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                   <option value="ACTIVE">정상 운행</option>
                   <option value="MAINTENANCE">정비중</option>
                 </select>
               </Field>
             )}
             <Field label="운전자" hint="본인 위탁업체 소속 근로자">
-              <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="">— 미지정 —</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>
@@ -710,7 +710,7 @@ function VehicleFormModal({
               </select>
             </Field>
             <Field label="동승자 1">
-              <select value={passenger1Id} onChange={(e) => setPassenger1Id(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={passenger1Id} onChange={(e) => setPassenger1Id(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="">— 미지정 —</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id} disabled={w.id === driverId || w.id === passenger2Id}>
@@ -720,7 +720,7 @@ function VehicleFormModal({
               </select>
             </Field>
             <Field label="동승자 2">
-              <select value={passenger2Id} onChange={(e) => setPassenger2Id(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
+              <select value={passenger2Id} onChange={(e) => setPassenger2Id(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
                 <option value="">— 미지정 —</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id} disabled={w.id === driverId || w.id === passenger1Id}>
@@ -734,7 +734,7 @@ function VehicleFormModal({
                 type="date"
                 value={opStart}
                 onChange={(e) => setOpStart(e.target.value)}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             <Field label="주행거리 (km)" hint={isEdit ? '변경 시 누적주행거리도 자동 재계산' : '등록 시점 odometer'}>
@@ -744,7 +744,7 @@ function VehicleFormModal({
                 onChange={(e) => setInitialMileage(e.target.value)}
                 placeholder="12000"
                 min={0}
-                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               />
             </Field>
             {isEdit && (
@@ -786,11 +786,7 @@ function VehicleFormModal({
 }
 
 // Design Ref: field-label-refactor §2 — shared Field로 통합
-import { Field as BaseField } from '@/components/Field';
-type FieldArgs = React.ComponentProps<typeof BaseField>;
-function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-extrabold text-ink mb-1.5 tracking-wide'} />;
-}
+import { Field } from '@/components/Field';
 
 function RetireModal({
   vehicle,
@@ -819,7 +815,7 @@ function RetireModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="예: 노후화로 인한 폐차 / 사고 후 회복 불가"
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-danger resize-none"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-danger resize-none"
           />
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
@@ -1152,7 +1148,7 @@ function RejectModal({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="예: 주행거리 입력 누락 / 수거량과 운행횟수 불일치"
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none"
           />
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
