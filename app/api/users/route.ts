@@ -198,8 +198,8 @@ export async function POST(req: Request) {
       /* PII 암호화 */
       address: await encryptField(b.address ?? null),
       hireDate: toDate(b.hireDate),
-      emergencyContact: b.emergencyContact ?? null,
-      emergencyPhone: normPhone(b.emergencyPhone),
+      emergencyContact: await encryptField(b.emergencyContact ?? null),
+      emergencyPhone: await encryptField(normPhone(b.emergencyPhone)),
       bankName: b.bankName ?? null,
       bankAccount: await encryptField(b.bankAccount ?? null),
       memo: b.memo ?? null,

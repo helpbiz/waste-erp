@@ -348,8 +348,8 @@ model User {
   address          String?   @db.Text
   hireDate         DateTime? @map("hire_date") @db.Date
   resignDate       DateTime? @map("resign_date") @db.Date
-  emergencyContact String?   @map("emergency_contact") @db.VarChar(50)
-  emergencyPhone   String?   @map("emergency_phone") @db.VarChar(20)
+  emergencyContact String?   @map("emergency_contact") @db.Text
+  emergencyPhone   String?   @map("emergency_phone") @db.Text
   bankName         String?   @map("bank_name") @db.VarChar(30)
   bankAccount      String?   @map("bank_account") @db.Text
   memo             String?   @db.Text

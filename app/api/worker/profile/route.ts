@@ -42,7 +42,12 @@ export async function GET() {
   });
   if (!u) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const [address, bankAccount] = await Promise.all([decryptField(u.address), decryptField(u.bankAccount)]);
+  const [address, bankAccount, emergencyContact, emergencyPhone] = await Promise.all([
+    decryptField(u.address).catch(() => null),
+    decryptField(u.bankAccount).catch(() => null),
+    decryptField(u.emergencyContact).catch(() => null),
+    decryptField(u.emergencyPhone).catch(() => null),
+  ]);
 
   return NextResponse.json({
     user: {
@@ -54,8 +59,8 @@ export async function GET() {
       birthDate: u.birthDate?.toISOString().slice(0, 10) ?? null,
       hireDate: u.hireDate?.toISOString().slice(0, 10) ?? null,
       address,
-      emergencyContact: u.emergencyContact,
-      emergencyPhone: u.emergencyPhone,
+      emergencyContact,
+      emergencyPhone,
       bankName: u.bankName,
       bankAccount,
       position: u.position ? { code: u.position.code, label: u.position.label, category: u.position.category } : null,
@@ -80,8 +85,8 @@ export async function PATCH(req: Request) {
 
   const data: Record<string, unknown> = {};
   if (b.phone !== undefined) data.phone = normPhone(b.phone);
-  if (b.emergencyContact !== undefined) data.emergencyContact = b.emergencyContact;
-  if (b.emergencyPhone !== undefined) data.emergencyPhone = normPhone(b.emergencyPhone);
+  if (b.emergencyContact !== undefined) data.emergencyContact = await encryptField(b.emergencyContact);
+  if (b.emergencyPhone !== undefined) data.emergencyPhone = await encryptField(normPhone(b.emergencyPhone));
   if (b.address !== undefined) data.address = await encryptField(b.address);
   if (b.bankName !== undefined) data.bankName = b.bankName;
   if (b.bankAccount !== undefined) data.bankAccount = await encryptField(b.bankAccount);

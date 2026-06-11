@@ -3,6 +3,7 @@
  */
 import type { HealthRecord } from '@prisma/client';
 import { encryptField, encryptNumber, decryptField, decryptNumber } from '@/lib/crypto';
+import { logger } from '@/lib/logger';
 
 export type HealthRecordPlain = {
   lastCheckupDate: string | null;
@@ -23,40 +24,45 @@ export type HealthRecordPlain = {
 
 export async function decryptHealthRecord(r: HealthRecord | null): Promise<HealthRecordPlain | null> {
   if (!r) return null;
-  const [
-    bps, bpd, hr, bs, vl, vr,
-    hl, hrr, bt, al, cc, ec, nt,
-  ] = await Promise.all([
-    decryptNumber(r.bloodPressureSys),
-    decryptNumber(r.bloodPressureDia),
-    decryptNumber(r.heartRate),
-    decryptNumber(r.bloodSugar),
-    decryptNumber(r.visionLeft),
-    decryptNumber(r.visionRight),
-    decryptField(r.hearingLeft),
-    decryptField(r.hearingRight),
-    decryptField(r.bloodType),
-    decryptField(r.allergies),
-    decryptField(r.chronicConditions),
-    decryptField(r.emergencyContact),
-    decryptField(r.notes),
-  ]);
-  return {
-    lastCheckupDate: r.lastCheckupDate ? r.lastCheckupDate.toISOString().slice(0, 10) : null,
-    bloodPressureSys: bps,
-    bloodPressureDia: bpd,
-    heartRate: hr,
-    bloodSugar: bs,
-    visionLeft: vl,
-    visionRight: vr,
-    hearingLeft: hl,
-    hearingRight: hrr,
-    bloodType: bt,
-    allergies: al,
-    chronicConditions: cc,
-    emergencyContact: ec,
-    notes: nt,
-  };
+  try {
+    const [
+      bps, bpd, hr, bs, vl, vr,
+      hl, hrr, bt, al, cc, ec, nt,
+    ] = await Promise.all([
+      decryptNumber(r.bloodPressureSys),
+      decryptNumber(r.bloodPressureDia),
+      decryptNumber(r.heartRate),
+      decryptNumber(r.bloodSugar),
+      decryptNumber(r.visionLeft),
+      decryptNumber(r.visionRight),
+      decryptField(r.hearingLeft),
+      decryptField(r.hearingRight),
+      decryptField(r.bloodType),
+      decryptField(r.allergies),
+      decryptField(r.chronicConditions),
+      decryptField(r.emergencyContact),
+      decryptField(r.notes),
+    ]);
+    return {
+      lastCheckupDate: r.lastCheckupDate ? r.lastCheckupDate.toISOString().slice(0, 10) : null,
+      bloodPressureSys: bps,
+      bloodPressureDia: bpd,
+      heartRate: hr,
+      bloodSugar: bs,
+      visionLeft: vl,
+      visionRight: vr,
+      hearingLeft: hl,
+      hearingRight: hrr,
+      bloodType: bt,
+      allergies: al,
+      chronicConditions: cc,
+      emergencyContact: ec,
+      notes: nt,
+    };
+  } catch (e) {
+    logger.warn('health_decrypt_fail', { workerId: r.workerId?.toString(), err: String(e) });
+    return null;
+  }
 }
 
 export type HealthRecordWriteInput = Partial<HealthRecordPlain>;

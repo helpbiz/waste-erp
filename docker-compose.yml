@@ -32,13 +32,9 @@ services:
     restart: unless-stopped
     # cleanerp-postgres 컨테이너가 waste-erp_default 네트워크에 존재해야 함
     # (docker network connect waste-erp_default cleanerp-postgres)
-    # P1-6 보안 주의: 운영 환경에서는 .env 대신 .env.prod 사용 권장
-    #   -> env_file: .env.prod  (JWT_SECRET, KMS_LOCAL_KEY, CRON_SECRET 실제 값 사용)
-    #   현재 .env는 dev 기본값 포함. 시크릿 교체 후 env_file을 .env.prod로 전환할 것.
-    env_file: .env
+    env_file: .env.prod
     environment:
-      # P1-4: DATABASE_URL은 cleanerp-postgres (내부 Docker 호스트명) 사용
-      # 이 값은 .env 의 localhost URL 을 컨테이너 네트워크용으로 오버라이드한다
+      # DATABASE_URL은 cleanerp-postgres (내부 Docker 호스트명) 사용 — .env.prod의 localhost URL 오버라이드
       DATABASE_URL: postgresql://cleanerp:tV7FRpcWgD+G+1r+YqW5L85ajaX9OIFnFaIRsmZFaA8@cleanerp-postgres:5432/cleanerp_prod
     ports:
       - "3001:3000"

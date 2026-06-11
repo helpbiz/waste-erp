@@ -13,6 +13,7 @@ import { findPositionByCode, listActivePositions } from '@/lib/positions';
 import { createMediaAsset, validateDataUrl, readDataUrl } from '@/lib/media-assets';
 import { registerUserSignature } from '@/lib/signatures';
 import { encryptField, decryptField, maskValue } from '@/lib/crypto';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -78,10 +79,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!u) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
   const recommend = recommendedAnnualLeaveDays(u.hireDate);
-  /* PII 복호화 */
-  const [addressPlain, bankAccountPlain] = await Promise.all([
-    decryptField(u.address),
-    decryptField(u.bankAccount),
+  /* PII 복호화 — KMS 키 불일치 시 null 반환 (HTTP 500 방지) */
+  const [addressPlain, bankAccountPlain, emergencyContactPlain, emergencyPhonePlain] = await Promise.all([
+    decryptField(u.address).catch((e) => { logger.warn('decrypt_fail', { userId: u.id.toString(), field: 'address', err: String(e) }); return null; }),
+    decryptField(u.bankAccount).catch((e) => { logger.warn('decrypt_fail', { userId: u.id.toString(), field: 'bankAccount', err: String(e) }); return null; }),
+    decryptField(u.emergencyContact).catch((e) => { logger.warn('decrypt_fail', { userId: u.id.toString(), field: 'emergencyContact', err: String(e) }); return null; }),
+    decryptField(u.emergencyPhone).catch((e) => { logger.warn('decrypt_fail', { userId: u.id.toString(), field: 'emergencyPhone', err: String(e) }); return null; }),
   ]);
   return NextResponse.json({
     user: {
@@ -99,8 +102,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       address: addressPlain,
       hireDate: u.hireDate?.toISOString().slice(0, 10) ?? null,
       resignDate: u.resignDate?.toISOString().slice(0, 10) ?? null,
-      emergencyContact: u.emergencyContact,
-      emergencyPhone: u.emergencyPhone,
+      emergencyContact: emergencyContactPlain,
+      emergencyPhone: emergencyPhonePlain,
       bankName: u.bankName,
       bankAccount: bankAccountPlain,
       bankAccountMasked: maskValue(bankAccountPlain, 4),
@@ -145,7 +148,7 @@ const TRACKED_FIELDS = [
 ] as const;
 
 /* PII 필드는 audit에 마스킹 처리 (Plan R5) */
-const PII_FIELDS = new Set(['address', 'bankAccount']);
+const PII_FIELDS = new Set(['address', 'bankAccount', 'emergencyContact', 'emergencyPhone']);
 
 function serializeForAudit(v: unknown): unknown {
   if (v == null) return null;
@@ -193,8 +196,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   if (b.hireDate !== undefined) data.hireDate = toDate(b.hireDate);
   if (b.resignDate !== undefined) data.resignDate = toDate(b.resignDate);
-  if (b.emergencyContact !== undefined) data.emergencyContact = b.emergencyContact;
-  if (b.emergencyPhone !== undefined) data.emergencyPhone = normPhone(b.emergencyPhone);
+  if (b.emergencyContact !== undefined) data.emergencyContact = await encryptField(b.emergencyContact);
+  if (b.emergencyPhone !== undefined) data.emergencyPhone = await encryptField(normPhone(b.emergencyPhone));
   if (b.bankName !== undefined) data.bankName = b.bankName;
   if (b.bankAccount !== undefined) {
     piiPlain.bankAccount = b.bankAccount;
