@@ -194,7 +194,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
         <div className="flex items-center justify-end">
           <button
             onClick={() => router.refresh()}
-            className="text-xs font-bold text-ink-muted hover:text-accent underline"
+            className="text-sm font-bold text-ink-muted hover:text-accent underline"
           >
             🔄 관리자 수정 후 상태 갱신
           </button>
@@ -214,7 +214,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
           <div className="text-sm font-extrabold text-red-800">
             ⚠️ 어제 퇴근이 등록되지 않았습니다
           </div>
-          <div className="text-xs font-semibold text-red-700 leading-relaxed">
+          <div className="text-sm font-semibold text-red-700 leading-relaxed">
             어제 출근 기록이 미마감 상태입니다.<br />
             아래 두 가지 중 선택하세요.
           </div>
@@ -273,7 +273,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
 function Box({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="bg-surface-alt rounded-xl border border-line p-3 text-center">
-      <div className="text-xs font-extrabold text-ink-muted tracking-widest mb-1">{label}</div>
+      <div className="text-sm font-extrabold text-ink-muted tracking-widest mb-1">{label}</div>
       {children}
     </div>
   );

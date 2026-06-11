@@ -153,19 +153,19 @@ export default function WallClient({ session }: { session: SessionInfo }) {
       <header className="flex items-center justify-between mb-5 pb-3 border-b border-slate-700">
         <div className="flex items-baseline gap-3">
           <span className={`${sz.headTitle} font-black tracking-tight`}>{scopeLabel}</span>
-          <span className="text-base text-slate-400 font-mono">관제 모드</span>
+          <span className="text-base text-ink-faint font-mono">관제 모드</span>
         </div>
         <div className="flex items-baseline gap-4">
           <div className="text-right">
             <div className={`${sz.clock} font-black font-mono`}>
               {now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </div>
-            <div className="text-xs text-slate-400 font-mono">
+            <div className="text-sm text-ink-faint font-mono">
               {now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })}
             </div>
           </div>
           {lastUpdate && (
-            <div className={`text-xs font-mono font-bold ${staleColor}`}>
+            <div className={`text-sm font-mono font-bold ${staleColor}`}>
               ⏱ {staleSec}s
             </div>
           )}
@@ -173,7 +173,7 @@ export default function WallClient({ session }: { session: SessionInfo }) {
       </header>
 
       {!data && (
-        <div className="text-center text-xl text-slate-400 py-24">데이터 로딩 중…</div>
+        <div className="text-center text-xl text-ink-faint py-24">데이터 로딩 중…</div>
       )}
 
       {data && (
@@ -212,7 +212,7 @@ export default function WallClient({ session }: { session: SessionInfo }) {
               <div className="grid grid-cols-2 gap-2">
                 {data.facilities.map((f) => {
                   const isAvac = f.type === 'AVAC';
-                  const rateColor = f.userCount === 0 ? 'text-slate-500'
+                  const rateColor = f.userCount === 0 ? 'text-ink-faint'
                     : f.presentRate >= 80 ? 'text-emerald-400'
                     : f.presentRate >= 50 ? 'text-amber-400'
                     : 'text-rose-400';
@@ -225,7 +225,7 @@ export default function WallClient({ session }: { session: SessionInfo }) {
                       <div className="text-2xl">{isAvac ? '🏭' : '♻️'}</div>
                       <div className="flex-1 min-w-0">
                         <div className={`${sz.facName} font-extrabold truncate`}>{f.name}</div>
-                        <div className="text-xs text-slate-400 font-mono">
+                        <div className="text-sm text-ink-faint font-mono">
                           배치 {f.userCount}명 · 출근 {f.todayPresent}명
                         </div>
                       </div>
@@ -246,13 +246,13 @@ export default function WallClient({ session }: { session: SessionInfo }) {
               <div className="space-y-1 bg-slate-800 rounded-lg p-3 border border-slate-700">
                 {data.recentComplaints.slice(0, 6).map((c) => (
                   <div key={c.id} className="flex items-center gap-2 text-sm py-0.5">
-                    <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${
+                    <span className={`px-2 py-0.5 rounded text-sm font-mono font-bold ${
                       c.completed ? 'bg-emerald-900 text-emerald-300' : 'bg-amber-900 text-amber-300'
                     }`}>
                       {c.completed ? '완료' : '진행'}
                     </span>
                     <span className="font-bold">{c.type}</span>
-                    <span className="ml-auto text-xs text-slate-400 font-mono">{c.reportedAt}</span>
+                    <span className="ml-auto text-sm text-ink-faint font-mono">{c.reportedAt}</span>
                   </div>
                 ))}
               </div>
@@ -261,7 +261,7 @@ export default function WallClient({ session }: { session: SessionInfo }) {
         </>
       )}
 
-      <footer className="mt-5 pt-3 border-t border-slate-700 text-center text-[0.625rem] text-slate-500 font-mono">
+      <footer className="mt-5 pt-3 border-t border-slate-700 text-center text-[0.625rem] text-ink-faint font-mono">
         {settings.monitorSize === 'auto' ? '자동' : settings.monitorSize + '"'} 풀스크린 ·
         {settings.refreshInterval}s 자동 갱신 · ESC/F11 종료 · {session.name} ({session.role})
       </footer>
@@ -298,12 +298,12 @@ function BigKpi({
   const valCls = valSize ?? 'text-3xl md:text-4xl';
   return (
     <div className={`rounded-lg p-3 border ${colors[tone]}`}>
-      <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+      <div className="text-sm font-mono font-bold text-ink-faint uppercase tracking-wider">{label}</div>
       <div className={`${valCls} font-black font-mono mt-1 ${valueColors[tone]}`}>
         {value}
-        {unit && <span className="text-base text-slate-400 ml-2">{unit}</span>}
+        {unit && <span className="text-base text-ink-faint ml-2">{unit}</span>}
       </div>
-      {sub && <div className="text-xs text-slate-400 font-mono mt-1">{sub}</div>}
+      {sub && <div className="text-sm text-ink-faint font-mono mt-1">{sub}</div>}
     </div>
   );
 }

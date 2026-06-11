@@ -188,7 +188,7 @@ export default function ZonesPage() {
       </div>
 
       {lookupError && (
-        <div className="px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 font-bold">
+        <div className="px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-700 font-bold">
           ⚠ {lookupError} — 행정동 수동 입력으로 진행할 수 있습니다.
         </div>
       )}
@@ -205,7 +205,7 @@ export default function ZonesPage() {
           <div className="text-sm font-extrabold text-ink">새 담당구역 추가</div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-ink-muted block mb-1">구역명 *</label>
+              <label className="text-sm font-bold text-ink-muted block mb-1">구역명 *</label>
               <input
                 value={newZoneName}
                 onChange={(e) => setNewZoneName(e.target.value)}
@@ -215,7 +215,7 @@ export default function ZonesPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-ink-muted block mb-1">구역코드 *</label>
+              <label className="text-sm font-bold text-ink-muted block mb-1">구역코드 *</label>
               <input
                 value={newZoneCode}
                 onChange={(e) => setNewZoneCode(e.target.value)}
@@ -225,7 +225,7 @@ export default function ZonesPage() {
               />
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label className="text-xs font-bold text-ink-muted block mb-1">구역 면적 (km²)</label>
+              <label className="text-sm font-bold text-ink-muted block mb-1">구역 면적 (km²)</label>
               <input
                 type="number"
                 value={newAreaKm2}
@@ -261,7 +261,7 @@ export default function ZonesPage() {
       {!loading && empty(zones) && (
         <div className="py-16 text-center text-sm text-ink-muted font-bold border-2 border-dashed border-line rounded-xl">
           등록된 담당구역이 없습니다.<br />
-          <span className="text-xs">[구역 추가] 버튼으로 첫 번째 구역을 등록하세요.</span>
+          <span className="text-sm">[구역 추가] 버튼으로 첫 번째 구역을 등록하세요.</span>
         </div>
       )}
 
@@ -279,7 +279,7 @@ export default function ZonesPage() {
               <div className="p-4 bg-surface-soft border-b border-line space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-ink-muted block mb-1">구역명</label>
+                    <label className="text-sm font-bold text-ink-muted block mb-1">구역명</label>
                     <input
                       autoFocus
                       value={editZoneName}
@@ -289,7 +289,7 @@ export default function ZonesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-ink-muted block mb-1">구역코드</label>
+                    <label className="text-sm font-bold text-ink-muted block mb-1">구역코드</label>
                     <input
                       value={editZoneCode}
                       onChange={(e) => setEditZoneCode(e.target.value)}
@@ -298,7 +298,7 @@ export default function ZonesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-ink-muted block mb-1">면적 (km²)</label>
+                    <label className="text-sm font-bold text-ink-muted block mb-1">면적 (km²)</label>
                     <input
                       type="number"
                       value={editAreaKm2}
@@ -310,8 +310,8 @@ export default function ZonesPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setEditZoneId(null)} className="px-3 py-1.5 rounded bg-slate-200 text-ink text-xs font-bold">취소</button>
-                  <button onClick={() => saveEditZone(zone.id)} className="px-3 py-1.5 rounded bg-accent text-white text-xs font-extrabold">저장</button>
+                  <button onClick={() => setEditZoneId(null)} className="px-3 py-1.5 rounded bg-slate-200 text-ink text-sm font-bold">취소</button>
+                  <button onClick={() => saveEditZone(zone.id)} className="px-3 py-1.5 rounded bg-accent text-white text-sm font-extrabold">저장</button>
                 </div>
               </div>
             ) : (
@@ -319,14 +319,14 @@ export default function ZonesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-base font-extrabold text-ink">{zone.zoneName}</span>
-                    <span className="font-mono text-xs text-ink-muted">({zone.zoneCode})</span>
+                    <span className="font-mono text-sm text-ink-muted">({zone.zoneCode})</span>
                     {displayArea && (
-                      <span className="text-xs text-ink-muted">
+                      <span className="text-sm text-ink-muted">
                         {displayArea} km²{zone.areaKm2 == null && dongAreaSum > 0 ? ' (합산)' : ''}
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-ink-muted mt-0.5">행정동 {zone.dongs.length}개</div>
+                  <div className="text-sm text-ink-muted mt-0.5">행정동 {zone.dongs.length}개</div>
                 </div>
                 <div className="flex gap-1.5 flex-shrink-0">
                   <button
@@ -337,13 +337,13 @@ export default function ZonesPage() {
                       setEditAreaKm2(zone.areaKm2 != null ? String(zone.areaKm2) : '');
                       setError(null);
                     }}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-ink-muted text-sm font-bold hover:bg-slate-200"
                   >
                     수정
                   </button>
                   <button
                     onClick={() => deleteZone(zone.id)}
-                    className="px-2.5 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-bold hover:bg-red-200"
+                    className="px-2.5 py-1.5 rounded-lg bg-red-100 text-red-700 text-sm font-bold hover:bg-red-200"
                   >
                     삭제
                   </button>
@@ -358,15 +358,15 @@ export default function ZonesPage() {
                   <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-bold text-ink">{dong.dongName}</span>
-                    <span className="text-xs text-ink-muted ml-2 font-mono">{dong.dongCode}</span>
-                    <span className="text-xs text-ink-muted ml-2">
+                    <span className="text-sm text-ink-muted ml-2 font-mono">{dong.dongCode}</span>
+                    <span className="text-sm text-ink-muted ml-2">
                       {dong.population != null ? `인구 ${dong.population.toLocaleString()}명` : ''}
                       {dong.areaKm2 != null ? ` · ${Number(dong.areaKm2).toFixed(4)} km²` : ''}
                     </span>
                   </div>
                   <button
                     onClick={() => deleteDong(zone.id, dong.id)}
-                    className="px-2 py-1 rounded bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 flex-shrink-0"
+                    className="px-2 py-1 rounded bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 flex-shrink-0"
                   >
                     제거
                   </button>
@@ -384,14 +384,14 @@ export default function ZonesPage() {
                           <div className="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border-2 border-accent">
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-extrabold text-ink">{selectedDong.dongName}</div>
-                              <div className="text-xs text-ink-muted mt-0.5">
+                              <div className="text-sm text-ink-muted mt-0.5">
                                 {selectedDong.population != null ? `인구 ${selectedDong.population.toLocaleString()}명` : ''}
                                 {selectedDong.areaKm2 != null ? ` · ${selectedDong.areaKm2.toFixed(4)} km²` : ''}
                               </div>
                             </div>
                             <button
                               onClick={clearDongSelection}
-                              className="text-xs text-slate-500 hover:text-red-600 font-bold flex-shrink-0"
+                              className="text-sm text-ink-faint hover:text-red-600 font-bold flex-shrink-0"
                             >
                               변경
                             </button>
@@ -399,7 +399,7 @@ export default function ZonesPage() {
                           {/* dong_code 없으면 수동 입력 */}
                           {!selectedDong.dongCode && (
                             <div>
-                              <label className="text-xs font-bold text-amber-700 block mb-1">
+                              <label className="text-sm font-bold text-amber-700 block mb-1">
                                 ⚠ 행정동코드 직접 입력 *
                                 <span className="font-normal text-ink-muted ml-1">(행안부 10자리 코드 — 예: 1171010100)</span>
                               </label>
@@ -417,7 +417,7 @@ export default function ZonesPage() {
                       ) : (
                         /* 행정동 검색 드롭다운 */
                         <div>
-                          <label className="text-xs font-bold text-ink-muted block mb-1">행정동 검색 *</label>
+                          <label className="text-sm font-bold text-ink-muted block mb-1">행정동 검색 *</label>
                           <input
                             autoFocus
                             value={dongSearch}
@@ -428,7 +428,7 @@ export default function ZonesPage() {
                           {dongSearch.length > 0 && (
                             <div className="mt-1 bg-white border border-line rounded-lg shadow-md max-h-48 overflow-y-auto">
                               {filteredDongs.length === 0 ? (
-                                <div className="px-3 py-2 text-xs text-ink-muted">검색 결과 없음</div>
+                                <div className="px-3 py-2 text-sm text-ink-muted">검색 결과 없음</div>
                               ) : (
                                 filteredDongs.slice(0, 20).map((d) => (
                                   <button
@@ -437,9 +437,9 @@ export default function ZonesPage() {
                                     className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm"
                                   >
                                     <span className="font-bold text-ink">{d.dongName}</span>
-                                    <span className="text-xs text-ink-muted ml-2 font-mono">{d.dongCode}</span>
+                                    <span className="text-sm text-ink-muted ml-2 font-mono">{d.dongCode}</span>
                                     {d.population != null && (
-                                      <span className="text-xs text-ink-muted ml-1">인구 {d.population.toLocaleString()}명</span>
+                                      <span className="text-sm text-ink-muted ml-1">인구 {d.population.toLocaleString()}명</span>
                                     )}
                                   </button>
                                 ))
@@ -453,7 +453,7 @@ export default function ZonesPage() {
                     /* fallback: 수동 입력 */
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="text-xs font-bold text-ink-muted block mb-1">행정동명 *</label>
+                        <label className="text-sm font-bold text-ink-muted block mb-1">행정동명 *</label>
                         <input
                           autoFocus
                           value={newDongName}
@@ -464,7 +464,7 @@ export default function ZonesPage() {
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs font-bold text-ink-muted block mb-1">행정동코드 *</label>
+                        <label className="text-sm font-bold text-ink-muted block mb-1">행정동코드 *</label>
                         <input
                           value={newDongCode}
                           onChange={(e) => setNewDongCode(e.target.value)}
@@ -479,14 +479,14 @@ export default function ZonesPage() {
                   <div className="flex gap-1.5 justify-end">
                     <button
                       onClick={() => { setAddDongZoneId(null); clearDongSelection(); setError(null); }}
-                      className="px-3 py-1.5 rounded-lg bg-slate-200 text-ink text-xs font-bold"
+                      className="px-3 py-1.5 rounded-lg bg-slate-200 text-ink text-sm font-bold"
                     >
                       취소
                     </button>
                     <button
                       disabled={!newDongName.trim() || !newDongCode.trim() || savingDong}
                       onClick={() => addDong(zone.id)}
-                      className="px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-extrabold disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-accent text-white text-sm font-extrabold disabled:opacity-50"
                     >
                       추가
                     </button>
@@ -496,7 +496,7 @@ export default function ZonesPage() {
                 <div className="px-5 py-2.5">
                   <button
                     onClick={() => { setAddDongZoneId(zone.id); clearDongSelection(); setError(null); }}
-                    className="text-xs font-bold text-accent hover:text-cyan-800"
+                    className="text-sm font-bold text-accent hover:text-cyan-800"
                   >
                     + 행정동 추가
                   </button>

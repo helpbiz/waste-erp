@@ -11,7 +11,7 @@ import OrgSettingsTab from './_org-settings-tab';
 const POSITION_CATEGORY_COLOR: Record<string, string> = {
   OFFICE: 'bg-blue-100 text-blue-700 border-blue-300',
   FIELD: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-  OTHER: 'bg-slate-100 text-slate-600 border-slate-300',
+  OTHER: 'bg-slate-100 text-ink-faint border-slate-300',
 };
 const POSITION_CATEGORY_LABEL: Record<string, string> = { OFFICE: '사무', FIELD: '현장', OTHER: '기타' };
 
@@ -160,11 +160,11 @@ export default function UsersClient({
       {/* 헤더 */}
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">사용자관리</h2>
-        <span className="text-xs font-mono font-bold text-slate-600">총 {rows.length}명 / 활성 {rows.filter((r) => r.status === 'ACTIVE').length}명</span>
+        <span className="text-sm font-mono font-bold text-ink-faint">총 {rows.length}명 / 활성 {rows.filter((r) => r.status === 'ACTIVE').length}명</span>
         <div className="ml-auto flex gap-2">
           <button
             onClick={() => router.refresh()}
-            className="px-3 py-1.5 rounded-md text-xs font-bold bg-white border border-line text-ink hover:bg-slate-50"
+            className="px-3 py-1.5 rounded-md text-sm font-bold bg-white border border-line text-ink hover:bg-slate-50"
           >새로고침</button>
         </div>
       </div>
@@ -261,7 +261,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       className={`px-5 py-3 text-[0.9375rem] font-black tracking-tight border-b-[3px] -mb-0.5 transition ${
         active
           ? 'border-accent text-accent bg-accent-soft'
-          : 'border-transparent text-slate-700 hover:text-ink hover:bg-slate-100'
+          : 'border-transparent text-ink-muted hover:text-ink hover:bg-slate-100'
       }`}
     >{children}</button>
   );
@@ -383,11 +383,11 @@ function RegisterTab({
           <>
             <button
               onClick={bulkDisableWorkers}
-              className="px-3 py-1.5 rounded-md text-xs font-extrabold bg-rose-100 text-rose-700 border border-rose-300 hover:bg-rose-200"
+              className="px-3 py-1.5 rounded-md text-sm font-extrabold bg-rose-100 text-rose-700 border border-rose-300 hover:bg-rose-200"
             >
               근로자 전체 삭제
             </button>
-            <button onClick={onAdd} className="ml-auto px-4 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
+            <button onClick={onAdd} className="ml-auto px-4 py-1.5 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-accent-strong">
               + 신규 사용자
             </button>
           </>
@@ -399,7 +399,7 @@ function RegisterTab({
         {/* 사용자 요청 2026-04-29: 리스트 컬럼 5종(이름/아이디/권한/입사일/상태)만 노출.
             숨김: avatar / 직책 / 사번 / 지자체·업체 / 부서 / 전화 / 서명. 액션(수정/상세/비활성화)은 유지. */}
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
+          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase tracking-wider">
             <tr>
               {/* 사용자 요청 2026-04-29 v2: 권한/직책 컬럼 제거 — 이름/아이디/상태 + 상태변경만 */}
               <th className="px-3 py-2 text-center">이름</th>
@@ -410,7 +410,7 @@ function RegisterTab({
           </thead>
           <tbody className="divide-y divide-line">
             {filtered.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-10 text-center text-slate-700 font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
+              <tr><td colSpan={4} className="px-3 py-10 text-center text-ink-muted font-bold">조건에 맞는 사용자가 없습니다.</td></tr>
             )}
             {filtered.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50">
@@ -420,18 +420,18 @@ function RegisterTab({
                     <span className="ml-1.5 text-[0.625rem] font-extrabold px-1 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-300">시설담당</span>
                   )}
                   {u.primaryFacility && (
-                    <span className="ml-1 text-[0.625rem] text-slate-500">({u.primaryFacility.name})</span>
+                    <span className="ml-1 text-[0.625rem] text-ink-faint">({u.primaryFacility.name})</span>
                   )}
                 </td>
-                <td className="px-3 py-2 font-mono text-xs">{u.username}</td>
+                <td className="px-3 py-2 font-mono text-sm">{u.username}</td>
                 <td className="px-3 py-2"><StatusBadge status={u.status} /></td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   {canManage && (
-                    <button onClick={() => setEditTarget(u)} className="text-xs font-bold text-accent hover:underline mr-2">수정</button>
+                    <button onClick={() => setEditTarget(u)} className="text-sm font-bold text-accent hover:underline mr-2">수정</button>
                   )}
-                  <button onClick={() => onSelectProfile(u.id)} className="text-xs font-bold text-slate-600 hover:underline mr-2">상세</button>
+                  <button onClick={() => onSelectProfile(u.id)} className="text-sm font-bold text-ink-faint hover:underline mr-2">상세</button>
                   {canManage && u.id !== currentUserId && (
-                    <button onClick={() => disable(u.id)} className="text-xs font-bold text-red-600 hover:underline">삭제</button>
+                    <button onClick={() => disable(u.id)} className="text-sm font-bold text-red-600 hover:underline">삭제</button>
                   )}
                 </td>
               </tr>
@@ -593,7 +593,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
 
   return (
     <Modal title={`${user.name} 수정`} onClose={onClose}>
-      {loading && <div className="text-center py-6 text-slate-500 text-sm">불러오는 중…</div>}
+      {loading && <div className="text-center py-6 text-ink-faint text-sm">불러오는 중…</div>}
       {!loading && (
         <div className="grid grid-cols-2 gap-3">
           <Field label="이름"><Input value={form.name} onChange={(v) => setForm({ ...form, name: v })} /></Field>
@@ -608,7 +608,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
             </select>
           </Field>
 
-          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">직무</div>
+          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest">직무</div>
           <Field label="직책">
             <select value={form.positionCode} onChange={(e) => setForm({ ...form, positionCode: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
@@ -680,7 +680,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
               </span>
             </label>
             {form.isFacilityOperator && !form.primaryFacilityId && (
-              <p className="mt-1 text-xs text-amber-600 font-bold">⚠ 주근무지(시설)를 반드시 지정해야 합니다.</p>
+              <p className="mt-1 text-sm text-amber-600 font-bold">⚠ 주근무지(시설)를 반드시 지정해야 합니다.</p>
             )}
           </Field>
 
@@ -773,13 +773,13 @@ function EditUserModal({ user, positions, departments, onClose }: {
           <Field label="입사일"><Input type="date" value={form.hireDate} onChange={(v) => setForm({ ...form, hireDate: v })} /></Field>
           <Field label="주소" colSpan={2}><Input value={form.address} onChange={(v) => setForm({ ...form, address: v })} /></Field>
 
-          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">비상연락 / 계좌</div>
+          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest">비상연락 / 계좌</div>
           <Field label="비상연락 이름"><Input value={form.emergencyContact} onChange={(v) => setForm({ ...form, emergencyContact: v })} /></Field>
           <Field label="비상연락 전화"><Input type="tel" value={form.emergencyPhone} onChange={(v) => setForm({ ...form, emergencyPhone: v })} placeholder="010-1234-5678" /></Field>
           <Field label="은행"><Input value={form.bankName} onChange={(v) => setForm({ ...form, bankName: v })} /></Field>
           <Field label="계좌번호"><Input value={form.bankAccount} onChange={(v) => setForm({ ...form, bankAccount: v })} /></Field>
 
-          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">자료 등록 (변경 시)</div>
+          <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest">자료 등록 (변경 시)</div>
           <Field label="프로필 사진" colSpan={2}>
             <ProfilePhotoUploader initialDataUrl={photo} onChange={(d) => { setPhoto(d); setPhotoChanged(true); }} size={64} />
             {photoChanged && photo && (
@@ -827,7 +827,7 @@ function ProfileTab({
       {selected ? (
         <ProfileEditor user={selected} canManage={canManage} positions={positions} departments={departments} />
       ) : (
-        <div className="bg-surface border border-line rounded-lg p-10 text-center text-slate-500">
+        <div className="bg-surface border border-line rounded-lg p-10 text-center text-ink-faint">
           [사용자 등록] 탭에서 [상세] 버튼을 눌러 인적사항을 조회하세요.
         </div>
       )}
@@ -919,7 +919,7 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
         <span className="font-extrabold text-ink">{user.name}</span>
         <RoleBadge role={user.role} />
         <StatusBadge status={user.status} />
-        <span className="ml-auto text-[0.625rem] font-mono text-slate-600">사번 {user.employeeNo ?? '—'}</span>
+        <span className="ml-auto text-[0.625rem] font-mono text-ink-faint">사번 {user.employeeNo ?? '—'}</span>
       </div>
       <div className="p-5 grid grid-cols-2 gap-4">
         <Section title="기본 정보">
@@ -943,7 +943,7 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
         <Section title="입·퇴사">
           <Field label="입사일"><Input type="date" value={form.hireDate} onChange={(v) => setForm({ ...form, hireDate: v })} disabled={!canManage} /></Field>
           <Field label="퇴사일"><Input type="date" value={form.resignDate} onChange={(v) => setForm({ ...form, resignDate: v })} disabled={!canManage} /></Field>
-          <div className="col-span-2 px-3 py-2 rounded bg-accent-soft border border-accent text-xs font-bold text-accent">
+          <div className="col-span-2 px-3 py-2 rounded bg-accent-soft border border-accent text-sm font-bold text-accent">
             근속 {user.tenureYears}년 · 권장 연차 {user.recommendDays}일 ({user.recommendRule})
           </div>
         </Section>
@@ -1026,12 +1026,12 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
               </div>
               {user.activeSignatureRef && !signatureChanged && (
                 <div className="w-[160px] flex flex-col items-center justify-center bg-slate-50 border border-line rounded p-2">
-                  <span className="text-[0.625rem] font-mono font-bold text-slate-600 mb-1">현재 서명</span>
+                  <span className="text-[0.625rem] font-mono font-bold text-ink-faint mb-1">현재 서명</span>
                   <span className="text-[0.5625rem] font-mono text-emerald-700">ref: {user.activeSignatureRef}</span>
                 </div>
               )}
             </div>
-            <div className="text-[0.625rem] font-mono text-slate-500 mt-1">서명을 다시 그리면 기존 서명은 비활성화됩니다.</div>
+            <div className="text-[0.625rem] font-mono text-ink-faint mt-1">서명을 다시 그리면 기존 서명은 비활성화됩니다.</div>
           </Field>
         </Section>
 
@@ -1093,13 +1093,13 @@ function AuditHistory({ userId }: { userId: string }) {
         className="w-full px-5 py-3 bg-slate-50 hover:bg-slate-100 text-left flex items-center"
       >
         <span className="text-sm font-extrabold text-ink">변경 이력</span>
-        <span className="ml-2 text-[0.625rem] font-mono text-slate-600">audit_logs</span>
-        <span className="ml-auto text-slate-500">{open ? '▲' : '▼'}</span>
+        <span className="ml-2 text-[0.625rem] font-mono text-ink-faint">audit_logs</span>
+        <span className="ml-auto text-ink-faint">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
-          {items === null && <div className="text-center text-slate-500 py-6 text-sm">불러오는 중…</div>}
-          {items && items.length === 0 && <div className="text-center text-slate-500 py-6 text-sm">변경 이력이 없습니다.</div>}
+          {items === null && <div className="text-center text-ink-faint py-6 text-sm">불러오는 중…</div>}
+          {items && items.length === 0 && <div className="text-center text-ink-faint py-6 text-sm">변경 이력이 없습니다.</div>}
           {items && items.length > 0 && (
             <div className="space-y-2">
               {items.map((l) => {
@@ -1109,17 +1109,17 @@ function AuditHistory({ userId }: { userId: string }) {
                   <div key={l.id} className="border border-line rounded-md p-3 bg-white">
                     <div className="flex items-center gap-2 mb-1.5">
                       <ActionBadge action={l.action} />
-                      <span className="text-xs font-bold text-ink">{l.actorName ?? '시스템'}</span>
-                      {l.actorRole && <span className="text-[0.5625rem] font-mono font-bold text-slate-600">{l.actorRole}</span>}
-                      <span className="ml-auto text-[0.625rem] font-mono text-slate-600">
+                      <span className="text-sm font-bold text-ink">{l.actorName ?? '시스템'}</span>
+                      {l.actorRole && <span className="text-[0.5625rem] font-mono font-bold text-ink-faint">{l.actorRole}</span>}
+                      <span className="ml-auto text-[0.625rem] font-mono text-ink-faint">
                         {new Date(l.createdAt).toLocaleString('ko-KR')}
                       </span>
                     </div>
                     {changeKeys.length > 0 && meta.changes && (
                       <div className="overflow-x-auto">
-                      <table className="w-full min-w-[480px] text-xs">
+                      <table className="w-full min-w-[480px] text-sm">
                         <thead>
-                          <tr className="text-[0.5625rem] font-mono font-bold text-slate-600 border-b border-line">
+                          <tr className="text-[0.5625rem] font-mono font-bold text-ink-faint border-b border-line">
                             <th className="text-left py-1 pr-2 w-[120px]">필드</th>
                             <th className="text-left py-1 pr-2">이전</th>
                             <th className="text-left py-1">변경</th>
@@ -1128,8 +1128,8 @@ function AuditHistory({ userId }: { userId: string }) {
                         <tbody>
                           {changeKeys.map((k) => (
                             <tr key={k} className="border-b border-line/50 last:border-0">
-                              <td className="py-1.5 pr-2 font-bold text-slate-600">{FIELD_LABEL[k] ?? k}</td>
-                              <td className="py-1.5 pr-2 font-mono text-slate-600 line-through">{fmtVal(meta.changes![k].from)}</td>
+                              <td className="py-1.5 pr-2 font-bold text-ink-faint">{FIELD_LABEL[k] ?? k}</td>
+                              <td className="py-1.5 pr-2 font-mono text-ink-faint line-through">{fmtVal(meta.changes![k].from)}</td>
                               <td className="py-1.5 font-mono font-extrabold text-accent">{fmtVal(meta.changes![k].to)}</td>
                             </tr>
                           ))}
@@ -1168,7 +1168,7 @@ function ActionBadge({ action }: { action: string }) {
   const labels: Record<string, string> = {
     USER_CREATE: '등록', USER_UPDATE: '수정', USER_DISABLE: '비활성',
   };
-  return <span className={`text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[action] ?? 'bg-slate-100 text-slate-600 border-slate-300'}`}>{labels[action] ?? action}</span>;
+  return <span className={`text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[action] ?? 'bg-slate-100 text-ink-faint border-slate-300'}`}>{labels[action] ?? action}</span>;
 }
 
 /* ────────────────────────  탭 3: 연월차관리  ──────────────────────── */
@@ -1231,7 +1231,7 @@ function LeaveTab({
       {canManage && (
         <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border ${zeroBalanceCount > 0 ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-300'}`}>
           <span className="text-lg">{zeroBalanceCount > 0 ? '⚠' : '✓'}</span>
-          <div className="text-xs font-bold flex-1">
+          <div className="text-sm font-bold flex-1">
             <span className={zeroBalanceCount > 0 ? 'text-amber-800' : 'text-emerald-700'}>
               {zeroBalanceCount > 0
                 ? `잔여 0 또는 미부여 워커 ${zeroBalanceCount}명 — 월초 부여를 검토하세요.`
@@ -1250,8 +1250,8 @@ function LeaveTab({
         {/* 상단 — 휴가 신청 목록 */}
         <div className="bg-surface border border-line rounded-lg overflow-hidden">
           <div className="px-4 py-2.5 bg-slate-100 border-b border-line flex items-center gap-2">
-            <span className="text-xs font-extrabold text-ink">휴가 신청 내역</span>
-            {selected && <span className="text-[0.625rem] font-mono text-slate-600">선택: {selected.name}</span>}
+            <span className="text-sm font-extrabold text-ink">휴가 신청 내역</span>
+            {selected && <span className="text-[0.625rem] font-mono text-ink-faint">선택: {selected.name}</span>}
             <button onClick={onCreate} disabled={!selected}
               className="ml-auto px-2.5 py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white disabled:opacity-40">
               + 휴가 신청
@@ -1259,7 +1259,7 @@ function LeaveTab({
           </div>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600">
+            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-faint">
               <tr>
                 <th className="px-3 py-2 text-left">근로자</th>
                 <th className="px-3 py-2 text-left">유형</th>
@@ -1272,20 +1272,20 @@ function LeaveTab({
             </thead>
             <tbody className="divide-y divide-line">
               {leaveRows.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-10 text-center text-slate-500">신청 내역이 없습니다.</td></tr>
+                <tr><td colSpan={7} className="px-3 py-10 text-center text-ink-faint">신청 내역이 없습니다.</td></tr>
               )}
               {leaveRows.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-3 py-2">
                     <div className="font-bold text-ink text-sm">{r.workerName}</div>
-                    <div className="text-[0.625rem] font-mono text-slate-600">{r.employeeNo ?? '—'}</div>
+                    <div className="text-[0.625rem] font-mono text-ink-faint">{r.employeeNo ?? '—'}</div>
                   </td>
-                  <td className="px-3 py-2 text-xs font-bold">{LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}</td>
+                  <td className="px-3 py-2 text-sm font-bold">{LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}</td>
                   <td className="px-3 py-2 font-mono text-[0.6875rem]">
                     {r.startDate}<br />~ {r.endDate}
-                    <div className="text-[0.5625rem] text-slate-500">{daysBetween(r.startDate, r.endDate)}일</div>
+                    <div className="text-[0.5625rem] text-ink-faint">{daysBetween(r.startDate, r.endDate)}일</div>
                   </td>
-                  <td className="px-3 py-2 text-xs text-slate-600 max-w-[200px] truncate" title={r.reason ?? ''}>{r.reason ?? '—'}</td>
+                  <td className="px-3 py-2 text-sm text-ink-faint max-w-[200px] truncate" title={r.reason ?? ''}>{r.reason ?? '—'}</td>
                   <td className="px-3 py-2"><LeaveStatusBadge status={r.status} /></td>
                   <td className="px-3 py-2">
                     {r.approverSignatureUrl ? (
@@ -1294,14 +1294,14 @@ function LeaveTab({
                         <img src={r.approverSignatureUrl} alt="signature" className="h-[40px] w-[80px] object-contain bg-white border border-line rounded" />
                         <div className="text-left">
                           <div className="text-[0.625rem] font-bold text-ink">{r.approverName}</div>
-                          <div className="text-[0.5625rem] font-mono text-slate-600">{r.approverSignatureRef?.slice(0, 8)}</div>
+                          <div className="text-[0.5625rem] font-mono text-ink-faint">{r.approverSignatureRef?.slice(0, 8)}</div>
                         </div>
                       </button>
-                    ) : <span className="text-[0.625rem] font-mono text-slate-500">—</span>}
+                    ) : <span className="text-[0.625rem] font-mono text-ink-faint">—</span>}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {(r.status === 'PENDING' || r.status === 'IN_REVIEW') && canManage && (
-                      <button onClick={() => setApproveTarget(r)} className="text-xs font-bold text-accent hover:underline">
+                      <button onClick={() => setApproveTarget(r)} className="text-sm font-bold text-accent hover:underline">
                         {r.status === 'PENDING' ? '1차 결재' : '대표 결재'}
                       </button>
                     )}
@@ -1316,7 +1316,7 @@ function LeaveTab({
         {/* 하단 — 직원별 연차 (사용자 요청 2026-04-29: 위에서 아래로 이동, full width) */}
         <div className="bg-surface border border-line rounded-lg overflow-hidden">
           <div className="px-4 py-2.5 bg-slate-100 border-b border-line flex items-center gap-1">
-            <span className="text-xs font-extrabold text-ink">{year}년 직원별 연차</span>
+            <span className="text-sm font-extrabold text-ink">{year}년 직원별 연차</span>
             {canManage && (
               <>
                 <button onClick={onBulkGrant}
@@ -1330,25 +1330,25 @@ function LeaveTab({
               </>
             )}
           </div>
-          {/* 사용자 요청 2026-04-29: 이름 1단계 다운 (text-sm → text-xs),
+          {/* 사용자 요청 2026-04-29: 이름 1단계 다운 (text-sm → text-sm),
               Stat 내용 글자 2단계 업 (text-[0.625rem] → text-sm), 식별성 향상. */}
           <div className="max-h-[560px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0">
             {workers.map((w) => (
               <button key={w.id} onClick={() => onSelect(w.id)}
                 className={`w-full text-left px-3 py-2 border-b border-r border-line hover:bg-slate-50 ${selected?.id === w.id ? 'bg-accent-soft border-l-[3px] border-l-accent' : ''}`}>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-ink text-xs">{w.name}</span>
-                  <span className="text-[0.625rem] font-mono font-extrabold text-slate-600">{w.employeeNo ?? '—'}</span>
+                  <span className="font-bold text-ink text-sm">{w.name}</span>
+                  <span className="text-[0.625rem] font-mono font-extrabold text-ink-faint">{w.employeeNo ?? '—'}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1 mt-1.5 text-sm font-mono">
                   <Stat label="부여" value={w.thisYearGranted.toFixed(1)} />
                   <Stat label="사용" value={w.thisYearUsed.toFixed(1)} tone="accent" />
                   <Stat label="잔여" value={w.thisYearRemaining.toFixed(1)} tone={w.thisYearRemaining > 0 ? 'success' : 'warning'} />
                 </div>
-                <div className="text-[0.5625rem] font-mono text-slate-500 mt-1">권장 {w.recommendDays}일 · 근속 {w.tenureYears}년</div>
+                <div className="text-[0.5625rem] font-mono text-ink-faint mt-1">권장 {w.recommendDays}일 · 근속 {w.tenureYears}년</div>
               </button>
             ))}
-            {workers.length === 0 && <div className="col-span-full px-3 py-10 text-center text-slate-500 text-sm">근로자가 없습니다.</div>}
+            {workers.length === 0 && <div className="col-span-full px-3 py-10 text-center text-ink-faint text-sm">근로자가 없습니다.</div>}
           </div>
         </div>
       </div>
@@ -1421,7 +1421,7 @@ function CalendarTab() {
         <h3 className="text-xl font-extrabold text-ink">{year}년 {month}월</h3>
         <button onClick={() => changeMonth(1)} className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold hover:bg-slate-50">▶</button>
         <button onClick={() => setYm(todayYm)} className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold hover:bg-slate-50">오늘</button>
-        {loading && <span className="text-xs font-mono text-slate-600 ml-3">로딩 중…</span>}
+        {loading && <span className="text-sm font-mono text-ink-faint ml-3">로딩 중…</span>}
         <div className="ml-auto flex items-center gap-3 text-[0.6875rem] font-bold">
           <LegendDot color="bg-emerald-500" label="승인" />
           <LegendDot color="bg-amber-400" label="대기" />
@@ -1442,7 +1442,7 @@ function CalendarTab() {
       <div className="bg-surface border border-line rounded-lg overflow-hidden shadow-sm">
         <div className="grid grid-cols-7 bg-slate-100 border-b-2 border-line">
           {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
-            <div key={d} className={`px-2 py-2 text-center text-[0.6875rem] font-mono font-extrabold ${i === 0 ? 'text-red-600' : i === 6 ? 'text-blue-600' : 'text-slate-600'}`}>
+            <div key={d} className={`px-2 py-2 text-center text-[0.6875rem] font-mono font-extrabold ${i === 0 ? 'text-red-600' : i === 6 ? 'text-blue-600' : 'text-ink-faint'}`}>
               {d}
             </div>
           ))}
@@ -1463,7 +1463,7 @@ function CalendarTab() {
                 onMouseLeave={() => setHover(null)}
                 className={`h-[100px] border-b border-r border-line p-1.5 relative ${isToday ? 'bg-accent-soft' : ''} hover:bg-slate-50 cursor-default`}
               >
-                <div className={`text-xs font-mono font-extrabold mb-1 ${weekday === 0 ? 'text-red-600' : weekday === 6 ? 'text-blue-600' : 'text-ink'}`}>
+                <div className={`text-sm font-mono font-extrabold mb-1 ${weekday === 0 ? 'text-red-600' : weekday === 6 ? 'text-blue-600' : 'text-ink'}`}>
                   {day}
                 </div>
                 {info && (
@@ -1474,18 +1474,18 @@ function CalendarTab() {
                         className={`text-[0.625rem] font-extrabold px-1 py-0.5 rounded truncate border ${
                           info.approved > 0 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                           info.pending > 0 ? 'bg-amber-100 text-amber-800 border-amber-300' :
-                          'bg-slate-200 text-slate-700 border-slate-400'
+                          'bg-slate-200 text-ink-muted border-slate-400'
                         }`}>
                         {wn}
                       </div>
                     ))}
                     {info.workers.length > 3 && (
-                      <div className="text-[0.5625rem] font-mono font-bold text-slate-600">+{info.workers.length - 3}명 더</div>
+                      <div className="text-[0.5625rem] font-mono font-bold text-ink-faint">+{info.workers.length - 3}명 더</div>
                     )}
                     <div className="flex gap-1 mt-0.5">
                       {info.approved > 0 && <span className="text-[0.5625rem] font-mono font-extrabold text-emerald-700">✓{info.approved}</span>}
                       {info.pending > 0 && <span className="text-[0.5625rem] font-mono font-extrabold text-amber-700">⏳{info.pending}</span>}
-                      {info.rejected > 0 && <span className="text-[0.5625rem] font-mono font-extrabold text-slate-600">✗{info.rejected}</span>}
+                      {info.rejected > 0 && <span className="text-[0.5625rem] font-mono font-extrabold text-ink-faint">✗{info.rejected}</span>}
                     </div>
                   </div>
                 )}
@@ -1503,12 +1503,12 @@ function CalendarTab() {
       {/* 월별 신청 리스트 */}
       {data && data.items.length > 0 && (
         <div className="bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-xs font-extrabold text-ink">
+          <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">
             {month}월 신청 내역 ({data.items.length}건)
           </div>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600">
+            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-faint">
               <tr>
                 <th className="px-3 py-2 text-left">근로자</th>
                 <th className="px-3 py-2 text-left">유형</th>
@@ -1519,9 +1519,9 @@ function CalendarTab() {
             <tbody className="divide-y divide-line">
               {data.items.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-1.5"><span className="font-bold text-sm">{r.workerName}</span> <span className="text-[0.625rem] font-mono text-slate-600">{r.employeeNo ?? '—'}</span></td>
+                  <td className="px-3 py-1.5"><span className="font-bold text-sm">{r.workerName}</span> <span className="text-[0.625rem] font-mono text-ink-faint">{r.employeeNo ?? '—'}</span></td>
                   <td className="px-3 py-1.5"><span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[0.625rem]">{LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}</span></td>
-                  <td className="px-3 py-1.5 font-mono text-xs">{r.startDate} ~ {r.endDate}</td>
+                  <td className="px-3 py-1.5 font-mono text-sm">{r.startDate} ~ {r.endDate}</td>
                   <td className="px-3 py-1.5"><LeaveStatusBadge status={r.status} /></td>
                 </tr>
               ))}
@@ -1538,7 +1538,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className={`w-3 h-3 rounded-sm ${color}`} />
-      <span className="text-slate-600">{label}</span>
+      <span className="text-ink-faint">{label}</span>
     </div>
   );
 }
@@ -1616,7 +1616,7 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
     }
   }
 
-  if (loading) return <div className="text-center py-12 text-slate-500">조직도 로딩 중…</div>;
+  if (loading) return <div className="text-center py-12 text-ink-faint">조직도 로딩 중…</div>;
   if (!data) return <div className="text-center py-12 text-red-600">조직도 로딩 실패</div>;
 
   const totalMembers = countMembers(data.tree) + data.unassigned.length;
@@ -1625,10 +1625,10 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
     <div className="space-y-4">
       <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <h3 className="text-lg font-extrabold text-ink">{data.contractorName ?? '조직도'}</h3>
-        <span className="text-xs font-mono font-bold text-slate-600">총 {totalMembers}명 / {data.tree.length}개 본부</span>
+        <span className="text-sm font-mono font-bold text-ink-faint">총 {totalMembers}명 / {data.tree.length}개 본부</span>
         {canManage && (
           <button onClick={() => setAddingNew((v) => !v)}
-            className="ml-auto px-3 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-cyan-800">
+            className="ml-auto px-3 py-1.5 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-cyan-800">
             {addingNew ? '취소' : '+ 부서 등록'}
           </button>
         )}
@@ -1652,7 +1652,7 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
       <PositionPanel positions={positions} canManage={canManage} />
 
       {data.tree.length === 0 ? (
-        <div className="bg-surface border border-line rounded-lg p-10 text-center text-slate-500">
+        <div className="bg-surface border border-line rounded-lg p-10 text-center text-ink-faint">
           부서가 없습니다. {canManage ? '상단의 [+ 부서 등록] 버튼으로 등록하세요.' : '관리자에게 문의하세요.'}
         </div>
       ) : (
@@ -1667,7 +1667,7 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
 
       {data.unassigned.length > 0 && (
         <div className="bg-amber-50 border border-amber-300 rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-amber-200 bg-amber-100 text-xs font-extrabold text-amber-800">
+          <div className="px-4 py-2.5 border-b border-amber-200 bg-amber-100 text-sm font-extrabold text-amber-800">
             ⚠ 부서 미지정 ({data.unassigned.length}명)
           </div>
           <div className="p-3 grid grid-cols-4 gap-2">
@@ -1746,11 +1746,11 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
     <div className="bg-surface border border-line rounded-lg overflow-hidden">
       <div className="px-4 py-2.5 border-b border-line bg-slate-100 flex items-center gap-3 flex-wrap">
         <h3 className="text-sm font-extrabold text-ink">🏷 직책 관리</h3>
-        <span className="text-[0.6875rem] font-mono text-slate-600">활성 {positions.length}건 · 사용자 등록 dropdown 에 자동 반영</span>
+        <span className="text-[0.6875rem] font-mono text-ink-faint">활성 {positions.length}건 · 사용자 등록 dropdown 에 자동 반영</span>
         <span className="text-[0.625rem] font-bold text-amber-700">⚠ Position 은 전역 — 변경 시 모든 회사 영향</span>
         {canManage && (
           <button onClick={() => setAdding((v) => !v)}
-            className="ml-auto px-3 py-1.5 rounded-md text-xs font-extrabold bg-accent text-white hover:bg-cyan-800">
+            className="ml-auto px-3 py-1.5 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-cyan-800">
             {adding ? '취소' : '+ 직책 등록'}
           </button>
         )}
@@ -1772,7 +1772,7 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
           </select>
           <button onClick={createPos}
             className="px-4 py-2 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-cyan-800">저장</button>
-          <span className="text-[0.625rem] font-mono text-slate-500">code 자동 생성</span>
+          <span className="text-[0.625rem] font-mono text-ink-faint">code 자동 생성</span>
         </div>
       )}
 
@@ -1781,10 +1781,10 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
           <div key={cat} className="p-3">
             <div className="text-[0.6875rem] font-mono font-extrabold text-ink-muted mb-2 tracking-widest uppercase">{CAT_LABEL[cat]}</div>
             <div className="space-y-1">
-              {byCat[cat].length === 0 && <div className="text-[0.6875rem] text-slate-500 py-2">— 등록된 직책 없음</div>}
+              {byCat[cat].length === 0 && <div className="text-[0.6875rem] text-ink-faint py-2">— 등록된 직책 없음</div>}
               {byCat[cat].map((p) => (
                 <div key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded border border-line bg-white">
-                  <code className="text-[0.625rem] font-mono text-slate-500 w-[80px] truncate" title={p.code}>{p.code}</code>
+                  <code className="text-[0.625rem] font-mono text-ink-faint w-[80px] truncate" title={p.code}>{p.code}</code>
                   {editingId === p.id ? (
                     <>
                       <input type="text" autoFocus value={labelDraft}
@@ -1793,21 +1793,21 @@ function PositionPanel({ positions, canManage }: { positions: PositionRow[]; can
                           if (e.key === 'Enter') renamePos(p.id, labelDraft);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
-                        className="flex-1 px-2 py-0.5 rounded border-2 border-accent text-xs font-bold focus:outline-none" />
+                        className="flex-1 px-2 py-0.5 rounded border-2 border-accent text-sm font-bold focus:outline-none" />
                       <button onClick={() => renamePos(p.id, labelDraft)}
                         className="text-[0.625rem] font-extrabold text-accent hover:underline">저장</button>
                       <button onClick={() => setEditingId(null)}
-                        className="text-[0.625rem] font-bold text-slate-500 hover:underline">취소</button>
+                        className="text-[0.625rem] font-bold text-ink-faint hover:underline">취소</button>
                     </>
                   ) : (
                     <>
-                      <span className="flex-1 text-xs font-bold text-ink truncate">{p.label}</span>
+                      <span className="flex-1 text-sm font-bold text-ink truncate">{p.label}</span>
                       {canManage && (
                         <>
                           <button onClick={() => { setLabelDraft(p.label); setEditingId(p.id); }}
-                            title="이름 수정" className="text-[0.625rem] text-slate-500 hover:text-accent">✎</button>
+                            title="이름 수정" className="text-[0.625rem] text-ink-faint hover:text-accent">✎</button>
                           <button onClick={() => toggleActive(p.id, true)}
-                            title="비활성화" className="text-[0.625rem] text-slate-500 hover:text-red-600">×</button>
+                            title="비활성화" className="text-[0.625rem] text-ink-faint hover:text-red-600">×</button>
                         </>
                       )}
                     </>
@@ -1860,7 +1860,7 @@ function OrgDeptCard({
             <button onClick={() => renameDept(node.id, nameDraft)}
               className="text-[0.6875rem] font-extrabold text-accent hover:underline">저장</button>
             <button onClick={() => { setEditDeptId(null); setNameDraft(node.name); }}
-              className="text-[0.6875rem] font-bold text-slate-600 hover:underline">취소</button>
+              className="text-[0.6875rem] font-bold text-ink-faint hover:underline">취소</button>
           </>
         ) : (
           <>
@@ -1868,20 +1868,20 @@ function OrgDeptCard({
             {canManage && (
               <button onClick={() => { setNameDraft(node.name); setEditDeptId(`rename:${node.id}`); }}
                 title="부서명 수정"
-                className="text-[0.625rem] font-bold text-slate-500 hover:text-accent">✎</button>
+                className="text-[0.625rem] font-bold text-ink-faint hover:text-accent">✎</button>
             )}
           </>
         )}
-        <div className="text-[0.625rem] font-mono text-slate-600">{node.members.length}명</div>
+        <div className="text-[0.625rem] font-mono text-ink-faint">{node.members.length}명</div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           {node.head ? (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-100 border border-purple-300">
               <span className="text-[0.625rem] font-mono font-extrabold text-purple-700">부서장</span>
-              <span className="text-xs font-bold text-purple-800">{node.head.name}</span>
+              <span className="text-sm font-bold text-purple-800">{node.head.name}</span>
               {node.head.positionLabel && <span className="text-[0.625rem] font-mono text-purple-600">({node.head.positionLabel})</span>}
             </div>
           ) : (
-            <span className="text-[0.625rem] font-mono text-slate-500">부서장 미지정</span>
+            <span className="text-[0.625rem] font-mono text-ink-faint">부서장 미지정</span>
           )}
           {canManage && (
             <button onClick={() => setEditDeptId(isEditing ? null : node.id)}
@@ -1900,10 +1900,10 @@ function OrgDeptCard({
 
       {isEditing && canManage && (
         <div className="px-4 py-2 border-b border-line bg-amber-50 flex items-center gap-2">
-          <span className="text-[0.6875rem] font-mono font-bold text-slate-600">부서장 선택:</span>
+          <span className="text-[0.6875rem] font-mono font-bold text-ink-faint">부서장 선택:</span>
           <select onChange={(e) => setHead(node.id, e.target.value || null)}
             defaultValue={node.head?.id ?? ''}
-            className="px-2 py-1 rounded border border-line bg-white text-xs font-bold">
+            className="px-2 py-1 rounded border border-line bg-white text-sm font-bold">
             <option value="">— 미지정 —</option>
             <optgroup label="해당 부서원">
               {candidateUsers.map((u) => (
@@ -1944,10 +1944,10 @@ function OrgMemberCard({ m, isHead }: { m: OrgMember; isHead?: boolean }) {
       <Avatar url={m.profilePhotoUrl} name={m.name} size={32} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
-          <span className="text-xs font-extrabold text-ink truncate">{m.name}</span>
+          <span className="text-sm font-extrabold text-ink truncate">{m.name}</span>
           {isHead && <span className="text-[0.5rem] font-mono font-extrabold text-purple-700">★</span>}
         </div>
-        <div className="text-[0.625rem] font-mono text-slate-600 truncate">
+        <div className="text-[0.625rem] font-mono text-ink-faint truncate">
           {m.employeeNo ?? '—'} · {m.positionLabel ?? '직책 X'}
         </div>
       </div>
@@ -2079,7 +2079,7 @@ function ReportTab() {
         </a>
       </div>
 
-      {!data && <div className="text-center py-12 text-slate-500">조회 결과를 기다리는 중…</div>}
+      {!data && <div className="text-center py-12 text-ink-faint">조회 결과를 기다리는 중…</div>}
 
       {data && (
         <>
@@ -2094,22 +2094,22 @@ function ReportTab() {
           {/* 유형별 + 부서별 (좌 우) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-surface border border-line rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-xs font-extrabold text-ink">유형별 분포</div>
+              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-sm font-extrabold text-ink">유형별 분포</div>
               <div className="p-3 space-y-1.5">
                 {Object.entries(data.byType).sort((a, b) => b[1].days - a[1].days).map(([t, v]) => (
                   <BarRow key={t} label={LEAVE_TYPE_LABEL[t] ?? t} value={v.days} max={maxByType} suffix="일" sub={`${v.count}건`} />
                 ))}
-                {Object.keys(data.byType).length === 0 && <div className="text-xs text-slate-500 text-center py-4">데이터 없음</div>}
+                {Object.keys(data.byType).length === 0 && <div className="text-sm text-ink-faint text-center py-4">데이터 없음</div>}
               </div>
             </div>
 
             <div className="bg-surface border border-line rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-xs font-extrabold text-ink">부서별 분포</div>
+              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-sm font-extrabold text-ink">부서별 분포</div>
               <div className="p-3 space-y-1.5">
                 {data.byDepartment.map((d) => (
                   <BarRow key={d.departmentName} label={d.departmentName} value={d.days} max={maxByDept} suffix="일" sub={`${d.count}건`} color="bg-emerald-400" />
                 ))}
-                {data.byDepartment.length === 0 && <div className="text-xs text-slate-500 text-center py-4">데이터 없음</div>}
+                {data.byDepartment.length === 0 && <div className="text-sm text-ink-faint text-center py-4">데이터 없음</div>}
               </div>
             </div>
           </div>
@@ -2117,31 +2117,31 @@ function ReportTab() {
           {/* 월별 추이 + 워커 Top */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-surface border border-line rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-xs font-extrabold text-ink">월별 추이</div>
+              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-sm font-extrabold text-ink">월별 추이</div>
               <div className="p-3 space-y-1.5">
                 {data.byMonth.map((m) => (
                   <BarRow key={m.ym} label={m.ym} value={m.days} max={maxByMonth} suffix="일" sub={`${m.count}건`} color="bg-amber-400" />
                 ))}
-                {data.byMonth.length === 0 && <div className="text-xs text-slate-500 text-center py-4">데이터 없음</div>}
+                {data.byMonth.length === 0 && <div className="text-sm text-ink-faint text-center py-4">데이터 없음</div>}
               </div>
             </div>
 
             <div className="bg-surface border border-line rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-xs font-extrabold text-ink">작업자 Top 10</div>
+              <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-sm font-extrabold text-ink">작업자 Top 10</div>
               <div className="overflow-x-auto">
               <table className="w-full min-w-[480px] text-sm">
-                <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600">
+                <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-faint">
                   <tr><th className="px-3 py-1.5 text-left">근로자</th><th className="px-3 py-1.5 text-right">건수</th><th className="px-3 py-1.5 text-right">일수</th></tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {data.byWorker.slice(0, 10).map((w) => (
                     <tr key={w.workerId} className="hover:bg-slate-50">
-                      <td className="px-3 py-1.5"><span className="font-bold">{w.workerName}</span> <span className="text-[0.625rem] font-mono text-slate-600">{w.employeeNo ?? '—'}</span></td>
+                      <td className="px-3 py-1.5"><span className="font-bold">{w.workerName}</span> <span className="text-[0.625rem] font-mono text-ink-faint">{w.employeeNo ?? '—'}</span></td>
                       <td className="px-3 py-1.5 text-right font-mono">{w.count}</td>
                       <td className="px-3 py-1.5 text-right font-mono font-extrabold">{w.days}</td>
                     </tr>
                   ))}
-                  {data.byWorker.length === 0 && <tr><td colSpan={3} className="px-3 py-6 text-xs text-slate-500 text-center">데이터 없음</td></tr>}
+                  {data.byWorker.length === 0 && <tr><td colSpan={3} className="px-3 py-6 text-sm text-ink-faint text-center">데이터 없음</td></tr>}
                 </tbody>
               </table>
               </div>
@@ -2150,10 +2150,10 @@ function ReportTab() {
 
           {/* 신청 내역 */}
           <div className="bg-surface border border-line rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-xs font-extrabold text-ink">신청 내역 ({data.rows.length}건)</div>
+            <div className="px-4 py-2.5 border-b border-line bg-slate-100 text-sm font-extrabold text-ink">신청 내역 ({data.rows.length}건)</div>
             <div className="max-h-[500px] overflow-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600 sticky top-0">
+                <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-faint sticky top-0">
                   <tr>
                     <th className="px-2 py-1.5 text-left">근로자</th>
                     <th className="px-2 py-1.5 text-left">부서</th>
@@ -2167,18 +2167,18 @@ function ReportTab() {
                 <tbody className="divide-y divide-line">
                   {data.rows.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="px-2 py-1.5"><span className="font-bold text-sm">{r.workerName}</span> <span className="text-[0.625rem] font-mono text-slate-600">{r.workerEmployeeNo ?? '—'}</span></td>
-                      <td className="px-2 py-1.5 text-xs">{r.departmentName ?? '—'}</td>
+                      <td className="px-2 py-1.5"><span className="font-bold text-sm">{r.workerName}</span> <span className="text-[0.625rem] font-mono text-ink-faint">{r.workerEmployeeNo ?? '—'}</span></td>
+                      <td className="px-2 py-1.5 text-sm">{r.departmentName ?? '—'}</td>
                       <td className="px-2 py-1.5"><span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-[0.625rem]">{LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}</span></td>
                       <td className="px-2 py-1.5 font-mono text-[0.6875rem]">{r.startDate} ~ {r.endDate}</td>
                       <td className="px-2 py-1.5 text-right font-mono font-extrabold">{r.days}</td>
                       <td className="px-2 py-1.5"><LeaveStatusBadge status={r.status} /></td>
-                      <td className="px-2 py-1.5 text-[0.625rem] font-mono text-slate-600">
+                      <td className="px-2 py-1.5 text-[0.625rem] font-mono text-ink-faint">
                         {r.firstApproverName ?? '—'} / <span className="text-purple-700 font-bold">{r.finalApproverName ?? '—'}</span>
                       </td>
                     </tr>
                   ))}
-                  {data.rows.length === 0 && <tr><td colSpan={7} className="px-3 py-10 text-center text-slate-500">기간 내 신청 없음</td></tr>}
+                  {data.rows.length === 0 && <tr><td colSpan={7} className="px-3 py-10 text-center text-ink-faint">기간 내 신청 없음</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -2195,13 +2195,13 @@ function BarRow({ label, value, max, suffix, sub, color = 'bg-accent' }: {
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-[100px] text-xs font-bold text-ink truncate">{label}</div>
+      <div className="w-[100px] text-sm font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-5 overflow-hidden">
         <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-white`} style={{ width: `${pct}%` }}>
           {value}{suffix}
         </div>
       </div>
-      {sub && <div className="text-[0.625rem] font-mono text-slate-600 w-[40px] text-right">{sub}</div>}
+      {sub && <div className="text-[0.625rem] font-mono text-ink-faint w-[40px] text-right">{sub}</div>}
     </div>
   );
 }
@@ -2239,15 +2239,15 @@ function ApprovalCertModal({ leaveRequestId, onClose }: { leaveRequestId: string
 
   return (
     <Modal title="결재 인증서" onClose={onClose}>
-      {data === null && <div className="text-center text-slate-500 py-6 text-sm">불러오는 중…</div>}
+      {data === null && <div className="text-center text-ink-faint py-6 text-sm">불러오는 중…</div>}
       {data?.error && <div className="text-center text-red-600 py-6 text-sm font-bold">{data.error}</div>}
       {(data?.firstApproval || data?.finalApproval) && data.worker && data.leaveRequest && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div><div className="text-[0.625rem] font-mono text-slate-600">신청자</div><div className="font-bold">{data.worker.name} ({data.worker.employeeNo ?? '—'})</div></div>
-            <div><div className="text-[0.625rem] font-mono text-slate-600">유형</div><div className="font-bold">{LEAVE_TYPE_LABEL[data.leaveRequest.requestType] ?? data.leaveRequest.requestType}</div></div>
-            <div><div className="text-[0.625rem] font-mono text-slate-600">기간</div><div className="font-mono">{data.leaveRequest.startDate} ~ {data.leaveRequest.endDate}</div></div>
-            <div><div className="text-[0.625rem] font-mono text-slate-600">상태</div><div><LeaveStatusBadge status={data.leaveRequest.status} /></div></div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div><div className="text-[0.625rem] font-mono text-ink-faint">신청자</div><div className="font-bold">{data.worker.name} ({data.worker.employeeNo ?? '—'})</div></div>
+            <div><div className="text-[0.625rem] font-mono text-ink-faint">유형</div><div className="font-bold">{LEAVE_TYPE_LABEL[data.leaveRequest.requestType] ?? data.leaveRequest.requestType}</div></div>
+            <div><div className="text-[0.625rem] font-mono text-ink-faint">기간</div><div className="font-mono">{data.leaveRequest.startDate} ~ {data.leaveRequest.endDate}</div></div>
+            <div><div className="text-[0.625rem] font-mono text-ink-faint">상태</div><div><LeaveStatusBadge status={data.leaveRequest.status} /></div></div>
           </div>
 
           <ApprovalBlock title="1차 결재" approval={data.firstApproval ?? null} pendingLabel="1차 결재 대기" />
@@ -2272,8 +2272,8 @@ function ApprovalBlock({ title, approval, pendingLabel, badge }: {
   if (!approval) {
     return (
       <div className="border-t border-line pt-3">
-        <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">{title}</div>
-        <div className="text-amber-700 bg-amber-50 border border-amber-300 rounded px-3 py-2 text-xs font-bold">
+        <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">{title}</div>
+        <div className="text-amber-700 bg-amber-50 border border-amber-300 rounded px-3 py-2 text-sm font-bold">
           ⏳ {pendingLabel}
         </div>
       </div>
@@ -2282,19 +2282,19 @@ function ApprovalBlock({ title, approval, pendingLabel, badge }: {
   return (
     <div className="border-t border-line pt-3">
       <div className="flex items-center gap-2 mb-1">
-        <div className="text-[0.625rem] font-mono font-extrabold text-slate-600">{title}</div>
+        <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint">{title}</div>
         {badge && <span className="text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border bg-purple-100 text-purple-700 border-purple-300">{badge}</span>}
       </div>
-      <div className="font-bold text-sm">{approval.actorName} <span className="text-[0.625rem] font-mono text-slate-600">({approval.actorRole})</span></div>
+      <div className="font-bold text-sm">{approval.actorName} <span className="text-[0.625rem] font-mono text-ink-faint">({approval.actorRole})</span></div>
       {approval.delegatedFromName && (
         <div className="mt-1 text-[0.6875rem] font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1">
           ⚖ 대결 — 원 결재자: {approval.delegatedFromName} ({approval.delegatedFromRole})
         </div>
       )}
-      <div className="font-mono text-[0.6875rem] text-slate-600 mt-0.5">{new Date(approval.signedAt).toLocaleString('ko-KR')}</div>
-      <div className="font-mono text-[0.625rem] text-slate-600">IP: {approval.ipAddress ?? '—'}</div>
+      <div className="font-mono text-[0.6875rem] text-ink-faint mt-0.5">{new Date(approval.signedAt).toLocaleString('ko-KR')}</div>
+      <div className="font-mono text-[0.625rem] text-ink-faint">IP: {approval.ipAddress ?? '—'}</div>
       <div className="font-mono text-[0.625rem] text-emerald-700 mt-1">ref: {approval.signatureRef}</div>
-      {approval.comment && <div className="text-[0.6875rem] text-slate-700 italic mt-1">"{approval.comment}"</div>}
+      {approval.comment && <div className="text-[0.6875rem] text-ink-muted italic mt-1">"{approval.comment}"</div>}
       {approval.signatureUrl && (
         <div className="border-2 border-accent rounded-lg p-2 bg-white flex items-center justify-center mt-2" style={{ minHeight: 100 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2367,7 +2367,7 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
           </select>
         </Field>
 
-        <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">직무</div>
+        <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest">직무</div>
         <Field label="직책">
           <select value={form.positionCode} onChange={(e) => setForm({ ...form, positionCode: e.target.value })}
             className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm">
@@ -2423,7 +2423,7 @@ function CreateUserModal({ onClose, canPickContractor, positions, departments, s
         <Field label="입사일"><Input type="date" value={form.hireDate} onChange={(v) => setForm({ ...form, hireDate: v })} /></Field>
         <Field label="주소" colSpan={2}><Input value={form.address} onChange={(v) => setForm({ ...form, address: v })} /></Field>
 
-        <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest">자료 등록 (선택)</div>
+        <div className="col-span-2 mt-2 text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest">자료 등록 (선택)</div>
         <Field label="프로필 사진" colSpan={2}>
           <ProfilePhotoUploader onChange={setPhoto} size={64} />
           {photo && (
@@ -2471,9 +2471,9 @@ function GrantLeaveModal({ user, year, onClose }: { user: UserRow; year: number;
 
   return (
     <Modal title={`${user.name} - 연차 부여 (${year}년)`} onClose={onClose}>
-      <div className="px-3 py-2 mb-3 rounded bg-accent-soft border border-accent text-xs font-bold text-accent">
+      <div className="px-3 py-2 mb-3 rounded bg-accent-soft border border-accent text-sm font-bold text-accent">
         근속 {user.tenureYears}년 → 권장 부여일수: <span className="text-base">{user.recommendDays}일</span>
-        <div className="text-[0.625rem] font-mono text-slate-600 mt-1">{user.recommendRule}</div>
+        <div className="text-[0.625rem] font-mono text-ink-faint mt-1">{user.recommendRule}</div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="대상 연도"><Input type="number" value={String(form.year)} onChange={(v) => setForm({ ...form, year: Number(v) })} /></Field>
@@ -2556,7 +2556,7 @@ function BulkGrantModal({ year, onClose }: { year: number; onClose: () => void }
         )}
 
         <div className="border border-line rounded p-3 bg-slate-50 space-y-2">
-          <label className="flex items-center gap-2 text-xs font-bold">
+          <label className="flex items-center gap-2 text-sm font-bold">
             <input type="checkbox" checked={form.useRecommend} onChange={(e) => setForm({ ...form, useRecommend: e.target.checked })} />
             권장 일수 자동 적용 (입사일 기반 근로기준법 §60)
           </label>
@@ -2575,7 +2575,7 @@ function BulkGrantModal({ year, onClose }: { year: number; onClose: () => void }
           <Input value={form.note} onChange={(v) => setForm({ ...form, note: v })} placeholder="예: 2026년 정기 부여" />
         </Field>
 
-        <label className="flex items-center gap-2 text-xs font-bold text-amber-700">
+        <label className="flex items-center gap-2 text-sm font-bold text-amber-700">
           <input type="checkbox" checked={form.overwrite} onChange={(e) => setForm({ ...form, overwrite: e.target.checked })} />
           ⚠ 기존 부여를 덮어쓰기 (overwrite)
         </label>
@@ -2609,8 +2609,8 @@ function BulkGrantModal({ year, onClose }: { year: number; onClose: () => void }
 function ModeBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick}
-      className={`flex-1 px-3 py-2 rounded text-xs font-extrabold border-2 transition ${
-        active ? 'bg-accent text-white border-accent' : 'bg-white text-slate-600 border-line hover:border-accent'
+      className={`flex-1 px-3 py-2 rounded text-sm font-extrabold border-2 transition ${
+        active ? 'bg-accent text-white border-accent' : 'bg-white text-ink-faint border-line hover:border-accent'
       }`}
     >{children}</button>
   );
@@ -2675,7 +2675,7 @@ function CreateLeaveRequestModal({ user, onClose }: { user: UserRow; onClose: ()
         <Field label={isHalf ? '종료일 (반차 = 시작일과 동일)' : '종료일'}>
           <Input type="date" value={form.endDate} onChange={(v) => setForm({ ...form, endDate: v })} />
         </Field>
-        <div className="col-span-2 px-3 py-2 rounded text-xs font-bold bg-accent-soft border border-accent text-accent">
+        <div className="col-span-2 px-3 py-2 rounded text-sm font-bold bg-accent-soft border border-accent text-accent">
           요청 일수: <span className="font-mono font-extrabold">{days}일</span>
           {isHalf && ' (반차 0.5일)'}
         </div>
@@ -2731,18 +2731,18 @@ function LeaveNotifyModal({ year, onClose }: { year: number; onClose: () => void
 
   return (
     <Modal title={`잔여 0 알림 (${year}년)`} onClose={onClose}>
-      {candidates === null && <div className="text-center text-slate-500 py-6 text-sm">대상 조회 중…</div>}
+      {candidates === null && <div className="text-center text-ink-faint py-6 text-sm">대상 조회 중…</div>}
       {candidates && candidates.length === 0 && (
         <div className="text-center text-emerald-600 py-6 text-sm font-bold">대상 워커가 없습니다 (모두 잔여 보유).</div>
       )}
       {candidates && candidates.length > 0 && (
         <>
-          <div className="text-xs font-bold text-ink-muted mb-2">
+          <div className="text-sm font-bold text-ink-muted mb-2">
             대상 {candidates.length}명 · 발송 가능(전화번호 등록) {candidates.filter((c) => c.phone).length}명
           </div>
           <div className="border border-line rounded max-h-[260px] overflow-auto mb-3">
-            <table className="w-full min-w-[560px] text-xs">
-              <thead className="bg-slate-100 text-[0.625rem] font-mono font-extrabold text-slate-600">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-slate-100 text-[0.625rem] font-mono font-extrabold text-ink-faint">
                 <tr>
                   <th className="px-2 py-1.5 text-center w-8"><input type="checkbox"
                     checked={selectedIds.size === candidates.filter((c) => c.phone).length}
@@ -2758,7 +2758,7 @@ function LeaveNotifyModal({ year, onClose }: { year: number; onClose: () => void
               </thead>
               <tbody className="divide-y divide-line">
                 {candidates.map((c) => (
-                  <tr key={c.id} className={!c.phone ? 'bg-red-50 text-slate-600' : ''}>
+                  <tr key={c.id} className={!c.phone ? 'bg-red-50 text-ink-faint' : ''}>
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" disabled={!c.phone}
                         checked={selectedIds.has(c.id)}
@@ -2816,7 +2816,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="bg-white rounded-lg shadow-xl w-[680px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-line flex items-center">
           <h3 className="font-extrabold text-ink">{title}</h3>
-          <button onClick={onClose} className="ml-auto text-slate-500 hover:text-ink text-xl">×</button>
+          <button onClick={onClose} className="ml-auto text-ink-faint hover:text-ink text-xl">×</button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -2827,18 +2827,18 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 function Section({ title, children, colSpan }: { title: string; children: React.ReactNode; colSpan?: number }) {
   return (
     <div className={`col-span-${colSpan ?? 1}`}>
-      <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 uppercase tracking-widest mb-2">{title}</div>
+      <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint uppercase tracking-widest mb-2">{title}</div>
       <div className="grid grid-cols-2 gap-3">{children}</div>
     </div>
   );
 }
 
 function Field({ label, children, colSpan }: { label?: string; children: React.ReactNode; colSpan?: number }) {
-  /* 사용자 요청 2026-04-29: 필드명 폰트 1단계 업 (text-[0.625rem] → text-xs 12px).
+  /* 사용자 요청 2026-04-29: 필드명 폰트 1단계 업 (text-[0.625rem] → text-sm 12px).
      canvas/file input은 <label> 내부에서 click forwarding 깨짐 → <div> 유지. */
   return (
     <div className={`block ${colSpan === 2 ? 'col-span-2' : ''}`}>
-      {label && <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">{label}</div>}
+      {label && <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">{label}</div>}
       {children}
     </div>
   );
@@ -2858,7 +2858,7 @@ function Input({ value, onChange, type = 'text', placeholder, disabled }: {
       inputMode={isTel ? 'numeric' : undefined}
       maxLength={isTel ? 13 : undefined}
       onChange={(e) => onChange(isTel ? formatKoreanPhone(e.target.value) : e.target.value)}
-      className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50 disabled:text-slate-600"
+      className="w-full px-3 py-1.5 rounded border border-line bg-white text-sm disabled:bg-slate-50 disabled:text-ink-faint"
     />
   );
 }
@@ -2890,7 +2890,7 @@ function SummaryCard({ title, value, unit, tone = 'default' }: { title: string; 
 function Stat({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
   /* 사용자 요청 2026-04-29: 라벨(부여/사용/잔여) 글자 진하게 — font-extrabold + text-ink-mid 추가. */
   const colors: Record<string, string> = {
-    default: 'text-slate-600',
+    default: 'text-ink-faint',
     accent: 'text-accent',
     success: 'text-emerald-600',
     warning: 'text-amber-600',
@@ -2942,7 +2942,7 @@ function RoleBadge({ role }: { role: string }) {
     MUNI_ADMIN: 'bg-blue-100 text-blue-700 border-blue-300',
     CONTRACTOR_ADMIN: 'bg-emerald-100 text-emerald-700 border-emerald-300',
     INTERNAL_ADMIN: 'bg-cyan-100 text-cyan-700 border-cyan-300',
-    WORKER: 'bg-slate-100 text-slate-600 border-slate-300',
+    WORKER: 'bg-slate-100 text-ink-faint border-slate-300',
   };
   return <span className={`text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[role] ?? colors.WORKER}`}>{ROLE_LABEL[role] ?? role}</span>;
 }
@@ -2950,7 +2950,7 @@ function RoleBadge({ role }: { role: string }) {
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     ACTIVE: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-    INACTIVE: 'bg-slate-200 text-slate-600 border-slate-400',
+    INACTIVE: 'bg-slate-200 text-ink-faint border-slate-400',
     PENDING: 'bg-amber-100 text-amber-700 border-amber-300',
   };
   return <span className={`text-[0.5625rem] font-mono font-extrabold px-1.5 py-0.5 rounded border ${colors[status] ?? colors.PENDING}`}>{STATUS_LABEL[status] ?? status}</span>;
@@ -2958,7 +2958,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function LeaveStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    PENDING: 'bg-slate-200 text-slate-800 border-slate-400',
+    PENDING: 'bg-slate-200 text-ink-muted border-slate-400',
     IN_REVIEW: 'bg-amber-200 text-amber-900 border-amber-500',
     APPROVED: 'bg-emerald-200 text-emerald-900 border-emerald-600',
     REJECTED: 'bg-red-200 text-red-900 border-red-500',

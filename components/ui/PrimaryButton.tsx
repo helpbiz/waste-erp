@@ -22,7 +22,7 @@ const VARIANT_STYLES: Record<Variant, string> = {
   primary: 'bg-accent text-white active:bg-cyan-700 shadow-md',
   danger: 'bg-red-600 text-white active:bg-red-700 shadow-md',
   success: 'bg-green-600 text-white active:bg-green-700 shadow-md',
-  secondary: 'bg-slate-100 text-slate-900 active:bg-slate-200 border border-slate-200',
+  secondary: 'bg-slate-100 text-ink-muted active:bg-slate-200 border border-slate-200',
 };
 
 export const PrimaryButton = forwardRef<HTMLButtonElement, Props>(function PrimaryButton(

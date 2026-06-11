@@ -148,7 +148,7 @@ export default function PayrollClient({
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-ink tracking-tight">인건비 정산</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">월마감 · 급여명세 발송</p>
+          <p className="text-sm font-bold text-ink-muted mt-1">월마감 · 급여명세 발송</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => navigateMonth(-1)} className="px-3 py-2 rounded-md border border-line text-ink hover:bg-surface-soft text-sm font-extrabold">←</button>
@@ -183,15 +183,15 @@ export default function PayrollClient({
 
         <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-line">
           {allFinalized ? (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-green-100 text-success border border-green-200">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border border-green-200">
               🔒 전체 마감 완료
             </span>
           ) : noneFinalized ? (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-amber-100 text-warn border border-amber-200">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-amber-100 text-warn border border-amber-200">
               미마감 ({rows.length}명)
             </span>
           ) : (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
               부분 마감 ({finalizedCount}/{rows.length})
             </span>
           )}
@@ -217,10 +217,10 @@ export default function PayrollClient({
         </div>
 
         {error && (
-          <div className="mt-3 bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>
+          <div className="mt-3 bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>
         )}
         {info && (
-          <div className="mt-3 bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">{info}</div>
+          <div className="mt-3 bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">{info}</div>
         )}
       </section>
 
@@ -231,7 +231,7 @@ export default function PayrollClient({
           <thead>
             <tr>
               {['근로자', '근무일', '총시간', '연장', '야간', '휴일', '결근', '잠금', '액션'].map((h) => (
-                <th key={h} className="text-left px-3 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
+                <th key={h} className="text-left px-3 py-2.5 text-sm font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -271,7 +271,7 @@ export default function PayrollClient({
                       <button
                         onClick={() => finalize([r.workerId])}
                         disabled={busy}
-                        className="text-xs font-extrabold text-accent hover:underline disabled:opacity-50"
+                        className="text-sm font-extrabold text-accent hover:underline disabled:opacity-50"
                       >
                         개별 마감
                       </button>
@@ -280,7 +280,7 @@ export default function PayrollClient({
                       <button
                         onClick={() => unlockOne(r.workerId, r.workerName)}
                         disabled={busy}
-                        className="text-xs font-extrabold text-danger hover:underline disabled:opacity-50"
+                        className="text-sm font-extrabold text-danger hover:underline disabled:opacity-50"
                       >
                         해제
                       </button>
@@ -300,12 +300,12 @@ export default function PayrollClient({
       </section>
 
       {partial && (
-        <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
+        <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed">
           <strong className="font-extrabold">부분 마감 상태</strong> · 일부 근로자만 마감되어 있습니다. 정산 일관성을 위해 가능한 한 모두 함께 마감해 주세요.
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold leading-relaxed">
+      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-sm text-info font-semibold leading-relaxed">
         <strong className="font-extrabold">가산임금 자동 계산 활성</strong> · 출퇴근 시각 기반으로 야간근로를 자동 집계합니다. 연장/야간/휴일 기준시간은 <button className="underline font-extrabold" onClick={() => setTab('policy')}>⚙️ 급여 정책</button> 탭에서 변경하세요.
       </div>
       </>)}

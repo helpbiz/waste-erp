@@ -25,7 +25,7 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   NEW:       { label: '신규',     cls: 'bg-blue-100 text-blue-800' },
   REVIEWING: { label: '검토 중',  cls: 'bg-amber-100 text-amber-900' },
   ANSWERED:  { label: '답변 완료', cls: 'bg-emerald-100 text-emerald-800' },
-  ARCHIVED:  { label: '보관',     cls: 'bg-slate-100 text-slate-700' },
+  ARCHIVED:  { label: '보관',     cls: 'bg-slate-100 text-ink-muted' },
 };
 
 type Item = {
@@ -86,7 +86,7 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
       <header className="flex items-end justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-lg md:text-xl font-black text-ink">작업자 익명 건의함</h1>
-          <p className="text-xs text-ink-muted mt-0.5">
+          <p className="text-sm text-ink-muted mt-0.5">
             🔒 작성자 식별 정보(userId/IP/UA)는 저장되지 않습니다. 부서 인원 3명 미만은 마스킹.
           </p>
         </div>
@@ -105,10 +105,10 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
 
       {stats && stats.byCategory.length > 0 && (
         <section className="bg-surface border border-line rounded-lg p-3">
-          <h2 className="text-xs font-extrabold text-ink mb-2">카테고리별</h2>
+          <h2 className="text-sm font-extrabold text-ink mb-2">카테고리별</h2>
           <div className="space-y-1">
             {stats.byCategory.map((c) => (
-              <div key={c.category} className="flex items-center gap-2 text-xs">
+              <div key={c.category} className="flex items-center gap-2 text-sm">
                 <span className="w-20 font-bold">{CAT_LABEL[c.category as Cat] ?? c.category}</span>
                 <span className="text-ink-muted">{c.count}건</span>
                 <SatBar score={c.avgSatisfaction} />
@@ -121,12 +121,12 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
 
       {stats && stats.byDepartment.length > 0 && (
         <section className="bg-surface border border-line rounded-lg p-3">
-          <h2 className="text-xs font-extrabold text-ink mb-2">
+          <h2 className="text-sm font-extrabold text-ink mb-2">
             부서별 만족도 <span className="text-ink-muted font-normal">(낮은 순 — 즉시 개입 우선순위)</span>
           </h2>
           <div className="space-y-1">
             {stats.byDepartment.map((d) => (
-              <div key={`${d.contractorId}-${d.departmentId}`} className="flex items-center gap-2 text-xs">
+              <div key={`${d.contractorId}-${d.departmentId}`} className="flex items-center gap-2 text-sm">
                 <span className="w-32 font-bold truncate">
                   {d.masked ? <span className="text-ink-muted">[마스킹: 인원 &lt; 3]</span> : (d.departmentName ?? '미분류')}
                 </span>
@@ -154,9 +154,9 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
 
       {/* 목록 */}
       {loading ? (
-        <div className="text-center text-xs text-ink-muted py-8">불러오는 중…</div>
+        <div className="text-center text-sm text-ink-muted py-8">불러오는 중…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center text-xs text-ink-muted py-12 bg-surface-soft rounded-lg">조건에 맞는 건의가 없습니다.</div>
+        <div className="text-center text-sm text-ink-muted py-12 bg-surface-soft rounded-lg">조건에 맞는 건의가 없습니다.</div>
       ) : (
         <div className="space-y-2">
           {filtered.map((it) => (
@@ -240,7 +240,7 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
   return (
     <article className="bg-surface rounded-xl border border-line p-3 shadow-sm">
       <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-        <span className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold bg-slate-100 text-slate-800 border border-slate-200">
+        <span className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold bg-slate-100 text-ink-muted border border-slate-200">
           {CAT_LABEL[item.category] ?? item.category}
         </span>
         <span className="text-[0.625rem] font-bold text-ink-muted">만족도 {item.satisfactionScore}/5</span>
@@ -271,7 +271,7 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
               <div className="text-[0.625rem] font-extrabold text-emerald-900 mb-1">
                 💬 {r.replierName} ({r.replierRole}) · {new Date(r.createdAt).toLocaleString('ko-KR')}
               </div>
-              <p className="text-xs text-emerald-900 whitespace-pre-wrap leading-relaxed">{r.content}</p>
+              <p className="text-sm text-emerald-900 whitespace-pre-wrap leading-relaxed">{r.content}</p>
             </div>
           ))}
         </div>
@@ -285,7 +285,7 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
               검토 중으로
             </button>
             <button disabled={busy || item.status === 'ARCHIVED'} onClick={() => changeStatus('ARCHIVED')}
-              className="px-2.5 py-1 rounded text-[0.6875rem] font-extrabold bg-slate-100 text-slate-700 border border-slate-200 disabled:opacity-50">
+              className="px-2.5 py-1 rounded text-[0.6875rem] font-extrabold bg-slate-100 text-ink-muted border border-slate-200 disabled:opacity-50">
               보관
             </button>
           </div>
@@ -296,10 +296,10 @@ function AdminCard({ item, canMutate, onChanged, onReplied }: { item: Item; canM
               rows={2}
               maxLength={4000}
               placeholder="공식 답변 (작성자 외 회사 전체에 공개됩니다)"
-              className="flex-1 text-xs border border-line rounded-md p-2 focus:border-indigo-500 focus:outline-none"
+              className="flex-1 text-sm border border-line rounded-md p-2 focus:border-indigo-500 focus:outline-none"
             />
             <button onClick={submitReply} disabled={busy}
-              className="px-3 py-2 rounded-md bg-indigo-600 text-white text-xs font-extrabold disabled:opacity-50">
+              className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm font-extrabold disabled:opacity-50">
               답변 등록
             </button>
           </div>

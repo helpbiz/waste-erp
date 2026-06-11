@@ -95,14 +95,14 @@ export default function AttendanceClient({
           <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5">
             <button
               onClick={() => router.push(`/attendance?date=${selectedDate}`)}
-              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
                 !selectedContractorId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
               }`}
             >전체 업체</button>
             {contractorOpts.map((c) => (
               <button key={c.id}
                 onClick={() => router.push(`/attendance?date=${selectedDate}&contractorId=${c.id}`)}
-                className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+                className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
                   selectedContractorId === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
                 }`}
               >{c.name}</button>
@@ -115,11 +115,11 @@ export default function AttendanceClient({
             aria-label="기준일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold w-[200px]" />
           <button onClick={() => changeDate(todayStr)}
-            className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 shrink-0">오늘</button>
+            className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold hover:bg-slate-50 shrink-0">오늘</button>
           <button
             onClick={handleExportExcel}
             disabled={exporting}
-            className="px-3 py-1.5 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50 flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold hover:bg-slate-50 flex items-center gap-1 disabled:opacity-50"
           >
             <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -133,7 +133,7 @@ export default function AttendanceClient({
               </span>
               <button
                 onClick={() => { router.refresh(); setLastRefresh(new Date()); }}
-                className="px-2.5 py-1 rounded border border-line bg-white text-xs font-bold hover:bg-slate-50"
+                className="px-2.5 py-1 rounded border border-line bg-white text-sm font-bold hover:bg-slate-50"
               >
                 새로고침
               </button>
@@ -168,7 +168,7 @@ export default function AttendanceClient({
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="근태 일별 현황 표">
         <table className="w-full min-w-[640px] text-sm">
           {/* 사용자 요청 2026-04-29: 직원/출근/퇴근/상태만 표시 (부서/직책/유형/구역 컬럼 제거) */}
-          <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
+          <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2 text-left">직원</th>
               <th className="px-3 py-2 text-left">출근</th>
@@ -179,7 +179,7 @@ export default function AttendanceClient({
           </thead>
           <tbody className="divide-y divide-line">
             {rows.length === 0 && (
-              <tr><td colSpan={canManage ? 5 : 4} className="px-3 py-10 text-center text-slate-500">근로자가 없습니다.</td></tr>
+              <tr><td colSpan={canManage ? 5 : 4} className="px-3 py-10 text-center text-ink-faint">근로자가 없습니다.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.workerId} className={`hover:bg-slate-50 ${!r.checkInTime ? 'bg-amber-50/30' : ''}`}>
@@ -190,7 +190,7 @@ export default function AttendanceClient({
                   {r.checkInTime ? <span className="text-emerald-700">{fmtTime(r.checkInTime)}</span> : <span className="text-amber-600">—</span>}
                 </td>
                 <td className="px-3 py-2 font-mono font-extrabold text-base">
-                  {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-slate-500">—</span>}
+                  {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-ink-faint">—</span>}
                 </td>
                 <td className="px-3 py-2">
                   {r.status ? (
@@ -200,7 +200,7 @@ export default function AttendanceClient({
                       r.status === 'ADJUSTED' ? 'bg-blue-200 text-blue-900 border-blue-500' :
                       'bg-amber-200 text-amber-900 border-amber-500'
                     }`}>{STATUS_LABEL[r.status]}</span>
-                  ) : <span className="text-sm font-mono text-slate-500">미기록</span>}
+                  ) : <span className="text-sm font-mono text-ink-faint">미기록</span>}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2">
@@ -208,7 +208,7 @@ export default function AttendanceClient({
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => { setEditing(r); setEditingInitTab('adjust'); }}
-                          className="px-3 py-1.5 rounded-md text-xs font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
+                          className="px-3 py-1.5 rounded-md text-sm font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
                         >
                           조정/반려
                         </button>
@@ -216,14 +216,14 @@ export default function AttendanceClient({
                           <button
                             onClick={() => { setEditing(r); setEditingInitTab('history'); }}
                             title="정정 이력 조회"
-                            className="px-2 py-1.5 rounded-md text-xs font-extrabold border-2 border-slate-300 text-slate-600 hover:bg-slate-100 transition active:scale-95"
+                            className="px-2 py-1.5 rounded-md text-sm font-extrabold border-2 border-slate-300 text-ink-faint hover:bg-slate-100 transition active:scale-95"
                           >
                             이력
                           </button>
                         )}
                       </div>
                     ) : (
-                      <span className="text-[0.625rem] font-mono text-slate-400">출근 전</span>
+                      <span className="text-[0.625rem] font-mono text-ink-faint">출근 전</span>
                     )}
                   </td>
                 )}
@@ -288,7 +288,7 @@ function HistoryCard({ entry, index }: { entry: AdjustHistoryEntry; index: numbe
       <div className="text-sm font-bold text-ink bg-amber-50 border border-amber-200 rounded px-3 py-2">
         사유: {entry.reason}
       </div>
-      <div className="text-xs font-mono text-ink-muted space-y-0.5">
+      <div className="text-sm font-mono text-ink-muted space-y-0.5">
         <div>출근: {fmt(entry.original.checkIn)} → {fmt(entry.adjusted.checkIn)}</div>
         <div>퇴근: {fmt(entry.original.checkOut)} → {fmt(entry.adjusted.checkOut)}</div>
       </div>
@@ -438,7 +438,7 @@ function AdjustModal({
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`px-4 py-2 text-xs font-extrabold border-b-2 transition-colors ${
+                  className={`px-4 py-2 text-sm font-extrabold border-b-2 transition-colors ${
                     tab === t
                       ? 'border-accent text-accent bg-white'
                       : 'border-transparent text-ink-muted hover:text-ink'
@@ -485,7 +485,7 @@ function AdjustModal({
 
             {shiftComplete && (
               <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5 space-y-1.5">
-                <div className="text-xs font-extrabold text-amber-800">야간 2교대 재출근 활성화</div>
+                <div className="text-sm font-extrabold text-amber-800">야간 2교대 재출근 활성화</div>
                 <div className="text-[0.6875rem] text-amber-700 leading-relaxed">
                   오전 교대 근무({isoToHm(row.checkInTime)}~{isoToHm(row.checkOutTime)})가 완료된 상태입니다.
                   같은 날 야간 교대 출근이 필요한 경우 아래 버튼을 클릭하면 근로자의 출근 등록이 다시 활성화됩니다.
@@ -495,7 +495,7 @@ function AdjustModal({
                   type="button"
                   onClick={() => setConfirmNightReset(true)}
                   disabled={busy}
-                  className="w-full py-2 rounded-md bg-amber-500 text-white text-xs font-extrabold hover:bg-amber-600 disabled:opacity-50"
+                  className="w-full py-2 rounded-md bg-amber-500 text-white text-sm font-extrabold hover:bg-amber-600 disabled:opacity-50"
                 >
                   야간 재출근 활성화
                 </button>
@@ -536,7 +536,7 @@ function AdjustModal({
               {!historyLoading && history && (
                 <>
                   {/* 체인 무결성 */}
-                  <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-extrabold ${
+                  <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-extrabold ${
                     history.chainOk
                       ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
                       : 'bg-red-50 border border-red-300 text-red-800'
@@ -611,7 +611,7 @@ function KpiCard({
     <>
       <div className="text-[0.8125rem] font-extrabold tracking-tight flex items-center gap-1">
         {label}
-        {onClick && <span aria-hidden className="text-xs">›</span>}
+        {onClick && <span aria-hidden className="text-sm">›</span>}
       </div>
       <div className="font-black mt-1"><span className="text-3xl">{value}</span> <span className="text-sm font-bold">{unit}</span></div>
     </>
@@ -735,7 +735,7 @@ function _PendingApprovalModal_REMOVED({
               </div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase tracking-wider">
+                <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase tracking-wider">
                   <tr>
                     <th className="px-3 py-2 text-left">직원</th>
                     <th className="px-3 py-2 text-left">출근</th>
@@ -752,21 +752,21 @@ function _PendingApprovalModal_REMOVED({
                         {r.checkInTime ? <span className="text-emerald-700">{fmtTime(r.checkInTime)}</span> : <span className="text-amber-600">—</span>}
                       </td>
                       <td className="px-3 py-2 font-mono font-extrabold">
-                        {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-slate-500">—</span>}
+                        {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-ink-faint">—</span>}
                       </td>
-                      <td className="px-3 py-2 text-xs font-bold">{r.workType ? WORK_TYPE_LABEL[r.workType] ?? r.workType : '—'}</td>
+                      <td className="px-3 py-2 text-sm font-bold">{r.workType ? WORK_TYPE_LABEL[r.workType] ?? r.workType : '—'}</td>
                       <td className="px-3 py-2">
                         <div className="flex justify-end gap-1.5 flex-wrap">
                           <button onClick={() => approve(r)} disabled={busyId === r.recordId}
-                            className="px-2.5 py-1 rounded text-xs font-extrabold border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-500 hover:text-white disabled:opacity-50 transition-colors">
+                            className="px-2.5 py-1 rounded text-sm font-extrabold border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-500 hover:text-white disabled:opacity-50 transition-colors">
                             {busyId === r.recordId ? '…' : '승인'}
                           </button>
                           <button onClick={() => { setRejectReason(''); setConfirmReject(r); }} disabled={busyId === r.recordId}
-                            className="px-2.5 py-1 rounded text-xs font-extrabold border-2 border-danger text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-colors">
+                            className="px-2.5 py-1 rounded text-sm font-extrabold border-2 border-danger text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-colors">
                             반려
                           </button>
                           <button onClick={() => onAdjust(r)} disabled={busyId === r.recordId}
-                            className="px-2.5 py-1 rounded text-xs font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white disabled:opacity-50 transition-colors">
+                            className="px-2.5 py-1 rounded text-sm font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white disabled:opacity-50 transition-colors">
                             조정
                           </button>
                         </div>
@@ -850,11 +850,11 @@ function AdminPunchWidget({ selfRecord, onSuccess }: { selfRecord: SelfRecord; o
     <div className="bg-surface border border-line rounded-xl px-4 py-3 shadow-card flex flex-wrap items-center gap-3">
       <div className="text-sm font-extrabold text-ink shrink-0">관리자 본인 출퇴근</div>
       <div className="flex items-center gap-2 text-sm font-mono font-bold">
-        <span className="text-slate-500">출근</span>
+        <span className="text-ink-faint">출근</span>
         <span className={checkInTime ? 'text-emerald-700' : 'text-amber-600'}>{checkInTime ?? '—'}</span>
-        <span className="text-slate-400 mx-1">·</span>
-        <span className="text-slate-500">퇴근</span>
-        <span className={checkOutTime ? 'text-accent' : 'text-slate-500'}>{checkOutTime ?? '—'}</span>
+        <span className="text-ink-faint mx-1">·</span>
+        <span className="text-ink-faint">퇴근</span>
+        <span className={checkOutTime ? 'text-accent' : 'text-ink-faint'}>{checkOutTime ?? '—'}</span>
       </div>
       <div className="flex gap-2 ml-auto">
         {!selfRecord?.checkInTime && (
@@ -870,10 +870,10 @@ function AdminPunchWidget({ selfRecord, onSuccess }: { selfRecord: SelfRecord; o
           </button>
         )}
         {selfRecord?.checkInTime && selfRecord?.checkOutTime && (
-          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold border border-slate-300">퇴근 완료</span>
+          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-ink-faint text-sm font-extrabold border border-slate-300">퇴근 완료</span>
         )}
       </div>
-      {error && <div className="w-full text-xs font-bold text-red-700">{error}</div>}
+      {error && <div className="w-full text-sm font-bold text-red-700">{error}</div>}
     </div>
   );
 }

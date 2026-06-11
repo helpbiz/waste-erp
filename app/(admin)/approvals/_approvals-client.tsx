@@ -59,7 +59,7 @@ const STATUS_COLOR: Record<string, string> = {
   REJECTED:  'bg-red-50 text-red-700 border-red-300',
   SUBMITTED: 'bg-cyan-50 text-cyan-700 border-cyan-300',
   REVIEWED:  'bg-green-50 text-green-700 border-green-300',
-  DISMISSED: 'bg-slate-100 text-slate-600 border-slate-300',
+  DISMISSED: 'bg-slate-100 text-ink-faint border-slate-300',
 };
 
 /* 개인별 결재 모달에서 어떤 action을 할 수 있는지 */
@@ -184,7 +184,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-black text-ink">결재 관리</h2>
-        <p className="text-xs font-bold text-ink-muted mt-1">휴가 신청 · 근태 조정 · 운행일지 · 안전보고서 결재 통합 관리</p>
+        <p className="text-sm font-bold text-ink-muted mt-1">휴가 신청 · 근태 조정 · 운행일지 · 안전보고서 결재 통합 관리</p>
       </div>
 
       {/* 탭 + 검색 */}
@@ -194,7 +194,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-4 py-2 text-xs font-extrabold transition-colors ${
+              className={`px-4 py-2 text-sm font-extrabold transition-colors ${
                 tab === t.key
                   ? 'bg-accent text-white'
                   : 'text-ink-muted hover:bg-surface'
@@ -210,7 +210,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
           placeholder="이름으로 검색…"
           className="flex-1 min-w-[140px] max-w-[240px] px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent"
         />
-        <span className="text-xs font-mono text-ink-muted ml-auto">{items.length}건</span>
+        <span className="text-sm font-mono text-ink-muted ml-auto">{items.length}건</span>
       </div>
 
       {/* 목록 */}
@@ -225,7 +225,7 @@ export default function ApprovalsClient({ role }: { role: string }) {
           {/* 일괄승인 바 — 결재대기 탭 + 승인 가능 항목 있을 때 */}
           {tab === 'pending' && approvableItems.length > 0 && (
             <div className="bg-accent/5 border border-accent/30 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
-              <span className="text-xs font-extrabold text-accent">
+              <span className="text-sm font-extrabold text-accent">
                 일괄승인 {checkedIds.size > 0 ? `${checkedIds.size}건 선택` : `(${approvableItems.length}건 가능)`}
               </span>
               {items.some((i) => checkedIds.has(`${i.kind}-${i.id}`) && i.kind === 'safety') && (
@@ -233,14 +233,14 @@ export default function ApprovalsClient({ role }: { role: string }) {
                   value={bulkNote}
                   onChange={(e) => setBulkNote(e.target.value)}
                   placeholder="안전보고서 검토 의견 (2자 이상 필수)"
-                  className="flex-1 min-w-[200px] px-3 py-1.5 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent"
+                  className="flex-1 min-w-[200px] px-3 py-1.5 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent"
                 />
               )}
-              {bulkError && <span className="text-xs font-bold text-danger">{bulkError}</span>}
+              {bulkError && <span className="text-sm font-bold text-danger">{bulkError}</span>}
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy || checkedIds.size === 0}
-                className="ml-auto px-4 py-1.5 rounded-lg bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 disabled:opacity-50"
+                className="ml-auto px-4 py-1.5 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50"
               >
                 {bulkBusy ? '처리 중…' : `선택 ${checkedIds.size}건 일괄승인`}
               </button>
@@ -306,17 +306,17 @@ export default function ApprovalsClient({ role }: { role: string }) {
                         {item.detail && <div className="text-[0.6875rem] text-ink-muted font-bold mt-0.5 truncate max-w-[280px]">{item.detail}</div>}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[0.625rem] font-extrabold border ${STATUS_COLOR[item.status] ?? 'bg-slate-100 text-slate-600 border-slate-300'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[0.625rem] font-extrabold border ${STATUS_COLOR[item.status] ?? 'bg-slate-100 text-ink-faint border-slate-300'}`}>
                           {STATUS_LABEL[item.status] ?? item.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted font-bold whitespace-nowrap">
+                      <td className="px-4 py-2.5 font-mono text-sm text-ink-muted font-bold whitespace-nowrap">
                         {fmtKst(item.createdAt)}
                       </td>
                       <td className="px-4 py-2.5">
                         <button
                           onClick={() => setSelected(item)}
-                          className="px-2.5 py-1 rounded text-xs font-extrabold border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
+                          className="px-2.5 py-1 rounded text-sm font-extrabold border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
                         >
                           {actions.approve || actions.reject ? '결재' : '상세'}
                         </button>
@@ -478,7 +478,7 @@ function ApprovalDetailModal({
             <div className="space-y-2">
               {/* 주행/연료 요약 */}
               {(item.startMileage != null || item.fuelUsed != null || item.tripCount != null) && (
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-sm">
                   {item.startMileage != null && item.endMileage != null && (
                     <div className="bg-slate-50 border border-line rounded px-2 py-1.5">
                       <div className="text-[0.625rem] font-bold text-ink-muted">주행거리</div>
@@ -538,7 +538,7 @@ function ApprovalDetailModal({
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-800">{error}</div>
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-800">{error}</div>
           )}
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
@@ -628,7 +628,7 @@ function SafetyReportDetail({ item }: { item: ApprovalItem }) {
   const showSeverity = severity && severity !== 'NONE';
 
   return (
-    <div className="space-y-3 text-xs">
+    <div className="space-y-3 text-sm">
       {/* 유형 / 심각도 / 위치 / 설명 */}
       <div className="bg-red-50 rounded-lg px-3 py-2.5 border border-red-200 space-y-1.5">
         <div className="font-extrabold text-red-900 mb-1">안전보고서 상세</div>
@@ -723,13 +723,13 @@ function VehicleLogRouteDetail({ raw }: { raw: string }) {
   const inspection = d.inspection && typeof d.inspection === 'object' ? (d.inspection as Record<string, string>) : null;
 
   return (
-    <div className="space-y-3 text-xs">
+    <div className="space-y-3 text-sm">
       {(passengers || note || fuelUsed || hasReceipt) && (
         <div className="bg-slate-50 rounded-lg px-3 py-2.5 space-y-1 border border-line">
           <div className="font-extrabold text-ink mb-1">운행 정보</div>
           {passengers && <div className="font-mono">동승자: {passengers}</div>}
           {fuelUsed && <div className="font-mono">주유량: {fuelUsed}L</div>}
-          {hasReceipt && <div className="font-mono text-slate-500">영수증: 첨부됨</div>}
+          {hasReceipt && <div className="font-mono text-ink-faint">영수증: 첨부됨</div>}
           {note && <div className="font-mono whitespace-pre-wrap">특이사항: {note}</div>}
         </div>
       )}

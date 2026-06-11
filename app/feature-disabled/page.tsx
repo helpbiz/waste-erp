@@ -20,7 +20,7 @@ export default async function FeatureDisabledPage({ searchParams }: { searchPara
       <div className="max-w-[520px] w-full bg-white rounded-2xl shadow-xl border border-line p-8 text-center">
         <div className="text-5xl mb-3">🔒</div>
         <h1 className="text-xl font-black text-ink mb-2">이 기능은 현재 사용할 수 없습니다</h1>
-        <p className="text-sm text-slate-600 leading-relaxed">
+        <p className="text-sm text-ink-faint leading-relaxed">
           {meta ? (
             <>
               요청하신 <span className="font-extrabold text-purple-700">{meta.label}</span> 기능이 회사 요금제에 포함되어 있지 않습니다.
@@ -30,7 +30,7 @@ export default async function FeatureDisabledPage({ searchParams }: { searchPara
           )}
         </p>
         {meta && (
-          <p className="text-xs text-slate-500 mt-3 leading-relaxed">{meta.description}</p>
+          <p className="text-xs text-ink-faint mt-3 leading-relaxed">{meta.description}</p>
         )}
 
         <div className="mt-6 px-4 py-3 rounded-lg bg-amber-50 border border-amber-300 text-xs font-bold text-amber-900 text-left leading-relaxed">
@@ -47,7 +47,7 @@ export default async function FeatureDisabledPage({ searchParams }: { searchPara
           </Link>
           <button
             onClick={() => { if (typeof window !== 'undefined') window.history.back(); }}
-            className="px-4 py-2 rounded-lg border-2 border-line bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold active:scale-95"
+            className="px-4 py-2 rounded-lg border-2 border-line bg-white hover:bg-slate-50 text-ink-muted text-sm font-bold active:scale-95"
             type="button"
           >
             ← 이전 화면
@@ -55,7 +55,7 @@ export default async function FeatureDisabledPage({ searchParams }: { searchPara
         </div>
 
         {meta && (
-          <div className="mt-5 text-[0.6875rem] font-mono text-slate-400">
+          <div className="mt-5 text-[0.6875rem] font-mono text-ink-faint">
             feature key: {meta.key}
           </div>
         )}

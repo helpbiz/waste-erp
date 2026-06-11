@@ -76,7 +76,7 @@ export default function PayslipClient({ workerName }: { workerName: string }) {
     <div className="pb-24">
       <div className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-black text-ink tracking-tight">급여명세서</h1>
-        <p className="text-xs text-ink-muted font-semibold mt-0.5">발송된 급여명세서를 확인하고 인쇄할 수 있습니다.</p>
+        <p className="text-sm text-ink-muted font-semibold mt-0.5">발송된 급여명세서를 확인하고 인쇄할 수 있습니다.</p>
       </div>
 
       {loading && <div className="px-4 py-16 text-center text-ink-muted text-sm">불러오는 중…</div>}
@@ -103,7 +103,7 @@ export default function PayslipClient({ workerName }: { workerName: string }) {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-extrabold text-ink">{y}년 {m}월 임금명세서</div>
                   {(() => { const t = normTotals(item.data.totals); return (
-                  <div className="text-xs text-ink-muted font-semibold mt-0.5">
+                  <div className="text-sm text-ink-muted font-semibold mt-0.5">
                     실지급액 <span className="text-success font-extrabold">{fmt(t.실지급액)}원</span>
                     {t.총계 !== t.실지급액 && <>&nbsp;· 총계 <span className="text-accent font-extrabold">{fmt(t.총계)}원</span></>}
                   </div>
@@ -145,9 +145,9 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
       {/* 헤더 */}
       <div className="text-center py-2">
         <h2 className="text-base font-black text-ink tracking-widest">{month}월 임 금 명 세 서</h2>
-        <p className="text-xs text-ink-muted font-bold mt-0.5">【 수 고 하 셨 습 니 다 ! 】</p>
-        {d.payDate && <p className="text-xs text-ink-muted mt-0.5">· 지급일 : {d.payDate}</p>}
-        {d.workDays != null && <p className="text-xs text-ink-muted">· 출근일수 : {d.workDays} 일</p>}
+        <p className="text-sm text-ink-muted font-bold mt-0.5">【 수 고 하 셨 습 니 다 ! 】</p>
+        {d.payDate && <p className="text-sm text-ink-muted mt-0.5">· 지급일 : {d.payDate}</p>}
+        {d.workDays != null && <p className="text-sm text-ink-muted">· 출근일수 : {d.workDays} 일</p>}
       </div>
 
       {/* 근로자 정보 */}
@@ -187,7 +187,7 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
       {/* 실지급액 */}
       <div className="bg-surface-soft border border-line rounded-lg overflow-hidden">
         <div className="flex justify-between items-center px-3 py-2">
-          <span className="text-xs font-extrabold text-ink">실지급액 (①-②)</span>
+          <span className="text-sm font-extrabold text-ink">실지급액 (①-②)</span>
           <span className="font-mono font-extrabold text-success">{fmt(totals.실지급액)}원</span>
         </div>
       </div>
@@ -196,13 +196,13 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
       {Object.keys(d.extras ?? {}).length > 0 && (
         <div className="border border-line rounded-lg overflow-hidden">
           {Object.entries(d.extras).map(([k, v]) => (
-            <div key={k} className="flex justify-between px-3 py-1.5 border-b border-line last:border-0 text-xs">
+            <div key={k} className="flex justify-between px-3 py-1.5 border-b border-line last:border-0 text-sm">
               <span className="text-ink-muted font-semibold">{k}</span>
               <span className="font-mono font-bold text-ink">{dash(v)}</span>
             </div>
           ))}
           <div className="flex justify-between px-3 py-2 bg-accent/10">
-            <span className="text-xs font-extrabold text-accent">총 계</span>
+            <span className="text-sm font-extrabold text-accent">총 계</span>
             <span className="font-mono font-extrabold text-accent">{fmt(totals.총계)}원</span>
           </div>
         </div>
@@ -210,7 +210,7 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
 
       {/* 근로시간 */}
       {d.workHours && (getOvertimeH(d.workHours) > 0 || getNightH(d.workHours) > 0) && (
-        <div className="border border-line rounded-lg overflow-hidden text-xs">
+        <div className="border border-line rounded-lg overflow-hidden text-sm">
           <SectionHeader>근 로 시 간</SectionHeader>
           <div className="divide-y divide-line">
             {getOvertimeH(d.workHours) > 0 && (
@@ -357,7 +357,7 @@ function Cell({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-3 py-2">
       <div className="text-[0.625rem] font-extrabold text-ink-muted">{label}</div>
-      <div className="text-xs font-bold text-ink mt-0.5">{value}</div>
+      <div className="text-sm font-bold text-ink mt-0.5">{value}</div>
     </div>
   );
 }
@@ -366,7 +366,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 }
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between px-3 py-1.5 border-b border-line last:border-0 text-xs">
+    <div className="flex justify-between px-3 py-1.5 border-b border-line last:border-0 text-sm">
       <span className="text-ink-muted font-semibold">{label}</span>
       <span className="font-mono font-bold text-ink">{value}</span>
     </div>
@@ -375,7 +375,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function TotalRow({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   const cls = accent ? 'bg-accent/10 text-accent' : danger ? 'bg-red-50 text-danger' : 'bg-surface-soft text-ink';
   return (
-    <div className={`flex justify-between px-3 py-2 text-xs font-extrabold ${cls}`}>
+    <div className={`flex justify-between px-3 py-2 text-sm font-extrabold ${cls}`}>
       <span>{label}</span>
       <span className="font-mono">{value}</span>
     </div>

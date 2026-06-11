@@ -76,7 +76,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
     <div className="space-y-4">
       {/* 헤더 */}
       <div className="flex items-center gap-3">
-        <a href="/safety" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
+        <a href="/safety" className="text-sm font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
           ← 안전관리
         </a>
         <h2 className="text-xl font-black text-ink tracking-tight">사업장 일자별 온도조회</h2>
@@ -85,7 +85,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
       {/* 컨트롤 */}
       <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">조회 년월</div>
+          <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">조회 년월</div>
           <input
             type="month"
             value={yearMonth}
@@ -116,17 +116,17 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
           </div>
         )}
         {data && (
-          <span className="text-xs text-ink-muted self-center">
+          <span className="text-sm text-ink-muted self-center">
             위치: {data.location.lat.toFixed(4)}, {data.location.lng.toFixed(4)}
           </span>
         )}
       </div>
 
-      {loading && <div className="py-10 text-center text-slate-500 text-sm">Open-Meteo API 조회 중…</div>}
+      {loading && <div className="py-10 text-center text-ink-faint text-sm">Open-Meteo API 조회 중…</div>}
       {error && (
         <div className="px-4 py-3 bg-red-50 border border-red-300 rounded text-sm text-red-700">
           <strong>API 오류:</strong> {error}
-          <div className="text-xs mt-1 text-red-500">WEATHER_LAT / WEATHER_LNG 환경변수를 확인하거나 잠시 후 재시도 하세요.</div>
+          <div className="text-sm mt-1 text-red-500">WEATHER_LAT / WEATHER_LNG 환경변수를 확인하거나 잠시 후 재시도 하세요.</div>
         </div>
       )}
 
@@ -136,7 +136,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
           {/* 출력 타이틀 */}
           <div className="hidden print:block text-center border-t-4 border-double border-slate-700 pt-3 mb-4">
             <h1 className="text-2xl font-black">사업장 일자별 온도 기록부</h1>
-            <div className="text-sm font-bold text-slate-600 mt-1">{y}년 {m}월</div>
+            <div className="text-sm font-bold text-ink-faint mt-1">{y}년 {m}월</div>
           </div>
 
           {/* 요약 카드 */}
@@ -173,7 +173,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
           {/* 일자별 테이블 */}
           <div className="bg-white border border-line rounded-xl overflow-hidden print:border-2 print:border-slate-700">
             <div className="px-4 py-2 bg-slate-50 border-b border-line print:bg-slate-100">
-              <span className="text-xs font-extrabold text-slate-600">
+              <span className="text-sm font-extrabold text-ink-faint">
                 {y}년 {m}월 일자별 온도 (출처: Open-Meteo · 체감온도 기준 위험도 판정)
               </span>
             </div>
@@ -181,13 +181,13 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-line">
                   <tr>
-                    <th className="px-3 py-2 text-left font-extrabold text-xs w-24">날짜</th>
-                    <th className="px-3 py-2 text-left font-extrabold text-xs w-10">요일</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs">최고(℃)</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs">최저(℃)</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs hidden sm:table-cell">체감최고(℃)</th>
-                    <th className="px-3 py-2 text-right font-extrabold text-xs hidden md:table-cell">강수(mm)</th>
-                    <th className="px-3 py-2 text-center font-extrabold text-xs">위험도</th>
+                    <th className="px-3 py-2 text-left font-extrabold text-sm w-24">날짜</th>
+                    <th className="px-3 py-2 text-left font-extrabold text-sm w-10">요일</th>
+                    <th className="px-3 py-2 text-right font-extrabold text-sm">최고(℃)</th>
+                    <th className="px-3 py-2 text-right font-extrabold text-sm">최저(℃)</th>
+                    <th className="px-3 py-2 text-right font-extrabold text-sm hidden sm:table-cell">체감최고(℃)</th>
+                    <th className="px-3 py-2 text-right font-extrabold text-sm hidden md:table-cell">강수(mm)</th>
+                    <th className="px-3 py-2 text-center font-extrabold text-sm">위험도</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -202,33 +202,33 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
 
                     return (
                       <tr key={day.date} className={`${rowBg} hover:bg-surface-soft transition`}>
-                        <td className={`px-3 py-1.5 font-mono text-xs ${isWeekend ? 'text-rose-600 font-bold' : ''}`}>
+                        <td className={`px-3 py-1.5 font-mono text-sm ${isWeekend ? 'text-rose-600 font-bold' : ''}`}>
                           {day.date.slice(5)}
                         </td>
-                        <td className={`px-3 py-1.5 text-xs font-bold text-center ${isWeekend ? 'text-rose-500' : 'text-ink-muted'}`}>
+                        <td className={`px-3 py-1.5 text-sm font-bold text-center ${isWeekend ? 'text-rose-500' : 'text-ink-muted'}`}>
                           {dow}
                         </td>
                         <td className="px-3 py-1.5 text-right font-bold text-sm">
-                          {day.maxTemp !== null ? `${day.maxTemp}` : <span className="text-slate-300 text-xs">{isFuture ? '—' : '⋯'}</span>}
+                          {day.maxTemp !== null ? `${day.maxTemp}` : <span className="text-slate-300 text-sm">{isFuture ? '—' : '⋯'}</span>}
                         </td>
                         <td className="px-3 py-1.5 text-right text-sm text-ink-muted">
-                          {day.minTemp !== null ? `${day.minTemp}` : <span className="text-slate-300 text-xs">{isFuture ? '—' : '⋯'}</span>}
+                          {day.minTemp !== null ? `${day.minTemp}` : <span className="text-slate-300 text-sm">{isFuture ? '—' : '⋯'}</span>}
                         </td>
                         <td className="px-3 py-1.5 text-right text-sm hidden sm:table-cell">
                           {day.feelsLikeMax !== null ? (
                             <span className={day.feelsLikeMax >= 33 ? 'text-red-600 font-extrabold' : day.feelsLikeMax >= 31 ? 'text-orange-600 font-bold' : ''}>
                               {day.feelsLikeMax}
                             </span>
-                          ) : <span className="text-slate-300 text-xs">{isFuture ? '—' : '⋯'}</span>}
+                          ) : <span className="text-slate-300 text-sm">{isFuture ? '—' : '⋯'}</span>}
                         </td>
-                        <td className="px-3 py-1.5 text-right text-xs text-ink-muted hidden md:table-cell">
+                        <td className="px-3 py-1.5 text-right text-sm text-ink-muted hidden md:table-cell">
                           {day.precip !== null ? (day.precip > 0 ? `${day.precip}` : '0') : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="px-3 py-1.5 text-center">
                           {isFuture ? (
-                            <span className="text-xs text-slate-300">미래</span>
+                            <span className="text-sm text-slate-300">미래</span>
                           ) : day.hazard && day.hazard !== 'NORMAL' ? (
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-extrabold ${
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-sm font-extrabold ${
                               day.hazard === 'HIGH_RISK' ? 'bg-red-500 text-white' :
                               day.hazard === 'HEAT_WAVE' ? 'bg-orange-400 text-white' :
                               'bg-sky-500 text-white'
@@ -236,9 +236,9 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
                               {HAZARD_LABEL[day.hazard]}
                             </span>
                           ) : noData ? (
-                            <span className="text-xs text-slate-300">데이터없음</span>
+                            <span className="text-sm text-slate-300">데이터없음</span>
                           ) : (
-                            <span className="text-xs text-slate-400">정상</span>
+                            <span className="text-sm text-ink-faint">정상</span>
                           )}
                         </td>
                       </tr>
@@ -250,14 +250,14 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
           </div>
 
           {/* 범례 */}
-          <div className="flex gap-4 text-xs text-ink-muted print:hidden">
+          <div className="flex gap-4 text-sm text-ink-muted print:hidden">
             <span><span className="inline-block w-3 h-3 rounded bg-red-500 mr-1"></span>고위험(체감 33℃↑)</span>
             <span><span className="inline-block w-3 h-3 rounded bg-orange-400 mr-1"></span>폭염(체감 31℃↑)</span>
             <span><span className="inline-block w-3 h-3 rounded bg-sky-500 mr-1"></span>한파(최고 -10℃↓)</span>
             <span className="ml-auto">⋯ = 데이터 준비 중 (Archive 약 5일 지연)</span>
           </div>
 
-          <div className="mt-2 text-center text-xs font-mono text-slate-500 print:block hidden">
+          <div className="mt-2 text-center text-sm font-mono text-ink-faint print:block hidden">
             출력일시: {new Date().toLocaleString('ko-KR')} · 데이터 출처: Open-Meteo (archive-api.open-meteo.com)
           </div>
         </div>
@@ -291,9 +291,9 @@ function SummaryCard({
     'text-ink';
   return (
     <div className={`border rounded-xl p-4 text-center print:border-slate-700 ${colors}`}>
-      <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{label}</div>
+      <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">{label}</div>
       <div className={`text-2xl font-black ${valueColor}`}>{value}</div>
-      {sub && <div className="text-xs text-slate-500 mt-0.5">{sub}</div>}
+      {sub && <div className="text-sm text-ink-faint mt-0.5">{sub}</div>}
     </div>
   );
 }

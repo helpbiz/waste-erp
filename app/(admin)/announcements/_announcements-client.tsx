@@ -44,7 +44,7 @@ const WEATHER_COLOR: Record<string, string> = {
   HEATWAVE: 'border-red-400 bg-red-50 text-red-900',
   COLDWAVE: 'border-blue-400 bg-blue-50 text-blue-900',
   TYPHOON:  'border-purple-400 bg-purple-50 text-purple-900',
-  STORM:    'border-slate-400 bg-slate-50 text-slate-900',
+  STORM:    'border-slate-400 bg-slate-50 text-ink-muted',
   OTHER:    'border-amber-400 bg-amber-50 text-amber-900',
 };
 
@@ -105,7 +105,7 @@ export default function AnnouncementsClient({
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-extrabold text-ink">📢 공지사항</h2>
-        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
+        <span className="text-sm font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300">
           {session.role === 'SUPER_ADMIN' ? '🌐 시스템 전체 공지 가능' :
            session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 (관리자/근로자/전체)' :
            session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 (관리자/근로자/전체)' :
@@ -188,18 +188,18 @@ export default function AnnouncementsClient({
             근로자는 안전관리 페이지에서 해당 공지를 확인하고 사진을 업로드할 수 있습니다.
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-xs font-extrabold text-ink-muted">날짜 조회</label>
+            <label className="text-sm font-extrabold text-ink-muted">날짜 조회</label>
             <input type="date" value={weatherDate} onChange={(e) => setWeatherDate(e.target.value)}
               className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
             <a href="/safety/weather-notices"
-              className="px-3 py-1.5 rounded text-xs font-bold bg-white border border-line hover:bg-slate-50">
+              className="px-3 py-1.5 rounded text-sm font-bold bg-white border border-line hover:bg-slate-50">
               날씨관리대장 전체 관리 →
             </a>
           </div>
-          {weatherLoading && <div className="text-center py-8 text-slate-500 text-sm">로딩 중…</div>}
+          {weatherLoading && <div className="text-center py-8 text-ink-faint text-sm">로딩 중…</div>}
           {!weatherLoading && weatherItems.length === 0 && (
             <div className="bg-surface border border-line rounded-lg py-12 text-center">
-              <div className="text-slate-500 font-bold text-sm mb-3">{weatherDate} 날씨관리대장 공지가 없습니다.</div>
+              <div className="text-ink-faint font-bold text-sm mb-3">{weatherDate} 날씨관리대장 공지가 없습니다.</div>
               <a href="/safety/weather-notices"
                 className="inline-block px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">
                 ＋ 날씨관리대장 등록하러 가기
@@ -223,13 +223,13 @@ export default function AnnouncementsClient({
                       )}
                     </div>
                     <h3 className="text-base font-black text-ink">{n.title}</h3>
-                    {n.content && <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1.5">{n.content}</p>}
-                    <div className="text-[0.6875rem] font-mono text-slate-500 mt-2">
+                    {n.content && <p className="text-sm text-ink-muted whitespace-pre-wrap mt-1.5">{n.content}</p>}
+                    <div className="text-[0.6875rem] font-mono text-ink-faint mt-2">
                       {n.createdBy} · {new Date(n.createdAt).toLocaleString('ko-KR')}
                     </div>
                   </div>
                   <a href={`/api/safety/weather-notices/${n.id}/export?images=true`}
-                    className="flex-shrink-0 px-2.5 py-1 rounded text-xs font-extrabold bg-white border border-current hover:bg-slate-50 active:scale-95">
+                    className="flex-shrink-0 px-2.5 py-1 rounded text-sm font-extrabold bg-white border border-current hover:bg-slate-50 active:scale-95">
                     📥 출력
                   </a>
                 </div>
@@ -240,9 +240,9 @@ export default function AnnouncementsClient({
       )}
 
       {/* ── 일반 공지 탭 ── */}
-      {tab === 'general' && loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
+      {tab === 'general' && loading && <div className="text-center py-10 text-ink-faint">로딩 중…</div>}
       {tab === 'general' && !loading && items.length === 0 && (
-        <div className="bg-surface border border-line rounded-lg py-16 text-center text-slate-500 font-bold">
+        <div className="bg-surface border border-line rounded-lg py-16 text-center text-ink-faint font-bold">
           등록된 공지가 없습니다. [＋ 일반 공지 작성] 클릭하여 첫 공지를 등록하세요.
         </div>
       )}
@@ -259,14 +259,14 @@ export default function AnnouncementsClient({
                     <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-white border border-current">
                       {SEV_LABEL[a.severity]}
                     </span>
-                    <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                    <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-ink-muted">
                       {AUDIENCE_LABEL[a.audience]}
                     </span>
                     {a.facilityId && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300">🏗 집하장 공지</span>}
-                    {expired && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-300 text-slate-700">만료</span>}
+                    {expired && <span className="text-[0.6875rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-300 text-ink-muted">만료</span>}
                   </div>
                   <h3 className="text-base font-black text-ink">{a.title}</h3>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap mt-1.5 leading-relaxed">{a.body}</p>
+                  <p className="text-sm text-ink-muted whitespace-pre-wrap mt-1.5 leading-relaxed">{a.body}</p>
                   {a.attachmentUrls && a.attachmentUrls.length > 0 && (
                     <div className="flex gap-1.5 mt-2 flex-wrap">
                       {a.attachmentUrls.map((src, i) => (
@@ -275,7 +275,7 @@ export default function AnnouncementsClient({
                       ))}
                     </div>
                   )}
-                  <div className="text-[0.6875rem] font-mono text-slate-500 mt-2 flex items-center gap-1.5 flex-wrap">
+                  <div className="text-[0.6875rem] font-mono text-ink-faint mt-2 flex items-center gap-1.5 flex-wrap">
                     <span>{a.authorName}</span>
                     <span>·</span>
                     <span>{new Date(a.publishedAt).toLocaleString('ko-KR')}</span>
@@ -290,13 +290,13 @@ export default function AnnouncementsClient({
                 <div className="flex flex-col gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => setEditTarget(a)}
-                    className="px-2.5 py-1 rounded text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95"
+                    className="px-2.5 py-1 rounded text-sm font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95"
                   >
                     ✏ 수정
                   </button>
                   <button
                     onClick={() => del(a.id, a.title)}
-                    className="px-2.5 py-1 rounded text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95"
+                    className="px-2.5 py-1 rounded text-sm font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95"
                   >
                     🗑 삭제
                   </button>
@@ -372,27 +372,27 @@ function CreateModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-[600px] w-full max-h-[92vh] flex flex-col">
         <div className="px-5 py-3 border-b border-line flex items-center justify-between">
           <h2 className="text-base font-black text-ink">{isEdit ? '✏ 공지 수정' : '📢 신규 공지 작성'}</h2>
-          <button onClick={onClose} disabled={busy} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+          <button onClick={onClose} disabled={busy} className="text-ink-faint hover:text-ink-muted text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">제목 *</div>
+            <div className="text-sm font-extrabold text-ink mb-1">제목 *</div>
             <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
               className="w-full px-3 py-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">내용 *</div>
+            <div className="text-sm font-extrabold text-ink mb-1">내용 *</div>
             <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} maxLength={10000}
               className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent" />
-            <div className="text-[0.625rem] text-slate-500 mt-0.5">{body.length}/10000자</div>
+            <div className="text-[0.625rem] text-ink-faint mt-0.5">{body.length}/10000자</div>
           </div>
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">사진 첨부 (선택, 최대 3장)</div>
+            <div className="text-sm font-extrabold text-ink mb-1">사진 첨부 (선택, 최대 3장)</div>
             <MultiPhotoUploader initial={attachments} onChange={setAttachments} max={3} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs font-extrabold text-ink mb-1">중요도</div>
+              <div className="text-sm font-extrabold text-ink mb-1">중요도</div>
               <select value={severity} onChange={(e) => setSeverity(e.target.value as 'INFO'|'WARNING'|'CRITICAL')}
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm">
                 <option value="INFO">📘 안내 (INFO)</option>
@@ -401,7 +401,7 @@ function CreateModal({
               </select>
             </div>
             <div>
-              <div className="text-xs font-extrabold text-ink mb-1">대상</div>
+              <div className="text-sm font-extrabold text-ink mb-1">대상</div>
               <select value={audience} onChange={(e) => setAudience(e.target.value as AudienceValue)}
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm">
                 {audienceOptions.map((opt) => {
@@ -414,16 +414,16 @@ function CreateModal({
                 })}
               </select>
               {role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN' ? (
-                <div className="text-[0.625rem] text-slate-500 mt-1">※ 회사 작성: 지자체관리자에게 발송 불가</div>
+                <div className="text-[0.625rem] text-ink-faint mt-1">※ 회사 작성: 지자체관리자에게 발송 불가</div>
               ) : role === 'MUNI_ADMIN' ? (
-                <div className="text-[0.625rem] text-slate-500 mt-1">※ 지자체 작성: 산하 회사 broadcast (회사대표/회사+관리자/전체 선택)</div>
+                <div className="text-[0.625rem] text-ink-faint mt-1">※ 지자체 작성: 산하 회사 broadcast (회사대표/회사+관리자/전체 선택)</div>
               ) : null}
             </div>
           </div>
           {/* AVAC: 집하장별 공지 (시설 목록 있을 때만 표시) */}
           {facilities.length > 0 && (
             <div>
-              <div className="text-xs font-extrabold text-ink mb-1">🏗 집하장 한정 공지 (선택, 비워두면 회사 전체)</div>
+              <div className="text-sm font-extrabold text-ink mb-1">🏗 집하장 한정 공지 (선택, 비워두면 회사 전체)</div>
               <select value={facilityId} onChange={(e) => setFacilityId(e.target.value)}
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm">
                 <option value="">— 전체 공지 (시설 무관) —</option>
@@ -431,11 +431,11 @@ function CreateModal({
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
-              <div className="text-[0.625rem] text-slate-500 mt-1">집하장을 선택하면 해당 시설 근무자만 이 공지를 받습니다.</div>
+              <div className="text-[0.625rem] text-ink-faint mt-1">집하장을 선택하면 해당 시설 근무자만 이 공지를 받습니다.</div>
             </div>
           )}
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">만료일 (선택, 비워두면 영구)</div>
+            <div className="text-sm font-extrabold text-ink mb-1">만료일 (선택, 비워두면 영구)</div>
             <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)}
               className="px-3 py-2 rounded border-2 border-line text-sm font-mono" />
           </div>
@@ -443,7 +443,7 @@ function CreateModal({
             <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="w-4 h-4 accent-purple-600" />
             <span className="text-sm font-bold text-ink">📌 상단 고정 (다른 공지보다 위에 표시)</span>
           </label>
-          {error && <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-700">⚠ {error}</div>}
+          {error && <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-sm font-bold text-red-700">⚠ {error}</div>}
         </div>
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
           <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold">취소</button>

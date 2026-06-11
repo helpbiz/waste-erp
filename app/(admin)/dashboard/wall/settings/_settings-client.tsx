@@ -69,7 +69,7 @@ export default function WallSettingsClient({ sessionRole }: { sessionRole: strin
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">로딩 중…</div>;
+    return <div className="p-8 text-center text-ink-faint">로딩 중…</div>;
   }
 
   return (
@@ -139,7 +139,7 @@ export default function WallSettingsClient({ sessionRole }: { sessionRole: strin
       {/* 저장 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex items-center justify-between">
         <div className="text-sm">
-          {saving && <span className="text-slate-500">저장 중…</span>}
+          {saving && <span className="text-ink-faint">저장 중…</span>}
           {!saving && savedAt && <span className="text-emerald-700 font-bold">✅ 저장됨 ({savedAt.toLocaleTimeString('ko-KR')})</span>}
           {error && <span className="text-rose-700 font-bold">❌ {error}</span>}
         </div>
@@ -149,7 +149,7 @@ export default function WallSettingsClient({ sessionRole }: { sessionRole: strin
         </button>
       </div>
 
-      <div className="text-xs text-ink-muted text-center pt-4 border-t border-line">
+      <div className="text-sm text-ink-muted text-center pt-4 border-t border-line">
         {sessionRole === 'MUNI_ADMIN'
           ? '지자체 관제 화면에 적용됩니다 · MUNI_ADMIN'
           : `설정은 자기 회사에만 적용됩니다 · ${sessionRole}`}
@@ -165,7 +165,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
     <div className="bg-surface border border-line rounded-lg p-4 space-y-3">
       <div>
         <h3 className="text-base font-extrabold text-ink">{title}</h3>
-        {hint && <p className="text-xs text-ink-muted mt-0.5">{hint}</p>}
+        {hint && <p className="text-sm text-ink-muted mt-0.5">{hint}</p>}
       </div>
       {children}
     </div>

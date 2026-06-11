@@ -30,7 +30,7 @@ const TYPES = [
   { id: 'PICKUP_MISS',  label: '수거 미비',  emoji: '🗑',  bg: 'bg-red-50 border-red-300 text-red-700' },
   { id: 'ILLEGAL_DUMP', label: '불법투기',  emoji: '⚠️', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
   { id: 'ODOR_NOISE',   label: '악취/소음',  emoji: '👃', bg: 'bg-blue-50 border-blue-300 text-blue-700' },
-  { id: 'OTHER',        label: '기타',       emoji: '📝', bg: 'bg-slate-50 border-slate-300 text-slate-700' },
+  { id: 'OTHER',        label: '기타',       emoji: '📝', bg: 'bg-slate-50 border-slate-300 text-ink-muted' },
 ] as const;
 
 const URGENT_TAGS = [

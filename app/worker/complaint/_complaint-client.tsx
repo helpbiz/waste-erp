@@ -12,7 +12,7 @@ import { formatKoreanPhone } from '@/lib/phone';
 const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[200px] rounded-lg border-2 border-line bg-surface-soft flex items-center justify-center text-xs font-mono text-ink-muted">
+    <div className="h-[200px] rounded-lg border-2 border-line bg-surface-soft flex items-center justify-center text-sm font-mono text-ink-muted">
       🗺️ 지도 로딩 중…
     </div>
   ),
@@ -191,7 +191,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
       <>
       <div className="px-1">
         <h1 className="text-xl font-black text-ink">민원 등록</h1>
-        <p className="text-xs font-bold text-ink-muted mt-1">현장에서 발견한 민원을 등록합니다.</p>
+        <p className="text-sm font-bold text-ink-muted mt-1">현장에서 발견한 민원을 등록합니다.</p>
       </div>
 
       {/* 인라인 성공 배너 → Toast (Wave 3-D) */}
@@ -223,14 +223,14 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
           <button
             type="button"
             onClick={() => { setLocationMode('map'); requestGps(); }}
-            className={`flex-1 py-1.5 rounded text-xs font-extrabold transition ${locationMode === 'map' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
+            className={`flex-1 py-1.5 rounded text-sm font-extrabold transition ${locationMode === 'map' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
           >
             🗺 지도 선택
           </button>
           <button
             type="button"
             onClick={() => { setLocationMode('text'); setGps({ kind: 'idle' }); setAddress(''); }}
-            className={`flex-1 py-1.5 rounded text-xs font-extrabold transition ${locationMode === 'text' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
+            className={`flex-1 py-1.5 rounded text-sm font-extrabold transition ${locationMode === 'text' ? 'bg-white shadow text-accent' : 'text-ink-muted'}`}
           >
             ✏ 주소 직접 입력
           </button>
@@ -247,7 +247,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
                 height={200}
               />
               {gps.kind !== 'ready' && (
-                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-xs font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
+                <div className="absolute top-2 left-2 right-2 px-3 py-1.5 rounded-md bg-amber-100/95 border border-amber-300 text-sm font-bold text-amber-900 backdrop-blur shadow-sm pointer-events-none">
                   {gps.kind === 'acquiring' && '📍 GPS 위치 확인 중… (핀을 드래그해도 됩니다)'}
                   {gps.kind === 'error' && `⚠️ ${gps.message} — 지도에서 핀을 드래그해 위치 지정`}
                   {gps.kind === 'idle' && '핀을 드래그해 발생 위치를 지정하세요'}
@@ -264,7 +264,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                 <circle cx="12" cy="9" r="2.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <div className="flex-1 text-xs">
+              <div className="flex-1 text-sm">
                 {gps.kind === 'ready' && (
                   <span className="font-mono font-bold text-ink">
                     {gps.lat.toFixed(5)}°N, {gps.lng.toFixed(5)}°E
@@ -277,7 +277,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
               <button
                 type="button"
                 onClick={requestGps}
-                className="text-xs font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
+                className="text-sm font-mono font-extrabold px-2 py-1 rounded-md bg-surface border border-line active:scale-95"
               >
                 🎯 내 위치
               </button>
@@ -304,7 +304,7 @@ export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: 
               className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
               autoFocus
             />
-            <p className="text-[0.625rem] text-slate-500 font-mono px-1">
+            <p className="text-[0.625rem] text-ink-faint font-mono px-1">
               도로명 또는 지번 주소를 직접 입력하세요. 좌표는 자동으로 조회됩니다.
             </p>
           </div>
@@ -435,7 +435,7 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
     <div className="space-y-3">
       <div className="px-1">
         <h1 className="text-xl font-black text-ink">📥 내 민원 처리</h1>
-        <p className="text-xs font-bold text-ink-muted mt-1">배정받은 민원의 도착·처리 시작·완료·반려를 기록합니다.</p>
+        <p className="text-sm font-bold text-ink-muted mt-1">배정받은 민원의 도착·처리 시작·완료·반려를 기록합니다.</p>
       </div>
 
       {/* 필터 */}
@@ -445,9 +445,9 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
         <FilterBtn active={filter === 'all'} onClick={() => setFilter('all')}>전체</FilterBtn>
       </div>
 
-      {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+      {loading && <div className="py-10 text-center text-ink-faint text-sm">로딩 중…</div>}
       {!loading && filtered.length === 0 && (
-        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-slate-500 font-bold">
+        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-ink-faint font-bold">
           {filter === 'active' ? '🎉 처리 중인 민원 없음' : '결과 없음'}
         </div>
       )}
@@ -464,26 +464,26 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                 <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${
                   c.status === 'IN_PROGRESS' ? 'bg-cyan-100 text-cyan-800 border-cyan-300' :
                   c.status === 'COMPLETED'   ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                  c.status === 'REJECTED'    ? 'bg-slate-200 text-slate-700 border-slate-400' :
+                  c.status === 'REJECTED'    ? 'bg-slate-200 text-ink-muted border-slate-400' :
                   c.status === 'ASSIGNED'    ? 'bg-amber-100 text-amber-800 border-amber-300' :
                                                 'bg-rose-100 text-rose-800 border-rose-300'
                 }`}>
                   {STATUS_LABEL[c.status]}
                 </span>
                 {c.isOverdue && <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-rose-600 text-white">⚠ 기한 초과</span>}
-                <code className="ml-auto text-[0.625rem] font-mono text-slate-500">#{c.id}</code>
+                <code className="ml-auto text-[0.625rem] font-mono text-ink-faint">#{c.id}</code>
               </div>
               {c.locationAddress && (
                 <div className="text-sm text-ink font-semibold leading-snug">📍 {c.locationAddress}</div>
               )}
               {c.description && (
-                <div className="text-xs text-slate-700 mt-1.5 line-clamp-3 whitespace-pre-wrap">{c.description}</div>
+                <div className="text-sm text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{c.description}</div>
               )}
               {c.complainantPhone && (
-                <div className="text-xs text-slate-700 mt-1">📞 {c.complainantPhone}</div>
+                <div className="text-sm text-ink-muted mt-1">📞 {c.complainantPhone}</div>
               )}
               {c.assignee && (
-                <div className="text-xs text-slate-600 mt-1">담당: <span className="font-bold">{c.assignee.name}</span></div>
+                <div className="text-sm text-ink-faint mt-1">담당: <span className="font-bold">{c.assignee.name}</span></div>
               )}
               {parseImages(c.requestImage).length > 0 && (
                 <div className="flex gap-1.5 mt-2 overflow-x-auto">
@@ -496,11 +496,11 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                 </div>
               )}
               {c.resolveNote && (
-                <div className="mt-2 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 whitespace-pre-wrap">
+                <div className="mt-2 px-2 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-sm text-emerald-800 whitespace-pre-wrap">
                   ✓ {c.resolveNote}
                 </div>
               )}
-              <div className="text-[0.625rem] font-mono text-slate-500 mt-2">
+              <div className="text-[0.625rem] font-mono text-ink-faint mt-2">
                 접수: {new Date(c.reportedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 {c.resolvedAt && ` · 완료: ${new Date(c.resolvedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`}
                 {c.dueDate && ` · 마감: ${new Date(c.dueDate).toLocaleDateString('ko-KR')}`}
@@ -515,7 +515,7 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                   <button
                     disabled={busyId === c.id}
                     onClick={() => action(c.id, 'start', '처리 시작')}
-                    className="px-3 py-2 rounded-lg text-xs font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                    className="px-3 py-2 rounded-lg text-sm font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
                   >
                     ▶ 처리 시작
                   </button>
@@ -523,21 +523,21 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                 <button
                   disabled={busyId === c.id}
                   onClick={() => action(c.id, 'arrive', '도착')}
-                  className="px-3 py-2 rounded-lg text-xs font-extrabold bg-purple-600 hover:bg-purple-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                  className="px-3 py-2 rounded-lg text-sm font-extrabold bg-purple-600 hover:bg-purple-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
                 >
                   📍 도착 확인
                 </button>
                 <button
                   disabled={busyId === c.id}
                   onClick={() => setCompleteModal({ id: c.id, mode: 'complete' })}
-                  className="px-3 py-2 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                  className="px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
                 >
                   ✓ 처리 완료
                 </button>
                 <button
                   disabled={busyId === c.id}
                   onClick={() => setCompleteModal({ id: c.id, mode: 'reject' })}
-                  className="ml-auto px-3 py-2 rounded-lg text-xs font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                  className="ml-auto px-3 py-2 rounded-lg text-sm font-extrabold bg-rose-600 hover:bg-rose-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
                 >
                   ✕ 반려
                 </button>
@@ -581,8 +581,8 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
 
 function FilterBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`px-3 py-1.5 rounded-md text-xs font-extrabold transition ${
-      active ? 'bg-accent text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+    <button onClick={onClick} className={`px-3 py-1.5 rounded-md text-sm font-extrabold transition ${
+      active ? 'bg-accent text-white' : 'bg-slate-100 text-ink-muted hover:bg-slate-200'
     }`}>
       {children}
     </button>
@@ -646,7 +646,7 @@ function CompleteModal({
         </div>
         <div className="px-5 py-4 space-y-3">
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">
+            <div className="text-sm font-extrabold text-ink mb-1">
               {mode === 'complete' ? '처리 내용 (선택)' : '반려 사유 (필수)'}
             </div>
             <textarea
@@ -662,14 +662,14 @@ function CompleteModal({
             <>
               {/* 완료 사진 최대 3장 */}
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">완료 사진 (선택, 최대 3장)</div>
+                <div className="text-sm font-extrabold text-ink mb-1">완료 사진 (선택, 최대 3장)</div>
                 <MultiPhotoUploader onChange={setPhotos} max={3} />
               </div>
 
               {/* 담당자 태그 */}
               {coworkers.length > 0 && (
                 <div>
-                  <div className="text-xs font-extrabold text-ink mb-1">
+                  <div className="text-sm font-extrabold text-ink mb-1">
                     담당자 태그 (선택 — 알림 발송)
                   </div>
                   <select
@@ -717,7 +717,7 @@ function parseImages(raw: string | null): string[] {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-xs font-extrabold text-ink mb-2 tracking-wide">{label}</div>
+      <div className="text-sm font-extrabold text-ink mb-2 tracking-wide">{label}</div>
       {children}
     </div>
   );

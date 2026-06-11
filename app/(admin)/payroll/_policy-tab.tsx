@@ -129,7 +129,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
                 <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
               ))}
             </select>
-            <span className="text-xs font-bold text-ink-muted">(익일)</span>
+            <span className="text-sm font-bold text-ink-muted">(익일)</span>
           </div>
           <p className="text-[0.6875rem] text-info mt-1 font-semibold">
             출퇴근 시각에서 이 구간에 해당하는 시간을 자동으로 야간근로로 계산합니다.
@@ -177,7 +177,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
           <span className="w-5 h-5 rounded bg-danger text-white text-[0.625rem] flex items-center justify-center font-black">3</span>
           급여명세서 결재승인권자
         </h3>
-        <p className="text-xs text-ink-muted font-semibold leading-relaxed">
+        <p className="text-sm text-ink-muted font-semibold leading-relaxed">
           승인권자를 지정하면 해당 담당자의 결재 없이는 급여명세서를 발송할 수 없습니다.<br />
           지정하지 않으면 관리자가 즉시 발송할 수 있습니다.
         </p>
@@ -209,8 +209,8 @@ export default function PolicyTab({ initialPolicy }: Props) {
         >
           {busy ? '저장 중…' : '💾 정책 저장'}
         </button>
-        {error   && <p className="mt-2 text-xs font-bold text-danger">{error}</p>}
-        {success && <p className="mt-2 text-xs font-bold text-success">{success}</p>}
+        {error   && <p className="mt-2 text-sm font-bold text-danger">{error}</p>}
+        {success && <p className="mt-2 text-sm font-bold text-success">{success}</p>}
       </div>
 
       <hr className="border-line" />
@@ -221,7 +221,7 @@ export default function PolicyTab({ initialPolicy }: Props) {
           <span className="w-5 h-5 rounded bg-success text-white text-[0.625rem] flex items-center justify-center font-black">4</span>
           급여명세서 초안 자동 생성
         </h3>
-        <p className="text-xs text-ink-muted font-semibold leading-relaxed">
+        <p className="text-sm text-ink-muted font-semibold leading-relaxed">
           마감 완료된 근태 집계(출근일수·연장·야간)를 급여명세서 초안으로 자동 채워줍니다.
           <br />기본급 등 금액은 Excel 업로드 또는 직접 입력으로 추가 작성하면 됩니다.
         </p>
@@ -243,10 +243,10 @@ export default function PolicyTab({ initialPolicy }: Props) {
         </div>
 
         {prefillErr && (
-          <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-danger">{prefillErr}</div>
+          <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-danger">{prefillErr}</div>
         )}
         {prefillMsg && (
-          <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">{prefillMsg}</div>
+          <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">{prefillMsg}</div>
         )}
 
         <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-[0.6875rem] text-amber-800 font-semibold leading-relaxed">
@@ -262,7 +262,7 @@ function Field({ label, note, children }: { label: string; note?: string; childr
   return (
     <div className="space-y-1">
       <div className="flex items-baseline gap-2">
-        <span className="text-xs font-extrabold text-ink">{label}</span>
+        <span className="text-sm font-extrabold text-ink">{label}</span>
         {note && <span className="text-[0.625rem] font-mono text-ink-faint">{note}</span>}
       </div>
       {children}

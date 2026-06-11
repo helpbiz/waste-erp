@@ -183,17 +183,17 @@ function WasteTab() {
 
       {/* 합계 */}
       <div className="bg-accent/10 border border-accent rounded-lg px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-extrabold text-accent">📊 오늘 합계</span>
+        <span className="text-sm font-extrabold text-accent">📊 오늘 합계</span>
         <span className="font-mono text-2xl font-black text-accent">
-          {total.toFixed(2)}<span className="text-xs ml-1 font-bold">톤</span>
+          {total.toFixed(2)}<span className="text-sm ml-1 font-bold">톤</span>
         </span>
       </div>
 
       {success && (
-        <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">✓ {success}</div>
+        <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">✓ {success}</div>
       )}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>
       )}
 
       {/* 성상별 입력 */}
@@ -210,13 +210,13 @@ function WasteTab() {
                   <span className="flex-1 text-sm font-extrabold text-ink">{m.label}</span>
                   {existing ? (
                     <div className="text-right">
-                      <div className="text-xs font-mono font-bold text-emerald-700">✓ {Number(existing.weightTon).toFixed(2)}t</div>
+                      <div className="text-sm font-mono font-bold text-emerald-700">✓ {Number(existing.weightTon).toFixed(2)}t</div>
                       {existing.disposalSiteName && (
                         <div className="text-[0.625rem] text-emerald-600 font-semibold">{existing.disposalSiteName}</div>
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs font-mono text-ink-muted">미입력</span>
+                    <span className="text-sm font-mono text-ink-muted">미입력</span>
                   )}
                 </div>
                 <div className="px-3 pb-2.5 flex gap-2">
@@ -230,12 +230,12 @@ function WasteTab() {
                     onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, weight: e.target.value } }))}
                     className="flex-1 px-3 py-2 rounded-md border border-line text-sm font-mono font-bold focus:outline-none focus:border-accent"
                   />
-                  <span className="self-center text-xs font-mono font-bold text-ink-muted">톤</span>
+                  <span className="self-center text-sm font-mono font-bold text-ink-muted">톤</span>
                   <button
                     type="button"
                     onClick={() => save(m.code)}
                     disabled={saving === m.code || !draft.weight}
-                    className="px-3 py-2 rounded-md bg-accent text-white text-xs font-extrabold disabled:opacity-50 active:scale-95"
+                    className="px-3 py-2 rounded-md bg-accent text-white text-sm font-extrabold disabled:opacity-50 active:scale-95"
                   >
                     {saving === m.code ? '저장중' : (existing ? '갱신' : '저장')}
                   </button>
@@ -246,7 +246,7 @@ function WasteTab() {
                       <select
                         value={draft.siteId}
                         onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, siteId: e.target.value } }))}
-                        className="w-full px-3 py-1.5 rounded-md border border-line text-xs font-bold focus:outline-none focus:border-accent"
+                        className="w-full px-3 py-1.5 rounded-md border border-line text-sm font-bold focus:outline-none focus:border-accent"
                       >
                         <option value="">— 처리장소 선택 (선택사항) —</option>
                         {disposalSites.map((s) => (
@@ -259,7 +259,7 @@ function WasteTab() {
                       placeholder="비고 (선택)"
                       value={draft.note}
                       onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, note: e.target.value } }))}
-                      className="w-full px-3 py-1.5 rounded-md border border-line text-xs focus:outline-none focus:border-accent"
+                      className="w-full px-3 py-1.5 rounded-md border border-line text-sm focus:outline-none focus:border-accent"
                     />
                   </div>
                 )}
@@ -358,22 +358,22 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
       </Section>
 
       <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-extrabold text-emerald-700">🚚 오늘 합계 ({items.length}건)</span>
+        <span className="text-sm font-extrabold text-emerald-700">🚚 오늘 합계 ({items.length}건)</span>
         <span className="font-mono text-2xl font-black text-emerald-700">
-          {total.toFixed(2)}<span className="text-xs ml-1 font-bold">톤</span>
+          {total.toFixed(2)}<span className="text-sm ml-1 font-bold">톤</span>
         </span>
       </div>
 
       {success && (
-        <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">✓ {success}</div>
+        <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">✓ {success}</div>
       )}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>
       )}
 
       <Section label="신규 입력">
         {vehicles.length === 0 ? (
-          <div className="text-xs text-warn font-bold p-3 bg-amber-50 rounded">⚠️ 등록된 차량이 없습니다. 관리자에게 문의하세요.</div>
+          <div className="text-sm text-warn font-bold p-3 bg-amber-50 rounded">⚠️ 등록된 차량이 없습니다. 관리자에게 문의하세요.</div>
         ) : (
           <div className="space-y-2.5">
             <Field label="차량">
@@ -473,11 +473,11 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
         <Section label={`오늘 입력 이력 (${items.length}건)`}>
           <div className="space-y-1.5">
             {items.map((it) => (
-              <div key={it.id} className="bg-surface-soft border border-line rounded-md px-3 py-2 text-xs">
+              <div key={it.id} className="bg-surface-soft border border-line rounded-md px-3 py-2 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
                   <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
-                  <span className="text-xs font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
+                  <span className="text-sm font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
                   <span className="font-mono font-black text-accent flex-shrink-0">{Number(it.weightTon).toFixed(2)}t</span>
                 </div>
                 {it.disposalSiteName && (
@@ -509,7 +509,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-sm font-mono font-extrabold text-ink-faint mb-1'} />;
 }
 
 /* ────────────────  운전기록 이력  ──────────────── */
@@ -607,11 +607,11 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
     <div className="space-y-4">
       {/* 헤더 + 입력 토글 */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-extrabold text-ink-muted">{facility.name}</span>
+        <span className="text-sm font-extrabold text-ink-muted">{facility.name}</span>
         <button
           type="button"
           onClick={() => { setShowForm((v) => !v); setMsg(''); }}
-          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-extrabold active:scale-95"
+          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-extrabold active:scale-95"
         >
           {showForm ? '✕ 닫기' : '+ 운전기록 입력'}
         </button>
@@ -622,13 +622,13 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
         <div className="bg-surface border-2 border-indigo-300 rounded-xl shadow-card p-4 space-y-3">
           <div className="text-sm font-extrabold text-indigo-800">📋 운전기록 입력</div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-extrabold text-ink-muted">운영일자</span>
+            <span className="text-sm font-extrabold text-ink-muted">운영일자</span>
             <input type="date" value={opsDate} onChange={(e) => setOpsDate(e.target.value)} className="border border-line rounded px-3 py-2 text-sm" />
           </label>
           <div className="grid grid-cols-2 gap-2">
             {OPS_FIELDS.map(([key, label]) => (
               <label key={key} className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">{label}</span>
+                <span className="text-sm font-extrabold text-ink-muted">{label}</span>
                 <input
                   type="number" min="0" step="0.01"
                   value={form[key]}
@@ -638,11 +638,11 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
               </label>
             ))}
             <label className="flex flex-col gap-1 col-span-2">
-              <span className="text-xs font-extrabold text-ink-muted">비가동 사유</span>
+              <span className="text-sm font-extrabold text-ink-muted">비가동 사유</span>
               <input value={form.downtimeReason} onChange={(e) => set('downtimeReason', e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
             </label>
             <label className="flex flex-col gap-1 col-span-2">
-              <span className="text-xs font-extrabold text-ink-muted">비고</span>
+              <span className="text-sm font-extrabold text-ink-muted">비고</span>
               <input value={form.notes} onChange={(e) => set('notes', e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" placeholder="선택 사항" />
             </label>
           </div>
@@ -664,11 +664,11 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
       {records.length === 0 ? (
         <div className="text-center py-12 text-ink-muted">
           <div className="text-4xl mb-3">📋</div>
-          <div className="text-xs mt-1">아직 입력된 운전기록이 없습니다</div>
+          <div className="text-sm mt-1">아직 입력된 운전기록이 없습니다</div>
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="text-xs font-extrabold text-ink-muted px-1">최근 {records.length}건</div>
+          <div className="text-sm font-extrabold text-ink-muted px-1">최근 {records.length}건</div>
           {records.map((r) => {
             const isOpen = expanded === r.id;
             const totalWaste = r.generalWasteTon + r.foodWasteTon;
@@ -683,7 +683,7 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-extrabold text-sm text-ink">{r.opsDate}</div>
-                    <div className="text-xs text-ink-muted mt-0.5">
+                    <div className="text-sm text-ink-muted mt-0.5">
                       처리 {totalWaste.toFixed(2)}t · 가동 {totalOp.toFixed(1)}h · 전력 {r.prevDayPowerKwh.toFixed(0)}kWh
                     </div>
                   </div>
@@ -696,7 +696,7 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
                 </div>
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1 border-t border-line bg-surface-soft">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                       {([
                         ['일반 가동시간', `${r.generalOpHours}h`],
                         ['음식물 가동시간', `${r.foodOpHours}h`],
@@ -715,8 +715,8 @@ function OpsHistoryTab({ facility, records: initialRecords }: { facility: { id: 
                         </div>
                       ))}
                     </div>
-                    {r.downtimeReason && <div className="mt-2 text-xs text-amber-700 font-bold">비가동 사유: {r.downtimeReason}</div>}
-                    {r.notes && <div className="mt-1 text-xs text-ink-muted">비고: {r.notes}</div>}
+                    {r.downtimeReason && <div className="mt-2 text-sm text-amber-700 font-bold">비가동 사유: {r.downtimeReason}</div>}
+                    {r.notes && <div className="mt-1 text-sm text-ink-muted">비고: {r.notes}</div>}
                   </div>
                 )}
               </button>

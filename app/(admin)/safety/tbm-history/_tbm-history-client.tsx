@@ -72,10 +72,10 @@ export default function TbmHistoryClient() {
     <div className="space-y-4">
       {/* 페이지 헤더 */}
       <div className="flex items-center gap-3">
-        <a href="/safety" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
+        <a href="/safety" className="text-sm font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
           ← 안전관리
         </a>
-        <a href="/print" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-slate-50">
+        <a href="/print" className="text-sm font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-slate-50">
           🖨 출력센터
         </a>
         <h2 className="text-xl font-black text-ink tracking-tight">TBM 교육 관리</h2>
@@ -99,12 +99,12 @@ export default function TbmHistoryClient() {
           {/* 필터 */}
           <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
             <div>
-              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+              <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">시작일</div>
               <input type="date" value={hFrom} onChange={(e) => setHFrom(e.target.value)}
                 className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
             </div>
             <div>
-              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+              <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">종료일</div>
               <input type="date" value={hTo} onChange={(e) => setHTo(e.target.value)}
                 className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
             </div>
@@ -120,27 +120,27 @@ export default function TbmHistoryClient() {
                 >
                   📥 Excel
                 </a>
-                <span className="text-xs text-ink-muted ml-auto">총 {hData.total}건</span>
+                <span className="text-sm text-ink-muted ml-auto">총 {hData.total}건</span>
               </>
             )}
           </div>
 
-          {hLoading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+          {hLoading && <div className="py-10 text-center text-ink-faint text-sm">로딩 중…</div>}
           {hError && <div className="px-4 py-2 bg-red-50 border border-red-300 rounded text-sm text-red-700">{hError}</div>}
 
           {hData && !hLoading && (
             <div className="bg-surface border border-line rounded-xl overflow-hidden">
               {hData.sessions.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-sm">해당 기간에 TBM 기록이 없습니다.</div>
+                <div className="py-12 text-center text-ink-faint text-sm">해당 기간에 TBM 기록이 없습니다.</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 border-b border-line">
                     <tr>
-                      <th className="px-4 py-2 text-left font-extrabold text-xs">날짜</th>
-                      <th className="px-4 py-2 text-left font-extrabold text-xs">주제</th>
-                      <th className="px-4 py-2 text-left font-extrabold text-xs hidden sm:table-cell">팀/시설</th>
-                      <th className="px-4 py-2 text-left font-extrabold text-xs hidden md:table-cell">작성자</th>
-                      <th className="px-4 py-2 text-center font-extrabold text-xs">서명</th>
+                      <th className="px-4 py-2 text-left font-extrabold text-sm">날짜</th>
+                      <th className="px-4 py-2 text-left font-extrabold text-sm">주제</th>
+                      <th className="px-4 py-2 text-left font-extrabold text-sm hidden sm:table-cell">팀/시설</th>
+                      <th className="px-4 py-2 text-left font-extrabold text-sm hidden md:table-cell">작성자</th>
+                      <th className="px-4 py-2 text-center font-extrabold text-sm">서명</th>
                       <th className="px-4 py-2"></th>
                     </tr>
                   </thead>
@@ -150,20 +150,20 @@ export default function TbmHistoryClient() {
                       return (
                         <Fragment key={s.id}>
                           <tr className="hover:bg-surface-soft transition">
-                            <td className="px-4 py-2 font-mono text-xs whitespace-nowrap">{s.sessionDate}</td>
+                            <td className="px-4 py-2 font-mono text-sm whitespace-nowrap">{s.sessionDate}</td>
                             <td className="px-4 py-2 font-bold text-sm max-w-[200px] truncate">{s.topic}</td>
-                            <td className="px-4 py-2 text-xs text-ink-muted hidden sm:table-cell">
+                            <td className="px-4 py-2 text-sm text-ink-muted hidden sm:table-cell">
                               {s.department ?? s.facilityName ?? '—'}
                             </td>
-                            <td className="px-4 py-2 text-xs text-ink-muted hidden md:table-cell">{s.createdBy}</td>
+                            <td className="px-4 py-2 text-sm text-ink-muted hidden md:table-cell">{s.createdBy}</td>
                             <td className="px-4 py-2 text-center">
-                              <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">
+                              <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-sm font-bold">
                                 {s.signCount}명
                               </span>
                             </td>
                             <td className="px-4 py-2 text-right">
                               <button onClick={() => setExpanded(isOpen ? null : s.id)}
-                                className="text-xs text-accent font-bold hover:underline">
+                                className="text-sm text-accent font-bold hover:underline">
                                 {isOpen ? '닫기' : '상세'}
                               </button>
                             </td>
@@ -172,14 +172,14 @@ export default function TbmHistoryClient() {
                             <tr className="bg-slate-50">
                               <td colSpan={6} className="px-4 py-3">
                                 {s.content && (
-                                  <p className="text-xs text-ink-muted mb-2 whitespace-pre-wrap">{s.content}</p>
+                                  <p className="text-sm text-ink-muted mb-2 whitespace-pre-wrap">{s.content}</p>
                                 )}
                                 {s.signers.length > 0 && (
                                   <div>
-                                    <div className="text-xs font-bold text-slate-600 mb-1">서명자</div>
+                                    <div className="text-sm font-bold text-ink-faint mb-1">서명자</div>
                                     <div className="flex flex-wrap gap-1.5">
                                       {s.signers.map((sig) => (
-                                        <span key={sig.id} className="text-xs bg-white border border-slate-200 rounded px-2 py-0.5">
+                                        <span key={sig.id} className="text-sm bg-white border border-slate-200 rounded px-2 py-0.5">
                                           {sig.name}{sig.employeeNo ? ` (${sig.employeeNo})` : ''}
                                         </span>
                                       ))}
@@ -206,7 +206,7 @@ export default function TbmHistoryClient() {
           {/* 필터 */}
           <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
             <div>
-              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">연도</div>
+              <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">연도</div>
               <input type="number" value={eduYear} onChange={(e) => setEduYear(Number(e.target.value))}
                 min={2020} max={2100}
                 className="w-24 px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
@@ -225,7 +225,7 @@ export default function TbmHistoryClient() {
             )}
           </div>
 
-          {eduLoading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+          {eduLoading && <div className="py-10 text-center text-ink-faint text-sm">로딩 중…</div>}
           {eduError && <div className="px-4 py-2 bg-red-50 border border-red-300 rounded text-sm text-red-700">{eduError}</div>}
 
           {eduData && !eduLoading && (
@@ -240,7 +240,7 @@ export default function TbmHistoryClient() {
                     ? `${Math.round(eduData.participantCount / eduData.totalWorkers * 100)}%` : '0%' },
                 ].map((c) => (
                   <div key={c.label} className="bg-surface border border-line rounded-xl p-4 text-center">
-                    <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{c.label}</div>
+                    <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">{c.label}</div>
                     <div className="text-xl font-black text-ink">{c.value}</div>
                   </div>
                 ))}
@@ -249,37 +249,37 @@ export default function TbmHistoryClient() {
               {/* 근로자별 테이블 */}
               <div className="bg-surface border border-line rounded-xl overflow-hidden">
                 <div className="px-4 py-2 bg-slate-50 border-b border-line">
-                  <span className="text-xs font-extrabold text-slate-600">근로자별 교육시간현황 (1회 = 10분 기준)</span>
+                  <span className="text-sm font-extrabold text-ink-faint">근로자별 교육시간현황 (1회 = 10분 기준)</span>
                 </div>
                 {eduData.workers.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-sm">{eduData.year}년 TBM 참여 기록이 없습니다.</div>
+                  <div className="py-12 text-center text-ink-faint text-sm">{eduData.year}년 TBM 참여 기록이 없습니다.</div>
                 ) : (
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 border-b border-line">
                       <tr>
-                        <th className="px-4 py-2 text-left font-extrabold text-xs">순번</th>
-                        <th className="px-4 py-2 text-left font-extrabold text-xs">성명</th>
-                        <th className="px-4 py-2 text-left font-extrabold text-xs hidden sm:table-cell">직위</th>
-                        <th className="px-4 py-2 text-left font-extrabold text-xs hidden md:table-cell">담당</th>
-                        <th className="px-4 py-2 text-center font-extrabold text-xs">참석횟수</th>
-                        <th className="px-4 py-2 text-center font-extrabold text-xs">교육시간(분)</th>
-                        <th className="px-4 py-2 text-center font-extrabold text-xs hidden sm:table-cell">최근참석</th>
+                        <th className="px-4 py-2 text-left font-extrabold text-sm">순번</th>
+                        <th className="px-4 py-2 text-left font-extrabold text-sm">성명</th>
+                        <th className="px-4 py-2 text-left font-extrabold text-sm hidden sm:table-cell">직위</th>
+                        <th className="px-4 py-2 text-left font-extrabold text-sm hidden md:table-cell">담당</th>
+                        <th className="px-4 py-2 text-center font-extrabold text-sm">참석횟수</th>
+                        <th className="px-4 py-2 text-center font-extrabold text-sm">교육시간(분)</th>
+                        <th className="px-4 py-2 text-center font-extrabold text-sm hidden sm:table-cell">최근참석</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
                       {eduData.workers.map((w, idx) => (
                         <tr key={w.id} className="hover:bg-surface-soft">
-                          <td className="px-4 py-2 text-xs text-ink-muted">{idx + 1}</td>
+                          <td className="px-4 py-2 text-sm text-ink-muted">{idx + 1}</td>
                           <td className="px-4 py-2 font-bold text-sm">{w.name}</td>
-                          <td className="px-4 py-2 text-xs text-ink-muted hidden sm:table-cell">{w.position ?? '—'}</td>
-                          <td className="px-4 py-2 text-xs text-ink-muted hidden md:table-cell">{w.department ?? '—'}</td>
+                          <td className="px-4 py-2 text-sm text-ink-muted hidden sm:table-cell">{w.position ?? '—'}</td>
+                          <td className="px-4 py-2 text-sm text-ink-muted hidden md:table-cell">{w.department ?? '—'}</td>
                           <td className="px-4 py-2 text-center">
                             <span className="font-extrabold text-accent">{w.count}회</span>
                           </td>
                           <td className="px-4 py-2 text-center">
                             <span className="font-bold">{w.minutesEstimated}분</span>
                           </td>
-                          <td className="px-4 py-2 text-center text-xs font-mono text-ink-muted hidden sm:table-cell">
+                          <td className="px-4 py-2 text-center text-sm font-mono text-ink-muted hidden sm:table-cell">
                             {w.lastDate}
                           </td>
                         </tr>

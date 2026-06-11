@@ -228,12 +228,12 @@ export default function AnnouncementBanner() {
             onClick={() => setVoiceOpen(true)}
             aria-label="음성 알림 설정"
             title="음성 알림 설정"
-            className="px-2 py-1 rounded text-xs font-extrabold bg-white/80 border border-purple-200 hover:bg-white active:scale-95"
+            className="px-2 py-1 rounded text-sm font-extrabold bg-white/80 border border-purple-200 hover:bg-white active:scale-95"
           >
             🔊 음성
           </button>
           {!hasCritical && (
-            <button onClick={() => setPopupOpen(false)} aria-label="닫기" className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+            <button onClick={() => setPopupOpen(false)} aria-label="닫기" className="text-ink-faint hover:text-ink-muted text-xl leading-none">✕</button>
           )}
         </div>
 
@@ -256,7 +256,7 @@ export default function AnnouncementBanner() {
                     </span>
                   </div>
                   <h3 className="font-extrabold text-sm">{a.title}</h3>
-                  <p className="text-xs mt-1.5 whitespace-pre-wrap leading-relaxed">{a.body}</p>
+                  <p className="text-sm mt-1.5 whitespace-pre-wrap leading-relaxed">{a.body}</p>
                   <div className="text-[0.625rem] font-mono opacity-70 mt-2">
                     {a.authorName} · {new Date(a.publishedAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </div>
@@ -264,7 +264,7 @@ export default function AnnouncementBanner() {
                 {a.severity !== 'CRITICAL' && (
                   <button
                     onClick={() => dismissOne(a.id)}
-                    className="text-xs font-bold px-2 py-0.5 rounded bg-white/60 hover:bg-white flex-shrink-0"
+                    className="text-sm font-bold px-2 py-0.5 rounded bg-white/60 hover:bg-white flex-shrink-0"
                   >
                     ✓ 확인
                   </button>
@@ -276,7 +276,7 @@ export default function AnnouncementBanner() {
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex items-center justify-between">
-          <span className="text-[0.6875rem] text-slate-500 font-bold">
+          <span className="text-[0.6875rem] text-ink-faint font-bold">
             {hasCritical ? '🚨 긴급 공지는 확인 필수' : '✕ 또는 외부 클릭 시 다음 접속 시 다시 표시'}
           </span>
           <button

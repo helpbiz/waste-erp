@@ -263,12 +263,12 @@ export default function SafetyClient({
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-ink tracking-tight">산업안전보건 관리</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">
+          <p className="text-sm font-bold text-ink-muted mt-1">
             Plan §3-4 · 산안법 §54 (사망/중상 24h) · §57 (부상 30일) 보고
           </p>
         </div>
         {overdueMol > 0 && (
-          <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-red-100 text-danger border border-danger animate-pulse">
+          <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-red-100 text-danger border border-danger animate-pulse">
             ⚠ MOL 보고 기한 초과 {overdueMol}건
           </span>
         )}
@@ -278,12 +278,12 @@ export default function SafetyClient({
       {/* 날짜 필터 */}
       <div className="bg-surface border border-line rounded-xl p-3 flex flex-wrap items-center gap-2 shadow-sm">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-extrabold text-ink-muted whitespace-nowrap">기간</span>
+          <span className="text-sm font-extrabold text-ink-muted whitespace-nowrap">기간</span>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
-          <span className="text-xs text-ink-muted">~</span>
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+          <span className="text-sm text-ink-muted">~</span>
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="px-2.5 py-1.5 rounded border border-line text-xs font-mono font-bold bg-white focus:outline-none focus:border-accent" />
+            className="px-2.5 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white focus:outline-none focus:border-accent" />
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => quickRange('thisMonth')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">이번달</button>
@@ -291,7 +291,7 @@ export default function SafetyClient({
           <button onClick={() => quickRange('last3')} className="px-2.5 py-1.5 rounded border border-line bg-white text-[0.6875rem] font-bold hover:bg-surface-soft">최근 3개월</button>
         </div>
         <button onClick={() => navigateSafety(dateFrom, dateTo)}
-          className="px-4 py-1.5 rounded bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95">조회</button>
+          className="px-4 py-1.5 rounded bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95">조회</button>
         <span className="ml-auto text-[0.6875rem] font-mono text-ink-muted">{initFrom} ~ {initTo} · {rows.length}건</span>
       </div>
 
@@ -299,7 +299,7 @@ export default function SafetyClient({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => navigateSafety(initFrom, initTo, '')}
-            className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+            className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
               !selectedContractorId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
             }`}
           >
@@ -309,7 +309,7 @@ export default function SafetyClient({
             <button
               key={c.id}
               onClick={() => navigateSafety(initFrom, initTo, c.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
                 selectedContractorId === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
               }`}
             >
@@ -365,20 +365,20 @@ export default function SafetyClient({
       {isManager && (
         <div className="flex items-center gap-2 flex-wrap print:hidden">
           <a href="/safety/temperature"
-            className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm">
+            className="px-3 py-1.5 rounded-lg border border-line bg-white text-sm font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm">
             🌡 일자별 온도조회
           </a>
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg border border-line bg-white text-sm font-extrabold text-ink-muted hover:bg-slate-50 transition shadow-sm flex items-center gap-1 disabled:opacity-50"
           >
             <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             {exporting ? '생성 중…' : '보고서 Excel'}
           </button>
-          <span className="text-xs text-slate-400">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
+          <span className="text-sm text-ink-faint">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
         </div>
       )}
 
@@ -448,13 +448,13 @@ export default function SafetyClient({
                   {tbm.content && <div><span className="font-bold">내용:</span> <span className="whitespace-pre-wrap">{tbm.content}</span></div>}
                   <div><span className="font-bold">서명자:</span> {tbm.signCount}명</div>
                 </div>
-              ) : <div className="text-sm text-slate-600">등록된 TBM 없음</div>}
+              ) : <div className="text-sm text-ink-faint">등록된 TBM 없음</div>}
             </DailySection>
 
             {/* 일일점검 — 체크박스 형태로 항목 표시 */}
             <DailySection title="✅ 일일점검">
               {dailyRows.filter((r) => r.reportType === 'DAILY_CHECKLIST').length === 0
-                ? <div className="text-sm text-slate-600">점검 보고 없음</div>
+                ? <div className="text-sm text-ink-faint">점검 보고 없음</div>
                 : dailyRows.filter((r) => r.reportType === 'DAILY_CHECKLIST').map((r) => (
                   <div key={r.id} className="mb-3 border border-line rounded p-2">
                     <div className="flex items-center mb-1.5">
@@ -492,7 +492,7 @@ export default function SafetyClient({
             {/* 아차사고 */}
             <DailySection title="⚠ 아차사고">
               {dailyRows.filter((r) => r.reportType === 'NEAR_MISS').length === 0
-                ? <div className="text-sm text-slate-600">신고 없음</div>
+                ? <div className="text-sm text-ink-faint">신고 없음</div>
                 : (
                   <ul className="space-y-1 text-sm">
                     {dailyRows.filter((r) => r.reportType === 'NEAR_MISS').map((r) => (
@@ -507,7 +507,7 @@ export default function SafetyClient({
             {/* 재해 발생 */}
             <DailySection title="🚨 재해 발생">
               {dailyRows.filter((r) => r.reportType === 'INCIDENT').length === 0
-                ? <div className="text-sm text-slate-600">재해 없음 (안전 무재해 진행 중)</div>
+                ? <div className="text-sm text-ink-faint">재해 없음 (안전 무재해 진행 중)</div>
                 : (
                   <ul className="space-y-1 text-sm">
                     {dailyRows.filter((r) => r.reportType === 'INCIDENT').map((r) => (
@@ -521,12 +521,12 @@ export default function SafetyClient({
 
             <div className="mt-6 pt-3 border-t-2 border-slate-300 grid grid-cols-2 gap-8 text-sm">
               <div>
-                <div className="font-bold mb-2">담당자 {meName && <span className="text-xs font-mono">({meName})</span>}</div>
+                <div className="font-bold mb-2">담당자 {meName && <span className="text-sm font-mono">({meName})</span>}</div>
                 <div className="border border-slate-400 h-16 flex items-center justify-center bg-white">
                   {meSignatureUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={meSignatureUrl} alt="signature" className="max-h-full" />
-                  ) : <span className="text-[0.625rem] font-mono text-slate-500">서명 미등록</span>}
+                  ) : <span className="text-[0.625rem] font-mono text-ink-faint">서명 미등록</span>}
                 </div>
               </div>
               <div>
@@ -535,7 +535,7 @@ export default function SafetyClient({
                   {isManager && meSignatureUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={meSignatureUrl} alt="signature" className="max-h-full" />
-                  ) : <span className="text-[0.625rem] font-mono text-slate-500">관리자 서명란</span>}
+                  ) : <span className="text-[0.625rem] font-mono text-ink-faint">관리자 서명란</span>}
                 </div>
               </div>
             </div>
@@ -565,7 +565,7 @@ export default function SafetyClient({
                     <code className="text-[0.625rem] font-mono text-ink-faint">#{r.id}</code>
                   </div>
                   {r.reportType === 'DAILY_CHECKLIST' && r.checklistItems && (
-                    <div className="text-xs text-ink font-semibold mt-1">
+                    <div className="text-sm text-ink font-semibold mt-1">
                       체크: {r.checklistItems.filter((i) => i.ok).length} / {r.checklistItems.length}
                       {r.allChecked ? ' ✓ 전체 완료' : ' (이상항목 있음)'}
                     </div>
@@ -574,7 +574,7 @@ export default function SafetyClient({
                   {r.reportType === 'DAILY_CHECKLIST' && !r.allChecked && r.checklistItems && (
                     <div className="mt-2 space-y-1">
                       {(r.checklistItems as ChecklistItem[]).filter((i) => !i.ok).map((item, idx) => (
-                        <div key={idx} className="bg-amber-50 border border-amber-300 rounded px-2 py-1 text-xs">
+                        <div key={idx} className="bg-amber-50 border border-amber-300 rounded px-2 py-1 text-sm">
                           <span className="font-extrabold text-amber-800">⚠ {item.label}</span>
                           {item.reason && (
                             <span className="ml-2 text-amber-700">— {item.reason}</span>
@@ -587,7 +587,7 @@ export default function SafetyClient({
                     <div className="text-sm text-ink font-semibold mt-1.5 line-clamp-3">{r.description}</div>
                   )}
                   {r.locationAddress && (
-                    <div className="text-xs text-ink-muted mt-1.5">📍 {r.locationAddress}</div>
+                    <div className="text-sm text-ink-muted mt-1.5">📍 {r.locationAddress}</div>
                   )}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[0.6875rem] font-mono font-bold text-ink-faint">
                     <span>접수: {fmt(r.reportedAt)}</span>
@@ -602,7 +602,7 @@ export default function SafetyClient({
                     {r.reviewer && <span>검토자: <span className="text-accent">{r.reviewer}</span></span>}
                   </div>
                   {r.reviewNote && (
-                    <div className="mt-2.5 px-3 py-2 bg-surface-alt rounded-md text-xs text-ink-muted font-semibold border-l-4 border-l-success">
+                    <div className="mt-2.5 px-3 py-2 bg-surface-alt rounded-md text-sm text-ink-muted font-semibold border-l-4 border-l-success">
                       <strong className="text-ink">검토 메모:</strong> {r.reviewNote}
                     </div>
                   )}
@@ -613,7 +613,7 @@ export default function SafetyClient({
                   {r.status === 'SUBMITTED' && (
                     <button
                       onClick={() => { setReviewing(r); setNote(''); setReviewStatus(r.reportType === 'INCIDENT' && (r.severity === 'FATAL' || r.severity === 'SEVERE' || r.severity === 'INJURY') ? 'MOL_REPORTED' : 'REVIEWED'); }}
-                      className="px-3 py-1.5 rounded-md bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95"
+                      className="px-3 py-1.5 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95"
                     >
                       검토 처리
                     </button>
@@ -621,13 +621,13 @@ export default function SafetyClient({
                   {r.reportType === 'DAILY_CHECKLIST' && !r.allChecked && r.status !== 'SUBMITTED' && (
                     <button
                       onClick={() => { setReviewing(r); setNote(r.reviewNote ?? ''); setReviewStatus('RESOLVED'); }}
-                      className="px-3 py-1.5 rounded-md bg-slate-600 text-white text-xs font-extrabold hover:bg-slate-700 active:scale-95"
+                      className="px-3 py-1.5 rounded-md bg-slate-600 text-white text-sm font-extrabold hover:bg-slate-700 active:scale-95"
                     >
                       조치사항 작성
                     </button>
                   )}
                   {r.reviewNote && (
-                    <span className="text-xs font-semibold text-ink-muted">조치: {r.reviewNote}</span>
+                    <span className="text-sm font-semibold text-ink-muted">조치: {r.reviewNote}</span>
                   )}
                 </div>
               )}
@@ -644,13 +644,13 @@ export default function SafetyClient({
               <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">#{reviewing.id} · {TYPE_LABEL[reviewing.reportType]}</div>
             </header>
             <div className="p-5 space-y-3">
-              <label className="block text-xs font-extrabold text-ink mb-2">처리 결과</label>
+              <label className="block text-sm font-extrabold text-ink mb-2">처리 결과</label>
               <select value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value as 'REVIEWED' | 'MOL_REPORTED' | 'RESOLVED')} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
                 <option value="REVIEWED">검토 완료</option>
                 <option value="MOL_REPORTED">지자체 보고 완료</option>
                 <option value="RESOLVED">종결</option>
               </select>
-              <label className="block text-xs font-extrabold text-ink mb-2">
+              <label className="block text-sm font-extrabold text-ink mb-2">
                 {reviewing?.reportType === 'DAILY_CHECKLIST' ? '조치사항 (예: 5/15 새 안전모 교체 완료)' : '검토 메모 (필수)'}
               </label>
               <textarea
@@ -673,7 +673,7 @@ export default function SafetyClient({
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold leading-relaxed">
+      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-sm text-info font-semibold leading-relaxed">
         <strong className="font-extrabold">지자체 보고 자동화</strong> · 사망·중상 보고서는 발생 시각 기준 24시간, 부상은 30일로 자동 마감 기한이 설정됩니다. 지자체 보고 완료 상태로 전이 시 보고 일시가 함께 기록되어 산안법 준수가 추적됩니다.
       </div>
     </div>
@@ -827,15 +827,15 @@ function TbmWidget({
           {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
           {isManager && !editing && (
             <>
-              <a href="/safety/tbm-print" className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold border border-slate-400 text-slate-600 hover:bg-slate-100 print:hidden">
+              <a href="/safety/tbm-print" className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold border border-slate-400 text-ink-faint hover:bg-slate-100 print:hidden">
                 월별 출력
               </a>
               <a href="/safety/tbm-history"
-                className="px-3 py-1 rounded text-xs font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
+                className="px-3 py-1 rounded text-sm font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
                 📋 TBM이력
               </a>
               <a href="/safety/alert-history"
-                className="px-3 py-1 rounded text-xs font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
+                className="px-3 py-1 rounded text-sm font-extrabold border border-line bg-white hover:bg-slate-50 transition print:hidden">
                 📡 공지이력
               </a>
             </>
@@ -855,7 +855,7 @@ function TbmWidget({
             <textarea rows={2} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="기타 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent resize-none" />
             <div className="flex items-center gap-2">
               <label className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md border-2 border-dashed border-line cursor-pointer hover:border-accent transition">
-                <span className="text-xs font-bold text-ink-muted">📷 TBM 사진</span>
+                <span className="text-sm font-bold text-ink-muted">📷 TBM 사진</span>
                 {photo && <span className="text-[0.625rem] text-success font-bold">사진 선택됨</span>}
                 <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoFile} />
               </label>
@@ -876,21 +876,21 @@ function TbmWidget({
               {tbm.department && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-slate-100 text-ink-muted border">{tbm.department}</span>}
             </div>
             {(tbm.leader || tbm.location) && (
-              <div className="flex gap-3 mt-1.5 text-xs font-semibold text-ink-muted">
+              <div className="flex gap-3 mt-1.5 text-sm font-semibold text-ink-muted">
                 {tbm.leader && <span>리더: <span className="text-ink font-bold">{tbm.leader}</span></span>}
                 {tbm.location && <span>장소: <span className="text-ink font-bold">{tbm.location}</span></span>}
               </div>
             )}
             {tbm.hazards && (
-              <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
+              <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-900">
                 <span className="font-extrabold">위험요인: </span>{tbm.hazards}
               </div>
             )}
-            {tbm.content && <p className="text-xs font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
+            {tbm.content && <p className="text-sm font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
             {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-contain bg-slate-50 border border-line" />}
             <div className="flex items-center justify-between mt-2.5">
               <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
-              {isManager && <button onClick={onEdit} className="text-xs font-extrabold text-accent hover:underline">수정</button>}
+              {isManager && <button onClick={onEdit} className="text-sm font-extrabold text-accent hover:underline">수정</button>}
             </div>
 
             {/* 서명자 / 미서명자 리스트 */}
@@ -901,7 +901,7 @@ function TbmWidget({
                 </div>
                 <div className="max-h-[80px] overflow-y-auto">
                   {tbm.signedWorkers.length === 0
-                    ? <span className="text-[0.625rem] text-slate-600">없음</span>
+                    ? <span className="text-[0.625rem] text-ink-faint">없음</span>
                     : (
                       <div className="flex flex-wrap gap-1">
                         {tbm.signedWorkers.map((w) => (
@@ -931,7 +931,7 @@ function TbmWidget({
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-xs font-bold text-ink-muted mb-2">오늘 TBM 세션이 등록되지 않았습니다.</p>
+            <p className="text-sm font-bold text-ink-muted mb-2">오늘 TBM 세션이 등록되지 않았습니다.</p>
             {isManager && (
               <button onClick={onEdit} className="px-4 py-2 rounded-md bg-info text-white text-sm font-extrabold hover:bg-blue-700">
                 + TBM 세션 등록

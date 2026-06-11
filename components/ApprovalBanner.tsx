@@ -104,7 +104,7 @@ export default function ApprovalBanner() {
           <button onClick={() => setOpen(false)} className="text-xl font-bold text-amber-800">&times;</button>
         </div>
         <div className="px-5 py-4 space-y-3">
-          <p className="text-sm font-bold text-slate-700">
+          <p className="text-sm font-bold text-ink-muted">
             결재가 필요한 문서가 <span className="text-amber-600 font-extrabold text-lg">{counts.total}건</span> 있습니다.
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -131,7 +131,7 @@ export default function ApprovalBanner() {
           </button>
           <button
             onClick={() => setOpen(false)}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50"
+            className="px-4 py-2.5 rounded-xl border border-slate-300 text-ink-faint font-bold text-sm hover:bg-slate-50"
           >
             나중에
           </button>
@@ -149,7 +149,7 @@ function CountChip({ label, count, tone }: { label: string; count: number; tone:
     : 'bg-blue-50 border-blue-200 text-blue-800';
   return (
     <div className={`rounded-lg border px-3 py-2 flex items-center justify-between ${cls}`}>
-      <span className="text-xs font-bold">{label}</span>
+      <span className="text-sm font-bold">{label}</span>
       <span className="text-base font-black font-mono">{count}</span>
     </div>
   );

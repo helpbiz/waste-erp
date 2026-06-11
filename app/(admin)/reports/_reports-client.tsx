@@ -190,7 +190,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         {/* 위탁업체 선택 — 통합 vs 개별 */}
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">위탁업체</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">위탁업체</div>
           <select
             value={contractorId}
             onChange={(e) => setContractorId(e.target.value)}
@@ -206,12 +206,12 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
           </select>
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="시작일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="종료일"
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
@@ -247,19 +247,19 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
         </div>
       </div>
 
-      {!data && <div className="text-center py-12 text-slate-700 font-bold">조회 중…</div>}
+      {!data && <div className="text-center py-12 text-ink-muted font-bold">조회 중…</div>}
 
       {data && (
         <div className="bg-white border-t-4 border-double border-slate-700 pt-4 px-4 print:px-2 print:pt-0">
           <h1 className="text-3xl font-black text-center mb-1">통합 운영 보고서</h1>
-          <div className="text-center text-sm font-bold text-slate-600 mb-1">{data.range.from} ~ {data.range.to}</div>
+          <div className="text-center text-sm font-bold text-ink-faint mb-1">{data.range.from} ~ {data.range.to}</div>
           {/* 업체명 — 개별 업체 선택 시 표시, 통합 시 '전체 업체' */}
           <div className="text-center text-base font-extrabold text-ink mb-1">
             {contractorId
               ? contractorOpts.find((c) => c.id === contractorId)?.companyName ?? '위탁업체'
               : '전체 업체 (통합)'}
           </div>
-          <div className="text-center text-[0.6875rem] font-mono text-slate-600 mb-6">
+          <div className="text-center text-[0.6875rem] font-mono text-ink-faint mb-6">
             출력자: {session.name} ({ROLE_LABEL[session.role]}) · 출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
 
@@ -373,7 +373,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
                     return (
                       <div key={m.ym} className="flex-1 flex flex-col items-center gap-1 min-w-0">
                         <div className="w-full bg-amber-400 rounded-t hover:bg-amber-500 transition" style={{ height: `${h}%` }} title={`${m.ym}: ${m.count}건`} />
-                        <div className="text-[0.5625rem] font-mono font-bold text-slate-600 truncate w-full text-center">{m.ym.slice(5)}</div>
+                        <div className="text-[0.5625rem] font-mono font-bold text-ink-faint truncate w-full text-center">{m.ym.slice(5)}</div>
                         <div className="text-[0.625rem] font-mono font-extrabold text-ink">{m.count}</div>
                       </div>
                     );
@@ -416,8 +416,8 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
                 {data.complaints.byWorker.length > 0 && (
                   <Card title="워커별 KPI Top 10">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead className="text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+                      <table className="w-full text-sm">
+                        <thead className="text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
                           <tr className="border-b border-line">
                             <th className="text-left py-1.5">워커</th>
                             <th className="text-right py-1.5">담당</th>
@@ -466,7 +466,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
           {!isAvac && (
             <>
               {/* 6. 처리실적 — 일반 수집운반 업체만 */}
-              <Section no={6} title="생활폐기물 처리실적 (14성상)" color="text-slate-700">
+              <Section no={6} title="생활폐기물 처리실적 (14성상)" color="text-ink-muted">
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <KCard label="총 처리량" value={`${data.waste.total} ton`} tone="accent" />
                   <KCard label="기록 건수" value={`${data.waste.records}건`} />
@@ -592,7 +592,7 @@ function Section({ no, title, color, children }: { no: number; title: string; co
 }
 
 function Card({ title, children, cls = '' }: { title: string; children: React.ReactNode; cls?: string }) {
-  /* 내용 1단계 다운 — sub title text-xs 12px → text-[0.6875rem] */
+  /* 내용 1단계 다운 — sub title text-sm 12px → text-[0.6875rem] */
   return (
     <div className={`bg-surface border border-line rounded p-3 ${cls}`}>
       <div className="text-[0.6875rem] font-extrabold text-ink mb-2">{title}</div>
@@ -602,8 +602,8 @@ function Card({ title, children, cls = '' }: { title: string; children: React.Re
 }
 
 function Empty() {
-  /* 내용 1단계 다운 — text-xs 12px → text-[0.6875rem] */
-  return <div className="text-[0.6875rem] text-slate-700 text-center py-3">데이터 없음</div>;
+  /* 내용 1단계 다운 — text-sm 12px → text-[0.6875rem] */
+  return <div className="text-[0.6875rem] text-ink-muted text-center py-3">데이터 없음</div>;
 }
 
 function KCard({ label, value, unit, tone = 'default' }: { label: string; value: string; unit?: string; tone?: 'default' | 'accent' | 'success' | 'warning' }) {
@@ -615,7 +615,7 @@ function KCard({ label, value, unit, tone = 'default' }: { label: string; value:
   };
   return (
     <div className={`px-3 py-2 rounded border-2 text-center ${c[tone]}`}>
-      <div className="text-xs font-mono font-extrabold uppercase">{label}</div>
+      <div className="text-sm font-mono font-extrabold uppercase">{label}</div>
       <div className="text-base font-black mt-0.5">{value}</div>
       {unit && <div className="text-[0.5625rem] font-mono font-bold opacity-70 mt-0.5">{unit}</div>}
     </div>
@@ -642,7 +642,7 @@ function HourHistogram({ data }: { data: Array<{ hour: number; count: number }> 
   const mx = Math.max(1, ...data.map((d) => d.count));
   const total = data.reduce((s, d) => s + d.count, 0);
   if (total === 0) {
-    return <div className="py-4 text-center text-xs text-slate-500">데이터 없음</div>;
+    return <div className="py-4 text-center text-sm text-ink-faint">데이터 없음</div>;
   }
   return (
     <div>
@@ -664,7 +664,7 @@ function HourHistogram({ data }: { data: Array<{ hour: number; count: number }> 
           );
         })}
       </div>
-      <div className="flex justify-between text-[0.5625rem] font-mono font-bold text-slate-500 mt-1 px-1">
+      <div className="flex justify-between text-[0.5625rem] font-mono font-bold text-ink-faint mt-1 px-1">
         <span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span>
       </div>
     </div>
@@ -677,7 +677,7 @@ function WeekdayBars({ data }: { data: Array<{ day: number; count: number }> }) 
   const mx = Math.max(1, ...data.map((d) => d.count));
   const total = data.reduce((s, d) => s + d.count, 0);
   if (total === 0) {
-    return <div className="py-4 text-center text-xs text-slate-500">데이터 없음</div>;
+    return <div className="py-4 text-center text-sm text-ink-faint">데이터 없음</div>;
   }
   return (
     <div className="flex items-end gap-1.5 h-24 px-1 pt-1">
@@ -689,7 +689,7 @@ function WeekdayBars({ data }: { data: Array<{ day: number; count: number }> }) 
           <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
             <div className="text-[0.625rem] font-mono font-extrabold text-ink">{d.count}</div>
             <div className={`w-full rounded-t ${color} hover:opacity-80 transition`} style={{ height: `${Math.max(4, h)}%` }} />
-            <div className={`text-[0.6875rem] font-bold ${isWeekend ? 'text-rose-600' : 'text-slate-700'}`}>{labels[d.day]}</div>
+            <div className={`text-[0.6875rem] font-bold ${isWeekend ? 'text-rose-600' : 'text-ink-muted'}`}>{labels[d.day]}</div>
           </div>
         );
       })}

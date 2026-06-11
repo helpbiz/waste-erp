@@ -27,7 +27,7 @@ type AttendanceDaily = { date: string; count: number };
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-line rounded-lg shadow-lg p-3 text-xs">
+    <div className="bg-white border border-line rounded-lg shadow-lg p-3 text-sm">
       <p className="font-extrabold text-ink mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }} className="font-bold">

@@ -93,7 +93,7 @@ export function UsersGlobalTab() {
       {/* 필터 */}
       <div className="bg-surface border border-line rounded-lg p-3 flex flex-wrap items-end gap-2">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">검색</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">검색</div>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -116,12 +116,12 @@ export function UsersGlobalTab() {
           <option value="">위탁업체 전체</option>
           {contractors.map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
         </select>
-        <label className="flex items-center gap-1 text-xs font-bold">
+        <label className="flex items-center gap-1 text-sm font-bold">
           <input type="checkbox" checked={lockedOnly} onChange={(e) => { setLockedOnly(e.target.checked); setPage(1); }} />
           잠금만
         </label>
-        <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-xs font-extrabold">검색</button>
-        <button onClick={() => setCreateOpen(true)} className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm">
+        <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-sm font-extrabold">검색</button>
+        <button onClick={() => setCreateOpen(true)} className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-sm">
           ＋ 신규 사용자 등록
         </button>
       </div>
@@ -143,18 +143,18 @@ export function UsersGlobalTab() {
           <div className="font-mono text-sm">
             <b>{resetResult.username}</b> → <code className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">{resetResult.tempPassword}</code>
           </div>
-          <button onClick={() => navigator.clipboard.writeText(resetResult.tempPassword)} className="mt-2 px-2 py-1 rounded bg-amber-600 text-white text-xs font-bold">📋 PW 복사</button>
-          <button onClick={() => setResetResult(null)} className="mt-2 ml-1.5 px-2 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">닫기</button>
+          <button onClick={() => navigator.clipboard.writeText(resetResult.tempPassword)} className="mt-2 px-2 py-1 rounded bg-amber-600 text-white text-sm font-bold">📋 PW 복사</button>
+          <button onClick={() => setResetResult(null)} className="mt-2 ml-1.5 px-2 py-1 rounded bg-slate-200 text-ink-muted text-sm font-bold">닫기</button>
         </div>
       )}
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-slate-100 border-b border-line text-xs font-extrabold text-ink">
+        <div className="px-3 py-2 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">
           전체 {total}명 · 페이지 {page} / {Math.ceil(total / 50)}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[900px]">
-            <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
+            <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase">
               <tr>
                 <th className="px-2 py-2 text-left">이름</th>
                 <th className="px-2 py-2 text-left">아이디</th>
@@ -167,31 +167,31 @@ export function UsersGlobalTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {loading && <tr><td colSpan={8} className="px-3 py-10 text-center text-slate-500">로딩 중…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-slate-500">결과 없음</td></tr>}
+              {loading && <tr><td colSpan={8} className="px-3 py-10 text-center text-ink-faint">로딩 중…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={8} className="px-3 py-10 text-center text-ink-faint">결과 없음</td></tr>}
               {items.map((u) => (
                 <tr key={u.id} className={u.isLocked ? 'bg-rose-50' : ''}>
                   <td className="px-2 py-2 font-bold text-ink">{u.name}</td>
-                  <td className="px-2 py-2 font-mono text-xs">{u.username}</td>
+                  <td className="px-2 py-2 font-mono text-sm">{u.username}</td>
                   <td className="px-2 py-2">
                     <span className="text-[0.625rem] font-mono font-extrabold px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-300">
                       {ROLE_LABEL[u.role] ?? u.role}
                     </span>
                   </td>
-                  <td className="px-2 py-2 text-xs">
-                    {u.contractorName ?? u.municipalityName ?? <span className="text-slate-400">—</span>}
+                  <td className="px-2 py-2 text-sm">
+                    {u.contractorName ?? u.municipalityName ?? <span className="text-ink-faint">—</span>}
                   </td>
                   <td className="px-2 py-2">
                     {u.isLocked && <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">🔒 잠금</span>}
                     {!u.isLocked && (
                       <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                         u.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                        u.status === 'INACTIVE' ? 'bg-slate-200 text-slate-700 border-slate-400' :
+                        u.status === 'INACTIVE' ? 'bg-slate-200 text-ink-muted border-slate-400' :
                         'bg-amber-100 text-amber-800 border-amber-300'
                       }`}>{u.status}</span>
                     )}
                   </td>
-                  <td className="px-2 py-2 font-mono text-[0.6875rem] text-slate-600">{u.lastLogin ? u.lastLogin.slice(0, 16).replace('T', ' ') : '—'}</td>
+                  <td className="px-2 py-2 font-mono text-[0.6875rem] text-ink-faint">{u.lastLogin ? u.lastLogin.slice(0, 16).replace('T', ' ') : '—'}</td>
                   <td className="px-2 py-2 text-right font-mono">{u.failedLoginAttempts}</td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <button onClick={() => toggleLock(u)} className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-rose-600 text-white hover:bg-rose-700 mr-1">
@@ -207,9 +207,9 @@ export function UsersGlobalTab() {
           </table>
         </div>
         <div className="px-3 py-2 bg-slate-50 border-t border-line flex items-center justify-between">
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded bg-slate-200 text-xs font-bold disabled:opacity-40">← 이전</button>
-          <span className="text-xs font-mono text-slate-600">{page} / {Math.max(1, Math.ceil(total / 50))}</span>
-          <button disabled={page * 50 >= total} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded bg-slate-200 text-xs font-bold disabled:opacity-40">다음 →</button>
+          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded bg-slate-200 text-sm font-bold disabled:opacity-40">← 이전</button>
+          <span className="text-sm font-mono text-ink-faint">{page} / {Math.max(1, Math.ceil(total / 50))}</span>
+          <button disabled={page * 50 >= total} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded bg-slate-200 text-sm font-bold disabled:opacity-40">다음 →</button>
         </div>
       </div>
     </div>
@@ -244,12 +244,12 @@ export function SystemStatsTab() {
     return () => clearInterval(t);
   }, []);
 
-  if (loading && !data) return <div className="text-center py-10 text-slate-500">로딩 중…</div>;
+  if (loading && !data) return <div className="text-center py-10 text-ink-faint">로딩 중…</div>;
   if (!data) return <div className="text-center py-10 text-rose-600">데이터 로드 실패</div>;
 
   return (
     <div className="space-y-4">
-      <div className="text-xs font-mono text-slate-500 text-right">
+      <div className="text-sm font-mono text-ink-faint text-right">
         업데이트: {data.timestamp.slice(0, 19).replace('T', ' ')} (30초마다 자동)
       </div>
       <Section title="📊 시스템 현황">
@@ -351,7 +351,7 @@ export function AuditLogTab() {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-3 flex flex-wrap items-end gap-2">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">액션</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">액션</div>
           <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="LOGIN_SUCCESS 등" className="w-44 px-2 py-1.5 rounded border border-line text-sm" />
         </div>
         <select value={actorRole} onChange={(e) => { setActorRole(e.target.value); setPage(1); }} className="px-2 py-1.5 rounded border border-line text-sm">
@@ -359,7 +359,7 @@ export function AuditLogTab() {
           {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">회사 (id 또는 이름)</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">회사 (id 또는 이름)</div>
           <input
             value={contractorFilter}
             onChange={(e) => { setContractorFilter(e.target.value); setPage(1); }}
@@ -368,7 +368,7 @@ export function AuditLogTab() {
           />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">지자체 (id 또는 이름)</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">지자체 (id 또는 이름)</div>
           <input
             value={municipalityFilter}
             onChange={(e) => { setMunicipalityFilter(e.target.value); setPage(1); }}
@@ -377,23 +377,23 @@ export function AuditLogTab() {
           />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} className="px-2 py-1.5 rounded border border-line text-sm" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} className="px-2 py-1.5 rounded border border-line text-sm" />
         </div>
-        <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-xs font-extrabold">검색</button>
+        <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-sm font-extrabold">검색</button>
       </div>
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        <div className="px-3 py-2 bg-slate-100 border-b border-line text-xs font-extrabold text-ink">
+        <div className="px-3 py-2 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">
           {total.toLocaleString()}건 · 페이지 {page} / {Math.max(1, Math.ceil(total / 50))}
         </div>
         <div className="overflow-x-auto max-h-[600px]">
-          <table className="w-full text-xs min-w-[1000px]">
-            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase sticky top-0">
+          <table className="w-full text-sm min-w-[1000px]">
+            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase sticky top-0">
               <tr>
                 <th className="px-2 py-1.5 text-left">시간</th>
                 <th className="px-2 py-1.5 text-left">행위자</th>
@@ -407,13 +407,13 @@ export function AuditLogTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {loading && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">로딩 중…</td></tr>}
-              {!loading && filteredItems.length === 0 && <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-500">결과 없음</td></tr>}
+              {loading && <tr><td colSpan={9} className="px-3 py-8 text-center text-ink-faint">로딩 중…</td></tr>}
+              {!loading && filteredItems.length === 0 && <tr><td colSpan={9} className="px-3 py-8 text-center text-ink-faint">결과 없음</td></tr>}
               {filteredItems.map((i) => (
                 <>
                   <tr key={i.id} className="hover:bg-slate-50">
-                    <td className="px-2 py-1 font-mono text-[0.6875rem] text-slate-700 whitespace-nowrap">{i.createdAt.slice(0, 19).replace('T', ' ')}</td>
-                    <td className="px-2 py-1 font-bold">{i.actor?.name ?? <span className="text-slate-400">—</span>}</td>
+                    <td className="px-2 py-1 font-mono text-[0.6875rem] text-ink-muted whitespace-nowrap">{i.createdAt.slice(0, 19).replace('T', ' ')}</td>
+                    <td className="px-2 py-1 font-bold">{i.actor?.name ?? <span className="text-ink-faint">—</span>}</td>
                     <td className="px-2 py-1 font-mono text-[0.625rem]">{i.actorRole ? (ROLE_LABEL[i.actorRole] ?? i.actorRole) : '—'}</td>
                     <td className="px-2 py-1">
                       <code className="text-[0.6875rem] font-mono font-extrabold px-1 rounded bg-blue-100 text-blue-900">{i.action}</code>
@@ -423,23 +423,23 @@ export function AuditLogTab() {
                       {i.contractorName ? (
                         <span className="inline-flex items-center gap-1">
                           <span className="font-bold text-emerald-800">{i.contractorName}</span>
-                          <span className="text-[0.5625rem] font-mono text-slate-400">#{i.contractorId}</span>
+                          <span className="text-[0.5625rem] font-mono text-ink-faint">#{i.contractorId}</span>
                         </span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-ink-faint">—</span>
                       )}
                     </td>
                     <td className="px-2 py-1 text-[0.6875rem]">
                       {i.municipalityName ? (
                         <span className="inline-flex items-center gap-1">
                           <span className="font-bold text-cyan-800">{i.municipalityName}</span>
-                          {i.municipalityCode && <span className="text-[0.5625rem] font-mono text-slate-400">{i.municipalityCode}</span>}
+                          {i.municipalityCode && <span className="text-[0.5625rem] font-mono text-ink-faint">{i.municipalityCode}</span>}
                         </span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-ink-faint">—</span>
                       )}
                     </td>
-                    <td className="px-2 py-1 font-mono text-[0.625rem] text-slate-500">{i.ipAddress ?? '—'}</td>
+                    <td className="px-2 py-1 font-mono text-[0.625rem] text-ink-faint">{i.ipAddress ?? '—'}</td>
                     <td className="px-2 py-1 text-right">
                       {i.metadata != null && (
                         <button onClick={() => setExpanded(expanded === i.id ? null : i.id)} className="text-[0.625rem] text-accent font-bold hover:underline">
@@ -451,7 +451,7 @@ export function AuditLogTab() {
                   {expanded === i.id && (
                     <tr key={i.id + '-exp'} className="bg-slate-100">
                       <td colSpan={9} className="px-3 py-2">
-                        <pre className="text-[0.625rem] font-mono whitespace-pre-wrap break-all text-slate-700">{JSON.stringify(i.metadata, null, 2)}</pre>
+                        <pre className="text-[0.625rem] font-mono whitespace-pre-wrap break-all text-ink-muted">{JSON.stringify(i.metadata, null, 2)}</pre>
                       </td>
                     </tr>
                   )}
@@ -461,9 +461,9 @@ export function AuditLogTab() {
           </table>
         </div>
         <div className="px-3 py-2 bg-slate-50 border-t border-line flex items-center justify-between">
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded bg-slate-200 text-xs font-bold disabled:opacity-40">← 이전</button>
-          <span className="text-xs font-mono text-slate-600">{page} / {Math.max(1, Math.ceil(total / 50))}</span>
-          <button disabled={page * 50 >= total} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded bg-slate-200 text-xs font-bold disabled:opacity-40">다음 →</button>
+          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1 rounded bg-slate-200 text-sm font-bold disabled:opacity-40">← 이전</button>
+          <span className="text-sm font-mono text-ink-faint">{page} / {Math.max(1, Math.ceil(total / 50))}</span>
+          <button disabled={page * 50 >= total} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded bg-slate-200 text-sm font-bold disabled:opacity-40">다음 →</button>
         </div>
       </div>
     </div>
@@ -498,7 +498,7 @@ export function OrgTreeTab() {
     return data.municipalities.filter((m) => (m.region ?? '').includes(region));
   }, [data, region]);
 
-  if (loading) return <div className="text-center py-10 text-slate-500">로딩 중…</div>;
+  if (loading) return <div className="text-center py-10 text-ink-faint">로딩 중…</div>;
   if (!data) return <div className="text-center py-10 text-rose-600">데이터 로드 실패</div>;
 
   function toggle(id: string) {
@@ -522,7 +522,7 @@ export function OrgTreeTab() {
             value={region}
             onChange={(e) => setRegion(e.target.value)}
             placeholder="🔍 지역 필터 (예: 서울)"
-            className="px-2 py-1 rounded border border-purple-300 text-xs"
+            className="px-2 py-1 rounded border border-purple-300 text-sm"
           />
         </div>
       </div>
@@ -535,21 +535,21 @@ export function OrgTreeTab() {
               <button onClick={() => toggle(m.id)} className="w-full px-3 py-2 bg-cyan-50 hover:bg-cyan-100 flex items-center gap-2 text-left">
                 <span className="text-base">🏛</span>
                 <span className="font-extrabold text-ink text-sm">{m.name}</span>
-                <span className="text-[0.625rem] font-mono text-slate-500">{m.region ?? ''} · {m.code}</span>
+                <span className="text-[0.625rem] font-mono text-ink-faint">{m.region ?? ''} · {m.code}</span>
                 <span className="ml-auto text-[0.625rem] font-mono font-bold text-cyan-800">
                   업체 {m.contractors.length}곳 · MUNI_ADMIN {m.muniAdmins}명 · 직원 {totalUsers}명
                 </span>
-                <span className="text-xs font-mono text-slate-500">{isOpen ? '▼' : '▶'}</span>
+                <span className="text-sm font-mono text-ink-faint">{isOpen ? '▼' : '▶'}</span>
               </button>
               {isOpen && (
                 <div className="px-3 py-2 space-y-1.5 border-t border-cyan-200">
-                  {m.contractors.length === 0 && <div className="text-xs text-slate-500">등록된 위탁업체 없음</div>}
+                  {m.contractors.length === 0 && <div className="text-sm text-ink-faint">등록된 위탁업체 없음</div>}
                   {m.contractors.map((c) => (
                     <div key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded border border-line bg-slate-50">
                       <span className="text-base">🏢</span>
                       <span className="font-bold text-sm">{c.name}</span>
                       <span className="text-[0.625rem] font-mono px-1.5 py-0.5 rounded bg-white border border-slate-300">{c.status}</span>
-                      <span className="ml-auto text-[0.625rem] font-mono font-extrabold text-slate-700">
+                      <span className="ml-auto text-[0.625rem] font-mono font-extrabold text-ink-muted">
                         대표 {c.counts.CONTRACTOR_ADMIN ?? 0} · 팀장 {c.counts.INTERNAL_ADMIN ?? 0} · 워커 {c.counts.WORKER ?? 0}
                       </span>
                     </div>
@@ -559,7 +559,7 @@ export function OrgTreeTab() {
             </div>
           );
         })}
-        {filtered.length === 0 && <div className="text-center py-10 text-slate-500">조건에 맞는 지자체 없음</div>}
+        {filtered.length === 0 && <div className="text-center py-10 text-ink-faint">조건에 맞는 지자체 없음</div>}
       </div>
     </div>
   );
@@ -617,13 +617,13 @@ function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassw
       <div className="mt-2 flex gap-1.5">
         <button
           onClick={copy}
-          className={`px-2.5 py-1 rounded text-xs font-extrabold transition ${
+          className={`px-2.5 py-1 rounded text-sm font-extrabold transition ${
             copyOk ? 'bg-emerald-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
           }`}
         >
           {copyOk ? '✓ 복사됨!' : '📋 클립보드 복사 (메일/메신저용)'}
         </button>
-        <button onClick={onClose} className="px-2.5 py-1 rounded bg-slate-200 text-slate-700 text-xs font-bold">닫기</button>
+        <button onClick={onClose} className="px-2.5 py-1 rounded bg-slate-200 text-ink-muted text-sm font-bold">닫기</button>
       </div>
       {showManual && (
         <div className="mt-2 bg-amber-50 border border-amber-400 rounded-md px-3 py-2">
@@ -636,7 +636,7 @@ function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassw
             rows={6}
             ref={(ta) => { if (ta) { ta.focus(); ta.select(); } }}
             onClick={(e) => (e.currentTarget as HTMLTextAreaElement).select()}
-            className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-xs font-mono"
+            className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-sm font-mono"
           />
         </div>
       )}
@@ -648,13 +648,13 @@ function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassw
 function UsernameLivenStatus({ username, onPick }: { username: string; onPick: (s: string) => void }) {
   const { status, suggestions } = useUsernameCheck(username);
   if (status === 'idle') {
-    return <div className="text-[0.625rem] text-slate-500 mt-1">3~30자 영문/숫자/_-, 시스템 전체 unique</div>;
+    return <div className="text-[0.625rem] text-ink-faint mt-1">3~30자 영문/숫자/_-, 시스템 전체 unique</div>;
   }
   if (status === 'invalid') {
     return <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ 형식 오류 — 영문/숫자/_- 만 (3~30자)</div>;
   }
   if (status === 'checking') {
-    return <div className="text-[0.6875rem] text-slate-500 mt-1">중복 검사 중…</div>;
+    return <div className="text-[0.6875rem] text-ink-faint mt-1">중복 검사 중…</div>;
   }
   if (status === 'available') {
     return <div className="text-[0.6875rem] font-bold text-emerald-700 mt-1">✓ 사용 가능</div>;
@@ -663,7 +663,7 @@ function UsernameLivenStatus({ username, onPick }: { username: string; onPick: (
     <div className="mt-1 space-y-1">
       <div className="text-[0.6875rem] font-bold text-rose-700">⚠ 이미 사용 중</div>
       {suggestions.length > 0 && (
-        <div className="text-[0.625rem] text-slate-700">
+        <div className="text-[0.625rem] text-ink-muted">
           <span className="font-bold">추천 대안:</span>
           <div className="flex flex-wrap gap-1 mt-0.5">
             {suggestions.map((s) => (
@@ -798,11 +798,11 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="bg-white rounded-2xl shadow-2xl max-w-[560px] w-full max-h-[92vh] flex flex-col">
         <div className="px-5 py-3 border-b border-line flex items-center justify-between">
           <h2 className="text-base font-black text-ink">신규 사용자 등록 (SUPER_ADMIN 전용)</h2>
-          <button onClick={onClose} disabled={busy} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+          <button onClick={onClose} disabled={busy} className="text-ink-faint hover:text-ink-muted text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">권한 (Role) *</div>
+            <div className="text-sm font-extrabold text-ink mb-1">권한 (Role) *</div>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as RoleKey)}
@@ -810,7 +810,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             >
               {CREATE_ROLE_OPTIONS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
             </select>
-            <div className="text-[0.625rem] text-slate-500 mt-1">
+            <div className="text-[0.625rem] text-ink-faint mt-1">
               {role === 'MUNI_ADMIN' && '※ 지자체관리자는 회사 소속이 없는 외부 감독자. 데이터는 조회만 가능.'}
               {role === 'CONTRACTOR_ADMIN' && '※ 위탁업체 대표 — 보통 위저드에서 자동 생성. 추가 발급 시 사용.'}
               {role === 'INTERNAL_ADMIN' && '※ 회사 내부 팀장 — 결재·배차·민원 배정.'}
@@ -820,7 +820,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           {ctx === 'muni' && (
             <div>
-              <div className="text-xs font-extrabold text-ink mb-1">관할 지자체 *</div>
+              <div className="text-sm font-extrabold text-ink mb-1">관할 지자체 *</div>
               <input
                 value={muniQuery}
                 onChange={(e) => setMuniQuery(e.target.value)}
@@ -828,7 +828,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
               />
               <div className="border border-line rounded max-h-44 overflow-y-auto">
-                {filteredMunis.length === 0 && <div className="px-3 py-3 text-center text-xs text-slate-500">{muniList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
+                {filteredMunis.length === 0 && <div className="px-3 py-3 text-center text-sm text-ink-faint">{muniList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
                 {filteredMunis.map((m) => (
                   <button
                     key={m.id}
@@ -839,7 +839,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                     }`}
                   >
                     {m.name}
-                    <span className={`ml-2 text-[0.625rem] font-mono ${muniId === m.id ? 'text-cyan-100' : 'text-slate-500'}`}>
+                    <span className={`ml-2 text-[0.625rem] font-mono ${muniId === m.id ? 'text-cyan-100' : 'text-ink-faint'}`}>
                       {m.region ?? ''} · {m.code}
                     </span>
                   </button>
@@ -850,7 +850,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           {ctx === 'contractor' && (
             <div>
-              <div className="text-xs font-extrabold text-ink mb-1">소속 회사 *</div>
+              <div className="text-sm font-extrabold text-ink mb-1">소속 회사 *</div>
               <input
                 value={contractorQuery}
                 onChange={(e) => setContractorQuery(e.target.value)}
@@ -858,7 +858,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent mb-1.5"
               />
               <div className="border border-line rounded max-h-44 overflow-y-auto">
-                {filteredContractors.length === 0 && <div className="px-3 py-3 text-center text-xs text-slate-500">{contractorList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
+                {filteredContractors.length === 0 && <div className="px-3 py-3 text-center text-sm text-ink-faint">{contractorList.length === 0 ? '로딩 중…' : '결과 없음'}</div>}
                 {filteredContractors.map((c) => (
                   <button
                     key={c.id}
@@ -869,7 +869,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                     }`}
                   >
                     {c.companyName}
-                    <span className={`ml-2 text-[0.625rem] font-mono ${contractorId === c.id ? 'text-cyan-100' : 'text-slate-500'}`}>
+                    <span className={`ml-2 text-[0.625rem] font-mono ${contractorId === c.id ? 'text-cyan-100' : 'text-ink-faint'}`}>
                       {c.municipalityName ?? ''}
                     </span>
                   </button>
@@ -879,23 +879,23 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           )}
 
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">이름 *</div>
+            <div className="text-sm font-extrabold text-ink mb-1">이름 *</div>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="홍길동" className="w-full px-3 py-2 rounded border-2 border-line text-sm focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">아이디 *</div>
+            <div className="text-sm font-extrabold text-ink mb-1">아이디 *</div>
             <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="muni-yongsan-01" className="w-full px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
             <UsernameLivenStatus username={username} onPick={setUsername} />
           </div>
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">임시 비밀번호 (자동 생성)</div>
+            <div className="text-sm font-extrabold text-ink mb-1">임시 비밀번호 (자동 생성)</div>
             <div className="flex gap-1.5">
               <input value={password} onChange={(e) => setPassword(e.target.value)} className="flex-1 px-3 py-2 rounded border-2 border-line text-sm font-mono focus:outline-none focus:border-accent" />
-              <button type="button" onClick={() => setPassword(genTempPw())} className="px-3 rounded border border-line text-xs font-bold bg-slate-50 hover:bg-slate-100">🎲 재생성</button>
+              <button type="button" onClick={() => setPassword(genTempPw())} className="px-3 rounded border border-line text-sm font-bold bg-slate-50 hover:bg-slate-100">🎲 재생성</button>
             </div>
           </div>
           <div>
-            <div className="text-xs font-extrabold text-ink mb-1">전화 (선택)</div>
+            <div className="text-sm font-extrabold text-ink mb-1">전화 (선택)</div>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -907,7 +907,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">⚠ {error}</div>
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">⚠ {error}</div>
           )}
         </div>
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
@@ -985,7 +985,7 @@ export function ContractorTrashTab() {
 
   return (
     <div className="space-y-3">
-      <div className="bg-purple-50 border border-purple-300 rounded-md px-3 py-2 text-xs text-purple-900">
+      <div className="bg-purple-50 border border-purple-300 rounded-md px-3 py-2 text-sm text-purple-900">
         <b>📝 위탁업체 삭제 정책 (§8 Q4=B)</b>
         <ul className="mt-1 ml-5 list-disc space-y-0.5">
           <li>[🗑 휴지통] = soft-delete: 30일 내 복구 가능, 데이터 보존</li>
@@ -1003,7 +1003,7 @@ export function ContractorTrashTab() {
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
-            <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
+            <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase">
               <tr>
                 <th className="px-2 py-2 text-left">회사명</th>
                 <th className="px-2 py-2 text-left">사업자번호</th>
@@ -1014,15 +1014,15 @@ export function ContractorTrashTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {loading && <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-500">로딩 중…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-500">결과 없음</td></tr>}
+              {loading && <tr><td colSpan={6} className="px-3 py-8 text-center text-ink-faint">로딩 중…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-ink-faint">결과 없음</td></tr>}
               {items.map((c) => {
                 const isDeleted = !!c.deletedAt;
                 return (
                   <tr key={c.id} className={isDeleted ? 'bg-rose-50' : ''}>
                     <td className="px-2 py-2 font-bold text-ink">{c.companyName}</td>
-                    <td className="px-2 py-2 font-mono text-xs">{c.businessNo}</td>
-                    <td className="px-2 py-2 text-xs">{c.municipalityName ?? '—'}</td>
+                    <td className="px-2 py-2 font-mono text-sm">{c.businessNo}</td>
+                    <td className="px-2 py-2 text-sm">{c.municipalityName ?? '—'}</td>
                     <td className="px-2 py-2">
                       <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                         c.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
@@ -1035,7 +1035,7 @@ export function ContractorTrashTab() {
                         <span className="text-rose-700">
                           {c.deletedAt.slice(0, 10)} <span className="text-[0.625rem] text-rose-500">(D-{daysLeft(c.deletedAt)})</span>
                         </span>
-                      ) : <span className="text-slate-400">—</span>}
+                      ) : <span className="text-ink-faint">—</span>}
                     </td>
                     <td className="px-2 py-2 text-right whitespace-nowrap">
                       {!isDeleted && (
@@ -1081,8 +1081,8 @@ function ViewBtn({ active, onClick, children }: { active: boolean; onClick: () =
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-md text-xs font-extrabold transition ${
-        active ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+      className={`px-3 py-1.5 rounded-md text-sm font-extrabold transition ${
+        active ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-100 text-ink-muted hover:bg-slate-200'
       }`}
     >
       {children}

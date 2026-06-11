@@ -77,7 +77,7 @@ export default function PerformanceClient({
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">실적관리</h2>
-        <span className="text-xs font-mono font-bold text-slate-600">생활폐기물 처리실적 + 자원순환센터 반입실적</span>
+        <span className="text-sm font-mono font-bold text-ink-faint">생활폐기물 처리실적 + 자원순환센터 반입실적</span>
       </div>
 
       {/* 사용자 요청 2026-04-29: 탭 라벨 짧게 + 한 줄 (whitespace-nowrap) */}
@@ -102,7 +102,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   return (
     <button onClick={onClick}
       className={`px-5 py-3 text-[0.9375rem] font-black tracking-tight border-b-[3px] -mb-0.5 transition ${
-        active ? 'border-accent text-accent bg-accent-soft' : 'border-transparent text-slate-700 hover:text-ink hover:bg-slate-100'
+        active ? 'border-accent text-accent bg-accent-soft' : 'border-transparent text-ink-muted hover:text-ink hover:bg-slate-100'
       }`}>
       {children}
     </button>
@@ -164,25 +164,25 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">기준일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">기준일</div>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             aria-label="기준일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">조회</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">조회</div>
           <div className="flex gap-1">
             <button onClick={() => setView('daily')}
-              className={`px-3 py-1.5 rounded text-xs font-extrabold border-2 ${view === 'daily' ? 'bg-accent text-white border-accent' : 'bg-white border-line text-slate-600'}`}>
+              className={`px-3 py-1.5 rounded text-sm font-extrabold border-2 ${view === 'daily' ? 'bg-accent text-white border-accent' : 'bg-white border-line text-ink-faint'}`}>
               일별
             </button>
             <button onClick={() => setView('monthly')}
-              className={`px-3 py-1.5 rounded text-xs font-extrabold border-2 ${view === 'monthly' ? 'bg-accent text-white border-accent' : 'bg-white border-line text-slate-600'}`}>
+              className={`px-3 py-1.5 rounded text-sm font-extrabold border-2 ${view === 'monthly' ? 'bg-accent text-white border-accent' : 'bg-white border-line text-ink-faint'}`}>
               월별
             </button>
           </div>
         </div>
-        <div className="ml-auto text-xs font-mono self-center">
+        <div className="ml-auto text-sm font-mono self-center">
           {view === 'daily' ? date : date.slice(0, 7)} · 합계 <span className="font-extrabold text-accent">
             {items.filter((i) => view === 'daily' ? i.recordDate === date : i.recordDate.startsWith(date.slice(0, 7)))
               .reduce((s, i) => s + i.weightTon, 0).toFixed(3)}
@@ -195,7 +195,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
           gap/padding 더 타이트, No 컬럼 w-5 (21px @ 17px root). */}
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         {/* 헤더 */}
-        <div className="flex items-center gap-1 px-1.5 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+        <div className="flex items-center gap-1 px-1.5 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
           <span className="w-5 text-center flex-shrink-0">No</span>
           <span className="flex-1 min-w-0">성상</span>
           <span className="text-right flex-shrink-0" style={{ width: 'clamp(36px, 11vw, 56px)' }}>입력(t)</span>
@@ -209,10 +209,10 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
             return (
               <div key={m.code} className={`${cur ? 'bg-emerald-50/30' : ''}`}>
                 <div className="flex items-center gap-1 px-1.5 py-1.5">
-                  <span className="w-5 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
+                  <span className="w-5 text-center font-mono font-extrabold text-ink-faint text-sm flex-shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-xs">
+                  <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-sm">
                     {m.label}
                   </span>
                   <input
@@ -226,10 +226,10 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                       setDrafts({ ...drafts, [m.code]: { ...draft, weight: v } });
                     }}
                     placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
-                    className="px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
+                    className="px-1 py-1 rounded border border-line text-sm font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
                     style={{ width: 'clamp(36px, 11vw, 56px)' }}
                   />
-                  <span className="hidden sm:block flex-shrink-0 w-36 text-[0.625rem] text-slate-600 truncate">
+                  <span className="hidden sm:block flex-shrink-0 w-36 text-[0.625rem] text-ink-faint truncate">
                     {cur ? (
                       <>
                         {cur.recorderName} ({cur.recorderRole})
@@ -272,12 +272,12 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
 
       {view === 'monthly' && (
         <div className="bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-xs font-extrabold text-ink">
+          <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">
             {date.slice(0, 7)} 월별 일자별 기록 ({items.length}건)
           </div>
           <div className="overflow-x-auto">
           <table className="w-full min-w-[480px] text-sm">
-            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-600">
+            <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-faint">
               <tr>
                 <th className="px-3 py-1.5 text-left">일자</th>
                 <th className="px-3 py-1.5 text-left">성상</th>
@@ -292,8 +292,8 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                   <td className="px-3 py-1.5 font-mono">{r.recordDate}</td>
                   <td className="px-3 py-1.5 font-bold">{MATERIAL_LABEL[r.materialCode] ?? r.materialCode}</td>
                   <td className="px-3 py-1.5 text-right font-mono font-extrabold">{r.weightTon.toFixed(3)}</td>
-                  <td className="px-3 py-1.5 text-xs">{r.disposalSiteName ?? <span className="text-slate-400 italic">(미지정)</span>}</td>
-                  <td className="px-3 py-1.5 text-xs">{r.recorderName}</td>
+                  <td className="px-3 py-1.5 text-sm">{r.disposalSiteName ?? <span className="text-ink-faint italic">(미지정)</span>}</td>
+                  <td className="px-3 py-1.5 text-sm">{r.recorderName}</td>
                 </tr>
               ))}
             </tbody>
@@ -334,18 +334,18 @@ function IntakeTab({ canEdit, vehicles }: {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             aria-label="조회 시작일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             aria-label="조회 종료일"
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
-        <div className="text-xs font-mono ml-auto">
+        <div className="text-sm font-mono ml-auto">
           {items.length}건 · 합계 <span className="font-extrabold text-accent">{items.reduce((s, i) => s + i.weightTon, 0).toFixed(3)}</span> ton
         </div>
         {/* Plan FR-08: 일자별 카드 PDF 출력 버튼 — from===to 일 때만 활성 (단일 일자 전제) */}
@@ -354,7 +354,7 @@ function IntakeTab({ canEdit, vehicles }: {
             href={`/api/reports/daily-treatment/pdf?date=${from}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-1.5 rounded text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
             title="해당 일자 일일 처리실적 일보 PDF 다운로드 (Module 6에서 활성화 예정)"
           >
             📄 일보 PDF 출력
@@ -362,7 +362,7 @@ function IntakeTab({ canEdit, vehicles }: {
         )}
         {canEdit && (
           <button onClick={() => setShowCreate(true)}
-            className="px-4 py-1.5 rounded text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-accent text-white hover:bg-accent-strong">
             + 신규 등록
           </button>
         )}
@@ -371,7 +371,7 @@ function IntakeTab({ canEdit, vehicles }: {
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
-          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
+          <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase">
             <tr>
               <th className="px-3 py-2 text-left">일자</th>
               <th className="px-3 py-2 text-left">반입시간</th>
@@ -387,20 +387,20 @@ function IntakeTab({ canEdit, vehicles }: {
           </thead>
           <tbody className="divide-y divide-line">
             {items.length === 0 && (
-              <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-500">반입 기록이 없습니다.</td></tr>
+              <tr><td colSpan={10} className="px-3 py-10 text-center text-ink-faint">반입 기록이 없습니다.</td></tr>
             )}
             {items.map((i) => (
               <tr key={i.id} className="hover:bg-slate-50">
                 <td className="px-3 py-1.5 font-mono">{i.intakeDate}</td>
                 <td className="px-3 py-1.5 font-mono font-extrabold">{i.intakeTime}</td>
                 <td className="px-3 py-1.5 font-bold">{i.vehicleNo}</td>
-                <td className="px-3 py-1.5 text-xs">
-                  {i.facilityName ?? <span className="text-slate-400 italic">—</span>}
+                <td className="px-3 py-1.5 text-sm">
+                  {i.facilityName ?? <span className="text-ink-faint italic">—</span>}
                 </td>
-                <td className="px-3 py-1.5 text-xs">
+                <td className="px-3 py-1.5 text-sm">
                   {i.disposalSiteName
                     ? <span className="font-bold text-emerald-700">📍 {i.disposalSiteName}</span>
-                    : <span className="text-slate-400 italic">(미지정)</span>}
+                    : <span className="text-ink-faint italic">(미지정)</span>}
                 </td>
                 <td className="px-3 py-1.5">
                   <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent">
@@ -408,13 +408,13 @@ function IntakeTab({ canEdit, vehicles }: {
                   </span>
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono font-extrabold">{i.weightTon.toFixed(3)}</td>
-                <td className="px-3 py-1.5 text-xs max-w-[150px] truncate" title={i.note ?? ''}>{i.note ?? '—'}</td>
+                <td className="px-3 py-1.5 text-sm max-w-[150px] truncate" title={i.note ?? ''}>{i.note ?? '—'}</td>
                 <td className="px-3 py-1.5 text-[0.625rem]">{i.recorderName}</td>
                 <td className="px-3 py-1.5 text-right whitespace-nowrap">
                   {canEdit && (
                     <>
-                      <button onClick={() => setEditTarget(i)} className="text-xs font-bold text-accent hover:underline mr-2">수정</button>
-                      <button onClick={() => del(i.id)} className="text-xs font-bold text-red-600 hover:underline">삭제</button>
+                      <button onClick={() => setEditTarget(i)} className="text-sm font-bold text-accent hover:underline mr-2">수정</button>
+                      <button onClick={() => del(i.id)} className="text-sm font-bold text-red-600 hover:underline">삭제</button>
                     </>
                   )}
                 </td>
@@ -490,17 +490,17 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
         </div>
         <div className="p-5 grid grid-cols-2 gap-3">
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입 일자</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입 일자</div>
             <input type="date" value={form.intakeDate} onChange={(e) => setForm({ ...form, intakeDate: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입 시간</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입 시간</div>
             <input type="time" value={form.intakeTime} onChange={(e) => setForm({ ...form, intakeTime: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">차량</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">차량</div>
             <select value={form.vehicleId} onChange={(e) => setForm({ ...form, vehicleId: e.target.value })} disabled={!!initial}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold disabled:bg-slate-50">
               <option value="">— 차량 선택 —</option>
@@ -508,19 +508,19 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             </select>
           </div>
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">성상</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">성상</div>
             <select value={form.materialCategory} onChange={(e) => setForm({ ...form, materialCategory: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
               {INTAKE_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
             </select>
           </div>
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입량 (ton)</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입량 (ton)</div>
             <input type="number" step="0.001" value={form.weightTon} onChange={(e) => setForm({ ...form, weightTon: e.target.value })}
               placeholder="0.000" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div className="col-span-2">
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">처리시설 (Design §3.1.2)</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">처리시설 (Design §3.1.2)</div>
             <FacilitySelect
               value={form.facilityId}
               onChange={(id) => setForm({ ...form, facilityId: id })}
@@ -529,7 +529,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
           </div>
           {disposalSites.length > 0 && (
             <div className="col-span-2">
-              <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입장소</div>
+              <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입장소</div>
               <select value={form.disposalSiteId ?? ''} onChange={(e) => setForm({ ...form, disposalSiteId: e.target.value || null })}
                 className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
                 <option value="">— 반입장소 선택 (선택사항) —</option>
@@ -540,7 +540,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             </div>
           )}
           <div className="col-span-2">
-            <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">비고</div>
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">비고</div>
             <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm" />
           </div>
@@ -586,12 +586,12 @@ function StatsTab() {
     <div className="space-y-5">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
@@ -605,7 +605,7 @@ function StatsTab() {
 
       <div className="bg-white border-t-4 border-double border-slate-700 pt-4 px-3 print:px-0">
         <h2 className="text-2xl font-black text-center mb-1">실적 통계</h2>
-        <div className="text-center text-sm font-bold text-slate-600 mb-5">{from} ~ {to}</div>
+        <div className="text-center text-sm font-bold text-ink-faint mb-5">{from} ~ {to}</div>
 
         {/* 사용자 요청 2026-04-29: H3 타이틀 1단계 업 (text-lg 18px → text-xl 20px),
             실적내용(KCard 값/라벨, sub-section 헤더, BarRow 라벨) 1단계 다운. */}
@@ -624,7 +624,7 @@ function StatsTab() {
                   {waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={wasteMaxByMaterial} suffix="t" />
                   ))}
-                  {waste.byMaterial.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.byMaterial.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
@@ -634,7 +634,7 @@ function StatsTab() {
                     <BarRow key={m.ym} label={m.ym} value={m.weight}
                       max={Math.max(1, ...waste.monthly.map((x) => x.weight))} suffix="t" color="bg-amber-400" />
                   ))}
-                  {waste.monthly.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {waste.monthly.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
@@ -656,7 +656,7 @@ function StatsTab() {
                   {intake.byCategory.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight} max={intakeMaxByCategory} suffix="t" color="bg-emerald-500" />
                   ))}
-                  {intake.byCategory.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byCategory.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
               </div>
               <div className="bg-surface border border-line rounded p-3">
@@ -665,14 +665,14 @@ function StatsTab() {
                   {intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
                     <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={intakeMaxByVehicle} suffix="t" color="bg-blue-400" />
                   ))}
-                  {intake.byVehicle.length === 0 && <div className="text-[0.6875rem] text-slate-500 text-center py-3">데이터 없음</div>}
+                  {intake.byVehicle.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
               </div>
             </div>
           </section>
         )}
 
-        <div className="text-[0.625rem] font-mono text-slate-600 text-right mt-4">
+        <div className="text-[0.625rem] font-mono text-ink-faint text-right mt-4">
           출력일시: {new Date().toLocaleString('ko-KR')}
         </div>
       </div>
@@ -702,7 +702,7 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
 }
 
 function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: string; value: number; max: number; suffix: string; color?: string }) {
-  /* 사용자 요청 2026-04-29: BarRow 라벨 1단계 다운 — text-xs(12px) → text-[0.6875rem] */
+  /* 사용자 요청 2026-04-29: BarRow 라벨 1단계 다운 — text-sm(12px) → text-[0.6875rem] */
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">

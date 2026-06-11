@@ -83,10 +83,10 @@ export function FacilitiesTab() {
     <div className="space-y-3">
       <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3 flex-wrap">
         <span className="font-extrabold text-ink">처리시설 마스터</span>
-        <span className="text-[0.6875rem] font-mono text-slate-700 font-bold">지자체 단위 — 산하 위탁업체 자동 반영</span>
+        <span className="text-[0.6875rem] font-mono text-ink-muted font-bold">지자체 단위 — 산하 위탁업체 자동 반영</span>
 
         <div className="ml-auto flex items-center gap-2">
-          <label htmlFor="facility-muni-picker" className="text-xs font-extrabold text-slate-700">지자체</label>
+          <label htmlFor="facility-muni-picker" className="text-sm font-extrabold text-ink-muted">지자체</label>
           <select
             id="facility-muni-picker"
             value={selectedMuniId}
@@ -103,23 +103,23 @@ export function FacilitiesTab() {
           <button
             onClick={() => setShowCreate(true)}
             disabled={!selectedMuniId}
-            className="px-4 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
             + 처리시설 등록
           </button>
         </div>
       </div>
 
       <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        {loading && <div className="text-center py-10 text-slate-700 font-bold">로딩 중…</div>}
+        {loading && <div className="text-center py-10 text-ink-muted font-bold">로딩 중…</div>}
         {!loading && items.length === 0 && (
-          <div className="text-center py-10 text-slate-700 font-bold">
+          <div className="text-center py-10 text-ink-muted font-bold">
             {selectedMuni ? `${selectedMuni.name}에 등록된 처리시설이 없습니다.` : '지자체를 선택해 주세요.'}
           </div>
         )}
         {!loading && items.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-slate-700 uppercase">
+              <thead className="bg-slate-100 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase">
                 <tr>
                   <th className="px-3 py-2 text-left">분류</th>
                   <th className="px-3 py-2 text-left">시설명</th>
@@ -138,25 +138,25 @@ export function FacilitiesTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 font-bold">{f.name}</td>
-                    <td className="px-3 py-2 text-xs text-slate-700 max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
-                    <td className="px-3 py-2 text-right text-xs text-slate-700">
+                    <td className="px-3 py-2 text-sm text-ink-muted max-w-[280px] truncate" title={f.address ?? ''}>{f.address ?? '—'}</td>
+                    <td className="px-3 py-2 text-right text-sm text-ink-muted">
                       {f.type === 'AVAC' && f.avacDesignCapKg
                         ? `${Number(f.avacDesignCapKg).toLocaleString()}kg/일`
                         : f.type === 'AVAC' ? '—' : ''}
                     </td>
                     <td className="px-3 py-2 text-center">
                       <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
-                        f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-slate-700 border-slate-400'
+                        f.active ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-slate-200 text-ink-muted border-slate-400'
                       }`}>
                         {f.active ? '활성' : '비활성'}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
-                      <button onClick={() => setEditing(f)} className="text-xs font-bold text-accent hover:underline mr-2">수정</button>
-                      <button onClick={() => toggleActive(f)} className="text-xs font-bold text-amber-700 hover:underline mr-2">
+                      <button onClick={() => setEditing(f)} className="text-sm font-bold text-accent hover:underline mr-2">수정</button>
+                      <button onClick={() => toggleActive(f)} className="text-sm font-bold text-amber-700 hover:underline mr-2">
                         {f.active ? '비활성화' : '활성화'}
                       </button>
-                      <button onClick={() => remove(f)} className="text-xs font-bold text-danger hover:underline">삭제</button>
+                      <button onClick={() => remove(f)} className="text-sm font-bold text-danger hover:underline">삭제</button>
                     </td>
                   </tr>
                 ))}
@@ -240,11 +240,11 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
       <div className="bg-white rounded-lg shadow-xl w-[480px] max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b border-line bg-purple-50">
           <h3 className="font-extrabold text-ink">{initial ? '처리시설 수정' : '처리시설 신규 등록'}</h3>
-          <div className="text-[0.6875rem] font-mono font-bold text-slate-700 mt-0.5">{municipalityName}</div>
+          <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">{municipalityName}</div>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label htmlFor="fac-type" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">분류</label>
+            <label htmlFor="fac-type" className="block text-[0.6875rem] font-mono font-extrabold text-ink-muted mb-1">분류</label>
             <select
               id="fac-type"
               value={form.type}
@@ -254,7 +254,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
             </select>
           </div>
           <div>
-            <label htmlFor="fac-name" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">시설명 *</label>
+            <label htmlFor="fac-name" className="block text-[0.6875rem] font-mono font-extrabold text-ink-muted mb-1">시설명 *</label>
             <input
               id="fac-name"
               value={form.name}
@@ -263,7 +263,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold" />
           </div>
           <div>
-            <label htmlFor="fac-address" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">주소</label>
+            <label htmlFor="fac-address" className="block text-[0.6875rem] font-mono font-extrabold text-ink-muted mb-1">주소</label>
             <input
               id="fac-address"
               value={form.address}
@@ -273,7 +273,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
           </div>
           {form.type === 'AVAC' && (
             <div>
-              <label htmlFor="fac-design-cap" className="block text-[0.6875rem] font-mono font-extrabold text-slate-700 mb-1">
+              <label htmlFor="fac-design-cap" className="block text-[0.6875rem] font-mono font-extrabold text-ink-muted mb-1">
                 설계 처리용량 (kg/일) — 가동률 계산에 사용
               </label>
               <input
@@ -288,7 +288,7 @@ function FacilityFormModal({ initial, municipalityId, municipalityName, onClose,
             </div>
           )}
           {error && (
-            <div className="px-3 py-2 rounded bg-red-50 border border-red-200 text-xs font-bold text-red-700">{error}</div>
+            <div className="px-3 py-2 rounded bg-red-50 border border-red-200 text-sm font-bold text-red-700">{error}</div>
           )}
         </div>
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">

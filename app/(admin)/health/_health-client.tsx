@@ -158,28 +158,28 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
       <header className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-black text-ink tracking-tight">건강기록카드 관리</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">
+          <p className="text-sm font-bold text-ink-muted mt-1">
             Plan §3-4 · 의료 정보 — 위탁업체 관리자만 조회 · 모든 접근 audit 기록
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-cyan-50 text-accent border border-accent">
+          <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-cyan-50 text-accent border border-accent">
             기록 {filledCount} / {rows.length}명
           </span>
           {dangerCount > 0 && (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-red-50 text-danger border border-red-300">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-bold bg-red-50 text-danger border border-red-300">
               위험 {dangerCount}명
             </span>
           )}
           {warnCount > 0 && (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-bold bg-amber-50 text-warn border border-amber-300">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-bold bg-amber-50 text-warn border border-amber-300">
               주의 {warnCount}명
             </span>
           )}
         </div>
       </header>
 
-      <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
+      <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed">
         <strong className="font-extrabold">개인정보보호법 §28 안내</strong> · 본 화면 접근 및 모든 변경은 audit_log에 영구 기록됩니다. 운영 단계에서는 컬럼 단위 AES-256 암호화 + 보존 기간 후 자동 폐기가 적용됩니다.
       </div>
 
@@ -195,7 +195,7 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
           <thead>
             <tr>
               {['근로자', '혈압', '심박', '혈당', '시력', '혈액형', '알레르기', '액션'].map((h) => (
-                <th key={h} className="text-left px-3 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
+                <th key={h} className="text-left px-3 py-2.5 text-sm font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -257,14 +257,14 @@ export default function HealthClient({ rows }: { rows: Row[] }) {
                 <td className="px-3 py-2.5 border-b border-line font-mono font-bold text-ink">
                   {r.record?.bloodType ?? <span className="text-ink-faint">—</span>}
                 </td>
-                <td className="px-3 py-2.5 border-b border-line text-xs">
+                <td className="px-3 py-2.5 border-b border-line text-sm">
                   {r.record?.allergies ? <span className="text-warn font-bold">⚠ 있음</span> : <span className="text-ink-faint">없음</span>}
                 </td>
                 <td className="px-3 py-2.5 border-b border-line">
                   {/* 사용자 요청 2026-04-28: 버튼 통일 — record 유무 무관 동일 스타일/라벨. */}
                   <button
                     onClick={() => { setEditing(r); setError(null); }}
-                    className="px-3 py-1.5 rounded-md text-xs font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
+                    className="px-3 py-1.5 rounded-md text-sm font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
                   >
                     조회/수정
                   </button>

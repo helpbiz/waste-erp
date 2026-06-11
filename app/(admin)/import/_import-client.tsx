@@ -200,7 +200,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
 
         {isSuperAdmin && contractors.length > 0 && (
           <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">위탁업체 선택</label>
+            <label className="text-sm font-medium text-gray-600 block mb-1">위탁업체 선택</label>
             <select
               value={contractorId}
               onChange={(e) => setContractorId(e.target.value)}
@@ -225,7 +225,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
         >
           <span className="text-2xl">📂</span>
           <span className="text-gray-500 text-sm mt-1">엑셀 파일(.xlsx, .xls)을 클릭하거나 드래그하세요</span>
-          <span className="text-xs text-gray-400 mt-0.5">컬럼 형식이 달라도 자동 인식합니다</span>
+          <span className="text-sm text-gray-400 mt-0.5">컬럼 형식이 달라도 자동 인식합니다</span>
         </div>
         <input
           ref={fileInputRef}
@@ -247,14 +247,14 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
         <section className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-700">③ 컬럼 매핑</p>
-            <span className="text-xs text-gray-400">
+            <span className="text-sm text-gray-400">
               컬럼 {sheet.headers.length}개 · 데이터 {sheet.rows.length}행 감지
             </span>
           </div>
 
           {sheets.length > 1 && (
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">시트 선택</label>
+              <label className="text-sm font-medium text-gray-600 block mb-1">시트 선택</label>
               <select
                 value={sheetIdx}
                 onChange={(e) => handleSheetChange(Number(e.target.value))}
@@ -268,11 +268,11 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
           )}
 
           <div>
-            <p className="text-xs text-gray-500 mb-2">자동 인식 결과입니다. 잘못된 항목은 직접 수정하세요.</p>
+            <p className="text-sm text-gray-500 mb-2">자동 인식 결과입니다. 잘못된 항목은 직접 수정하세요.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {fields.map((f) => (
                 <div key={f.key}>
-                  <label className="text-xs font-medium text-gray-600 block mb-1">
+                  <label className="text-sm font-medium text-gray-600 block mb-1">
                     {f.required && <span className="text-red-500 mr-0.5">*</span>}
                     {f.label}
                   </label>
@@ -281,7 +281,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
                     onChange={(e) =>
                       setColMap((prev) => ({ ...prev, [f.key]: e.target.value || null }))
                     }
-                    className="border border-gray-300 rounded px-2 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="border border-gray-300 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="">(없음)</option>
                     {sheet.headers.map((h) => (
@@ -295,9 +295,9 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
 
           {/* 샘플 미리보기 */}
           <div>
-            <p className="text-xs font-medium text-gray-600 mb-2">매핑된 데이터 미리보기 (처음 5행)</p>
+            <p className="text-sm font-medium text-gray-600 mb-2">매핑된 데이터 미리보기 (처음 5행)</p>
             <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="text-xs w-full border-collapse">
+              <table className="text-sm w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50">
                     {fields.filter((f) => colMap[f.key]).map((f) => (
@@ -321,7 +321,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
               </table>
             </div>
             {sheet.rows.length > 5 && (
-              <p className="text-xs text-gray-400 mt-1">처음 5행 표시 중 (전체 {sheet.rows.length}행)</p>
+              <p className="text-sm text-gray-400 mt-1">처음 5행 표시 중 (전체 {sheet.rows.length}행)</p>
             )}
           </div>
         </section>
@@ -335,7 +335,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
               <strong className="text-gray-800">{dataType === '차량' ? '🚛 차량' : '👷 인원'}</strong> 데이터{' '}
               <strong className="text-blue-600">{sheet.rows.length}행</strong>을 DB에 입력합니다.
               {dataType === '인원' && (
-                <span className="text-xs text-gray-400 ml-2">초기 비밀번호: Qwer1234!</span>
+                <span className="text-sm text-gray-400 ml-2">초기 비밀번호: Qwer1234!</span>
               )}
             </p>
             <button
@@ -347,7 +347,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
             </button>
           </div>
           {!colMap[requiredKey] && (
-            <p className="text-xs text-red-500 mt-2">
+            <p className="text-sm text-red-500 mt-2">
               ⚠️ 필수 컬럼 &quot;{dataType === '차량' ? '차량번호' : '이름'}&quot;을 ③에서 지정해주세요.
             </p>
           )}
@@ -362,7 +362,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
         <section className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-700">⑤ 가져오기 결과</p>
-            <button onClick={reset} className="text-xs text-blue-600 hover:underline">
+            <button onClick={reset} className="text-sm text-blue-600 hover:underline">
               다시 업로드
             </button>
           </div>
@@ -371,11 +371,11 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-gray-700">{importRes.total}</p>
-              <p className="text-xs text-gray-500 mt-1">전체</p>
+              <p className="text-sm text-gray-500 mt-1">전체</p>
             </div>
             <div className="bg-green-50 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-green-600">{importRes.okCount}</p>
-              <p className="text-xs text-green-600 mt-1">성공</p>
+              <p className="text-sm text-green-600 mt-1">성공</p>
             </div>
             <div className={`rounded-lg p-3 text-center ${
               importRes.results.some((r) => r.status === 'ERROR') ? 'bg-red-50' : 'bg-yellow-50'
@@ -385,7 +385,7 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
               }`}>
                 {importRes.total - importRes.okCount}
               </p>
-              <p className={`text-xs mt-1 ${
+              <p className={`text-sm mt-1 ${
                 importRes.results.some((r) => r.status === 'ERROR') ? 'text-red-600' : 'text-yellow-600'
               }`}>건너뜀/오류</p>
             </div>
@@ -400,14 +400,14 @@ export default function ImportClient({ isSuperAdmin, contractors }: Props) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700">
               ✅ {importRes.okCount}건 성공 · {importRes.total - importRes.okCount}건 건너뜀/오류
               {dataType === '인원' && (
-                <span className="block text-xs mt-0.5 text-blue-500">등록된 인원의 초기 비밀번호는 Qwer1234! 입니다.</span>
+                <span className="block text-sm mt-0.5 text-blue-500">등록된 인원의 초기 비밀번호는 Qwer1234! 입니다.</span>
               )}
             </div>
           )}
 
           {/* 행별 결과 테이블 */}
           <div className="overflow-auto max-h-72 rounded-lg border border-gray-200">
-            <table className="text-xs w-full border-collapse">
+            <table className="text-sm w-full border-collapse">
               <thead className="sticky top-0 bg-white">
                 <tr className="bg-gray-50">
                   <th className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-600 w-12">행</th>

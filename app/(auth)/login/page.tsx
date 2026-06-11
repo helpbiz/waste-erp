@@ -227,7 +227,7 @@ function LoginInner() {
           {/* #3 #11 — 아이디 입력 + 사용자 아이콘 + 명시적 라벨 (sr-only) + X 버튼 */}
           <label htmlFor="login-username" className="sr-only">아이디</label>
           <div className="relative mb-2.5">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 pointer-events-none" aria-hidden="true">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-ink-faint pointer-events-none" aria-hidden="true">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -242,7 +242,7 @@ function LoginInner() {
               spellCheck={false}
               placeholder="아이디"
               aria-label="아이디"
-              className="w-full pl-10 pr-9 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-600 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full pl-10 pr-9 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             {username && (
               <button
@@ -250,7 +250,7 @@ function LoginInner() {
                 onClick={() => setUsername('')}
                 aria-label="아이디 지우기"
                 tabIndex={-1}
-                className="absolute inset-y-0 right-0 px-2.5 flex items-center text-slate-400 hover:text-slate-700"
+                className="absolute inset-y-0 right-0 px-2.5 flex items-center text-ink-faint hover:text-ink-muted"
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -262,7 +262,7 @@ function LoginInner() {
           {/* 비밀번호 입력 + 자물쇠 아이콘 + 눈 토글 */}
           <label htmlFor="login-password" className="sr-only">비밀번호</label>
           <div className="relative mb-2.5">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 pointer-events-none" aria-hidden="true">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-ink-faint pointer-events-none" aria-hidden="true">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2-2-.895-2-2zM5 11V7a7 7 0 0114 0v4M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z" />
               </svg>
@@ -275,14 +275,14 @@ function LoginInner() {
               autoComplete="current-password"
               placeholder="비밀번호"
               aria-label="비밀번호"
-              className="w-full pl-10 pr-10 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-slate-900 bg-slate-50 placeholder:text-slate-600 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
+              className="w-full pl-10 pr-10 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-semibold text-ink-muted bg-slate-50 placeholder:text-ink-faint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-white transition"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               tabIndex={-1}
               aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
-              className="absolute inset-y-0 right-0 px-2.5 flex items-center text-slate-500 hover:text-accent"
+              className="absolute inset-y-0 right-0 px-2.5 flex items-center text-ink-faint hover:text-accent"
             >
               {showPassword ? (
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -306,10 +306,10 @@ function LoginInner() {
                 onChange={(e) => setRememberId(e.target.checked)}
                 className="w-4 h-4 accent-accent cursor-pointer"
               />
-              <span className="text-xs font-semibold text-slate-700">아이디 기억하기</span>
-              <span className="text-[0.625rem] font-medium text-slate-500">(비밀번호는 저장하지 않음)</span>
+              <span className="text-xs font-semibold text-ink-muted">아이디 기억하기</span>
+              <span className="text-[0.625rem] font-medium text-ink-faint">(비밀번호는 저장하지 않음)</span>
             </label>
-            <p className="text-[0.625rem] font-medium text-slate-500 ml-6 mt-0.5">
+            <p className="text-[0.625rem] font-medium text-ink-faint ml-6 mt-0.5">
               ⚠ 공용 PC에서는 체크 해제하세요
             </p>
           </div>
@@ -351,7 +351,7 @@ function LoginInner() {
           </button>
 
           {/* #7 비밀번호 분실 시 안내 (B2B 시스템) */}
-          <p className="text-center mt-2 text-[0.625rem] font-medium text-slate-500">
+          <p className="text-center mt-2 text-[0.625rem] font-medium text-ink-faint">
             비밀번호 분실 시 관리자에게 문의해 주세요
           </p>
 

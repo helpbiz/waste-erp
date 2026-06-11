@@ -149,7 +149,7 @@ export default function ContractorFeaturesTab() {
 
   return (
     <div className="space-y-3">
-      <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3 text-xs font-bold text-amber-900">
+      <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3 text-sm font-bold text-amber-900">
         ⓘ 기능을 OFF 하면 해당 회사의 사용자는 즉시 그 기능에 접근할 수 없습니다(서버 측 차단). 신규 회사는
         모든 기능이 기본 ON 입니다. 변경 즉시 저장됩니다.
       </div>
@@ -163,9 +163,9 @@ export default function ContractorFeaturesTab() {
             placeholder="회사명·지자체 검색"
             className="w-full px-3 py-2 mb-2 rounded border-2 border-line text-sm font-semibold focus:outline-none focus:border-accent"
           />
-          {!list && <div className="text-xs text-slate-500 text-center py-6">로딩 중…</div>}
+          {!list && <div className="text-sm text-ink-faint text-center py-6">로딩 중…</div>}
           {list && filtered.length === 0 && (
-            <div className="text-xs text-slate-500 text-center py-6">검색 결과 없음</div>
+            <div className="text-sm text-ink-faint text-center py-6">검색 결과 없음</div>
           )}
           <div className="space-y-1">
             {filtered.map((c) => {
@@ -180,7 +180,7 @@ export default function ContractorFeaturesTab() {
                   }`}
                 >
                   <div className="text-sm font-extrabold text-ink">{c.companyName}</div>
-                  <div className="text-[0.6875rem] text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <div className="text-[0.6875rem] text-ink-faint mt-0.5 flex items-center gap-1.5 flex-wrap">
                     {c.municipalityName && <span>🏛 {c.municipalityName}</span>}
                     {c.currentPackage ? (
                       <span className="px-1.5 py-0.5 rounded font-extrabold bg-cyan-100 text-cyan-800 border border-cyan-300">
@@ -191,7 +191,7 @@ export default function ContractorFeaturesTab() {
                         🛠 커스텀
                       </span>
                     )}
-                    <span className={`px-1.5 py-0.5 rounded font-extrabold ${allOn ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                    <span className={`px-1.5 py-0.5 rounded font-extrabold ${allOn ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-ink-muted'}`}>
                       {c.enabledCount}/{c.totalCount}
                     </span>
                   </div>
@@ -203,32 +203,32 @@ export default function ContractorFeaturesTab() {
 
         {/* 우측 — 기능 매트릭스 */}
         <div className="bg-surface border border-line rounded-lg p-4 min-h-[400px]">
-          {!selected && <div className="text-sm text-slate-500 text-center py-12">왼쪽에서 회사를 선택하세요</div>}
-          {selected && !detail && <div className="text-sm text-slate-500 text-center py-12">로딩 중…</div>}
+          {!selected && <div className="text-sm text-ink-faint text-center py-12">왼쪽에서 회사를 선택하세요</div>}
+          {selected && !detail && <div className="text-sm text-ink-faint text-center py-12">로딩 중…</div>}
           {detail && (
             <div className="space-y-5">
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-base font-black text-ink">
                   {list?.contractors.find((c) => c.id === selected)?.companyName ?? '—'}
                 </h3>
-                <span className="text-[0.6875rem] font-mono text-slate-500">contractorId: {selected}</span>
+                <span className="text-[0.6875rem] font-mono text-ink-faint">contractorId: {selected}</span>
                 {detail.currentPackage ? (
-                  <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                  <span className="text-sm font-extrabold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
                     📦 현재: {detail.currentPackage}
                   </span>
                 ) : (
-                  <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  <span className="text-sm font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
                     🛠 커스텀 (패키지 미일치)
                   </span>
                 )}
-                {busy && <span className="text-xs text-amber-700 font-bold">저장 중…</span>}
+                {busy && <span className="text-sm text-amber-700 font-bold">저장 중…</span>}
               </div>
 
               {/* 요금제 패키지 일괄 적용 */}
               <section className="border-2 border-purple-200 bg-purple-50/50 rounded-lg p-3">
-                <div className="text-xs font-extrabold text-purple-900 mb-2 flex items-center gap-2">
+                <div className="text-sm font-extrabold text-purple-900 mb-2 flex items-center gap-2">
                   📦 요금제 패키지 일괄 적용
-                  <span className="text-[0.625rem] font-bold text-slate-500 font-mono">
+                  <span className="text-[0.625rem] font-bold text-ink-faint font-mono">
                     (8개 기능 모두 패키지 정의로 덮어쓰기)
                   </span>
                 </div>
@@ -243,11 +243,11 @@ export default function ContractorFeaturesTab() {
                           isCurrent ? 'border-purple-500 ring-2 ring-purple-200' : 'border-line'
                         }`}
                       >
-                        <div className="text-xs font-extrabold text-ink">{p.label}</div>
-                        <div className="text-[0.625rem] text-slate-500 mt-0.5 leading-snug">
+                        <div className="text-sm font-extrabold text-ink">{p.label}</div>
+                        <div className="text-[0.625rem] text-ink-faint mt-0.5 leading-snug">
                           {p.description}
                         </div>
-                        <div className="text-[0.625rem] font-mono text-slate-500 mt-1">
+                        <div className="text-[0.625rem] font-mono text-ink-faint mt-1">
                           기능 {enabledCount}/8 · {p.monthlyHint}
                         </div>
                         <button
@@ -255,7 +255,7 @@ export default function ContractorFeaturesTab() {
                           disabled={busy || isCurrent}
                           className={`mt-2 w-full px-2 py-1 rounded text-[0.6875rem] font-extrabold transition active:scale-95 ${
                             isCurrent
-                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              ? 'bg-slate-200 text-ink-faint cursor-not-allowed'
                               : 'bg-purple-600 hover:bg-purple-700 text-white'
                           } ${busy && !isCurrent ? 'opacity-50' : ''}`}
                         >
@@ -269,7 +269,7 @@ export default function ContractorFeaturesTab() {
 
               {Array.from(grouped.entries()).map(([group, features]) => (
                 <section key={group}>
-                  <h4 className="text-xs font-extrabold text-slate-600 mb-2 uppercase tracking-wide">{group}</h4>
+                  <h4 className="text-sm font-extrabold text-ink-faint mb-2 uppercase tracking-wide">{group}</h4>
                   <div className="space-y-2">
                     {features.map((f) => (
                       <label
@@ -289,12 +289,12 @@ export default function ContractorFeaturesTab() {
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-sm font-extrabold ${f.enabled ? 'text-ink' : 'text-slate-500 line-through'}`}>
+                            <span className={`text-sm font-extrabold ${f.enabled ? 'text-ink' : 'text-ink-faint line-through'}`}>
                               {f.label}
                             </span>
-                            <span className="text-[0.6875rem] font-mono text-slate-400">{f.key}</span>
+                            <span className="text-[0.6875rem] font-mono text-ink-faint">{f.key}</span>
                             {f.isDefault && (
-                              <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                              <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-slate-200 text-ink-muted">
                                 기본값
                               </span>
                             )}
@@ -304,9 +304,9 @@ export default function ContractorFeaturesTab() {
                               </span>
                             )}
                           </div>
-                          <div className="text-[0.6875rem] text-slate-600 mt-0.5">{f.description}</div>
+                          <div className="text-[0.6875rem] text-ink-faint mt-0.5">{f.description}</div>
                           {!f.isDefault && f.updatedAt && (
-                            <div className="text-[0.625rem] font-mono text-slate-400 mt-1">
+                            <div className="text-[0.625rem] font-mono text-ink-faint mt-1">
                               마지막 변경: {new Date(f.updatedAt).toLocaleString('ko-KR')}
                               {f.updatedBy && <> · userId {f.updatedBy}</>}
                             </div>

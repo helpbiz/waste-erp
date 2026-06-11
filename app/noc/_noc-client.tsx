@@ -145,7 +145,7 @@ export default function NocClient({ session }: { session: { name: string; role: 
         <div className="text-cyan-400 font-mono font-black tabular-nums" style={{ fontSize: '56px', lineHeight: 1 }}>
           {timeStr}
         </div>
-        <div className="text-slate-400" style={{ fontSize: '20px', lineHeight: 1.2 }}>
+        <div className="text-ink-faint" style={{ fontSize: '20px', lineHeight: 1.2 }}>
           <div>{dateStr}</div>
           <div className="text-[16px]">관제: {session.name}</div>
         </div>
@@ -195,7 +195,7 @@ export default function NocClient({ session }: { session: { name: string; role: 
             <BigKpi label="⚪ 대기" value={`${vehicleStats.idle}대`} tone="slate" />
             <BigKpi label="🔧 정비" value={`${vehicleStats.maint}대`} tone="rose" />
           </div>
-          <div className="mt-3 text-[16px] text-slate-400">
+          <div className="mt-3 text-[16px] text-ink-faint">
             전체 {vehicleStats.total}대 · 5초 갱신
           </div>
           <div className="mt-2 max-h-[200px] overflow-y-auto">
@@ -207,7 +207,7 @@ export default function NocClient({ session }: { session: { name: string; role: 
                   v.operationalStatus === 'MAINTENANCE' ? 'bg-rose-500' : 'bg-slate-500'
                 }`} />
                 <span className="font-mono font-bold">{v.vehicleNo}</span>
-                <span className="ml-auto text-slate-400 font-mono">{v.speed.toFixed(0)}km/h</span>
+                <span className="ml-auto text-ink-faint font-mono">{v.speed.toFixed(0)}km/h</span>
               </div>
             ))}
           </div>
@@ -249,13 +249,13 @@ export default function NocClient({ session }: { session: { name: string; role: 
                 );
               })}
               <div className="pt-3 mt-2 border-t border-slate-700 flex justify-between text-[18px]">
-                <span className="text-slate-400">총 민원</span>
+                <span className="text-ink-faint">총 민원</span>
                 <span className="font-mono font-black text-cyan-300" style={{ fontSize: '32px' }}>
                   {masterStats.complaints.total}
                 </span>
               </div>
               <div className="flex justify-between text-[18px]">
-                <span className="text-slate-400">만족도 평균</span>
+                <span className="text-ink-faint">만족도 평균</span>
                 <span className="font-mono font-bold">
                   {masterStats.complaints.satisfaction.count > 0
                     ? `${masterStats.complaints.satisfaction.avg}/5 (${masterStats.complaints.satisfaction.count})`
@@ -275,13 +275,13 @@ export default function NocClient({ session }: { session: { name: string; role: 
                 <div key={u.id} className={`flex items-center gap-2 py-1.5 border-b border-slate-700 ${u.isLocked ? 'bg-rose-900/30' : ''}`}>
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.isLocked ? 'bg-rose-500' : 'bg-emerald-500'}`} />
                   <span className="font-bold text-[18px]">{u.name}</span>
-                  <span className="text-slate-400 text-[14px] font-mono">{u.role}</span>
-                  <span className="ml-auto text-slate-500 text-[14px] font-mono">
+                  <span className="text-ink-faint text-[14px] font-mono">{u.role}</span>
+                  <span className="ml-auto text-ink-faint text-[14px] font-mono">
                     {u.lastLogin ? new Date(u.lastLogin).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
                   </span>
                 </div>
               ))}
-              <div className="text-[16px] text-slate-400 pt-2 mt-2 border-t border-slate-700">
+              <div className="text-[16px] text-ink-faint pt-2 mt-2 border-t border-slate-700">
                 전체 {globalUsers.total}명 등록
               </div>
             </div>
@@ -333,7 +333,7 @@ function BigKpi({ label, value, unit, tone = 'cyan' }: { label: string; value: s
   };
   return (
     <div className={`px-3 py-2.5 rounded border ${bgMap[tone]}`}>
-      <div className="text-slate-400 font-bold" style={{ fontSize: '16px' }}>{label}</div>
+      <div className="text-ink-faint font-bold" style={{ fontSize: '16px' }}>{label}</div>
       <div className={`font-mono font-black tabular-nums ${colorMap[tone]}`} style={{ fontSize: '40px', lineHeight: 1 }}>
         {value}
         {unit && <span className="ml-2 font-bold opacity-70" style={{ fontSize: '20px' }}>{unit}</span>}
@@ -344,7 +344,7 @@ function BigKpi({ label, value, unit, tone = 'cyan' }: { label: string; value: s
 
 function Loading() {
   return (
-    <div className="text-center py-8 text-slate-500" style={{ fontSize: '20px' }}>
+    <div className="text-center py-8 text-ink-faint" style={{ fontSize: '20px' }}>
       📡 데이터 로딩 중…
     </div>
   );

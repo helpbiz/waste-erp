@@ -276,7 +276,7 @@ export default function VehicleLogClient({
       <div className="px-4 py-10 text-center">
         <div className="text-4xl mb-3">🚛</div>
         <div className="text-sm font-bold text-ink-muted">등록된 차량이 없습니다.</div>
-        <div className="text-xs text-ink-faint mt-1">관리자에게 차량 등록을 요청하세요.</div>
+        <div className="text-sm text-ink-faint mt-1">관리자에게 차량 등록을 요청하세요.</div>
         <Link href="/worker" className="mt-4 inline-block text-accent text-sm font-bold">← 홈으로</Link>
       </div>
     );
@@ -322,12 +322,12 @@ export default function VehicleLogClient({
           <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <div className="text-base font-black text-ink">{selectedVehicle.vehicleNo}</div>
-              <div className="text-xs font-mono text-ink-muted mt-0.5">
+              <div className="text-sm font-mono text-ink-muted mt-0.5">
                 {selectedVehicle.vehicleType} {selectedVehicle.vehicleTon && `· ${selectedVehicle.vehicleTon}t`} · {selectedVehicle.fuelType}
               </div>
             </div>
             <button type="button" onClick={() => setShowVehiclePicker(true)}
-              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-extrabold border border-accent/30 active:scale-95">
+              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-sm font-extrabold border border-accent/30 active:scale-95">
               차량 변경
             </button>
           </div>
@@ -349,7 +349,7 @@ export default function VehicleLogClient({
                 vehicleId === v.id ? 'border-accent bg-accent/5' : 'border-line bg-surface'
               }`}>
               <div className="font-extrabold text-sm text-ink">{v.vehicleNo}</div>
-              <div className="text-xs font-mono text-ink-muted mt-0.5">
+              <div className="text-sm font-mono text-ink-muted mt-0.5">
                 {v.vehicleType} {v.vehicleTon && `${v.vehicleTon}t`} · {v.fuelType}
                 {v.totalMileage != null && ` · 누적 ${v.totalMileage.toLocaleString()}km`}
               </div>
@@ -418,12 +418,12 @@ export default function VehicleLogClient({
               </Field>
             </div>
             {form.prevMileage && form.todayMileage && Number(form.todayMileage) >= Number(form.prevMileage) && (
-              <div className="bg-accent/10 rounded-lg px-3 py-2 text-xs font-mono font-bold text-accent">
+              <div className="bg-accent/10 rounded-lg px-3 py-2 text-sm font-mono font-bold text-accent">
                 금일 운행거리: {(Number(form.todayMileage) - Number(form.prevMileage)).toLocaleString()} km
               </div>
             )}
             {form.prevMileage && form.todayMileage && Number(form.todayMileage) < Number(form.prevMileage) && (
-              <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs font-bold text-amber-800">
+              <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-sm font-bold text-amber-800">
                 ⚠ 금일누적거리가 전일보다 작습니다. 계기판 리셋 또는 차량 변경 시 그대로 입력하세요.
               </div>
             )}
@@ -449,9 +449,9 @@ export default function VehicleLogClient({
             </Field>
 
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-mono font-extrabold text-slate-600">차량운행내역 (4차)</span>
+              <span className="text-sm font-mono font-extrabold text-ink-faint">차량운행내역 (4차)</span>
               <div className="overflow-x-auto -mx-1">
-                <table className="w-full text-xs border-collapse min-w-[420px]">
+                <table className="w-full text-sm border-collapse min-w-[420px]">
                   <thead>
                     <tr className="bg-slate-100">
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-8">차수</th>
@@ -468,23 +468,23 @@ export default function VehicleLogClient({
                         <td className="border border-slate-300 p-0.5">
                           <input type="time" value={row.startTime}
                             onChange={(e) => setOperationRow(i, 'startTime', e.target.value)}
-                            className="w-full px-1 py-1 text-xs font-mono border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="time" value={row.endTime}
                             onChange={(e) => setOperationRow(i, 'endTime', e.target.value)}
-                            className="w-full px-1 py-1 text-xs font-mono border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm font-mono border-0 focus:outline-none bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.zone}
                             onChange={(e) => setOperationRow(i, 'zone', e.target.value)}
                             placeholder="구간/경로"
-                            className="w-full px-1 py-1 text-xs border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none bg-transparent" />
                         </td>
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.note}
                             onChange={(e) => setOperationRow(i, 'note', e.target.value)}
-                            className="w-full px-1 py-1 text-xs border-0 focus:outline-none bg-transparent" />
+                            className="w-full px-1 py-1 text-sm border-0 focus:outline-none bg-transparent" />
                         </td>
                       </tr>
                     ))}
@@ -500,7 +500,7 @@ export default function VehicleLogClient({
           <Card title={showUrea ? '주유 / 요소수' : '주유'}>
             <div className="space-y-3">
               {selectedVehicle && (
-                <div className="bg-surface-soft rounded-lg px-3 py-2 text-xs font-mono text-ink-muted">
+                <div className="bg-surface-soft rounded-lg px-3 py-2 text-sm font-mono text-ink-muted">
                   유종: <span className="text-ink font-bold">{selectedVehicle.fuelType === 'DIESEL' ? '경유' : selectedVehicle.fuelType === 'LPG' ? 'LPG' : selectedVehicle.fuelType === 'ELECTRIC' ? '전기' : selectedVehicle.fuelType === 'CNG' ? 'CNG' : selectedVehicle.fuelType === 'GASOLINE' ? '휘발유' : selectedVehicle.fuelType}</span>
                 </div>
               )}
@@ -530,7 +530,7 @@ export default function VehicleLogClient({
         {/* ── Card A: 작업내역 — 중량제봉투 및 음식물용기, 재활용·자원 ── */}
         <Card title="작업내역 — 중량제봉투 및 음식물용기, 재활용·자원 (단위: kg)">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse min-w-[340px]">
+            <table className="w-full text-sm border-collapse min-w-[340px]">
               <thead>
                 <tr className="bg-slate-100">
                   <th className="px-2 py-1.5 border border-line font-extrabold text-center w-10">차수</th>
@@ -572,7 +572,7 @@ export default function VehicleLogClient({
                         value={form.bagWork[idx].disposalSite}
                         onChange={(e) => setBagWorkRow(idx, 'disposalSite', e.target.value)}
                         placeholder="직접 입력"
-                        className="w-full px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white min-w-[72px]"
+                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white min-w-[72px]"
                       />
                     </td>
                     <td className="px-1 py-1 border border-line">
@@ -581,21 +581,21 @@ export default function VehicleLogClient({
                         value={form.bagWork[idx].note}
                         onChange={(e) => setBagWorkRow(idx, 'note', e.target.value)}
                         placeholder="비고"
-                        className="w-full px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white min-w-[64px]"
+                        className="w-full px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white min-w-[64px]"
                       />
                     </td>
                   </tr>
                 ))}
                 {/* 합계행 */}
                 <tr className="bg-accent/10 font-extrabold">
-                  <td className="px-2 py-1.5 border border-line text-center text-xs text-accent">계</td>
-                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                  <td className="px-2 py-1.5 border border-line text-center text-sm text-accent">계</td>
+                  <td className="px-2 py-1.5 border border-line text-center text-sm font-mono text-accent">
                     {bagTotals.general > 0 ? bagTotals.general : '—'}
                   </td>
-                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                  <td className="px-2 py-1.5 border border-line text-center text-sm font-mono text-accent">
                     {bagTotals.food > 0 ? bagTotals.food : '—'}
                   </td>
-                  <td className="px-2 py-1.5 border border-line text-center text-xs font-mono text-accent">
+                  <td className="px-2 py-1.5 border border-line text-center text-sm font-mono text-accent">
                     {bagTotals.recycle > 0 ? bagTotals.recycle : '—'}
                   </td>
                   <td className="border border-line" />
@@ -622,7 +622,7 @@ export default function VehicleLogClient({
             <div>
               <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">음식물 종량제</div>
               <div className="overflow-x-auto">
-                <table className="text-xs border-collapse">
+                <table className="text-sm border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
                       {['1L','2L','3L','5L','10L'].map((l) => (
@@ -650,7 +650,7 @@ export default function VehicleLogClient({
             <div>
               <div className="text-[0.6875rem] font-extrabold text-ink mb-1.5">생활폐기물 종량제</div>
               <div className="overflow-x-auto">
-                <table className="text-xs border-collapse">
+                <table className="text-sm border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
                       {['5L','10L','20L','30L','50L','75L'].map((l) => (
@@ -736,12 +736,12 @@ export default function VehicleLogClient({
             ))}
           </div>
           <div className="mt-3 bg-slate-50 rounded-lg px-3 py-2.5 flex items-center gap-2 border border-line">
-            <span className="text-xs font-extrabold text-ink flex-1">무단투기물 수거량 총합 (가구류 기준)</span>
+            <span className="text-sm font-extrabold text-ink flex-1">무단투기물 수거량 총합 (가구류 기준)</span>
             <input type="number" inputMode="numeric" min="0" placeholder="0"
               value={form.largeWasteWork.illegalTotal}
               onChange={(e) => setLargeWaste('illegalTotal', e.target.value)}
               className="w-20 px-2 py-1 rounded border-2 border-line text-center text-sm font-mono font-bold focus:outline-none focus:border-accent bg-white" />
-            <span className="text-xs font-bold text-ink-muted">점</span>
+            <span className="text-sm font-bold text-ink-muted">점</span>
           </div>
         </Card>
 
@@ -755,7 +755,7 @@ export default function VehicleLogClient({
                 <div key={item.key} className={`flex items-center gap-2 px-2 py-2 rounded-lg border transition ${
                   isAbnormal ? 'bg-amber-50 border-amber-300' : 'bg-surface border-line'
                 }`}>
-                  <span className={`flex-1 text-xs font-extrabold ${isAbnormal ? 'text-amber-800' : 'text-ink'}`}>
+                  <span className={`flex-1 text-sm font-extrabold ${isAbnormal ? 'text-amber-800' : 'text-ink'}`}>
                     {item.label}
                   </span>
                   <div className="flex gap-1">
@@ -779,7 +779,7 @@ export default function VehicleLogClient({
             })}
           </div>
           {INSPECTION_ITEMS.some((i) => form.inspection[i.key] !== i.opts[0]) && (
-            <div className="mt-2.5 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-xs font-bold text-amber-800">
+            <div className="mt-2.5 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 text-sm font-bold text-amber-800">
               ⚠️ 이상 항목: {INSPECTION_ITEMS.filter((i) => form.inspection[i.key] !== i.opts[0]).map((i) => `${i.label}(${form.inspection[i.key]})`).join(', ')}
             </div>
           )}
@@ -819,7 +819,7 @@ export default function VehicleLogClient({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={form.receiptPhoto} alt="영수증" className="w-full rounded-lg border border-line object-cover max-h-48" />
                     <button type="button" onClick={() => setField('receiptPhoto', '')}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center font-bold active:scale-95">
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white text-sm flex items-center justify-center font-bold active:scale-95">
                       ✕
                     </button>
                   </div>
@@ -830,7 +830,7 @@ export default function VehicleLogClient({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="text-xs font-bold">영수증 촬영</span>
+                    <span className="text-sm font-bold">영수증 촬영</span>
                   </button>
                 )}
                 <input ref={receiptInputRef} type="file" accept="image/*" capture="environment"
@@ -861,7 +861,7 @@ export default function VehicleLogClient({
           }`}>
             {result.ok ? '✓ ' : '✕ '}{result.message}
             {result.ok && (
-              <Link href="/worker" className="block mt-2 text-accent font-extrabold text-xs">← 홈으로 돌아가기</Link>
+              <Link href="/worker" className="block mt-2 text-accent font-extrabold text-sm">← 홈으로 돌아가기</Link>
             )}
           </div>
         )}
@@ -940,7 +940,7 @@ function VehicleLogPreview({
           {/* 기본정보 */}
           <section>
             <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">기본정보</div>
-            <div className="bg-slate-50 rounded-xl border border-line p-3 grid grid-cols-2 gap-y-2 gap-x-4 text-xs font-mono">
+            <div className="bg-slate-50 rounded-xl border border-line p-3 grid grid-cols-2 gap-y-2 gap-x-4 text-sm font-mono">
               <Row label="차량" value={vehicle?.vehicleNo ?? '—'} />
               <Row label="작성자" value={driverName} />
               <Row label="작성일자" value={form.logDate} />
@@ -958,7 +958,7 @@ function VehicleLogPreview({
               <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">차량운행내역</div>
               <div className="bg-slate-50 rounded-xl border border-line divide-y divide-line">
                 {filledOps.map((r, i) => (
-                  <div key={i} className="px-3 py-2 text-xs font-mono flex gap-3">
+                  <div key={i} className="px-3 py-2 text-sm font-mono flex gap-3">
                     <span className="text-ink-muted w-8 flex-shrink-0">{form.operationRows.indexOf(r) + 1}차</span>
                     <span>{r.startTime && r.endTime ? `${r.startTime}~${r.endTime}` : r.startTime || ''}</span>
                     {r.zone && <span className="text-ink">{r.zone}</span>}
@@ -973,7 +973,7 @@ function VehicleLogPreview({
           {(bagTotals.general > 0 || bagTotals.food > 0 || bagTotals.recycle > 0) && (
             <section>
               <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">작업내역 A (kg)</div>
-              <div className="bg-blue-50 rounded-xl border border-blue-200 px-3 py-2 text-xs font-mono flex gap-6">
+              <div className="bg-blue-50 rounded-xl border border-blue-200 px-3 py-2 text-sm font-mono flex gap-6">
                 {bagTotals.general > 0 && <span>일반 {bagTotals.general} kg</span>}
                 {bagTotals.food > 0 && <span>음식물 {bagTotals.food} kg</span>}
                 {bagTotals.recycle > 0 && <span>재활용 {bagTotals.recycle} kg</span>}
@@ -985,7 +985,7 @@ function VehicleLogPreview({
           {(hasBagB || hasBagC) && (
             <section>
               <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">작업내역 B·C</div>
-              <div className="bg-green-50 rounded-xl border border-green-200 px-3 py-2 text-xs font-mono space-y-1">
+              <div className="bg-green-50 rounded-xl border border-green-200 px-3 py-2 text-sm font-mono space-y-1">
                 {hasBagB && (
                   <div>
                     <span className="font-extrabold text-green-800">B — 종량제봉투: </span>
@@ -1012,7 +1012,7 @@ function VehicleLogPreview({
           {abnormalInsp.length > 0 && (
             <section>
               <div className="text-[0.6875rem] font-extrabold text-warn mb-2 tracking-wider">⚠ 차량점검 이상 항목</div>
-              <div className="bg-amber-50 rounded-xl border border-amber-300 px-3 py-2 text-xs font-mono space-y-0.5">
+              <div className="bg-amber-50 rounded-xl border border-amber-300 px-3 py-2 text-sm font-mono space-y-0.5">
                 {abnormalInsp.map((i) => (
                   <div key={i.key} className="text-amber-800 font-bold">
                     {i.label}: {form.inspection[i.key]}
@@ -1026,7 +1026,7 @@ function VehicleLogPreview({
           {hasMaint && (
             <section>
               <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">정비이력</div>
-              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-xs font-mono space-y-0.5">
+              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-sm font-mono space-y-0.5">
                 {form.maintCompany && <div>업체: {form.maintCompany}</div>}
                 {form.maintContent && <div>내용: {form.maintContent}</div>}
                 {form.maintCost && <div>비용: {Number(form.maintCost).toLocaleString()}원</div>}
@@ -1038,7 +1038,7 @@ function VehicleLogPreview({
           {form.note.trim() && (
             <section>
               <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2 tracking-wider">특이사항</div>
-              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-xs font-mono whitespace-pre-wrap">
+              <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 text-sm font-mono whitespace-pre-wrap">
                 {form.note}
               </div>
             </section>
@@ -1087,7 +1087,7 @@ const LOG_STATUS_LABEL: Record<string, string> = {
   DRAFT: '임시저장', SUBMITTED: '제출완료', APPROVED: '승인완료', REJECTED: '반려',
 };
 const LOG_STATUS_COLOR: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-700 border-slate-300',
+  DRAFT: 'bg-slate-100 text-ink-muted border-slate-300',
   SUBMITTED: 'bg-amber-100 text-amber-800 border-amber-300',
   APPROVED: 'bg-emerald-100 text-emerald-800 border-emerald-300',
   REJECTED: 'bg-rose-100 text-rose-800 border-rose-300',
@@ -1128,10 +1128,10 @@ function HistoryPanel() {
 
   return (
     <div className="px-4">
-      <p className="text-xs font-bold text-ink-muted px-1 mb-3">최근 30건 · 본인 제출 내역</p>
-      {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+      <p className="text-sm font-bold text-ink-muted px-1 mb-3">최근 30건 · 본인 제출 내역</p>
+      {loading && <div className="py-10 text-center text-ink-faint text-sm">로딩 중…</div>}
       {!loading && items.length === 0 && (
-        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-slate-500 font-bold">
+        <div className="bg-surface border border-line rounded-xl py-12 text-center text-sm text-ink-faint font-bold">
           제출한 차량일지가 없습니다.
         </div>
       )}
@@ -1149,7 +1149,7 @@ function HistoryPanel() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-black text-ink">{log.logDate}</span>
-                  <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${LOG_STATUS_COLOR[log.status] ?? 'bg-slate-100 text-slate-700 border-slate-300'}`}>
+                  <span className={`text-[0.625rem] font-extrabold px-2 py-0.5 rounded-full border ${LOG_STATUS_COLOR[log.status] ?? 'bg-slate-100 text-ink-muted border-slate-300'}`}>
                     {LOG_STATUS_LABEL[log.status] ?? log.status}
                   </span>
                   {/* DRAFT·REJECTED 상태만 삭제 가능 */}
@@ -1164,7 +1164,7 @@ function HistoryPanel() {
                     </button>
                   )}
                 </div>
-                <div className="text-xs font-mono text-ink-muted mt-0.5">
+                <div className="text-sm font-mono text-ink-muted mt-0.5">
                   {log.vehicle.no} · {log.vehicle.type}{log.vehicle.ton ? ` ${log.vehicle.ton}t` : ''}
                   {log.mileageDelta != null && ` · ${log.mileageDelta.toLocaleString()}km`}
                 </div>
@@ -1176,7 +1176,7 @@ function HistoryPanel() {
             </button>
 
             {isOpen && (
-              <div className="px-4 pb-4 border-t border-line space-y-2 text-xs">
+              <div className="px-4 pb-4 border-t border-line space-y-2 text-sm">
                 <div className="pt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
                   {log.startMileage != null && <span>시작거리: {log.startMileage.toLocaleString()}km</span>}
                   {log.endMileage != null && <span>종료거리: {log.endMileage.toLocaleString()}km</span>}
@@ -1280,7 +1280,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-mono font-extrabold text-slate-600">{label}</span>
+      <span className="text-sm font-mono font-extrabold text-ink-faint">{label}</span>
       {children}
     </label>
   );

@@ -295,7 +295,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                   ? `⚠️ 결재 대기 중 — 승인 전 발송 불가 (미승인 ${unapprovedCount}건)`
                   : '✅ 결재 승인 완료 — 발송 가능'}
               </div>
-              <div className="text-xs text-ink-muted font-semibold mt-1">
+              <div className="text-sm text-ink-muted font-semibold mt-1">
                 결재승인권자: <strong className="text-ink">{approverInfo.approverName ?? '(지정됨)'}</strong>
               </div>
             </div>
@@ -312,7 +312,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
       {/* 업로드 카드 */}
       <section className="bg-surface rounded-xl border border-line shadow-card p-5 space-y-3">
         <h3 className="text-sm font-extrabold text-ink">1단계 — 엑셀 업로드</h3>
-        <p className="text-xs text-ink-muted font-semibold">
+        <p className="text-sm text-ink-muted font-semibold">
           헤더 행: <code className="bg-surface-soft px-1 rounded text-[0.7rem]">직원번호 | 이름 | 기본급 | 연장수당 | ... | 실수령액</code>
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -328,14 +328,14 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <input ref={fileRef} type="file" accept=".xlsx,.xls" className="text-sm font-semibold text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-line file:text-xs file:font-extrabold file:bg-surface-soft file:text-ink hover:file:bg-surface" />
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" className="text-sm font-semibold text-ink-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-line file:text-sm file:font-extrabold file:bg-surface-soft file:text-ink hover:file:bg-surface" />
           <button onClick={handleImport} disabled={busy}
             className="px-4 py-2 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95 disabled:opacity-50">
             {busy ? '처리 중…' : '파일 불러오기'}
           </button>
         </div>
-        {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
-        {info  && <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">{info}</div>}
+        {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>}
+        {info  && <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">{info}</div>}
       </section>
 
       {/* 미리보기 결과 */}
@@ -356,7 +356,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
               <thead>
                 <tr className="bg-surface-soft border-b-2 border-line-strong">
                   {['행', '상태', '이름', '직원번호', '실수령액', '상세'].map((h) => (
-                    <th key={h} className="text-left px-3 py-2 text-xs font-extrabold text-ink uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left px-3 py-2 text-sm font-extrabold text-ink uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -367,16 +367,16 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                   return (
                     <>
                       <tr key={r.rowNo} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
-                        <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.rowNo}</td>
-                        <td className={`px-3 py-2 border-b border-line font-extrabold text-xs ${tone}`}>{r.status}</td>
+                        <td className="px-3 py-2 border-b border-line font-mono text-sm text-ink-muted">{r.rowNo}</td>
+                        <td className={`px-3 py-2 border-b border-line font-extrabold text-sm ${tone}`}>{r.status}</td>
                         <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName ?? '—'}</td>
-                        <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
+                        <td className="px-3 py-2 border-b border-line font-mono text-sm text-ink-muted">{r.employeeNo ?? '—'}</td>
                         <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">
                           {r.preview ? fmt(r.preview.totals.실수령액) : '—'}
                         </td>
                         <td className="px-3 py-2 border-b border-line">
                           {(r.preview || r.status === 'ERROR' || r.status === 'WARN') && (
-                            <button onClick={() => setExpandRow(isOpen ? null : i)} className="text-xs font-extrabold text-accent hover:underline">
+                            <button onClick={() => setExpandRow(isOpen ? null : i)} className="text-sm font-extrabold text-accent hover:underline">
                               {isOpen ? '닫기' : '상세'}
                             </button>
                           )}
@@ -407,8 +407,8 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
           <div className="px-5 py-3 border-b border-line flex items-center justify-between">
             <h3 className="text-sm font-extrabold text-ink">
               {ym} 발송 현황
-              {publishedCount > 0 && <span className="ml-2 text-xs font-bold text-success">발송 {publishedCount}명</span>}
-              {unpublishedCount > 0 && <span className="ml-2 text-xs font-bold text-warn">미발송 {unpublishedCount}명</span>}
+              {publishedCount > 0 && <span className="ml-2 text-sm font-bold text-success">발송 {publishedCount}명</span>}
+              {unpublishedCount > 0 && <span className="ml-2 text-sm font-bold text-warn">미발송 {unpublishedCount}명</span>}
             </h3>
             {unpublishedCount > 0 && (
               <button onClick={handlePublish} disabled={busy || publishBlocked}
@@ -428,7 +428,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                 <thead>
                   <tr className="bg-surface-soft border-b-2 border-line-strong">
                     {(needsApproval ? ['이름', '직원번호', '실수령액', '결재', '발송상태', ''] : ['이름', '직원번호', '실수령액', '발송상태', '']).map((h) => (
-                      <th key={h} className="text-left px-3 py-2 text-xs font-extrabold text-ink uppercase tracking-wide">{h}</th>
+                      <th key={h} className="text-left px-3 py-2 text-sm font-extrabold text-ink uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -436,7 +436,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                   {published.map((r, i) => (<>
                     <tr key={r.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
                       <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName}</td>
-                      <td className="px-3 py-2 border-b border-line font-mono text-xs text-ink-muted">{r.employeeNo ?? '—'}</td>
+                      <td className="px-3 py-2 border-b border-line font-mono text-sm text-ink-muted">{r.employeeNo ?? '—'}</td>
                       <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">{fmt(getNetPay(r.data.totals))}</td>
                       {needsApproval && (
                         <td className="px-3 py-2 border-b border-line">
@@ -456,7 +456,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                            className="text-xs font-extrabold text-accent hover:underline"
+                            className="text-sm font-extrabold text-accent hover:underline"
                           >
                             {expandedId === r.id ? '닫기' : '내용보기'}
                           </button>
@@ -473,7 +473,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                                 setDeletingIds((s) => { const n = new Set(s); n.delete(r.id); return n; });
                               }
                             }}
-                            className="text-xs font-extrabold text-danger hover:underline disabled:opacity-50"
+                            className="text-sm font-extrabold text-danger hover:underline disabled:opacity-50"
                           >
                             {deletingIds.has(r.id) ? '삭제 중…' : '삭제'}
                           </button>
@@ -484,8 +484,8 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                       <tr key={r.id + '-detail'}>
                         <td colSpan={needsApproval ? 6 : 5} className="px-4 py-3 bg-slate-50 border-b border-line">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-extrabold text-ink">{r.workerName} ({r.yearMonth}) 임금명세서</span>
-                            <button onClick={() => printPayslip(r)} className="text-xs font-extrabold text-emerald-700 hover:underline">🖨 인쇄</button>
+                            <span className="text-sm font-extrabold text-ink">{r.workerName} ({r.yearMonth}) 임금명세서</span>
+                            <button onClick={() => printPayslip(r)} className="text-sm font-extrabold text-emerald-700 hover:underline">🖨 인쇄</button>
                           </div>
                           <PublishedPayslipDetail data={r.data} template={tmpl} />
                         </td>
@@ -505,7 +505,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
 /* ─── 미리보기 컴포넌트 ──────────────────────────────────────────── */
 function PayslipPreview({ data }: { data: NonNullable<ImportResult['preview']> }) {
   return (
-    <div className="grid grid-cols-2 gap-4 text-xs mt-2">
+    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
       <div>
         <div className="font-extrabold text-ink mb-1">지급 항목</div>
         {Object.entries(data.earnings).map(([k, v]) => (
@@ -535,7 +535,7 @@ function PayslipPreview({ data }: { data: NonNullable<ImportResult['preview']> }
         <span className="font-mono text-xl font-black text-accent">{fmt(data.totals.실수령액)}</span>
       </div>
       {data.payDate && (
-        <div className="col-span-2 flex items-center justify-between text-xs font-mono text-ink-muted border-t border-line pt-2">
+        <div className="col-span-2 flex items-center justify-between text-sm font-mono text-ink-muted border-t border-line pt-2">
           <span className="font-extrabold text-ink">임금 지급일</span>
           <span className="font-bold">{data.payDate}</span>
         </div>
@@ -565,7 +565,7 @@ function PublishedPayslipDetail({ data, template }: { data: PublishedRecord['dat
   const deductEntries  = sortByTemplate(Object.entries(data.deductions ?? {}) as [string, number][], template?.deductions);
 
   return (
-    <div className="grid grid-cols-2 gap-3 text-xs">
+    <div className="grid grid-cols-2 gap-3 text-sm">
       {(data.workDays != null || data.payDate) && (
         <div className="col-span-2 flex gap-4 text-ink-muted flex-wrap">
           {data.workDays != null && <span>출근일수: <b className="text-ink">{data.workDays}일</b></span>}
@@ -601,7 +601,7 @@ function PublishedPayslipDetail({ data, template }: { data: PublishedRecord['dat
         <span className="font-mono font-black text-accent">{net.toLocaleString('ko-KR')}원</span>
       </div>
       {wh && (overtimeH > 0 || nightH > 0) && (
-        <div className="col-span-2 grid grid-cols-2 gap-2 text-xs border border-line rounded-lg px-3 py-2">
+        <div className="col-span-2 grid grid-cols-2 gap-2 text-sm border border-line rounded-lg px-3 py-2">
           <span className="text-ink-muted">연장근로: <b className="text-ink font-mono">{overtimeH}시간</b></span>
           <span className="text-ink-muted">야간근로: <b className="text-ink font-mono">{nightH}시간</b></span>
         </div>
@@ -721,23 +721,23 @@ function SettingsTab() {
             <label className="text-sm font-semibold text-ink whitespace-nowrap mt-1.5">하단 고지문</label>
             <textarea value={template.footer} rows={3}
               onChange={(e) => setStr('footer', e.target.value)}
-              className="px-2.5 py-1.5 rounded-md border border-line text-xs font-semibold resize-y focus:outline-none focus:border-accent" />
+              className="px-2.5 py-1.5 rounded-md border border-line text-sm font-semibold resize-y focus:outline-none focus:border-accent" />
           </div>
         </div>
       </section>
 
-      {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
-      {info  && <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-xs font-bold text-success">{info}</div>}
+      {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>}
+      {info  && <div className="bg-green-50 border border-green-300 rounded-md px-3 py-2 text-sm font-bold text-success">{info}</div>}
 
       <div className="flex items-center gap-3">
         <button onClick={save} disabled={busy}
           className="px-5 py-2.5 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95 disabled:opacity-50">
           {busy ? '저장 중…' : '저장'}
         </button>
-        <p className="text-xs text-ink-muted font-semibold">저장 후 다음 업로드부터 새 항목이 적용됩니다.</p>
+        <p className="text-sm text-ink-muted font-semibold">저장 후 다음 업로드부터 새 항목이 적용됩니다.</p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-xs text-info font-semibold">
+      <div className="bg-blue-50 border border-blue-300 border-l-4 border-l-info rounded-md px-4 py-3 text-sm text-info font-semibold">
         <strong className="font-extrabold">엑셀 헤더 규칙</strong> — 항목 키 이름이 엑셀 헤더와 정확히 일치해야 합니다.
         예: 키를 <code className="bg-white px-1 rounded">기본급</code>으로 설정하면 엑셀 헤더도 <code className="bg-white px-1 rounded">기본급</code>이어야 합니다.
       </div>
@@ -760,7 +760,7 @@ function ColSection({ title, cols, onAdd, onRemove, onChange, onMoveUp, onMoveDo
           <h4 className="text-sm font-extrabold text-ink">{title}</h4>
           <p className="text-[0.625rem] text-ink-muted font-mono mt-0.5">출력 순서 = 목록 순서 · ↑↓ 로 변경</p>
         </div>
-        <button onClick={onAdd} className="px-3 py-1 rounded-md bg-accent text-white text-xs font-extrabold hover:bg-cyan-800 active:scale-95">+ 추가</button>
+        <button onClick={onAdd} className="px-3 py-1 rounded-md bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95">+ 추가</button>
       </div>
       {/* 컬럼 헤더 */}
       <div className="px-3 pt-2 pb-1 grid grid-cols-[28px_1fr_1fr_56px_48px_32px] gap-2 text-[0.625rem] font-extrabold text-ink-muted uppercase tracking-wide">
@@ -781,14 +781,14 @@ function ColSection({ title, cols, onAdd, onRemove, onChange, onMoveUp, onMoveDo
               value={col.key}
               onChange={(e) => onChange(i, 'key', e.target.value)}
               placeholder="기본급"
-              className="px-2 py-1 rounded border border-line text-xs font-bold focus:outline-none focus:border-accent bg-white"
+              className="px-2 py-1 rounded border border-line text-sm font-bold focus:outline-none focus:border-accent bg-white"
             />
             {/* 표시명 */}
             <input
               value={col.label}
               onChange={(e) => onChange(i, 'label', e.target.value)}
               placeholder="기본급"
-              className="px-2 py-1 rounded border border-line text-xs focus:outline-none focus:border-accent bg-white"
+              className="px-2 py-1 rounded border border-line text-sm focus:outline-none focus:border-accent bg-white"
             />
             {/* 필수 */}
             <label className="flex items-center justify-center gap-1 cursor-pointer">
@@ -814,11 +814,11 @@ function ColSection({ title, cols, onAdd, onRemove, onChange, onMoveUp, onMoveDo
               >↓</button>
             </div>
             {/* 삭제 */}
-            <button onClick={() => onRemove(i)} className="text-danger text-xs font-extrabold hover:underline text-center" title="삭제">✕</button>
+            <button onClick={() => onRemove(i)} className="text-danger text-sm font-extrabold hover:underline text-center" title="삭제">✕</button>
           </div>
         ))}
         {cols.length === 0 && (
-          <p className="text-xs text-ink-muted font-semibold text-center py-3">항목 없음 — 추가 버튼으로 항목을 넣으세요.</p>
+          <p className="text-sm text-ink-muted font-semibold text-center py-3">항목 없음 — 추가 버튼으로 항목을 넣으세요.</p>
         )}
       </div>
     </section>

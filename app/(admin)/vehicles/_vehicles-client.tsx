@@ -154,26 +154,26 @@ export default function VehiclesClient({
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-black text-ink tracking-tight">차량 관리</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">
+          <p className="text-sm font-bold text-ink-muted mt-1">
             {todayLabel} · Plan §2-4 / §3-3 · 차량 마스터 + 운행일지 결재
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {submittedCount > 0 && (
-            <span className="px-3 py-1.5 rounded-full text-xs font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
+            <span className="px-3 py-1.5 rounded-full text-sm font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
               결재 대기 {submittedCount}건
             </span>
           )}
           {isManager && (
             <a href="/vehicles/logs-overview"
-              className="px-3 py-1.5 rounded-md border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition">
+              className="px-3 py-1.5 rounded-md border border-line bg-white text-sm font-extrabold text-ink-muted hover:bg-slate-50 transition">
               📋 차량일지 현황
             </a>
           )}
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="px-3 py-1.5 rounded-md border border-line bg-white text-xs font-extrabold text-ink-muted hover:bg-slate-50 transition flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-md border border-line bg-white text-sm font-extrabold text-ink-muted hover:bg-slate-50 transition flex items-center gap-1 disabled:opacity-50"
           >
             <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -297,13 +297,13 @@ export default function VehiclesClient({
             />
             <button
               onClick={() => navigateDate(dateInput)}
-              className="px-3 py-1 rounded bg-accent text-white text-xs font-extrabold hover:bg-cyan-800"
+              className="px-3 py-1 rounded bg-accent text-white text-sm font-extrabold hover:bg-cyan-800"
             >
               조회
             </button>
             <button
               onClick={() => { setDateInput(todayLabel); navigateDate(todayLabel); }}
-              className="px-2 py-1 rounded border border-line text-xs font-bold hover:bg-surface"
+              className="px-2 py-1 rounded border border-line text-sm font-bold hover:bg-surface"
             >
               오늘
             </button>
@@ -315,7 +315,7 @@ export default function VehiclesClient({
           <thead>
             <tr>
               {['차량', '기사', '주행거리', '주유량', '유종', '회', '상태', '상세', '액션'].map((h) => (
-                <th key={h} className="text-left px-3 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
+                <th key={h} className="text-left px-3 py-2.5 text-sm font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -368,14 +368,14 @@ export default function VehiclesClient({
                         <button
                           onClick={() => call(`/api/vehicle-logs/${l.id}/approve`, undefined, 'POST')}
                           disabled={busy}
-                          className="px-2.5 py-1 rounded-md bg-success text-white text-xs font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
+                          className="px-2.5 py-1 rounded-md bg-success text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
                         >
                           승인
                         </button>
                         <button
                           onClick={() => setRejectFor(l.id)}
                           disabled={busy}
-                          className="px-2.5 py-1 rounded-md border border-danger text-danger text-xs font-extrabold hover:bg-danger hover:text-white active:scale-95 disabled:opacity-50"
+                          className="px-2.5 py-1 rounded-md border border-danger text-danger text-sm font-extrabold hover:bg-danger hover:text-white active:scale-95 disabled:opacity-50"
                         >
                           반려
                         </button>
@@ -759,7 +759,7 @@ function VehicleFormModal({
 
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex items-center justify-end gap-2">
           {hasDuplicateCrew && (
-            <span className="text-xs font-extrabold text-danger mr-auto">⚠ 운전자/동승자 1/2는 모두 다른 사람이어야 합니다</span>
+            <span className="text-sm font-extrabold text-danger mr-auto">⚠ 운전자/동승자 1/2는 모두 다른 사람이어야 합니다</span>
           )}
           {isEdit && onDelete && (
             <button
@@ -810,10 +810,10 @@ function RetireModal({
           <div className="text-[0.6875rem] font-mono font-bold text-danger mt-0.5">{vehicle.vehicleNo} · {vehicle.vehicleType}</div>
         </header>
         <div className="p-5">
-          <p className="text-xs font-semibold text-ink mb-3 leading-relaxed">
+          <p className="text-sm font-semibold text-ink mb-3 leading-relaxed">
             폐차 처리하면 이 차량은 신규 운행일지 작성이 차단됩니다 (기존 데이터는 보존). 이 작업은 audit_log에 영구 보존됩니다.
           </p>
-          <label className="block text-xs font-extrabold text-ink mb-2">폐차 사유 (필수)</label>
+          <label className="block text-sm font-extrabold text-ink mb-2">폐차 사유 (필수)</label>
           <textarea
             rows={3}
             value={reason}
@@ -892,11 +892,11 @@ function DeleteVehicleModal({
           <div className="text-[0.6875rem] font-mono font-bold text-danger mt-0.5">{vehicle.vehicleNo} · {vehicle.vehicleType}</div>
         </header>
         <div className="p-5">
-          <p className="text-xs font-semibold text-ink mb-3 leading-relaxed">
+          <p className="text-sm font-semibold text-ink mb-3 leading-relaxed">
             차량과 관련된 모든 데이터(운행일지 등)가 영구 삭제됩니다. 진행 중인 운행일지가 있으면 삭제할 수 없습니다.
           </p>
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-800 mb-2">{error}</div>
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-800 mb-2">{error}</div>
           )}
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
@@ -966,7 +966,7 @@ function VehicleOperationDetailTable({ routeDetail }: { routeDetail: string | nu
 
   return (
     <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-      <div className="font-extrabold text-slate-700 mb-1 text-[0.6875rem] flex items-center gap-2">
+      <div className="font-extrabold text-ink-muted mb-1 text-[0.6875rem] flex items-center gap-2">
         <span>◎ 차량운행내역</span>
         <span className="font-normal text-red-600 text-[0.625rem]">※지정 소각장 및 기타처리장 반입 상황에 따라 근무시간 조정.</span>
       </div>
@@ -1003,7 +1003,7 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
   }
 
   if (!detail && !routeDetail) {
-    return <div className="text-xs text-ink-muted">상세 정보 없음</div>;
+    return <div className="text-sm text-ink-muted">상세 정보 없음</div>;
   }
 
   const inspection = detail?.inspection;
@@ -1013,7 +1013,7 @@ function VehicleLogDetail({ routeDetail, startMileage, endMileage }: { routeDeta
   const largeWasteWork = detail?.largeWasteWork && typeof detail.largeWasteWork === 'object' ? detail.largeWasteWork : null;
 
   return (
-    <div className="text-xs space-y-2">
+    <div className="text-sm space-y-2">
       {/* 기본 운행 정보 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {startMileage != null && endMileage != null && (
@@ -1146,7 +1146,7 @@ function RejectModal({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (
           <h3 className="text-base font-extrabold text-ink">운행일지 반려</h3>
         </header>
         <div className="p-5">
-          <label className="block text-xs font-extrabold text-ink mb-2">반려 사유</label>
+          <label className="block text-sm font-extrabold text-ink mb-2">반려 사유</label>
           <textarea
             rows={3}
             value={reason}

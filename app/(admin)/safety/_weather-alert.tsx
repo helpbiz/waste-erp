@@ -120,14 +120,14 @@ export default function WeatherAlertCard({
         <span className="text-2xl">🔔</span>
         <div className="flex-1">
           <h3 className="text-base font-extrabold text-ink">기상악화 알림톡 공지</h3>
-          <p className="text-xs font-bold text-ink-muted mt-0.5">기상 악화 시 카카오 알림톡으로 공지 발송</p>
+          <p className="text-sm font-bold text-ink-muted mt-0.5">기상 악화 시 카카오 알림톡으로 공지 발송</p>
         </div>
         {hazardLevel === 'DANGER' && !open && (
           <span className="px-3 py-1 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-100 text-danger border border-danger animate-pulse">
             ⚠ 위험기상 — 발송 권장
           </span>
         )}
-        <span className="text-ink-muted text-xs font-mono font-bold">
+        <span className="text-ink-muted text-sm font-mono font-bold">
           {open ? '접기 ▴' : '펼치기 ▾'}
         </span>
       </header>
@@ -138,7 +138,7 @@ export default function WeatherAlertCard({
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-extrabold text-ink">전송대상</h4>
-              <span className="text-xs font-mono font-extrabold text-info">총 {workers.length}명</span>
+              <span className="text-sm font-mono font-extrabold text-info">총 {workers.length}명</span>
             </div>
             <div className="bg-surface-alt rounded-lg border border-line p-3 flex items-center gap-3">
               <div className="text-sm font-extrabold text-ink">
@@ -146,7 +146,7 @@ export default function WeatherAlertCard({
               </div>
               <button
                 onClick={() => setShowWorkerPicker((s) => !s)}
-                className="ml-auto px-3 py-1.5 rounded-md border border-line text-xs font-extrabold text-ink hover:bg-surface active:scale-95"
+                className="ml-auto px-3 py-1.5 rounded-md border border-line text-sm font-extrabold text-ink hover:bg-surface active:scale-95"
               >
                 {showWorkerPicker ? '닫기' : '직원 선택'}
               </button>
@@ -217,7 +217,7 @@ export default function WeatherAlertCard({
               <h4 className="text-sm font-extrabold text-ink">전송내용</h4>
               <button
                 onClick={() => setMessage(WEATHER_ALERT_TEMPLATES[type] ?? '')}
-                className="text-xs font-extrabold text-accent hover:underline"
+                className="text-sm font-extrabold text-accent hover:underline"
                 title="현재 유형의 표준 템플릿으로 초기화"
               >
                 기상 유형별 전송내용 관리 ↻
@@ -239,7 +239,7 @@ export default function WeatherAlertCard({
                 </div>
               </div>
               <aside className="bg-surface-alt rounded-lg border border-line p-4">
-                <div className="text-xs font-extrabold text-ink mb-3 pb-2 border-b border-line">전송 요약</div>
+                <div className="text-sm font-extrabold text-ink mb-3 pb-2 border-b border-line">전송 요약</div>
                 <dl className="space-y-2.5 text-[0.8125rem]">
                   <div className="flex justify-between"><dt className="font-bold text-ink-muted">유형</dt><dd className="font-extrabold text-ink">{WEATHER_ALERT_LABEL[type]}</dd></div>
                   <div className="flex justify-between"><dt className="font-bold text-ink-muted">대상</dt><dd className="font-extrabold text-info">{selectedIds.size}명</dd></div>
@@ -260,10 +260,10 @@ export default function WeatherAlertCard({
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>
           )}
           {result && (
-            <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-md px-3 py-2.5 text-xs font-extrabold text-success">
+            <div className="bg-green-50 border border-green-300 border-l-4 border-l-success rounded-md px-3 py-2.5 text-sm font-extrabold text-success">
               ✓ {result.sent}/{result.total}명에게 발송 완료
               <span className={`ml-2 px-2 py-0.5 rounded-full text-[0.625rem] font-mono ${result.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
                 provider={result.provider}

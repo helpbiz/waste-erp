@@ -70,7 +70,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
         {isNoticeManager && (
           <Link
             href="/announcements"
-            className="px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-extrabold active:scale-95"
+            className="px-3 py-1.5 rounded-lg bg-accent text-white text-sm font-extrabold active:scale-95"
           >
             + 공지 작성
           </Link>
@@ -86,7 +86,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
       {/* 날씨 공지 (폭염·한파) — 오늘 등록된 날씨 경보 */}
       {weatherNotices.length > 0 && (
         <div className="px-4 pt-2 space-y-2">
-          <div className="text-xs font-extrabold text-red-700 tracking-wider flex items-center gap-1.5">
+          <div className="text-sm font-extrabold text-red-700 tracking-wider flex items-center gap-1.5">
             <span>🌡 날씨 안전 공지</span>
             <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full text-[0.6rem]">{weatherNotices.length}건</span>
           </div>
@@ -97,7 +97,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
               <article key={wx.id} className={`rounded-xl border-2 overflow-hidden ${cls}`}>
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-extrabold border border-current/40 px-1.5 py-0.5 rounded">{wx.alertLabel}</span>
+                    <span className="text-sm font-extrabold border border-current/40 px-1.5 py-0.5 rounded">{wx.alertLabel}</span>
                     {responded ? (
                       <span className="text-[0.625rem] font-extrabold bg-emerald-600 text-white px-1.5 py-0.5 rounded">✓ 대응완료</span>
                     ) : (
@@ -105,10 +105,10 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
                     )}
                   </div>
                   <div className="text-sm font-extrabold">{wx.title}</div>
-                  {wx.content && <div className="text-xs mt-1 text-current/70 line-clamp-2">{wx.content}</div>}
+                  {wx.content && <div className="text-sm mt-1 text-current/70 line-clamp-2">{wx.content}</div>}
                   <Link
                     href="/worker/safety/weather-notices"
-                    className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/70 text-current text-xs font-extrabold active:scale-95"
+                    className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/70 text-current text-sm font-extrabold active:scale-95"
                   >
                     {responded ? '📋 대응 내역 확인' : '📸 사진·온도 기록하기 →'}
                   </Link>
@@ -148,7 +148,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
                 </div>
                 <div className="text-sm font-extrabold text-current mt-0.5">{a.title}</div>
                 {!isOpen && (
-                  <div className="text-xs text-current/70 mt-1 line-clamp-1">{a.body}</div>
+                  <div className="text-sm text-current/70 mt-1 line-clamp-1">{a.body}</div>
                 )}
               </button>
               {isOpen && (
@@ -170,7 +170,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
                   {/민원 #\d+/.test(a.body) && (
                     <Link
                       href="/worker/complaint"
-                      className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent text-white text-xs font-extrabold active:scale-95"
+                      className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent text-white text-sm font-extrabold active:scale-95"
                     >
                       📥 내 민원 탭에서 확인
                     </Link>

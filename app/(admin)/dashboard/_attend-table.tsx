@@ -40,7 +40,7 @@ export default function AttendTable({ readOnly, cards }: { readOnly: boolean; ca
         <thead>
           <tr>
             {['사원명', '구역', '출근시각', '근무유형', '상태', '조치'].map((h) => (
-              <th key={h} className="text-left px-2.5 py-2.5 text-xs font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono">
+              <th key={h} className="text-left px-2.5 py-2.5 text-sm font-extrabold uppercase tracking-wide text-ink bg-surface-soft border-b-2 border-line-strong font-mono">
                 {h}
               </th>
             ))}
@@ -63,7 +63,7 @@ export default function AttendTable({ readOnly, cards }: { readOnly: boolean; ca
                   <StatusChip kind={r.status}>{r.statusLabel}</StatusChip>
                 </td>
                 <td
-                  className={`px-2.5 py-2.5 border-b border-line text-xs font-extrabold ${r.actionColor} ${
+                  className={`px-2.5 py-2.5 border-b border-line text-sm font-extrabold ${r.actionColor} ${
                     clickable ? 'cursor-pointer hover:underline' : 'cursor-default'
                   } ${readOnly && r.action !== '-' ? 'opacity-50 line-through pointer-events-none' : ''} ${synthetic && !readOnly ? 'opacity-60' : ''}`}
                   onClick={() => clickable && setOpenId(r.id)}
@@ -216,7 +216,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
 
         <div className="px-5 py-4 space-y-4">
           {/* 원본 표시 */}
-          <div className="bg-surface-alt rounded-md border border-line px-3 py-2.5 text-xs">
+          <div className="bg-surface-alt rounded-md border border-line px-3 py-2.5 text-sm">
             <div className="font-extrabold text-ink mb-1">원본 값</div>
             <div className="font-mono font-bold text-ink-muted">
               출근 {row.checkInISO ? hm(row.checkInISO) : '—'} · 퇴근 {row.checkOutISO ? hm(row.checkOutISO) : '—'} · {row.workType}
@@ -270,7 +270,7 @@ function AdjustModal({ row, onClose, onSaved }: { row: Row; onClose: () => void;
             />
           </Field>
 
-          {error && <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
+          {error && <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>}
 
           <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-3 py-2.5 text-[0.6875rem] text-amber-900 font-semibold leading-relaxed">
             <strong className="font-extrabold">감사 추적 안내</strong> · 본 조정은 attendance_adjustments 테이블에 SHA-256 prev_hash 체인으로 영구 보존되며 삭제할 수 없습니다 (Plan §3-2-D, 노동청 감사 대비).

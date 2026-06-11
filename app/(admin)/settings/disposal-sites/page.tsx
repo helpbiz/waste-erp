@@ -90,7 +90,7 @@ export default function DisposalSitesPage() {
               key={p}
               disabled={existingNames.has(p) || saving}
               onClick={() => add(p)}
-              className="px-3 py-1.5 rounded-lg border text-xs font-bold transition
+              className="px-3 py-1.5 rounded-lg border text-sm font-bold transition
                 disabled:opacity-40 disabled:cursor-not-allowed
                 enabled:bg-surface enabled:border-line enabled:text-ink enabled:hover:bg-accent enabled:hover:text-white enabled:hover:border-accent"
             >
@@ -129,7 +129,7 @@ export default function DisposalSitesPage() {
           maxLength={255}
           className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent"
         />
-        {error && <p className="text-xs text-red-600 font-bold">{error}</p>}
+        {error && <p className="text-sm text-red-600 font-bold">{error}</p>}
       </div>
 
       {/* 목록 */}
@@ -144,7 +144,7 @@ export default function DisposalSitesPage() {
         {!loading && items.length === 0 && (
           <div className="py-10 text-center text-sm text-ink-muted font-bold">
             아직 등록된 반입장소가 없습니다.<br />
-            <span className="text-xs">위 기본 제안 또는 직접 추가로 등록하세요.</span>
+            <span className="text-sm">위 기본 제안 또는 직접 추가로 등록하세요.</span>
           </div>
         )}
 
@@ -152,7 +152,7 @@ export default function DisposalSitesPage() {
           <div key={site.id} className={`flex items-center gap-3 px-5 py-3 border-b border-line last:border-0 ${
             !site.isActive ? 'opacity-50' : ''
           }`}>
-            <span className="text-xs font-mono text-ink-muted w-5 text-right">{idx + 1}</span>
+            <span className="text-sm font-mono text-ink-muted w-5 text-right">{idx + 1}</span>
 
             {editId === site.id ? (
               <div className="flex-1 space-y-1">
@@ -168,41 +168,41 @@ export default function DisposalSitesPage() {
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
                   placeholder="주소 (선택)"
-                  className="w-full px-2 py-1 rounded border border-line text-xs focus:outline-none focus:border-accent"
+                  className="w-full px-2 py-1 rounded border border-line text-sm focus:outline-none focus:border-accent"
                 />
               </div>
             ) : (
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-ink">{site.name}</div>
-                {site.address && <div className="text-xs text-ink-muted truncate">{site.address}</div>}
+                {site.address && <div className="text-sm text-ink-muted truncate">{site.address}</div>}
               </div>
             )}
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {editId === site.id ? (
                 <>
-                  <button onClick={() => saveEdit(site.id)} className="px-2 py-1 rounded bg-accent text-white text-xs font-bold">저장</button>
-                  <button onClick={() => setEditId(null)} className="px-2 py-1 rounded bg-slate-200 text-ink text-xs font-bold">취소</button>
+                  <button onClick={() => saveEdit(site.id)} className="px-2 py-1 rounded bg-accent text-white text-sm font-bold">저장</button>
+                  <button onClick={() => setEditId(null)} className="px-2 py-1 rounded bg-slate-200 text-ink text-sm font-bold">취소</button>
                 </>
               ) : (
                 <>
                   <button
                     onClick={() => toggleActive(site.id, site.isActive)}
-                    className={`px-2 py-1 rounded text-xs font-bold ${
-                      site.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                    className={`px-2 py-1 rounded text-sm font-bold ${
+                      site.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-ink-faint'
                     }`}
                   >
                     {site.isActive ? '활성' : '비활성'}
                   </button>
                   <button
                     onClick={() => { setEditId(site.id); setEditName(site.name); setEditAddress(site.address ?? ''); }}
-                    className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
+                    className="px-2 py-1 rounded bg-slate-100 text-ink-muted text-sm font-bold hover:bg-slate-200"
                   >
                     수정
                   </button>
                   <button
                     onClick={() => remove(site.id)}
-                    className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-bold hover:bg-red-200"
+                    className="px-2 py-1 rounded bg-red-100 text-red-700 text-sm font-bold hover:bg-red-200"
                   >
                     삭제
                   </button>

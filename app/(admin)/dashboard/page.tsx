@@ -452,7 +452,7 @@ function FacilityOpsWidget({
               )}
             </div>
             {noData ? (
-              <div className="py-3 text-center text-xs text-ink-muted font-semibold">최근 7일 실적 없음</div>
+              <div className="py-3 text-center text-sm text-ink-muted font-semibold">최근 7일 실적 없음</div>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 <OpsKpi label="처리량" value={wasteTon.toFixed(1)} unit="t" color="cyan" />
@@ -481,7 +481,7 @@ function OpsKpi({
     sky:     'bg-sky-100 text-sky-800',
     indigo:  'bg-indigo-100 text-indigo-800',
   };
-  const cls = bgMap[color] ?? 'bg-slate-100 text-slate-800';
+  const cls = bgMap[color] ?? 'bg-slate-100 text-ink-muted';
   return (
     <div className={`rounded-lg p-2 text-center ${cls} ${colSpan === 2 ? 'col-span-2' : ''}`}>
       <div className="text-[0.625rem] font-extrabold tracking-wide opacity-70 mb-0.5">{label}</div>
@@ -518,7 +518,7 @@ function Panel({
           {title}
         </div>
         {actionHref && actionLabel && (
-          <Link href={actionHref} className="text-xs font-mono font-bold text-accent hover:underline">
+          <Link href={actionHref} className="text-sm font-mono font-bold text-accent hover:underline">
             {actionLabel}
           </Link>
         )}
@@ -560,12 +560,12 @@ function KpiCard({
       className="relative bg-surface rounded-xl shadow-card border border-line p-[18px] overflow-hidden block hover:shadow-md active:scale-[0.99] transition"
     >
       <div className={`absolute inset-x-0 top-0 h-[3px] ${accentBar}`} />
-      <div className="text-xs font-extrabold text-ink-muted tracking-wide mb-2.5">{label}</div>
+      <div className="text-sm font-extrabold text-ink-muted tracking-wide mb-2.5">{label}</div>
       <div className="text-[1.875rem] font-black text-ink leading-none font-mono tracking-tight">
         {value}
         {unit && <span className="text-sm font-semibold text-ink-muted ml-1.5">{unit}</span>}
       </div>
-      <div className={`text-xs font-extrabold mt-2.5 font-mono ${subColor}`}>{sub}</div>
+      <div className={`text-sm font-extrabold mt-2.5 font-mono ${subColor}`}>{sub}</div>
     </Link>
   );
 }

@@ -66,7 +66,7 @@ export default function ProfilePhotoUploader({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="profile" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-2xl text-slate-600">📷</span>
+          <span className="text-2xl text-ink-faint">📷</span>
         )}
       </div>
       <div className="flex-1">
@@ -78,16 +78,16 @@ export default function ProfilePhotoUploader({
             const f = e.target.files?.[0];
             if (f) handleFile(f);
           }}
-          className="block w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-accent file:text-white file:text-xs file:font-extrabold hover:file:bg-accent-strong file:cursor-pointer cursor-pointer"
+          className="block w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-accent file:text-white file:text-sm file:font-extrabold hover:file:bg-accent-strong file:cursor-pointer cursor-pointer"
         />
         <div className="flex items-center gap-2 mt-1.5">
-          {loading && <span className="text-[0.625rem] font-mono text-slate-600">처리 중…</span>}
+          {loading && <span className="text-[0.625rem] font-mono text-ink-faint">처리 중…</span>}
           {preview && (
             <button type="button" onClick={clear} className="text-[0.625rem] font-bold text-red-600 hover:underline">
               제거
             </button>
           )}
-          <span className="text-[0.625rem] font-mono text-slate-600 ml-auto">최대 480px · 500KB</span>
+          <span className="text-[0.625rem] font-mono text-ink-faint ml-auto">최대 480px · 500KB</span>
         </div>
         {error && <div className="text-[0.6875rem] font-bold text-red-600 mt-1">{error}</div>}
       </div>

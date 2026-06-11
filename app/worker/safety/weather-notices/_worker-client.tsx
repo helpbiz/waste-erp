@@ -7,7 +7,7 @@ const ALERT_COLOR: Record<string, string> = {
   HEATWAVE: 'bg-red-100 text-red-800 border-red-300',
   COLDWAVE: 'bg-blue-100 text-blue-800 border-blue-300',
   TYPHOON:  'bg-purple-100 text-purple-800 border-purple-300',
-  STORM:    'bg-slate-100 text-slate-800 border-slate-300',
+  STORM:    'bg-slate-100 text-ink-muted border-slate-300',
   OTHER:    'bg-amber-100 text-amber-800 border-amber-300',
 };
 const ALERT_LABEL: Record<string, string> = {
@@ -120,7 +120,7 @@ export default function WeatherNoticesWorkerClient({
     <div className="p-4 space-y-4 pb-24">
       <div>
         <h2 className="text-lg font-extrabold text-ink">날씨 안전 기록</h2>
-        <p className="text-xs font-bold text-ink-muted mt-0.5">{todayStr} · 폭염·한파 안전 조치를 기록하세요</p>
+        <p className="text-sm font-bold text-ink-muted mt-0.5">{todayStr} · 폭염·한파 안전 조치를 기록하세요</p>
       </div>
 
       {error && (
@@ -144,7 +144,7 @@ export default function WeatherNoticesWorkerClient({
                 {/* 공지 내용 */}
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${ALERT_COLOR[n.alertType] ?? ALERT_COLOR.OTHER}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-sm font-extrabold border ${ALERT_COLOR[n.alertType] ?? ALERT_COLOR.OTHER}`}>
                       {ALERT_LABEL[n.alertType] ?? n.alertType}
                     </span>
                     {hasRecord && (
@@ -158,14 +158,14 @@ export default function WeatherNoticesWorkerClient({
                 {/* 기록 현황 (완료 시) */}
                 {hasRecord && !isOpen && (
                   <div className="border-t border-line bg-green-50 px-4 py-3 space-y-1">
-                    <div className="grid grid-cols-2 gap-x-4 text-xs">
+                    <div className="grid grid-cols-2 gap-x-4 text-sm">
                       {n.myPhoto?.recordTime  && <span><b>시간:</b> {n.myPhoto.recordTime}</span>}
                       {n.myPhoto?.feelsLike   != null && <span><b>체감온도:</b> {n.myPhoto.feelsLike}℃</span>}
                       {n.myPhoto?.managerName && <span><b>담당자:</b> {n.myPhoto.managerName}</span>}
                       {n.myPhoto?.actionTaken && <span className="col-span-2"><b>조치사항:</b> {n.myPhoto.actionTaken}</span>}
                     </div>
                     <button onClick={() => { initForm(n.id, n.myPhoto); setActiveForm(n.id); }}
-                      className="text-xs font-extrabold text-accent hover:underline mt-1">수정하기 →</button>
+                      className="text-sm font-extrabold text-accent hover:underline mt-1">수정하기 →</button>
                   </div>
                 )}
 

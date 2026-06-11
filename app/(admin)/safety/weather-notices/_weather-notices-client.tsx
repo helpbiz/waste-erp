@@ -6,7 +6,7 @@ const ALERT_COLOR: Record<string, string> = {
   HEATWAVE: 'bg-red-100 text-red-800 border-red-300',
   COLDWAVE: 'bg-blue-100 text-blue-800 border-blue-300',
   TYPHOON:  'bg-purple-100 text-purple-800 border-purple-300',
-  STORM:    'bg-slate-100 text-slate-800 border-slate-300',
+  STORM:    'bg-slate-100 text-ink-muted border-slate-300',
   OTHER:    'bg-amber-100 text-amber-800 border-amber-300',
 };
 
@@ -149,7 +149,7 @@ export default function WeatherNoticesClient() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-black text-ink">날씨관리대장</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">폭염·한파 등 기상 안전 — 근로자 기록 조회 및 Excel 출력</p>
+          <p className="text-sm font-bold text-ink-muted mt-1">폭염·한파 등 기상 안전 — 근로자 기록 조회 및 Excel 출력</p>
         </div>
         <button onClick={() => { setShowForm((v) => !v); setSaveError(null); }}
           className="px-4 py-2 rounded-lg bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 active:scale-95 flex-shrink-0">
@@ -163,7 +163,7 @@ export default function WeatherNoticesClient() {
           <div className="text-sm font-extrabold text-ink">새 기상 안전 공지 등록</div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-extrabold text-ink-muted">경보 유형</label>
+              <label className="text-sm font-extrabold text-ink-muted">경보 유형</label>
               <select value={formAlertType} onChange={(e) => setFormAlertType(e.target.value)}
                 className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
                 {ALERT_TYPES.map((t) => (
@@ -172,26 +172,26 @@ export default function WeatherNoticesClient() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-extrabold text-ink-muted">공지 날짜</label>
+              <label className="text-sm font-extrabold text-ink-muted">공지 날짜</label>
               <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)}
                 className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-extrabold text-ink-muted">제목 *</label>
+            <label className="text-sm font-extrabold text-ink-muted">제목 *</label>
             <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)}
               placeholder="예: 6월 10일 폭염주의보 발령"
               maxLength={100}
               className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-extrabold text-ink-muted">내용 (선택)</label>
+            <label className="text-sm font-extrabold text-ink-muted">내용 (선택)</label>
             <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)}
               placeholder="근로자에게 전달할 안전 조치 내용을 입력하세요."
               rows={3} maxLength={2000}
               className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:border-accent" />
           </div>
-          {saveError && <p className="text-xs font-bold text-red-600">{saveError}</p>}
+          {saveError && <p className="text-sm font-bold text-red-600">{saveError}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={saving}
               className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-extrabold disabled:opacity-50">
@@ -209,16 +209,16 @@ export default function WeatherNoticesClient() {
       <div className="flex flex-wrap items-center gap-3">
         <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}
           className="px-3 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent" />
-        <span className="text-xs font-mono text-ink-muted">{notices.length}건</span>
+        <span className="text-sm font-mono text-ink-muted">{notices.length}건</span>
         <a
           href={`/safety/weather-notices/print?from=${filterDate}&to=${filterDate}`}
-          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 ml-auto"
+          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 ml-auto"
         >
           🖨 일자별 출력
         </a>
         <a
           href="/safety/weather-notices/print"
-          className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs font-bold hover:bg-slate-50"
+          className="px-3 py-1.5 rounded-lg border border-line bg-white text-sm font-bold hover:bg-slate-50"
         >
           📅 기간별 출력
         </a>
@@ -240,22 +240,22 @@ export default function WeatherNoticesClient() {
               </span>
               <div className="flex-1 min-w-0">
                 <div className="font-extrabold text-ink">{n.title}</div>
-                {n.content && <div className="text-xs text-ink-muted mt-0.5 line-clamp-1">{n.content}</div>}
+                {n.content && <div className="text-sm text-ink-muted mt-0.5 line-clamp-1">{n.content}</div>}
                 <div className="text-[0.6875rem] font-mono text-ink-muted mt-1">
                   {n.noticeDate} · {n.createdBy} 등록 · <span className="font-bold text-accent">기록 {n.photoCount}명</span>
                 </div>
               </div>
               <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={() => openRecords(n)}
-                  className="px-3 py-1.5 rounded-lg border border-line text-xs font-extrabold hover:bg-surface-soft">
+                  className="px-3 py-1.5 rounded-lg border border-line text-sm font-extrabold hover:bg-surface-soft">
                   기록 보기
                 </button>
                 <button onClick={() => openEdit(n)}
-                  className="px-2.5 py-1.5 rounded-lg border border-line text-xs font-extrabold hover:bg-surface-soft text-accent">
+                  className="px-2.5 py-1.5 rounded-lg border border-line text-sm font-extrabold hover:bg-surface-soft text-accent">
                   수정
                 </button>
                 <button onClick={() => handleDelete(n.id)} disabled={deletingId === n.id}
-                  className="px-2.5 py-1.5 rounded-lg border border-red-300 text-xs font-extrabold hover:bg-red-50 text-danger disabled:opacity-40">
+                  className="px-2.5 py-1.5 rounded-lg border border-red-300 text-sm font-extrabold hover:bg-red-50 text-danger disabled:opacity-40">
                   {deletingId === n.id ? '…' : '삭제'}
                 </button>
               </div>
@@ -275,7 +275,7 @@ export default function WeatherNoticesClient() {
             <form onSubmit={handleEdit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-extrabold text-ink-muted">경보 유형</label>
+                  <label className="text-sm font-extrabold text-ink-muted">경보 유형</label>
                   <select value={editAlertType} onChange={(e) => setEditAlertType(e.target.value)}
                     className="w-full px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface focus:outline-none focus:border-accent">
                     {ALERT_TYPES.map((t) => (
@@ -284,25 +284,25 @@ export default function WeatherNoticesClient() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-extrabold text-ink-muted">공지 날짜</label>
+                  <label className="text-sm font-extrabold text-ink-muted">공지 날짜</label>
                   <div className="px-2.5 py-2 rounded-lg border border-line text-sm font-bold bg-surface-soft text-ink-muted">
                     {editingNotice.noticeDate}
                   </div>
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-extrabold text-ink-muted">제목 *</label>
+                <label className="text-sm font-extrabold text-ink-muted">제목 *</label>
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
                   maxLength={100}
                   className="w-full px-3 py-2 rounded-lg border-2 border-line text-sm focus:outline-none focus:border-accent" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-extrabold text-ink-muted">내용 (선택)</label>
+                <label className="text-sm font-extrabold text-ink-muted">내용 (선택)</label>
                 <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
                   rows={3} maxLength={2000}
                   className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:border-accent" />
               </div>
-              {editError && <p className="text-xs font-bold text-red-600">{editError}</p>}
+              {editError && <p className="text-sm font-bold text-red-600">{editError}</p>}
               <div className="flex gap-2">
                 <button type="submit" disabled={editSaving}
                   className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-extrabold disabled:opacity-50">
@@ -326,15 +326,15 @@ export default function WeatherNoticesClient() {
             <header className="px-5 py-4 bg-surface-soft border-b-2 border-line flex items-center gap-3 flex-wrap">
               <div className="flex-1">
                 <div className="text-base font-extrabold text-ink">{selectedNotice.title}</div>
-                <div className="text-xs font-mono text-ink-muted mt-0.5">{selectedNotice.noticeDate} · {records.length}명 기록</div>
+                <div className="text-sm font-mono text-ink-muted mt-0.5">{selectedNotice.noticeDate} · {records.length}명 기록</div>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => handleExport(selectedNotice.id, false)} disabled={exporting}
-                  className="px-3 py-1.5 rounded-lg border border-line text-xs font-extrabold hover:bg-surface-soft disabled:opacity-50">
+                  className="px-3 py-1.5 rounded-lg border border-line text-sm font-extrabold hover:bg-surface-soft disabled:opacity-50">
                   📊 Excel (텍스트)
                 </button>
                 <button onClick={() => handleExport(selectedNotice.id, true)} disabled={exporting}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 disabled:opacity-50">
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50">
                   {exporting ? '생성 중…' : '📊 Excel (이미지 포함)'}
                 </button>
                 <button onClick={() => setSelectedNotice(null)} className="text-2xl font-bold text-ink-muted px-1">×</button>
@@ -348,7 +348,7 @@ export default function WeatherNoticesClient() {
                 <div className="py-12 text-center text-sm font-bold text-ink-muted">제출된 기록이 없습니다.</div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs min-w-[700px]">
+                  <table className="w-full text-sm min-w-[700px]">
                     <thead>
                       <tr className="bg-surface-soft border-b-2 border-line text-[0.6875rem] font-extrabold text-ink-muted uppercase tracking-wide">
                         {['직원명', '사원번호', '기록시간', '체감온도', '조치사항', '담당자', '사진', '제출일시'].map((h) => (

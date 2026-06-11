@@ -149,7 +149,7 @@ export default function LeafletMap({
             eventHandlers={{ click: () => onVehicleClick?.(v.id) }}
           >
             <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={isSel}>
-              <span className="font-extrabold text-xs">{v.label}</span>
+              <span className="font-extrabold text-sm">{v.label}</span>
             </Tooltip>
             <Popup>
               <div className="font-extrabold">{v.label}</div>
@@ -187,7 +187,7 @@ export default function LeafletMap({
                 <div className="font-extrabold text-base">
                   #{seq + 1} {seq === 0 ? '(🏁 출발)' : seq === routeOrder.length - 1 ? '(🎯 도착)' : ''}
                 </div>
-                <div className="text-xs">{routeStops[i].label}</div>
+                <div className="text-sm">{routeStops[i].label}</div>
               </Popup>
             </Marker>
           ))}

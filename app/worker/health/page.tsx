@@ -19,7 +19,7 @@ const HEARING_OPTS = ['정상', '경도이상', '중도이상', '검사전'];
 function Inp({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold text-slate-500 mb-1">{label}</label>
+      <label className="block text-sm font-bold text-ink-faint mb-1">{label}</label>
       {children}
     </div>
   );
@@ -104,18 +104,18 @@ export default function WorkerHealthPage() {
       setForm((f) => ({ ...f, [k]: e.target.value }));
   }
 
-  if (loading) return <div className="px-4 py-16 text-center text-sm text-slate-500">로딩 중…</div>;
+  if (loading) return <div className="px-4 py-16 text-center text-sm text-ink-faint">로딩 중…</div>;
 
   return (
     <div className="px-3 py-4 pb-24 space-y-5 max-w-lg mx-auto">
       <div>
         <h2 className="text-base font-black text-ink tracking-tight">건강검진 기록</h2>
-        <p className="text-xs text-ink-muted mt-0.5">본인의 건강검진 결과를 직접 입력합니다. 데이터는 암호화 저장됩니다.</p>
+        <p className="text-sm text-ink-muted mt-0.5">본인의 건강검진 결과를 직접 입력합니다. 데이터는 암호화 저장됩니다.</p>
       </div>
 
       {/* 검진일 */}
       <div className="bg-surface border border-line rounded-xl p-4 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">검진 정보</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide">검진 정보</div>
         <Inp label="최근 검진일">
           <input type="date" value={form.lastCheckupDate} onChange={set('lastCheckupDate')} className={cls} />
         </Inp>
@@ -129,7 +129,7 @@ export default function WorkerHealthPage() {
 
       {/* 혈압·맥박·혈당 */}
       <div className="bg-surface border border-line rounded-xl p-4 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">혈압 · 맥박 · 혈당</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide">혈압 · 맥박 · 혈당</div>
         <div className="grid grid-cols-2 gap-3">
           <Inp label="수축기 혈압 (mmHg)">
             <input type="number" value={form.bloodPressureSys} onChange={set('bloodPressureSys')} placeholder="예: 120" className={cls} />
@@ -148,7 +148,7 @@ export default function WorkerHealthPage() {
 
       {/* 시력·청력 */}
       <div className="bg-surface border border-line rounded-xl p-4 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">시력 · 청력</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide">시력 · 청력</div>
         <div className="grid grid-cols-2 gap-3">
           <Inp label="시력 좌">
             <input type="number" step="0.1" min="0" max="2.5" value={form.visionLeft} onChange={set('visionLeft')} placeholder="예: 1.2" className={cls} />
@@ -173,7 +173,7 @@ export default function WorkerHealthPage() {
 
       {/* 기저질환·알레르기·비상연락 */}
       <div className="bg-surface border border-line rounded-xl p-4 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">병력 · 비상연락</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide">병력 · 비상연락</div>
         <Inp label="알레르기">
           <textarea rows={2} value={form.allergies} onChange={set('allergies')} placeholder="예: 땅콩, 항생제" className={cls + ' resize-none'} />
         </Inp>

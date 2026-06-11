@@ -368,7 +368,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
         {/* Header */}
         <div className="px-5 py-3 border-b border-line flex items-center justify-between">
           <h2 className="text-base font-black text-ink">신규 위탁업체 개설 마법사</h2>
-          <button onClick={close} disabled={busy} aria-label="닫기" className="text-slate-400 hover:text-slate-700 text-xl leading-none disabled:opacity-30">✕</button>
+          <button onClick={close} disabled={busy} aria-label="닫기" className="text-ink-faint hover:text-ink-muted text-xl leading-none disabled:opacity-30">✕</button>
         </div>
 
         {/* Stepper */}
@@ -376,8 +376,8 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           <div className="px-5 py-3 border-b border-line bg-slate-50 flex items-center gap-1.5">
             {[1, 2, 3, 4, 5].map((n) => (
               <div key={n} className="flex-1 flex items-center gap-1.5">
-                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-black ${
-                  step === n ? 'bg-accent text-white' : step > n ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
+                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-mono font-black ${
+                  step === n ? 'bg-accent text-white' : step > n ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-ink-faint'
                 }`}>
                   {step > n ? '✓' : n}
                 </div>
@@ -417,7 +417,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           {step === 2 && (
             <>
               <h3 className="text-sm font-extrabold text-ink">2단계: 관할 지자체 선택</h3>
-              <p className="text-xs text-slate-600">
+              <p className="text-sm text-ink-faint">
                 사전 등록된 226개 시군구 중 선택. 1글자 이상 입력 시 자동 추천,
                 결과가 1개로 좁혀지면 자동 선택됩니다. 키보드 ↑↓ Enter 도 가능.
               </p>
@@ -431,7 +431,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
               />
               <div className="border border-line rounded-md max-h-64 overflow-y-auto">
                 {filteredMunis.length === 0 && (
-                  <div className="px-3 py-4 text-center text-xs text-slate-500">
+                  <div className="px-3 py-4 text-center text-sm text-ink-faint">
                     {munis.length === 0 ? '로딩 중…' : muniQuery.trim() ? `'${muniQuery}' 검색 결과 없음` : '키워드 1자 이상 입력'}
                   </div>
                 )}
@@ -457,7 +457,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                         {selected && <span className="text-[0.6875rem]">✓</span>}
                         {m.name}
                       </span>
-                      <span className={`ml-2 text-[0.625rem] font-mono ${selected ? 'text-cyan-100' : 'text-slate-500'}`}>
+                      <span className={`ml-2 text-[0.625rem] font-mono ${selected ? 'text-cyan-100' : 'text-ink-faint'}`}>
                         {m.region ?? ''} · {m.code}
                       </span>
                       {/* 상태 배지 — ACTIVE 는 emerald, SUSPENDED 는 amber (시드만 됨) */}
@@ -475,7 +475,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 })}
               </div>
               {muniQuery.trim() && filteredMunis.length === 1 && data.municipalityId === filteredMunis[0].id && (
-                <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-2 text-xs font-bold text-emerald-900">
+                <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-2 text-sm font-bold text-emerald-900">
                   ✓ 자동 선택됨: <b>{filteredMunis[0].name}</b> · 다음 단계로 이동하세요.
                 </div>
               )}
@@ -485,7 +485,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           {step === 3 && (
             <>
               <h3 className="text-sm font-extrabold text-ink">3단계: 권한 정책 선택</h3>
-              <p className="text-xs text-slate-600">선택한 지자체에 어떤 화면을 노출할지 결정. 잘 모르면 [표준]을 선택하세요.</p>
+              <p className="text-sm text-ink-faint">선택한 지자체에 어떤 화면을 노출할지 결정. 잘 모르면 [표준]을 선택하세요.</p>
               {PRESETS.map((p) => (
                 <label
                   key={p.key}
@@ -503,8 +503,8 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                     />
                     <div className="flex-1">
                       <div className="text-sm font-extrabold text-ink">{p.label}</div>
-                      <div className="text-xs text-slate-700 mt-0.5">{p.description}</div>
-                      <div className="text-[0.625rem] font-mono text-slate-500 mt-1.5">
+                      <div className="text-sm text-ink-muted mt-0.5">{p.description}</div>
+                      <div className="text-[0.625rem] font-mono text-ink-faint mt-1.5">
                         화면 {p.allowedScreens.length}개 · 보고서 {p.allowedReports.length}개
                         {p.exportEnabled && ' · 다운로드'}
                         {p.bulkExportEnabled && ' · 일괄출력'}
@@ -519,7 +519,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           {step === 4 && (
             <>
               <h3 className="text-sm font-extrabold text-ink">4단계: 회사 관리자 (CONTRACTOR_ADMIN) 등록</h3>
-              <p className="text-xs text-slate-600">위탁업체 대표 1명. 이후 직원·차량 등록은 이 분이 직접 진행합니다.</p>
+              <p className="text-sm text-ink-faint">위탁업체 대표 1명. 이후 직원·차량 등록은 이 분이 직접 진행합니다.</p>
               <Field label="이름 *">
                 <Input value={data.adminName} onChange={(v) => setField('adminName', v)} placeholder="홍길동" />
               </Field>
@@ -536,7 +536,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                   <button
                     type="button"
                     onClick={() => setField('adminPassword', genPassword())}
-                    className="px-3 py-1.5 rounded border border-line text-xs font-bold bg-slate-50 hover:bg-slate-100"
+                    className="px-3 py-1.5 rounded border border-line text-sm font-bold bg-slate-50 hover:bg-slate-100"
                   >
                     🎲 재생성
                   </button>
@@ -551,18 +551,18 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
           {step === 5 && (
             <>
               <h3 className="text-sm font-extrabold text-ink">5단계: 직원 CSV 일괄 등록 (선택)</h3>
-              <p className="text-xs text-slate-600">
+              <p className="text-sm text-ink-faint">
                 CSV 형식: <code className="px-1 bg-slate-100 rounded">이름,아이디,전화,비밀번호</code> (헤더 자동 인식, 비밀번호 누락 시 <code>cleanerp123</code>)
               </p>
               <input
                 type="file"
                 accept=".csv,text/csv,text/plain"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) onCsvFile(f); }}
-                className="block w-full text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-accent file:text-white file:font-bold file:cursor-pointer"
+                className="block w-full text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-accent file:text-white file:font-bold file:cursor-pointer"
               />
               {csvRows.length > 0 && (
                 <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-2">
-                  <div className="text-xs font-extrabold text-emerald-900">✓ {csvRows.length}명 미리보기</div>
+                  <div className="text-sm font-extrabold text-emerald-900">✓ {csvRows.length}명 미리보기</div>
                   <div className="mt-1.5 max-h-32 overflow-y-auto border border-emerald-200 rounded bg-white">
                     <table className="w-full text-[0.625rem] font-mono">
                       <thead className="bg-emerald-100 text-emerald-900">
@@ -574,12 +574,12 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                             <td className="px-1.5 py-1">{r.name}</td>
                             <td className="px-1.5 py-1">{r.username}</td>
                             <td className="px-1.5 py-1">{r.phone || '—'}</td>
-                            <td className="px-1.5 py-1 text-slate-500">{r.password.slice(0, 3)}***</td>
+                            <td className="px-1.5 py-1 text-ink-faint">{r.password.slice(0, 3)}***</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {csvRows.length > 50 && <div className="px-2 py-1 text-[0.625rem] text-slate-500">... 외 {csvRows.length - 50}명</div>}
+                    {csvRows.length > 50 && <div className="px-2 py-1 text-[0.625rem] text-ink-faint">... 외 {csvRows.length - 50}명</div>}
                   </div>
                 </div>
               )}
@@ -591,7 +591,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                   </ul>
                 </div>
               )}
-              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900 font-semibold">
+              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-sm text-amber-900 font-semibold">
                 💡 [완료] 시 위탁업체 + 권한 + 관리자 + {csvRows.length > 0 ? `직원 ${csvRows.length}명` : '직원 0명'} 모두 생성됩니다.
                 <br />
                 건너뛰려면 파일을 선택하지 말고 [완료]를 누르세요.
@@ -608,18 +608,18 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                   </svg>
                 </div>
                 <h3 className="text-base font-black text-ink">개설 완료</h3>
-                <p className="text-xs text-slate-600 mt-1">아래 정보를 안전한 채널로 위탁업체 대표에게 전달하세요.</p>
+                <p className="text-sm text-ink-faint mt-1">아래 정보를 안전한 채널로 위탁업체 대표에게 전달하세요.</p>
               </div>
               <div className="bg-slate-50 border border-line rounded-md px-3 py-3 space-y-1.5 text-sm font-mono relative">
-                <div><b className="text-slate-700">접속 URL:</b> <span className="text-accent">https://wci.helpbiz.kr/login</span></div>
-                <div><b className="text-slate-700">아이디:</b> {data.adminUsername}</div>
-                <div><b className="text-slate-700">임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">{data.adminPassword}</code></div>
-                <div><b className="text-slate-700">회사:</b> {data.companyName} ({data.businessNo})</div>
-                <div><b className="text-slate-700">계약 상태:</b> SETUP</div>
+                <div><b className="text-ink-muted">접속 URL:</b> <span className="text-accent">https://wci.helpbiz.kr/login</span></div>
+                <div><b className="text-ink-muted">아이디:</b> {data.adminUsername}</div>
+                <div><b className="text-ink-muted">임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">{data.adminPassword}</code></div>
+                <div><b className="text-ink-muted">회사:</b> {data.companyName} ({data.businessNo})</div>
+                <div><b className="text-ink-muted">계약 상태:</b> SETUP</div>
                 <button
                   type="button"
                   onClick={copyCredentials}
-                  className={`mt-1 w-full px-2.5 py-1.5 rounded text-xs font-extrabold transition ${
+                  className={`mt-1 w-full px-2.5 py-1.5 rounded text-sm font-extrabold transition ${
                     copyOk ? 'bg-emerald-600 text-white' : 'bg-accent hover:bg-cyan-800 text-white'
                   }`}
                 >
@@ -634,7 +634,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
 
               {/* P1-5 CSV 임포트 결과 */}
               {csvImportProgress && (
-                <div className={`border rounded-md px-3 py-2 text-xs font-bold ${
+                <div className={`border rounded-md px-3 py-2 text-sm font-bold ${
                   csvImportProgress.failed === 0 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-amber-50 border-amber-300 text-amber-900'
                 }`}>
                   📥 직원 CSV 임포트: {csvImportProgress.done}/{csvImportProgress.total}
@@ -645,14 +645,14 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
               {/* P1-4 셋업 체크리스트 — 자동 검증 + 수동 확인 항목 분리 */}
               <SetupChecklist contractorId={createdContractorId} />
 
-              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900 font-semibold">
+              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-sm text-amber-900 font-semibold">
                 ⚠ 첫 로그인 후 비밀번호 변경을 권장하세요. 30일 동안 미접속 시 계정 잠금.
               </div>
             </>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">
+            <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">
               ⚠ {error}
             </div>
           )}
@@ -681,7 +681,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
             </>
           ) : (
             <>
-              <span className="text-xs text-slate-500 font-mono">contractorId: {createdContractorId}</span>
+              <span className="text-sm text-ink-faint font-mono">contractorId: {createdContractorId}</span>
               <button
                 type="button"
                 onClick={close}
@@ -704,7 +704,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
 function SetupChecklist({ contractorId }: { contractorId: string }) {
   return (
     <div className="bg-emerald-50 border border-emerald-300 rounded-md px-3 py-3 space-y-2">
-      <div className="text-xs font-extrabold text-emerald-900">📋 셋업 체크리스트 (Design §5.3)</div>
+      <div className="text-sm font-extrabold text-emerald-900">📋 셋업 체크리스트 (Design §5.3)</div>
       <ul className="space-y-1 text-[0.6875rem]">
         <ChecklistItem auto label="위탁업체 레코드 생성됨" detail={`contractorId=${contractorId} (status=SETUP)`} />
         <ChecklistItem auto label="권한 정책(매트릭스) 적용됨" detail="선택한 프리셋이 지자체에 매핑됨" />
@@ -715,7 +715,7 @@ function SetupChecklist({ contractorId }: { contractorId: string }) {
         <ChecklistItem manual label="차량 명단 등록" detail="CONTRACTOR_ADMIN이 /vehicles 메뉴에서" />
         <ChecklistItem manual label="결재 라인 정의" detail="휴가/근태 결재선 1회 설정" />
       </ul>
-      <div className="text-[0.625rem] text-slate-600 leading-snug">
+      <div className="text-[0.625rem] text-ink-faint leading-snug">
         ✓ 자동 항목 = 위저드 진행 중 즉시 검증. □ 수동 항목 = CONTRACTOR_ADMIN 또는 운영자 후속 작업.
       </div>
     </div>
@@ -726,13 +726,13 @@ function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual
   return (
     <li className="flex items-start gap-1.5">
       <span className={`flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded text-[0.5625rem] font-mono font-black ${
-        auto ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-400 text-slate-400'
+        auto ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-400 text-ink-faint'
       }`}>
         {auto ? '✓' : '□'}
       </span>
       <div className="flex-1 min-w-0">
-        <div className={`font-bold ${auto ? 'text-emerald-900' : 'text-slate-700'}`}>{label}</div>
-        {detail && <div className="text-[0.625rem] text-slate-600 font-mono">{detail}</div>}
+        <div className={`font-bold ${auto ? 'text-emerald-900' : 'text-ink-muted'}`}>{label}</div>
+        {detail && <div className="text-[0.625rem] text-ink-faint font-mono">{detail}</div>}
       </div>
       <span className={`text-[0.5625rem] font-mono font-extrabold px-1 rounded ${
         auto ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-100 text-amber-800'
@@ -765,7 +765,7 @@ function ManualCopyArea({ data }: { data: WizardData }) {
         readOnly
         value={text}
         rows={8}
-        className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-xs font-mono text-slate-800 select-all"
+        className="w-full px-2 py-1.5 rounded border border-amber-300 bg-white text-sm font-mono text-ink-muted select-all"
         onClick={(e) => (e.currentTarget as HTMLTextAreaElement).select()}
       />
     </div>
@@ -776,13 +776,13 @@ function ManualCopyArea({ data }: { data: WizardData }) {
 function UsernameStatus({ username, onPick }: { username: string; onPick: (s: string) => void }) {
   const { status, suggestions } = useUsernameCheck(username);
   if (status === 'idle') {
-    return <div className="text-[0.625rem] text-slate-500 mt-1">3~30자 영문/숫자/_-, 시스템 전체에서 unique</div>;
+    return <div className="text-[0.625rem] text-ink-faint mt-1">3~30자 영문/숫자/_-, 시스템 전체에서 unique</div>;
   }
   if (status === 'invalid') {
     return <div className="text-[0.6875rem] font-bold text-rose-700 mt-1">⚠ 형식 오류 — 영문/숫자/_- 만, 3~30자</div>;
   }
   if (status === 'checking') {
-    return <div className="text-[0.6875rem] text-slate-500 mt-1">중복 검사 중…</div>;
+    return <div className="text-[0.6875rem] text-ink-faint mt-1">중복 검사 중…</div>;
   }
   if (status === 'available') {
     return <div className="text-[0.6875rem] font-bold text-emerald-700 mt-1">✓ 사용 가능</div>;
@@ -792,7 +792,7 @@ function UsernameStatus({ username, onPick }: { username: string; onPick: (s: st
     <div className="mt-1 space-y-1">
       <div className="text-[0.6875rem] font-bold text-rose-700">⚠ 이미 사용 중</div>
       {suggestions.length > 0 && (
-        <div className="text-[0.625rem] text-slate-700">
+        <div className="text-[0.625rem] text-ink-muted">
           <span className="font-bold">추천 대안:</span>
           <div className="flex flex-wrap gap-1 mt-0.5">
             {suggestions.map((s) => (
@@ -816,10 +816,10 @@ function UsernameStatus({ username, onPick }: { username: string; onPick: (s: st
 function BusinessNoStatus({ value }: { value: string }) {
   const digits = value.replace(/\D/g, '');
   if (digits.length === 0) {
-    return <div className="text-[0.625rem] text-slate-500 mt-1">숫자만 입력하면 자동으로 하이픈이 들어갑니다.</div>;
+    return <div className="text-[0.625rem] text-ink-faint mt-1">숫자만 입력하면 자동으로 하이픈이 들어갑니다.</div>;
   }
   if (digits.length < 10) {
-    return <div className="text-[0.625rem] text-slate-500 mt-1">진행: {digits.length}/10자리</div>;
+    return <div className="text-[0.625rem] text-ink-faint mt-1">진행: {digits.length}/10자리</div>;
   }
   const v = validateBusinessNo(value);
   return v.valid
@@ -830,7 +830,7 @@ function BusinessNoStatus({ value }: { value: string }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs font-extrabold text-ink mb-1">{label}</span>
+      <span className="block text-sm font-extrabold text-ink mb-1">{label}</span>
       {children}
     </label>
   );

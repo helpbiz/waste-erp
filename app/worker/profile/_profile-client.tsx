@@ -125,8 +125,8 @@ export default function ProfileClient({ user }: { user: UserData }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-2xl font-black truncate">{user.name}</div>
-          <div className="text-xs font-mono font-bold text-cyan-100 mt-0.5">사번 {user.employeeNo ?? '—'}</div>
-          <div className="text-xs font-bold text-cyan-100 mt-1">
+          <div className="text-sm font-mono font-bold text-cyan-100 mt-0.5">사번 {user.employeeNo ?? '—'}</div>
+          <div className="text-sm font-bold text-cyan-100 mt-1">
             {user.positionLabel ?? '직책 미지정'} · {user.departmentName ?? '부서 미지정'}
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
           size={88}
         />
         {photoChanged && photo && (
-          <label className="flex items-center gap-2 mt-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1.5">
+          <label className="flex items-center gap-2 mt-2 text-sm font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1.5">
             <input type="checkbox" checked={consentPII} onChange={(e) => setConsentPII(e.target.checked)} />
             개인정보(사진) 수집·이용 동의 (필수)
           </label>
@@ -155,27 +155,27 @@ export default function ProfileClient({ user }: { user: UserData }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={user.activeSignatureUrl} alt="signature" className="max-h-[120px]" />
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
+            <div className="mt-2 flex items-center gap-1.5 text-sm font-extrabold text-emerald-700">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               등록 완료 — 수정 불가
             </div>
-            <div className="text-xs font-mono text-emerald-700/70 mt-0.5">ref: {user.activeSignatureRef}</div>
-            <div className="text-xs text-amber-700 mt-2 leading-relaxed">
+            <div className="text-sm font-mono text-emerald-700/70 mt-0.5">ref: {user.activeSignatureRef}</div>
+            <div className="text-sm text-amber-700 mt-2 leading-relaxed">
               ⚠️ 서명은 한 번 등록하면 본인이 직접 수정할 수 없습니다. 변경이 필요하면 <strong>관리자</strong>에게 문의하세요.
             </div>
           </div>
         ) : (
           <>
-            <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">
+            <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">
               서명 등록 (1회 등록 · 등록 후 수정 불가)
             </div>
             <SignaturePad
               onChange={(d) => { setSignature(d); setSignatureChanged(true); }}
               height={160}
             />
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 mt-2 font-bold leading-relaxed">
+            <div className="text-sm text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 mt-2 font-bold leading-relaxed">
               ⚠️ 서명은 <strong className="font-extrabold">한 번 등록하면 본인이 수정할 수 없습니다.</strong> 신중하게 작성하세요.
             </div>
           </>
@@ -184,7 +184,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
 
       {/* 연락처 */}
       <Section title="연락처">
-        <div className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 -mt-1">
+        <div className="text-sm font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 -mt-1">
           💡 전화번호는 <strong className="font-extrabold">숫자만</strong> 입력하세요. 하이픈(-)은 자동으로 표시됩니다.
         </div>
         <Field label="휴대전화">
@@ -240,8 +240,8 @@ export default function ProfileClient({ user }: { user: UserData }) {
             className="w-full px-3 py-2.5 rounded-lg border border-line bg-white text-sm font-bold"
           />
         </Field>
-        {pwError && <p className="text-xs font-bold text-danger">{pwError}</p>}
-        {pwDone && <p className="text-xs font-bold text-emerald-600">비밀번호가 변경되었습니다.</p>}
+        {pwError && <p className="text-sm font-bold text-danger">{pwError}</p>}
+        {pwDone && <p className="text-sm font-bold text-emerald-600">비밀번호가 변경되었습니다.</p>}
         <button
           onClick={changePassword}
           disabled={pwSaving}
@@ -259,14 +259,14 @@ export default function ProfileClient({ user }: { user: UserData }) {
       {/* 아이폰 홈 화면 추가 안내 */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <h3 className="text-sm font-extrabold text-blue-900">📱 아이폰 홈 화면 설치 방법</h3>
-        <ol className="text-xs font-bold text-blue-800 space-y-1 list-decimal list-inside leading-relaxed">
+        <ol className="text-sm font-bold text-blue-800 space-y-1 list-decimal list-inside leading-relaxed">
           <li><strong>Safari 브라우저</strong>로 이 앱에 접속합니다 (Chrome/Firefox 불가)</li>
           <li>화면 하단의 공유 버튼 <strong>(□↑ 아이콘)</strong>을 탭합니다</li>
           <li><strong>&quot;홈 화면에 추가&quot;</strong>를 선택합니다</li>
           <li>앱 이름 확인 후 <strong>&quot;추가&quot;</strong> 버튼을 탭합니다</li>
           <li>홈 화면에서 앱 아이콘을 탭하면 전체화면 앱으로 실행됩니다</li>
         </ol>
-        <p className="text-xs font-mono text-blue-600">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
+        <p className="text-sm font-mono text-blue-600">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
       </div>
 
       {/* 로그아웃은 AppBar 우상단으로 이동 (PWA Mobile UX Mastering 2026-04-28).
@@ -288,7 +288,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-sm font-mono font-extrabold text-ink-faint mb-1'} />;
 }
 
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {

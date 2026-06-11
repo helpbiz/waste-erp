@@ -67,7 +67,7 @@ export default function TbmPrintClient({
       {/* ── 컨트롤 바 ── */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">대상 월</div>
+          <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">대상 월</div>
           <input
             type="month" value={yearMonth}
             onChange={(e) => setYearMonth(e.target.value)}
@@ -86,15 +86,15 @@ export default function TbmPrintClient({
           className="px-5 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700">
           📊 엑셀 출력
         </button>
-        <a href="/safety" className="px-3 py-1.5 rounded text-xs font-bold bg-white border border-line hover:bg-slate-50">
+        <a href="/safety" className="px-3 py-1.5 rounded text-sm font-bold bg-white border border-line hover:bg-slate-50">
           ← 안전관리
         </a>
-        <a href="/print" className="px-3 py-1.5 rounded text-xs font-bold bg-slate-100 border border-line hover:bg-slate-200">
+        <a href="/print" className="px-3 py-1.5 rounded text-sm font-bold bg-slate-100 border border-line hover:bg-slate-200">
           🖨 출력센터
         </a>
       </div>
 
-      {loading && <div className="py-10 text-center text-slate-500 text-sm print:hidden">로딩 중…</div>}
+      {loading && <div className="py-10 text-center text-ink-faint text-sm print:hidden">로딩 중…</div>}
       {error && <div className="px-4 py-2 bg-red-50 border border-red-300 rounded text-sm text-red-700 print:hidden">{error}</div>}
 
       {!loading && (
@@ -103,11 +103,11 @@ export default function TbmPrintClient({
           {/* 화면 전용 제목 */}
           <div className="print:hidden border-t-4 border-double border-slate-700 pt-3 px-2 mb-4">
             <h1 className="text-2xl font-black text-center underline underline-offset-4 mb-1">TBM 안전교육</h1>
-            <div className="text-center text-sm font-bold text-slate-600">{ymLabel}</div>
+            <div className="text-center text-sm font-bold text-ink-faint">{ymLabel}</div>
           </div>
 
           {sessions.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-sm">해당 월에 등록된 TBM 기록이 없습니다.</div>
+            <div className="text-center py-12 text-ink-faint text-sm">해당 월에 등록된 TBM 기록이 없습니다.</div>
           ) : (
             <div className="px-2">
               {sessions.map((s) => {
@@ -129,7 +129,7 @@ export default function TbmPrintClient({
                       <div className="font-black underline underline-offset-2 tracking-tight" style={{ fontSize: '14pt' }}>
                         TBM 안전교육
                       </div>
-                      <div className="font-bold text-slate-600 mt-0.5" style={{ fontSize: '10pt' }}>
+                      <div className="font-bold text-ink-faint mt-0.5" style={{ fontSize: '10pt' }}>
                         {dateLabel}
                       </div>
                     </div>
@@ -180,7 +180,7 @@ export default function TbmPrintClient({
                       {/* 서명자 이름 목록 (이미지 없이) */}
                       {s.signers.length > 0 && (
                         <div className="mb-1.5">
-                          <span className="text-slate-500 font-semibold">서명자: </span>
+                          <span className="text-ink-faint font-semibold">서명자: </span>
                           <span>{s.signers.map((sig) => sig.name).join(', ')}</span>
                         </div>
                       )}
@@ -201,7 +201,7 @@ export default function TbmPrintClient({
               <div className="tbm-sheet-last border-2 border-slate-700 px-3 py-3 mb-4 tbm-body">
                 <div className="screen-hidden border-b-2 border-double border-slate-700 -mx-3 px-3 py-2 mb-3 text-center">
                   <div className="font-black underline underline-offset-2" style={{ fontSize: '14pt' }}>TBM 안전교육</div>
-                  <div className="font-bold text-slate-600 mt-0.5" style={{ fontSize: '10pt' }}>{ymLabel} · 월별 요약</div>
+                  <div className="font-bold text-ink-faint mt-0.5" style={{ fontSize: '10pt' }}>{ymLabel} · 월별 요약</div>
                 </div>
                 <div className="font-bold mb-1.5">◎ 월별 요약</div>
                 <div className="grid grid-cols-3 gap-2">
@@ -230,7 +230,7 @@ export default function TbmPrintClient({
             </div>
           )}
 
-          <div className="mt-4 text-center font-mono text-slate-600 print:hidden" style={{ fontSize: '9pt' }}>
+          <div className="mt-4 text-center font-mono text-ink-faint print:hidden" style={{ fontSize: '9pt' }}>
             출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
         </div>

@@ -125,7 +125,7 @@ export default function BulkyWasteClient({
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">대형폐기물 설정</h2>
-        <span className="text-xs font-mono font-bold text-slate-600">공유 App(bbegi.com) 앱 연동</span>
+        <span className="text-sm font-mono font-bold text-ink-faint">공유 App(bbegi.com) 앱 연동</span>
         <a href="https://bbegi.com/login" target="_blank" rel="noopener noreferrer"
           className="ml-auto text-[0.6875rem] font-bold text-cyan-900 hover:underline">
           🔗 공유 App 로그인 페이지 (bbegi.com/login) ↗
@@ -152,11 +152,11 @@ export default function BulkyWasteClient({
 
           <div className="col-span-2 flex items-center gap-2">
             <button onClick={test} disabled={testing || !canManage || !form.ppaegiUsername || !form.ppaegiPassword}
-              className="px-4 py-1.5 rounded text-xs font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+              className="px-4 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
               {testing ? '테스트 중…' : '🔑 로그인 테스트'}
             </button>
             {testResult && (
-              <span className={`text-xs font-extrabold px-2 py-1 rounded border-2 ${
+              <span className={`text-sm font-extrabold px-2 py-1 rounded border-2 ${
                 testResult.ok ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-red-100 text-red-800 border-red-500'
               }`}>
                 {testResult.ok ? '✓ 성공' : '✗ 실패'} — {testResult.message}
@@ -228,7 +228,7 @@ export default function BulkyWasteClient({
               {JSON.stringify(runResult, null, 2)}
             </div>
           )}
-          <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div className="bg-white border border-line rounded p-2">
               <div className="font-bold text-emerald-700">마지막 import</div>
               <div className="font-mono">{config.lastImportAt ? new Date(config.lastImportAt).toLocaleString('ko-KR') : '—'}</div>
@@ -248,7 +248,7 @@ export default function BulkyWasteClient({
         <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">실행 이력 (최근 20)</div>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="실행 이력 표">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+          <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
             <tr>
               <th className="px-3 py-1.5 text-left">시각</th>
               <th className="px-3 py-1.5 text-left">유형</th>
@@ -261,12 +261,12 @@ export default function BulkyWasteClient({
           </thead>
           <tbody className="divide-y divide-line">
             {recentImports.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-500">실행 이력이 없습니다.</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-ink-faint">실행 이력이 없습니다.</td></tr>
             )}
             {recentImports.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="px-3 py-1.5 font-mono text-[0.6875rem]">{new Date(r.createdAt).toLocaleString('ko-KR')}</td>
-                <td className="px-3 py-1.5 text-xs font-bold">{r.triggerType === 'cron' ? 'CRON' : '수동'}</td>
+                <td className="px-3 py-1.5 text-sm font-bold">{r.triggerType === 'cron' ? 'CRON' : '수동'}</td>
                 <td className="px-3 py-1.5">
                   <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                     r.resultStatus === 'ok' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-red-100 text-red-800 border-red-300'
@@ -292,7 +292,7 @@ export default function BulkyWasteClient({
         </div>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="자동 등록 민원 표">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+          <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
             <tr>
               <th className="px-3 py-1.5 text-left">신고일</th>
               <th className="px-3 py-1.5 text-left">시민</th>
@@ -303,14 +303,14 @@ export default function BulkyWasteClient({
           </thead>
           <tbody className="divide-y divide-line">
             {recentComplaints.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">등록된 대형폐기물 민원이 없습니다.</td></tr>
+              <tr><td colSpan={5} className="px-3 py-8 text-center text-ink-faint">등록된 대형폐기물 민원이 없습니다.</td></tr>
             )}
             {recentComplaints.map((c) => (
               <tr key={c.id} className="hover:bg-slate-50">
                 <td className="px-3 py-1.5 font-mono text-[0.6875rem]">{new Date(c.reportedAt).toLocaleString('ko-KR')}</td>
-                <td className="px-3 py-1.5 text-xs">{c.citizenName ?? '—'}</td>
-                <td className="px-3 py-1.5 text-xs max-w-[180px] truncate" title={c.locationAddress ?? ''}>{c.locationAddress ?? '—'}</td>
-                <td className="px-3 py-1.5 text-xs max-w-[300px] truncate" title={c.description ?? ''}>{c.description ?? '—'}</td>
+                <td className="px-3 py-1.5 text-sm">{c.citizenName ?? '—'}</td>
+                <td className="px-3 py-1.5 text-sm max-w-[180px] truncate" title={c.locationAddress ?? ''}>{c.locationAddress ?? '—'}</td>
+                <td className="px-3 py-1.5 text-sm max-w-[300px] truncate" title={c.description ?? ''}>{c.description ?? '—'}</td>
                 <td className="px-3 py-1.5">
                   <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${
                     c.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
@@ -325,7 +325,7 @@ export default function BulkyWasteClient({
         </div>
       </div>
 
-      <div className="text-[0.6875rem] font-mono text-slate-600 px-4 py-2 bg-slate-50 rounded">
+      <div className="text-[0.6875rem] font-mono text-ink-faint px-4 py-2 bg-slate-50 rounded">
         💡 <strong>Cron 호출 안내</strong>: 외부 cron(Vercel/K8s/GitHub Actions)에서 매일 03시·17시 KST에<br />
         <code>POST /api/cron/bulky-waste-import</code> / <code>POST /api/cron/bulky-waste-resolve</code>를<br />
         Bearer 토큰(<code>CRON_SECRET</code>)과 함께 호출. importTimeKst±10분 윈도우 내 config만 자동 처리.
@@ -338,5 +338,5 @@ export default function BulkyWasteClient({
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
 }

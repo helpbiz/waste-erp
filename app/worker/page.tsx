@@ -183,7 +183,7 @@ export default async function WorkerHomePage() {
 
       {/* 안내 카드 — 추가 다운 */}
       <div className="bg-amber-50 border border-amber-300 rounded-lg px-2.5 py-1.5 text-[0.6875rem] text-amber-900 font-semibold leading-relaxed flex items-start gap-1.5">
-        <span aria-hidden className="text-xs flex-shrink-0">🔒</span>
+        <span aria-hidden className="text-sm flex-shrink-0">🔒</span>
         <span>GPS 좌표는 PIPA 준수를 위해 ~10m 격자 라운딩 + 90일 후 자동 폐기됩니다.</span>
       </div>
     </div>
@@ -218,7 +218,7 @@ function MenuCard({
         </svg>
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-end">
-        <div className="text-xs font-extrabold text-ink leading-tight">{title}</div>
+        <div className="text-sm font-extrabold text-ink leading-tight">{title}</div>
         <div className="text-[0.6875rem] font-semibold text-ink-faint mt-0.5 leading-tight">{desc}</div>
       </div>
     </Link>

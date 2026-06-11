@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 /* leaflet은 SSR 불가 — dynamic import */
 const LeafletMap = dynamic(() => import('./_leaflet-map'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-slate-500">지도 로드 중…</div>,
+  loading: () => <div className="flex items-center justify-center h-full text-ink-faint">지도 로드 중…</div>,
 });
 
 const VEHICLE_TYPE_LABEL: Record<string, string> = {
@@ -205,11 +205,11 @@ export default function LiveVehiclesClient({
     <div className="space-y-4">
       {isSuperAdmin && (
         <div className="bg-purple-50 border border-purple-300 rounded-lg px-4 py-2 flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-extrabold text-purple-800">슈퍼관리자 — 업체 선택:</span>
+          <span className="text-sm font-extrabold text-purple-800">슈퍼관리자 — 업체 선택:</span>
           <select
             value={superAdminCid}
             onChange={(e) => setSuperAdminCid(e.target.value)}
-            className="px-3 py-1 rounded border-2 border-purple-300 text-xs font-bold w-56 bg-white"
+            className="px-3 py-1 rounded border-2 border-purple-300 text-sm font-bold w-56 bg-white"
           >
             <option value="">— 전체 —</option>
             {contractorList.map((c) => (
@@ -219,7 +219,7 @@ export default function LiveVehiclesClient({
           <button
             type="button"
             onClick={() => { load(superAdminCid); loadConfig(superAdminCid); }}
-            className="px-3 py-1 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
+            className="px-3 py-1 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700"
           >
             조회
           </button>
@@ -231,14 +231,14 @@ export default function LiveVehiclesClient({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => { setMuniCid(''); load(''); loadConfig(''); }}
-            className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+            className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
               !muniCid ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
             }`}
           >전체 업체</button>
           {muniContractorOpts.map((c) => (
             <button key={c.id}
               onClick={() => { setMuniCid(c.id); load(c.id); loadConfig(c.id); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-extrabold whitespace-nowrap transition ${
                 muniCid === c.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'
               }`}
             >{c.name}</button>
@@ -248,19 +248,19 @@ export default function LiveVehiclesClient({
       <div className="flex items-center gap-3">
         <h2 className="text-xl font-extrabold text-ink">실시간 차량조회</h2>
         <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-red-600 text-white animate-pulse">● LIVE</span>
-        <span className="text-xs font-mono text-slate-600">
+        <span className="text-sm font-mono text-ink-faint">
           {data?.provider === 'simulation' ? '시안 모드 (시뮬 GPS)' : `GIS: ${data?.provider ?? '-'}`}
           {data && ` · ${data.refreshSec}초 폴링`}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {/* 사용자 요청 2026-04-29: 즉시 갱신 버튼 앞 🔄 아이콘 제거 */}
           <button type="button" onClick={() => load()}
-            className="px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50">
+            className="px-3 py-1.5 rounded text-sm font-extrabold bg-white border-2 border-line hover:bg-slate-50">
             즉시 갱신
           </button>
           {isSuperAdmin && (
             <a href="/super-admin"
-              className="px-3 py-1.5 rounded text-xs font-extrabold bg-purple-600 text-white hover:bg-purple-700"
+              className="px-3 py-1.5 rounded text-sm font-extrabold bg-purple-600 text-white hover:bg-purple-700"
               title="GIS API 설정은 슈퍼관리자 메뉴로 이관됨">
               ⚙ GIS 설정 (슈퍼관리자)
             </a>
@@ -270,7 +270,7 @@ export default function LiveVehiclesClient({
 
       {/* GPS 단말 직접수신 모드 안내 */}
       {data?.provider === 'local' && (
-        <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 text-xs font-semibold text-emerald-900 space-y-1">
+        <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 text-sm font-semibold text-emerald-900 space-y-1">
           <div className="font-extrabold">📡 GPS 단말 직접 수신 모드 (local)</div>
           <div>GPS 단말이 아래 엔드포인트로 위치를 Push합니다.</div>
           <div className="bg-white border border-emerald-200 rounded px-3 py-2 font-mono text-[0.6875rem] break-all">
@@ -301,7 +301,7 @@ export default function LiveVehiclesClient({
         <div className="grid grid-cols-[300px,1fr] gap-3">
           {/* 좌측 차량 리스트 */}
           <div className="bg-surface border border-line rounded-lg overflow-hidden max-h-[640px] overflow-y-auto">
-            <div className="px-3 py-2 bg-slate-100 border-b border-line text-xs font-extrabold text-ink sticky top-0">
+            <div className="px-3 py-2 bg-slate-100 border-b border-line text-sm font-extrabold text-ink sticky top-0">
               차량 목록 ({data?.vehicles.length ?? 0})
             </div>
             {(data?.vehicles ?? []).map((v) => (
@@ -310,26 +310,26 @@ export default function LiveVehiclesClient({
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-bold text-ink text-sm">{v.vehicleNo}</span>
                   <StatusDot status={v.operationalStatus} />
-                  <span className="text-[0.625rem] font-mono font-extrabold text-slate-600 ml-auto">
+                  <span className="text-[0.625rem] font-mono font-extrabold text-ink-faint ml-auto">
                     {v.speed} km/h
                   </span>
                 </div>
-                <div className="text-[0.625rem] font-mono text-slate-600">
+                <div className="text-[0.625rem] font-mono text-ink-faint">
                   {VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType} · {v.driverName ?? '운전자 미배정'}
                 </div>
-                <div className="text-[0.5625rem] font-mono text-slate-500 mt-0.5">
+                <div className="text-[0.5625rem] font-mono text-ink-faint mt-0.5">
                   {v.lat.toFixed(5)}, {v.lng.toFixed(5)}
                 </div>
               </button>
             ))}
             {(!data || data.vehicles.length === 0) && (
-              <div className="px-3 py-10 text-center text-slate-500 text-sm">활성 차량 없음</div>
+              <div className="px-3 py-10 text-center text-ink-faint text-sm">활성 차량 없음</div>
             )}
           </div>
 
           {/* 지도 그리드 (시안) */}
           <div className="bg-emerald-50/40 border-2 border-line rounded-lg p-3 relative" style={{ minHeight: 600 }}>
-            <div className="text-[0.625rem] font-mono font-bold text-slate-600 mb-2">
+            <div className="text-[0.625rem] font-mono font-bold text-ink-faint mb-2">
               📍 강남구 중심 ({data?.center?.lat?.toFixed(4) ?? '—'}, {data?.center?.lng?.toFixed(4) ?? '—'}) · 시안: 30초 단위 시뮬 위치
             </div>
             {/* 격자 */}
@@ -368,7 +368,7 @@ export default function LiveVehiclesClient({
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-1.5 py-0.5 bg-white rounded shadow border border-line whitespace-nowrap">
                             <div className="text-[0.625rem] font-extrabold text-ink">{v.vehicleNo}</div>
                             {isSel && (
-                              <div className="text-[0.5625rem] font-mono text-slate-600">{v.speed}km/h</div>
+                              <div className="text-[0.5625rem] font-mono text-ink-faint">{v.speed}km/h</div>
                             )}
                           </div>
                         )}
@@ -394,15 +394,15 @@ export default function LiveVehiclesClient({
         <div className="flex flex-col gap-2">
           {/* 컨트롤 바 */}
           <div className="bg-surface border border-line rounded-lg px-3 py-2 flex items-center gap-2">
-            <span className="text-xs font-extrabold text-ink shrink-0">베이스 타일:</span>
+            <span className="text-sm font-extrabold text-ink shrink-0">베이스 타일:</span>
             <select value={baseTile} onChange={(e) => setBaseTile(e.target.value as typeof baseTile)}
-              className="px-2 py-1 rounded border-2 border-line text-xs font-bold bg-white">
+              className="px-2 py-1 rounded border-2 border-line text-sm font-bold bg-white">
               {Object.entries(TILE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <span className="text-[0.625rem] font-mono text-slate-500">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
+            <span className="text-[0.625rem] font-mono text-ink-faint">차량 {data.vehicles.length}대 · {data.refreshSec}초 폴링</span>
             <button type="button" onClick={toggleFullscreen}
               title={fullscreen ? '전체화면 해제' : '지도 전체화면'}
-              className="ml-auto px-3 py-1.5 rounded text-xs font-extrabold bg-white border-2 border-line hover:bg-slate-50 flex items-center gap-1.5">
+              className="ml-auto px-3 py-1.5 rounded text-sm font-extrabold bg-white border-2 border-line hover:bg-slate-50 flex items-center gap-1.5">
               {fullscreen ? (
                 <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M15 9h4.5M15 9V4.5M9 15v4.5M9 15H4.5M15 15h4.5M15 15v4.5" />
@@ -420,12 +420,12 @@ export default function LiveVehiclesClient({
             style={{ height: 'calc(100vh - 220px)', minHeight: 480 }}>
             {/* 좌측 차량 목록 */}
             <div className="w-[230px] shrink-0 flex flex-col border-r border-line bg-white">
-              <div className="px-3 py-2 bg-slate-100 border-b border-line text-xs font-extrabold text-ink shrink-0">
+              <div className="px-3 py-2 bg-slate-100 border-b border-line text-sm font-extrabold text-ink shrink-0">
                 차량 목록 ({data.vehicles.length})
               </div>
               <div className="overflow-y-auto flex-1">
                 {data.vehicles.length === 0 && (
-                  <div className="px-3 py-10 text-center text-slate-500 text-sm">활성 차량 없음</div>
+                  <div className="px-3 py-10 text-center text-ink-faint text-sm">활성 차량 없음</div>
                 )}
                 {data.vehicles.map((v) => (
                   <button key={v.vehicleId} type="button"
@@ -437,11 +437,11 @@ export default function LiveVehiclesClient({
                       <span className="font-bold text-ink text-sm truncate flex-1">{v.vehicleNo}</span>
                       <StatusDot status={v.operationalStatus} />
                     </div>
-                    <div className="text-[0.625rem] font-mono text-slate-600 truncate">
+                    <div className="text-[0.625rem] font-mono text-ink-faint truncate">
                       {VEHICLE_TYPE_LABEL[v.vehicleType] ?? v.vehicleType}
                       {v.driverName ? ` · ${v.driverName}` : ' · 미배정'}
                     </div>
-                    <div className="text-[0.5625rem] font-mono text-slate-400 flex items-center gap-1 mt-0.5">
+                    <div className="text-[0.5625rem] font-mono text-ink-faint flex items-center gap-1 mt-0.5">
                       <span>{v.speed} km/h</span>
                       {v.updatedAt && <><span>·</span><span>{new Date(v.updatedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></>}
                     </div>
@@ -457,7 +457,7 @@ export default function LiveVehiclesClient({
                   <div className="border-t-2 border-accent bg-accent-soft px-3 py-2 shrink-0">
                     <div className="text-[0.625rem] font-extrabold text-accent mb-1">선택 차량</div>
                     <div className="font-extrabold text-ink text-sm">{sel.vehicleNo}</div>
-                    <div className="text-[0.625rem] font-mono text-slate-700 space-y-0.5 mt-1">
+                    <div className="text-[0.625rem] font-mono text-ink-muted space-y-0.5 mt-1">
                       <div>{VEHICLE_TYPE_LABEL[sel.vehicleType] ?? sel.vehicleType}</div>
                       <div>운전자: {sel.driverName ?? '미배정'}</div>
                       <div>속도: {sel.speed} km/h</div>
@@ -465,7 +465,7 @@ export default function LiveVehiclesClient({
                       <div className="pt-0.5"><StatusDot status={sel.operationalStatus} /></div>
                     </div>
                     <button type="button" onClick={() => setSelectedId(null)}
-                      className="mt-1.5 text-[0.625rem] font-bold text-slate-500 hover:text-ink">
+                      className="mt-1.5 text-[0.625rem] font-bold text-ink-faint hover:text-ink">
                       선택 해제
                     </button>
                   </div>
@@ -498,18 +498,18 @@ export default function LiveVehiclesClient({
       {tab === 'heatmap' && (
         <div className="space-y-3">
           <div className="bg-surface border border-line rounded-lg p-3 flex items-center gap-2">
-            <span className="text-xs font-extrabold text-ink">🔥 수거 히트맵</span>
+            <span className="text-sm font-extrabold text-ink">🔥 수거 히트맵</span>
             <input type="date" value={heatFrom} onChange={(e) => setHeatFrom(e.target.value)}
-              className="px-2 py-1 rounded border border-line text-xs font-mono" />
-            <span className="text-slate-500">~</span>
+              className="px-2 py-1 rounded border border-line text-sm font-mono" />
+            <span className="text-ink-faint">~</span>
             <input type="date" value={heatTo} onChange={(e) => setHeatTo(e.target.value)}
-              className="px-2 py-1 rounded border border-line text-xs font-mono" />
+              className="px-2 py-1 rounded border border-line text-sm font-mono" />
             <button onClick={loadHeatmap}
-              className="px-3 py-1 rounded text-xs font-extrabold bg-accent text-white hover:bg-accent-strong">
+              className="px-3 py-1 rounded text-sm font-extrabold bg-accent text-white hover:bg-accent-strong">
               조회
             </button>
             {heatStats && (
-              <span className="ml-auto text-[0.625rem] font-mono text-slate-600">
+              <span className="ml-auto text-[0.625rem] font-mono text-ink-faint">
                 민원 {heatStats.totalPoints}건 · 활성 셀 {heatStats.cellsActive}개 · {heatStats.range.from}~{heatStats.range.to}
               </span>
             )}
@@ -519,12 +519,12 @@ export default function LiveVehiclesClient({
               <LeafletMap mode="heatmap" center={data.center} heatPoints={heatPoints} baseTile={baseTile} />
             )}
             {(!heatPoints || heatPoints.length === 0) && (
-              <div className="flex items-center justify-center h-full text-slate-500">
+              <div className="flex items-center justify-center h-full text-ink-faint">
                 {heatPoints ? '해당 기간 민원 데이터 없음' : '조회 버튼을 눌러 히트맵 생성'}
               </div>
             )}
           </div>
-          <div className="text-[0.625rem] font-mono text-slate-600 px-2 bg-slate-50 rounded p-2">
+          <div className="text-[0.625rem] font-mono text-ink-faint px-2 bg-slate-50 rounded p-2">
             💡 알고리즘 (gis-cost 동등): 50m 그리드 density + BULKY_WASTE/ILLEGAL_DUMP 2배 가중치 + Folium HeatMap 동등 그라디언트 (blue→cyan→orange→red→maroon)
           </div>
         </div>
@@ -533,13 +533,13 @@ export default function LiveVehiclesClient({
       {tab === 'route' && (
         <div className="space-y-3">
           <div className="bg-surface border border-line rounded-lg p-3 flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-extrabold text-ink">🛣 추천경로 계산 (TSP)</span>
-            <label className="text-xs font-mono ml-3">최대 stops:
+            <span className="text-sm font-extrabold text-ink">🛣 추천경로 계산 (TSP)</span>
+            <label className="text-sm font-mono ml-3">최대 stops:
               <input type="number" min="2" max="50" value={maxStops} onChange={(e) => setMaxStops(Number(e.target.value))}
                 className="ml-1 px-2 py-1 rounded border border-line w-20 font-mono font-bold" />
             </label>
             <button onClick={runOptimize} disabled={routeBusy}
-              className="px-4 py-1.5 rounded text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
               {routeBusy ? '계산 중…' : '🚀 미처리 민원으로 경로 최적화'}
             </button>
             {routeStats && (
@@ -561,13 +561,13 @@ export default function LiveVehiclesClient({
               />
             )}
             {!routeStops && (
-              <div className="flex items-center justify-center h-full text-slate-500">
+              <div className="flex items-center justify-center h-full text-ink-faint">
                 "🚀 경로 최적화" 버튼을 눌러주세요
               </div>
             )}
           </div>
           {routeStats && (
-            <div className="bg-emerald-50 border border-emerald-300 rounded p-3 text-xs">
+            <div className="bg-emerald-50 border border-emerald-300 rounded p-3 text-sm">
               <div className="font-extrabold text-emerald-900 mb-1">최적화 결과</div>
               <div className="grid grid-cols-2 gap-2 font-mono">
                 <div>알고리즘: <span className="font-extrabold">{routeStats.algorithm}</span></div>
@@ -591,7 +591,7 @@ export default function LiveVehiclesClient({
                   </div>
                 )}
               </div>
-              <div className="text-[0.625rem] text-slate-600 mt-2">
+              <div className="text-[0.625rem] text-ink-faint mt-2">
                 💡 알고리즘 (gis-cost 동등): Nearest Neighbor 초기해 + 2-opt 개선. polyline은 OSRM 공개 데모(키 불필요)로 도로 따라 그려짐.
               </div>
             </div>
@@ -604,10 +604,10 @@ export default function LiveVehiclesClient({
           {config?.embedUrl ? (
             <iframe src={config.embedUrl} className="w-full" style={{ height: 700, border: 0 }} title="GIS Live View" />
           ) : (
-            <div className="text-center py-20 text-slate-600">
+            <div className="text-center py-20 text-ink-faint">
               <div className="text-2xl mb-2">🔗</div>
               <div className="font-bold mb-1">외부 GIS embed URL이 설정되지 않았습니다</div>
-              <div className="text-xs font-mono">
+              <div className="text-sm font-mono">
                 관리자가 ⚙ GIS API 설정에서 embed URL을 입력하면 외부 시스템(예: gis.helpbiz.kr) 화면을 직접 표시합니다.
               </div>
             </div>
@@ -693,7 +693,7 @@ function SettingsModal({ config, onClose, onSaved }: {
             <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
             연동 활성화
           </label>
-          <div className="text-[0.625rem] font-mono text-slate-600 bg-slate-50 rounded p-2">
+          <div className="text-[0.625rem] font-mono text-ink-faint bg-slate-50 rounded p-2">
             💡 Provider=simulation: 강남구 그리드에서 시뮬 GPS<br />
             💡 Provider=helpbiz: API key + Base URL로 외부 호출 (Phase 2 구현 예정)<br />
             💡 Embed URL: iframe으로 외부 화면 직접 표시 (Provider 무관)
@@ -715,14 +715,14 @@ function SettingsModal({ config, onClose, onSaved }: {
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
 }
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
       className={`px-4 py-2 text-sm font-extrabold border-b-[3px] -mb-0.5 transition ${
-        active ? 'border-accent text-accent bg-accent-soft' : 'border-transparent text-slate-700 hover:bg-slate-100'
+        active ? 'border-accent text-accent bg-accent-soft' : 'border-transparent text-ink-muted hover:bg-slate-100'
       }`}>{children}</button>
   );
 }
@@ -738,7 +738,7 @@ function StatusDot({ status }: { status: string }) {
   return (
     <span className="flex items-center gap-1">
       <span className={`w-2 h-2 rounded-full ${m.color} ${status === 'MOVING' ? 'animate-pulse' : ''}`} />
-      <span className="text-[0.5625rem] font-mono font-extrabold text-slate-600">{m.label}</span>
+      <span className="text-[0.5625rem] font-mono font-extrabold text-ink-faint">{m.label}</span>
     </span>
   );
 }
@@ -753,7 +753,7 @@ function KCard({ label, value, unit, tone = 'default' }: { label: string; value:
   return (
     <div className={`px-4 py-3 rounded-lg border-2 ${c[tone]} shadow-sm`}>
       <div className="text-[0.75rem] font-extrabold tracking-tight">{label}</div>
-      <div className="font-black mt-0.5"><span className="text-2xl">{value}</span> <span className="text-xs font-bold">{unit}</span></div>
+      <div className="font-black mt-0.5"><span className="text-2xl">{value}</span> <span className="text-sm font-bold">{unit}</span></div>
     </div>
   );
 }

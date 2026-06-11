@@ -74,7 +74,7 @@ export default function LeaveClient({
 
       {/* 잔여 카드 (큼) */}
       <div className="bg-gradient-to-br from-accent to-cyan-700 rounded-2xl p-5 text-white shadow-card">
-        <div className="text-xs font-mono font-extrabold tracking-widest text-cyan-100 mb-2">
+        <div className="text-sm font-mono font-extrabold tracking-widest text-cyan-100 mb-2">
           {year}년 연차 잔여
         </div>
         {balance ? (
@@ -89,14 +89,14 @@ export default function LeaveClient({
               <BalanceStat label="이월" value={balance.carriedOver.toFixed(1)} />
             </div>
             {balance.note && (
-              <div className="mt-3 text-xs font-mono text-cyan-100">{balance.note}</div>
+              <div className="mt-3 text-sm font-mono text-cyan-100">{balance.note}</div>
             )}
           </>
         ) : (
           <>
             <div className="text-2xl font-black mb-1">아직 부여 안 됨</div>
             <div className="text-sm font-semibold text-cyan-100">관리자에게 연차 부여를 요청하세요.</div>
-            <div className="mt-3 text-xs font-mono text-cyan-100">
+            <div className="mt-3 text-sm font-mono text-cyan-100">
               근속 {recommend.years}년 → 권장 {recommend.days}일
             </div>
           </>
@@ -105,9 +105,9 @@ export default function LeaveClient({
 
       {/* 권장/안내 */}
       {hireDate && (
-        <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-xs text-amber-900 font-semibold leading-relaxed">
+        <div className="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 rounded-md px-4 py-3 text-sm text-amber-900 font-semibold leading-relaxed">
           <strong className="font-extrabold">근로기준법 §60 안내</strong> · 입사일 {hireDate} 기준 근속 {recommend.years}년차 → 권장 연차 {recommend.days}일.
-          <div className="mt-1 font-mono text-xs">{recommend.rule}</div>
+          <div className="mt-1 font-mono text-sm">{recommend.rule}</div>
         </div>
       )}
 
@@ -135,22 +135,22 @@ export default function LeaveClient({
             return (
               <div key={r.id} className="px-4 py-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-xs">
+                  <span className="px-1.5 py-0.5 rounded font-mono font-extrabold bg-accent-soft text-accent text-sm">
                     {LEAVE_TYPE_LABEL[r.requestType] ?? r.requestType}
                   </span>
                   <StatusBadge status={r.status} />
                   <span className="ml-auto font-mono font-extrabold text-ink text-sm">{days}일</span>
                 </div>
-                <div className="font-mono text-xs font-bold text-ink">
+                <div className="font-mono text-sm font-bold text-ink">
                   {r.startDate} ~ {r.endDate}
                 </div>
-                {r.reason && <div className="text-xs text-ink-muted mt-1">{r.reason}</div>}
+                {r.reason && <div className="text-sm text-ink-muted mt-1">{r.reason}</div>}
                 <div className="flex items-center mt-1.5">
-                  <span className="text-xs font-mono text-ink-faint">
+                  <span className="text-sm font-mono text-ink-faint">
                     {new Date(r.createdAt).toLocaleString('ko-KR')}
                   </span>
                   {r.status === 'PENDING' && (
-                    <button onClick={() => cancel(r.id)} className="ml-auto text-xs font-bold text-red-600 active:underline">
+                    <button onClick={() => cancel(r.id)} className="ml-auto text-sm font-bold text-red-600 active:underline">
                       취소
                     </button>
                   )}
@@ -213,7 +213,7 @@ function CreateLeaveModal({ workerId, balance, singleStageApproval, onClose }: {
       <div className="bg-white w-full max-w-[480px] rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center mb-4">
           <h3 className="font-extrabold text-ink text-lg">휴가 신청</h3>
-          <button onClick={onClose} className="ml-auto text-slate-500 text-2xl font-bold">×</button>
+          <button onClick={onClose} className="ml-auto text-ink-faint text-2xl font-bold">×</button>
         </div>
 
         <div className="space-y-3">
@@ -241,7 +241,7 @@ function CreateLeaveModal({ workerId, balance, singleStageApproval, onClose }: {
             </Field>
           </div>
 
-          <div className={`px-3 py-2 rounded-lg text-xs font-bold ${willBeNegative ? 'bg-red-50 text-red-700 border border-red-300' : 'bg-accent-soft text-accent border border-accent'}`}>
+          <div className={`px-3 py-2 rounded-lg text-sm font-bold ${willBeNegative ? 'bg-red-50 text-red-700 border border-red-300' : 'bg-accent-soft text-accent border border-accent'}`}>
             {isAnnualType && balance ? (
               <>
                 요청: <span className="font-mono font-extrabold">{days}일</span> · 잔여:{' '}
@@ -259,7 +259,7 @@ function CreateLeaveModal({ workerId, balance, singleStageApproval, onClose }: {
               className="w-full px-3 py-2 rounded-lg border border-line bg-white text-sm" />
           </Field>
 
-          <div className="text-xs font-mono text-slate-600 px-2 py-1 bg-slate-50 rounded">
+          <div className="text-sm font-mono text-ink-faint px-2 py-1 bg-slate-50 rounded">
             {singleStageApproval
               ? 'ℹ 결재 흐름: 신청 → 관리자 결재 → 완료'
               : 'ℹ 결재 흐름: 신청 → 1차 결재 (관리자) → 대표 최종 결재 → 완료'}
@@ -282,13 +282,13 @@ function CreateLeaveModal({ workerId, balance, singleStageApproval, onClose }: {
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-xs font-mono font-extrabold text-ink-muted mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-sm font-mono font-extrabold text-ink-muted mb-1'} />;
 }
 
 function BalanceStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white/15 rounded-lg py-2">
-      <div className="text-xs font-mono font-extrabold text-cyan-100">{label}</div>
+      <div className="text-sm font-mono font-extrabold text-cyan-100">{label}</div>
       <div className="text-base font-extrabold mt-0.5">{value}</div>
     </div>
   );
@@ -296,7 +296,7 @@ function BalanceStat({ label, value }: { label: string; value: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    PENDING: 'bg-slate-100 text-slate-600 border-slate-300',
+    PENDING: 'bg-slate-100 text-ink-faint border-slate-300',
     IN_REVIEW: 'bg-amber-100 text-amber-700 border-amber-300',
     APPROVED: 'bg-emerald-100 text-emerald-700 border-emerald-300',
     REJECTED: 'bg-red-100 text-red-700 border-red-300',

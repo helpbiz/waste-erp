@@ -86,7 +86,7 @@ export default function SuperAdminClient() {
           href="/noc"
           target="_blank"
           rel="noopener"
-          className="ml-auto px-3 py-2 rounded-lg border-2 border-cyan-400 bg-cyan-900 hover:bg-cyan-800 text-white text-xs font-extrabold transition"
+          className="ml-auto px-3 py-2 rounded-lg border-2 border-cyan-400 bg-cyan-900 hover:bg-cyan-800 text-white text-sm font-extrabold transition"
           title="NOC 운영센터 — 56인치 풀스크린 관제 화면 (별도 창 / Chromium kiosk 권장)"
         >
           📡 NOC 운영센터
@@ -95,7 +95,7 @@ export default function SuperAdminClient() {
           href="/super-admin/permission-print"
           target="_blank"
           rel="noopener"
-          className="px-3 py-2 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-extrabold transition"
+          className="px-3 py-2 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 text-sm font-extrabold transition"
           title="권한 매트릭스 인쇄용 페이지 (Ctrl+P → PDF)"
         >
           🖨 권한 매트릭스 인쇄
@@ -270,7 +270,7 @@ function MunicipalitiesTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <MuniStat label="총 지자체" value={total} />
         <MuniStat label="활성 (운영중)" value={activeCount} accent="text-emerald-700" />
-        <MuniStat label="비활성 (휴면)" value={dormantCount} accent="text-slate-600" />
+        <MuniStat label="비활성 (휴면)" value={dormantCount} accent="text-ink-faint" />
         <MuniStat label="광역단체" value={regions.length} accent="text-purple-700" />
       </div>
 
@@ -301,14 +301,14 @@ function MunicipalitiesTab() {
         <div className="flex items-center gap-1 ml-2 border border-line rounded-md overflow-hidden">
           <button
             onClick={() => setViewMode('grouped')}
-            className={`px-3 py-1.5 text-xs font-extrabold ${viewMode === 'grouped' ? 'bg-purple-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+            className={`px-3 py-1.5 text-sm font-extrabold ${viewMode === 'grouped' ? 'bg-purple-600 text-white' : 'bg-white text-ink-muted hover:bg-slate-100'}`}
             aria-pressed={viewMode === 'grouped'}
           >
             📂 광역 그룹
           </button>
           <button
             onClick={() => setViewMode('table')}
-            className={`px-3 py-1.5 text-xs font-extrabold ${viewMode === 'table' ? 'bg-purple-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}
+            className={`px-3 py-1.5 text-sm font-extrabold ${viewMode === 'table' ? 'bg-purple-600 text-white' : 'bg-white text-ink-muted hover:bg-slate-100'}`}
             aria-pressed={viewMode === 'table'}
           >
             📋 테이블
@@ -332,7 +332,7 @@ function MunicipalitiesTab() {
                 }
               } finally { setSyncBusy(false); }
             }}
-            className="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 text-xs font-extrabold hover:bg-slate-300 border border-slate-300 disabled:opacity-50"
+            className="px-3 py-1.5 rounded-md bg-slate-200 text-ink-muted text-sm font-extrabold hover:bg-slate-300 border border-slate-300 disabled:opacity-50"
             title="위탁업체 운영 기준으로 모든 지자체 상태를 DB에 일괄 반영"
           >
             {syncBusy ? '처리 중…' : '🔄 DB 동기화'}
@@ -362,8 +362,8 @@ function MunicipalitiesTab() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={7} className="text-center py-8 text-slate-700 font-bold">로딩 중…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-slate-700 font-bold">조건에 맞는 지자체 없음</td></tr>}
+              {loading && <tr><td colSpan={7} className="text-center py-8 text-ink-muted font-bold">로딩 중…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-ink-muted font-bold">조건에 맞는 지자체 없음</td></tr>}
               {!loading && items.map((m) => (
                 <tr key={m.id} className="border-b border-line hover:bg-surface-soft">
                   <MTd className="text-[0.6875rem] font-mono font-bold text-ink-muted">{m.region ?? '—'}</MTd>
@@ -403,18 +403,18 @@ function MunicipalitiesTab() {
         /* 광역-기초 아코디언 */
         <div className="space-y-2">
           {/* 광역 그룹 컨트롤 */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-sm">
             <button onClick={expandAll} className="px-2 py-1 rounded border border-line bg-white font-bold hover:bg-slate-50">
               ▼ 모두 펼치기
             </button>
             <button onClick={collapseAll} className="px-2 py-1 rounded border border-line bg-white font-bold hover:bg-slate-50">
               ▶ 모두 접기
             </button>
-            <span className="text-slate-700 font-bold ml-2">{grouped.length} 광역 · {items.length} 지자체</span>
+            <span className="text-ink-muted font-bold ml-2">{grouped.length} 광역 · {items.length} 지자체</span>
           </div>
 
-          {loading && <div className="text-center py-8 text-slate-700 font-bold">로딩 중…</div>}
-          {!loading && grouped.length === 0 && <div className="text-center py-8 text-slate-700 font-bold">조건에 맞는 지자체 없음</div>}
+          {loading && <div className="text-center py-8 text-ink-muted font-bold">로딩 중…</div>}
+          {!loading && grouped.length === 0 && <div className="text-center py-8 text-ink-muted font-bold">조건에 맞는 지자체 없음</div>}
 
           {!loading && grouped.map((g) => {
             const open = expandedRegions.has(g.region);
@@ -430,9 +430,9 @@ function MunicipalitiesTab() {
                   <span className="text-purple-700 text-sm font-mono font-extrabold w-4">{open ? '▼' : '▶'}</span>
                   <span className="font-black text-base text-ink flex-1">{g.region}</span>
                   <span className="text-[0.6875rem] font-mono font-bold text-emerald-700">활성 {g.active}</span>
-                  <span className="text-[0.6875rem] font-mono font-bold text-slate-700">휴면 {g.dormant}</span>
+                  <span className="text-[0.6875rem] font-mono font-bold text-ink-muted">휴면 {g.dormant}</span>
                   <span className="text-[0.6875rem] font-mono font-bold text-info">위탁 {g.totalContractors}</span>
-                  <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{g.list.length}</span>
+                  <span className="text-sm font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{g.list.length}</span>
                 </button>
                 {open && (
                   <div id={`region-panel-${g.region}`} className="border-t border-line">
@@ -651,7 +651,7 @@ function MuniEditModal({
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6875rem] font-bold text-slate-600 hover:text-red-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6875rem] font-bold text-ink-faint hover:text-red-600"
                 >
                   ✕ 선택 해제
                 </button>
@@ -730,7 +730,7 @@ function MuniEditModal({
               <option value="SUSPENDED">비활성</option>
             </select>
           </Field>
-          {err && <div className="px-3 py-2 rounded-md bg-red-50 border border-red-200 text-xs font-bold text-red-700">{err}</div>}
+          {err && <div className="px-3 py-2 rounded-md bg-red-50 border border-red-200 text-sm font-bold text-red-700">{err}</div>}
         </div>
       <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">
         <button onClick={onClose} className="px-4 py-2 rounded-md border border-line text-sm font-bold hover:bg-surface min-h-[44px]">취소</button>
@@ -746,7 +746,7 @@ function MuniStatusBadge({ status }: { status: 'PENDING' | 'ACTIVE' | 'SUSPENDED
   const map = {
     ACTIVE:    { label: '활성',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     PENDING:   { label: '대기',   cls: 'bg-amber-100 text-amber-800 border-amber-300' },
-    SUSPENDED: { label: '비활성', cls: 'bg-slate-100 text-slate-700 border-slate-300' },
+    SUSPENDED: { label: '비활성', cls: 'bg-slate-100 text-ink-muted border-slate-300' },
   } as const;
   const m = map[status];
   return <span className={`text-[0.625rem] font-mono font-extrabold px-2 py-0.5 rounded-full border ${m.cls}`}>{m.label}</span>;
@@ -880,7 +880,7 @@ function CompanyInfoTab() {
     <div className="bg-surface border border-line rounded-lg p-5 max-w-[720px] space-y-4">
       {/* 1단계 — 지자체 picker (SUPER_ADMIN 계층 진입) */}
       <div className="flex items-center gap-2 pb-2 border-b border-line">
-        <label htmlFor="company-muni-picker" className="text-xs font-extrabold text-slate-700 whitespace-nowrap">지자체</label>
+        <label htmlFor="company-muni-picker" className="text-sm font-extrabold text-ink-muted whitespace-nowrap">지자체</label>
         <select
           id="company-muni-picker"
           value={selectedMuniId}
@@ -898,7 +898,7 @@ function CompanyInfoTab() {
 
       {/* 2단계 — 위탁업체 picker + 신규 등록 (선택된 지자체 산하만) */}
       <div className="flex items-center gap-2 pb-3 border-b border-line">
-        <label htmlFor="contractor-picker" className="text-xs font-extrabold text-slate-700 whitespace-nowrap">위탁업체</label>
+        <label htmlFor="contractor-picker" className="text-sm font-extrabold text-ink-muted whitespace-nowrap">위탁업체</label>
         <select
           id="contractor-picker"
           value={selectedId}
@@ -915,7 +915,7 @@ function CompanyInfoTab() {
           type="button"
           onClick={() => setShowCreate(true)}
           disabled={!selectedMuniId}
-          className="px-3 py-2 rounded-md bg-emerald-700 text-white text-xs font-extrabold hover:bg-emerald-800 active:scale-95 disabled:opacity-50"
+          className="px-3 py-2 rounded-md bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 active:scale-95 disabled:opacity-50"
         >
           + 신규 등록
         </button>
@@ -933,7 +933,7 @@ function CompanyInfoTab() {
       )}
 
       {!c && (
-        <div className="text-center py-8 text-slate-700 font-bold">
+        <div className="text-center py-8 text-ink-muted font-bold">
           {selectedId ? '회사 정보 로딩 중…' : '위탁업체를 선택해 주세요.'}
         </div>
       )}
@@ -941,8 +941,8 @@ function CompanyInfoTab() {
       {c && (<>
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-extrabold text-ink">{c.companyName}</h3>
-        <span className="text-[0.625rem] font-mono font-bold text-slate-600">{c.businessNo}</span>
-        <span className="text-[0.625rem] font-mono font-bold text-slate-600">관할: {c.municipalityName}</span>
+        <span className="text-[0.625rem] font-mono font-bold text-ink-faint">{c.businessNo}</span>
+        <span className="text-[0.625rem] font-mono font-bold text-ink-faint">관할: {c.municipalityName}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -969,7 +969,7 @@ function CompanyInfoTab() {
                 placeholder="서울시 강남구 역삼동 123-45 차고지"
                 className="flex-1 px-3 py-1.5 rounded border border-line text-sm" />
               <button onClick={geocode} disabled={geoBusy || !form.garageAddress}
-                className="px-3 py-1.5 rounded text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+                className="px-3 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
                 {geoBusy ? '변환…' : '📍 좌표 변환'}
               </button>
             </div>
@@ -984,7 +984,7 @@ function CompanyInfoTab() {
                 placeholder="127.0473" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
             </Field>
           </div>
-          <div className="text-[0.625rem] font-mono text-slate-600 bg-slate-50 rounded p-2">
+          <div className="text-[0.625rem] font-mono text-ink-faint bg-slate-50 rounded p-2">
             💡 차고지 좌표는 <code>/live-vehicles → 추천경로 계산</code>의 출발/종료점으로 자동 사용됩니다.<br />
             📍 좌표 변환 버튼: OpenStreetMap Nominatim (무료) 사용. 변환 후 정확도 확인 권장.
           </div>
@@ -1055,7 +1055,7 @@ function Tab({ active, onClick, children }: { active: boolean; onClick: () => vo
   return (
     <button onClick={onClick}
       className={`px-5 py-3 text-[0.9375rem] font-black tracking-tight border-b-[3px] -mb-0.5 transition ${
-        active ? 'border-purple-600 text-purple-700 bg-purple-50' : 'border-transparent text-slate-700 hover:text-ink hover:bg-slate-100'
+        active ? 'border-purple-600 text-purple-700 bg-purple-50' : 'border-transparent text-ink-muted hover:text-ink hover:bg-slate-100'
       }`}>{children}</button>
   );
 }
@@ -1078,16 +1078,16 @@ function PoliciesTab() {
 
   return (
     <div className="space-y-3">
-      {loading && <div className="text-center py-10 text-slate-500">로딩 중…</div>}
+      {loading && <div className="text-center py-10 text-ink-faint">로딩 중…</div>}
       {!loading && munis.length === 0 && (
-        <div className="text-center py-10 text-slate-500">등록된 지자체가 없습니다.</div>
+        <div className="text-center py-10 text-ink-faint">등록된 지자체가 없습니다.</div>
       )}
       {!loading && munis.map((m) => (
         <div key={m.id} className="bg-surface border-2 border-line rounded-lg overflow-hidden">
           <div className="px-4 py-3 bg-slate-100 flex items-center gap-3">
             <span className="font-extrabold text-ink text-base">{m.name}</span>
-            <span className="text-[0.625rem] font-mono font-bold text-slate-600">{m.code}</span>
-            <span className="text-[0.625rem] font-mono font-bold text-slate-600">관할 거래처 {m.contractorCount}</span>
+            <span className="text-[0.625rem] font-mono font-bold text-ink-faint">{m.code}</span>
+            <span className="text-[0.625rem] font-mono font-bold text-ink-faint">관할 거래처 {m.contractorCount}</span>
             <span className={`ml-auto text-[0.625rem] font-extrabold px-2 py-0.5 rounded border-2 ${
               m.policy ? 'bg-emerald-100 text-emerald-800 border-emerald-500' : 'bg-amber-100 text-amber-800 border-amber-500'
             }`}>
@@ -1099,9 +1099,9 @@ function PoliciesTab() {
             </button>
           </div>
           {m.policy && (
-            <div className="p-3 grid grid-cols-2 gap-4 text-xs">
+            <div className="p-3 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="font-extrabold text-slate-600 mb-1">허용 화면 ({m.policy.allowedScreens.length}/{ALL_SCREENS.length})</div>
+                <div className="font-extrabold text-ink-faint mb-1">허용 화면 ({m.policy.allowedScreens.length}/{ALL_SCREENS.length})</div>
                 <div className="flex flex-wrap gap-1">
                   {m.policy.allowedScreens.map((s) => {
                     const def = ALL_SCREENS.find((x) => x.code === s);
@@ -1110,7 +1110,7 @@ function PoliciesTab() {
                 </div>
               </div>
               <div>
-                <div className="font-extrabold text-slate-600 mb-1">허용 보고서 ({m.policy.allowedReports.length}/{ALL_REPORTS.length})</div>
+                <div className="font-extrabold text-ink-faint mb-1">허용 보고서 ({m.policy.allowedReports.length}/{ALL_REPORTS.length})</div>
                 <div className="flex flex-wrap gap-1">
                   {m.policy.allowedReports.map((s) => {
                     const def = ALL_REPORTS.find((x) => x.code === s);
@@ -1119,10 +1119,10 @@ function PoliciesTab() {
                 </div>
               </div>
               <div className="col-span-2 flex gap-3 mt-1">
-                <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${m.policy.exportEnabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-slate-600 border-slate-400'}`}>
+                <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${m.policy.exportEnabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-ink-faint border-slate-400'}`}>
                   {m.policy.exportEnabled ? '✓ 출력 가능' : '✗ 출력 불가'}
                 </span>
-                <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${m.policy.bulkExportEnabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-slate-600 border-slate-400'}`}>
+                <span className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border ${m.policy.bulkExportEnabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-200 text-ink-faint border-slate-400'}`}>
                   {m.policy.bulkExportEnabled ? '✓ 일괄 출력' : '✗ 일괄 출력 불가'}
                 </span>
               </div>
@@ -1183,26 +1183,26 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
   return (
     <BottomSheet open={true} onClose={onClose} title={`${muni.name} — 권한 정책`} desktopMaxWidth="640px">
       <div className="px-5 py-2 bg-purple-50 border-b border-line">
-        <div className="text-[0.6875rem] font-mono text-slate-600">{muni.code} · 관할 거래처 {muni.contractorCount}</div>
+        <div className="text-[0.6875rem] font-mono text-ink-faint">{muni.code} · 관할 거래처 {muni.contractorCount}</div>
       </div>
       <div className="p-5 space-y-4">
         {/* P1-1: 프리셋 3종 일괄 적용 버튼 — 잘 모르면 [표준] */}
         <div>
-          <div className="font-extrabold text-ink text-sm mb-2">⚡ 프리셋 일괄 적용 <span className="text-[0.6875rem] font-normal text-slate-500">(잘 모르면 [표준] 추천)</span></div>
+          <div className="font-extrabold text-ink text-sm mb-2">⚡ 프리셋 일괄 적용 <span className="text-[0.6875rem] font-normal text-ink-faint">(잘 모르면 [표준] 추천)</span></div>
           <div className="grid grid-cols-3 gap-1.5">
             {PRESETS.map((p) => (
               <button
                 key={p.key}
                 type="button"
                 onClick={() => applyPreset(p.key)}
-                className="px-2 py-2 rounded-md border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 active:scale-95 transition text-xs font-extrabold text-purple-900"
+                className="px-2 py-2 rounded-md border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 active:scale-95 transition text-sm font-extrabold text-purple-900"
                 title={p.description}
               >
                 {p.label}
               </button>
             ))}
           </div>
-          <div className="text-[0.625rem] text-slate-500 mt-1.5 leading-snug">
+          <div className="text-[0.625rem] text-ink-faint mt-1.5 leading-snug">
             ※ 적용 후에도 아래 체크박스로 세부 조정 가능. 저장 누르기 전엔 반영 안 됩니다.
           </div>
         </div>
@@ -1210,8 +1210,8 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
           <div className="font-extrabold text-ink text-sm mb-2">허용 화면 ({screens.size}/{ALL_SCREENS.length})</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {ALL_SCREENS.map((s) => (
-              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition min-h-[44px] sm:min-h-0 ${
-                screens.has(s.code) ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-line bg-white text-slate-600 hover:border-blue-300'
+              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-sm font-bold transition min-h-[44px] sm:min-h-0 ${
+                screens.has(s.code) ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-line bg-white text-ink-faint hover:border-blue-300'
               }`}>
                 <input type="checkbox" checked={screens.has(s.code)} onChange={() => setScreens(toggle(screens, s.code))} />
                 {s.label}
@@ -1223,8 +1223,8 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
           <div className="font-extrabold text-ink text-sm mb-2">허용 보고서 ({reports.size}/{ALL_REPORTS.length})</div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {ALL_REPORTS.map((s) => (
-              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-xs font-bold transition min-h-[44px] sm:min-h-0 ${
-                reports.has(s.code) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-line bg-white text-slate-600 hover:border-emerald-300'
+              <label key={s.code} className={`flex items-center gap-1.5 p-2 rounded border-2 cursor-pointer text-sm font-bold transition min-h-[44px] sm:min-h-0 ${
+                reports.has(s.code) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-line bg-white text-ink-faint hover:border-emerald-300'
               }`}>
                 <input type="checkbox" checked={reports.has(s.code)} onChange={() => setReports(toggle(reports, s.code))} />
                 {s.label}
@@ -1243,7 +1243,7 @@ function PolicyEditModal({ muni, onClose, onSaved }: { muni: Muni; onClose: () =
           </label>
         </div>
         <div>
-          <div className="text-[0.6875rem] font-mono font-extrabold text-slate-600 mb-1">메모</div>
+          <div className="text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1">메모</div>
           <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)}
             className="w-full px-3 py-1.5 rounded border border-line text-sm" />
         </div>
@@ -1307,19 +1307,19 @@ function AggregateTab() {
     <div className="space-y-4">
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">지자체</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">지자체</div>
           <select value={muniId} onChange={(e) => setMuniId(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-bold min-w-[180px]">
             {munis.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.contractorCount}개 거래처)</option>)}
           </select>
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
         </div>
@@ -1349,12 +1349,12 @@ function AggregateTab() {
         />
       )}
 
-      {!data && <div className="text-center py-12 text-slate-500">지자체 선택 후 조회</div>}
+      {!data && <div className="text-center py-12 text-ink-faint">지자체 선택 후 조회</div>}
 
       {data && (
         <div className="bg-white border-t-4 border-double border-purple-700 pt-4 px-4 print:px-2">
           <h1 className="text-2xl font-black text-center mb-1">{data.municipality.name} 관할 거래처 통합 보고서</h1>
-          <div className="text-center text-sm font-bold text-slate-600 mb-4">
+          <div className="text-center text-sm font-bold text-ink-faint mb-4">
             {data.range.from} ~ {data.range.to} · 거래처 {data.contractors.length}개
           </div>
 
@@ -1370,8 +1370,8 @@ function AggregateTab() {
 
           <div className="bg-surface border border-line rounded overflow-hidden">
             <div className="px-4 py-2.5 bg-purple-50 border-b border-line text-sm font-extrabold text-ink">거래처별 상세 (모든 영역)</div>
-            <table className="w-full text-xs">
-              <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-slate-700 uppercase">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
                 <tr>
                   <th className="px-2 py-1.5 text-center print:hidden">
                     <input
@@ -1395,7 +1395,7 @@ function AggregateTab() {
               </thead>
               <tbody className="divide-y divide-line">
                 {data.contractors.length === 0 && (
-                  <tr><td colSpan={11} className="px-3 py-8 text-center text-slate-500">거래처 없음</td></tr>
+                  <tr><td colSpan={11} className="px-3 py-8 text-center text-ink-faint">거래처 없음</td></tr>
                 )}
                 {data.contractors.map((c) => (
                   <tr key={c.id} className={`hover:bg-slate-50 ${selectedIds.has(c.id) ? 'bg-blue-50' : ''}`}>
@@ -1409,7 +1409,7 @@ function AggregateTab() {
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="font-extrabold text-ink text-sm">{c.companyName}</div>
-                      <div className="text-[0.625rem] font-mono text-slate-600">{c.businessNo}</div>
+                      <div className="text-[0.625rem] font-mono text-ink-faint">{c.businessNo}</div>
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono font-extrabold">{c.users}</td>
                     <td className="px-2 py-1.5 text-right font-mono">{c.attendance}</td>
@@ -1444,7 +1444,7 @@ function AggregateTab() {
           </div>
 
           {/* 결재란 — 사용자 요청 2026-04-29: 모든 보고서 결재 표시 숨김 */}
-          <div className="text-[0.625rem] font-mono text-slate-600 text-right mt-3">
+          <div className="text-[0.625rem] font-mono text-ink-faint text-right mt-3">
             출력일시: {new Date().toLocaleString('ko-KR')}
           </div>
         </div>
@@ -1516,23 +1516,23 @@ function BroadcastModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-[640px] w-full max-h-[92vh] flex flex-col">
         <div className="px-5 py-3 border-b border-line flex items-center justify-between">
           <h2 className="text-base font-black text-ink">📧 그룹 발송 ({contractors.length}개 거래처)</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl">✕</button>
+          <button onClick={onClose} className="text-ink-faint hover:text-ink-muted text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          <div className="bg-blue-50 border border-blue-300 rounded-md px-3 py-2 text-xs">
+          <div className="bg-blue-50 border border-blue-300 rounded-md px-3 py-2 text-sm">
             <b>📮 발송 방식:</b>
             <div className="mt-1 flex gap-3">
               <label className="flex items-center gap-1 cursor-pointer">
                 <input type="radio" checked={channel === 'email'} onChange={() => setChannel('email')} />
                 <span className="font-bold">이메일 (mailto BCC, OS 메일앱 자동 열림)</span>
-                <span className="text-slate-500">— {emails.length}곳 등록</span>
+                <span className="text-ink-faint">— {emails.length}곳 등록</span>
               </label>
             </div>
             <div className="mt-0.5">
               <label className="flex items-center gap-1 cursor-pointer">
                 <input type="radio" checked={channel === 'sms'} onChange={() => setChannel('sms')} />
                 <span className="font-bold">SMS (전화번호+메시지 클립보드 복사)</span>
-                <span className="text-slate-500">— {phones.length}곳 등록</span>
+                <span className="text-ink-faint">— {phones.length}곳 등록</span>
               </label>
             </div>
           </div>
@@ -1540,24 +1540,24 @@ function BroadcastModal({
           {channel === 'email' && (
             <>
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">제목</div>
+                <div className="text-sm font-extrabold text-ink mb-1">제목</div>
                 <input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
               </div>
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">본문</div>
+                <div className="text-sm font-extrabold text-ink mb-1">본문</div>
                 <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
               </div>
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">수신자 ({emails.length}곳)</div>
+                <div className="text-sm font-extrabold text-ink mb-1">수신자 ({emails.length}곳)</div>
                 <div className="bg-slate-50 border border-line rounded p-2 text-[0.6875rem] font-mono max-h-24 overflow-y-auto">
-                  {emails.length === 0 ? <span className="text-slate-500">이메일 미등록 거래처</span> : emails.join(', ')}
+                  {emails.length === 0 ? <span className="text-ink-faint">이메일 미등록 거래처</span> : emails.join(', ')}
                 </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={openMailto} disabled={emails.length === 0} className="flex-1 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-extrabold disabled:opacity-50">
                   📨 메일 작성 (BCC 자동) — OS 메일앱 열기
                 </button>
-                <button onClick={() => copy(emails.join(', '), 'emails')} disabled={emails.length === 0} className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold disabled:opacity-50">
+                <button onClick={() => copy(emails.join(', '), 'emails')} disabled={emails.length === 0} className="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 text-ink-muted text-sm font-bold disabled:opacity-50">
                   {copyOk === 'emails' ? '✓ 복사됨' : '📋 주소만 복사'}
                 </button>
               </div>
@@ -1567,25 +1567,25 @@ function BroadcastModal({
           {channel === 'sms' && (
             <>
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">메시지 (90 byte 권장)</div>
+                <div className="text-sm font-extrabold text-ink mb-1">메시지 (90 byte 권장)</div>
                 <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded border-2 border-line text-sm" />
-                <div className="text-[0.625rem] text-slate-500 mt-0.5">현재 길이: {body.length}자</div>
+                <div className="text-[0.625rem] text-ink-faint mt-0.5">현재 길이: {body.length}자</div>
               </div>
               <div>
-                <div className="text-xs font-extrabold text-ink mb-1">수신 번호 ({phones.length}곳)</div>
+                <div className="text-sm font-extrabold text-ink mb-1">수신 번호 ({phones.length}곳)</div>
                 <div className="bg-slate-50 border border-line rounded p-2 text-[0.6875rem] font-mono max-h-24 overflow-y-auto">
-                  {phones.length === 0 ? <span className="text-slate-500">전화번호 미등록 거래처</span> : phones.join(', ')}
+                  {phones.length === 0 ? <span className="text-ink-faint">전화번호 미등록 거래처</span> : phones.join(', ')}
                 </div>
               </div>
-              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-xs text-amber-900">
+              <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2 text-sm text-amber-900">
                 ⚠ <b>SMS 직접 발송 미지원</b> — 외부 SMS API(Aligo / NHN Cloud / AWS SNS) 연동이 필요합니다.
                 지금은 번호와 메시지를 클립보드에 복사 → SMS 앱에서 단체 발송 화면에 붙여넣기 사용.
               </div>
               <div className="flex gap-2">
-                <button onClick={() => copy(phones.join(','), 'phones')} disabled={phones.length === 0} className="flex-1 px-3 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold disabled:opacity-50">
+                <button onClick={() => copy(phones.join(','), 'phones')} disabled={phones.length === 0} className="flex-1 px-3 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-sm font-extrabold disabled:opacity-50">
                   {copyOk === 'phones' ? '✓ 복사됨' : '📋 전화번호 복사'}
                 </button>
-                <button onClick={() => copy(body, 'body')} className="flex-1 px-3 py-2 rounded bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold">
+                <button onClick={() => copy(body, 'body')} className="flex-1 px-3 py-2 rounded bg-amber-600 hover:bg-amber-700 text-white text-sm font-extrabold">
                   {copyOk === 'body' ? '✓ 복사됨' : '📋 메시지 복사'}
                 </button>
               </div>
@@ -1593,7 +1593,7 @@ function BroadcastModal({
           )}
         </div>
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end">
-          <button onClick={onClose} className="px-4 py-1.5 rounded bg-slate-200 text-slate-700 text-sm font-bold">닫기</button>
+          <button onClick={onClose} className="px-4 py-1.5 rounded bg-slate-200 text-ink-muted text-sm font-bold">닫기</button>
         </div>
       </div>
     </div>
@@ -1610,7 +1610,7 @@ function KCard({ label, value, unit, tone = 'default' }: { label: string; value:
   return (
     <div className={`px-3 py-2 rounded border-2 ${c[tone]}`}>
       <div className="text-[0.625rem] font-mono font-extrabold uppercase">{label}</div>
-      <div className="text-2xl font-black mt-0.5">{value}<span className="text-xs font-bold ml-1">{unit}</span></div>
+      <div className="text-2xl font-black mt-0.5">{value}<span className="text-sm font-bold ml-1">{unit}</span></div>
     </div>
   );
 }
@@ -1693,7 +1693,7 @@ function GisConfigTab() {
 
       {/* 업체 선택 */}
       <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 space-y-2">
-        <div className="text-[0.6875rem] font-mono font-extrabold text-slate-600">위탁업체 ContractorId</div>
+        <div className="text-[0.6875rem] font-mono font-extrabold text-ink-faint">위탁업체 ContractorId</div>
         <div className="flex gap-2">
           <input
             value={targetCid}
@@ -1708,7 +1708,7 @@ function GisConfigTab() {
           </button>
         </div>
         {loadStatus === 'found' && config && <div className="text-[0.625rem] text-emerald-700 font-mono">✓ 설정 로드됨 (최종 수정: {config.updatedAt ?? '-'})</div>}
-        {loadStatus === 'empty' && <div className="text-[0.625rem] text-slate-400 font-mono">설정 없음 — 저장 시 신규 생성</div>}
+        {loadStatus === 'empty' && <div className="text-[0.625rem] text-ink-faint font-mono">설정 없음 — 저장 시 신규 생성</div>}
       </div>
 
       <Field label="GIS Provider">
@@ -1781,7 +1781,7 @@ function GisConfigTab() {
           {saving ? '저장 중…' : '저장'}
         </button>
         <a href="/complaints"
-          className="px-5 py-1.5 rounded text-sm font-extrabold bg-slate-200 text-slate-700 hover:bg-slate-300 border border-slate-300 inline-flex items-center">
+          className="px-5 py-1.5 rounded text-sm font-extrabold bg-slate-200 text-ink-muted hover:bg-slate-300 border border-slate-300 inline-flex items-center">
           닫기
         </a>
       </div>
@@ -1789,26 +1789,26 @@ function GisConfigTab() {
       {/* API 응답 테스트 (응답 형식 파악용) */}
       {form.gisProvider !== 'simulation' && form.gisProvider !== 'local' && (
         <div className="border-t border-line pt-4 space-y-2">
-          <div className="text-xs font-extrabold text-ink">🔍 외부 GPS API 응답 테스트</div>
-          <div className="text-[0.6875rem] text-slate-500">저장 후 위 ContractorId 기준으로 실제 API를 호출해 응답 JSON을 확인합니다.</div>
+          <div className="text-sm font-extrabold text-ink">🔍 외부 GPS API 응답 테스트</div>
+          <div className="text-[0.6875rem] text-ink-faint">저장 후 위 ContractorId 기준으로 실제 API를 호출해 응답 JSON을 확인합니다.</div>
           <div className="flex gap-2 items-center">
             <button onClick={probe} disabled={probing || !targetCid}
               className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0">
               {probing ? '조회 중…' : 'API 테스트'}
             </button>
-            {!targetCid && <span className="text-[0.6875rem] text-slate-400">위에서 ContractorId를 입력하세요</span>}
+            {!targetCid && <span className="text-[0.6875rem] text-ink-faint">위에서 ContractorId를 입력하세요</span>}
           </div>
           {probeResult && (
             <div className={`rounded-lg border p-3 space-y-2 text-[0.6875rem] font-mono ${probeResult.ok ? 'bg-emerald-50 border-emerald-300' : 'bg-red-50 border-red-300'}`}>
               <div className="font-extrabold">{probeResult.ok ? '✅ 성공' : '❌ 실패'}{probeResult.status ? ` — HTTP ${probeResult.status}` : ''}</div>
-              <div className="text-slate-600 break-all">URL: {probeResult.url}</div>
+              <div className="text-ink-faint break-all">URL: {probeResult.url}</div>
               {probeResult.error && <div className="text-red-700">오류: {probeResult.error}</div>}
-              {probeResult.url && <div className="text-slate-600 break-all">URL: {probeResult.url}</div>}
+              {probeResult.url && <div className="text-ink-faint break-all">URL: {probeResult.url}</div>}
               {probeResult.provider === 'etrace' ? (
                 <>
                   {probeResult.lastSeqResponse !== undefined && (
                     <div>
-                      <div className="font-extrabold text-slate-700 mb-1">pos_last_seq.jsp 응답:</div>
+                      <div className="font-extrabold text-ink-muted mb-1">pos_last_seq.jsp 응답:</div>
                       <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-40 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
                         {JSON.stringify(probeResult.lastSeqResponse, null, 2)}
                       </pre>
@@ -1816,7 +1816,7 @@ function GisConfigTab() {
                   )}
                   {probeResult.positionsResponse !== undefined && (
                     <div>
-                      <div className="font-extrabold text-slate-700 mb-1">pos_json.jsp 응답 (최초 1건):</div>
+                      <div className="font-extrabold text-ink-muted mb-1">pos_json.jsp 응답 (최초 1건):</div>
                       <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
                         {JSON.stringify(probeResult.positionsResponse, null, 2)}
                       </pre>
@@ -1826,7 +1826,7 @@ function GisConfigTab() {
               ) : (
                 probeResult.response !== undefined && (
                   <div>
-                    <div className="font-extrabold text-slate-700 mb-1">응답 JSON:</div>
+                    <div className="font-extrabold text-ink-muted mb-1">응답 JSON:</div>
                     <pre className="bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-64 text-[0.625rem] leading-relaxed whitespace-pre-wrap break-all">
                       {JSON.stringify(probeResult.response, null, 2)}
                     </pre>
@@ -1846,7 +1846,7 @@ function GisConfigTab() {
 import { Field as BaseField } from '@/components/Field';
 type FieldArgs = React.ComponentProps<typeof BaseField>;
 function Field(props: FieldArgs) {
-  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-slate-600 mb-1'} />;
+  return <BaseField {...props} labelClassName={props.labelClassName ?? 'block text-[0.6875rem] font-mono font-extrabold text-ink-faint mb-1'} />;
 }
 
 /* 위탁업체 수정 모달 — SUPER_ADMIN 전용
@@ -1937,7 +1937,7 @@ function ContractorEditModal({
           <input
             value={contractor.municipalityName}
             disabled
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-slate-100 text-slate-700 min-h-[44px]"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-slate-100 text-ink-muted min-h-[44px]"
           />
         </Field>
 
@@ -1953,7 +1953,7 @@ function ContractorEditModal({
           <input
             value={form.businessNo}
             disabled
-            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold bg-slate-100 text-slate-700 min-h-[44px]"
+            className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold bg-slate-100 text-ink-muted min-h-[44px]"
           />
         </Field>
 
@@ -1989,7 +1989,7 @@ function ContractorEditModal({
         </Field>
 
         <div className="border-t-2 border-purple-200 pt-3">
-          <div className="text-xs font-extrabold text-purple-900 mb-2">📋 회사 기본 정보</div>
+          <div className="text-sm font-extrabold text-purple-900 mb-2">📋 회사 기본 정보</div>
           <div className="grid grid-cols-2 gap-2">
             <Field label="대표자">
               <input
@@ -2019,7 +2019,7 @@ function ContractorEditModal({
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">
+          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-sm font-bold text-red-800">
             오류: {error}
           </div>
         )}
@@ -2177,7 +2177,7 @@ function ContractorCreateModal({
         </Field>
 
         <div className="border-t-2 border-purple-200 pt-3">
-          <div className="text-xs font-extrabold text-purple-900 mb-2">📋 회사 기본 정보 (선택)</div>
+          <div className="text-sm font-extrabold text-purple-900 mb-2">📋 회사 기본 정보 (선택)</div>
           <div className="grid grid-cols-2 gap-2">
             <Field label="대표자">
               <input
@@ -2207,7 +2207,7 @@ function ContractorCreateModal({
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-xs font-bold text-red-800">
+          <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-sm font-bold text-red-800">
             오류: {error}
           </div>
         )}
@@ -2298,7 +2298,7 @@ function FacilityOpsTab() {
             className={`px-3 py-1.5 rounded text-sm font-bold border transition ${
               subTab === t
                 ? 'bg-purple-600 text-white border-purple-600'
-                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                : 'bg-white text-ink-muted border-slate-300 hover:bg-slate-50'
             }`}
           >
             {t === 'record' ? '운전기록 입력' : t === 'summary' ? '집계 현황' : '출력'}
@@ -2415,7 +2415,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
 
   const numField = (label: string, key: keyof typeof form) => (
     <label className="flex flex-col gap-1">
-      <span className="text-xs font-bold text-ink-muted">{label}</span>
+      <span className="text-sm font-bold text-ink-muted">{label}</span>
       <input
         type="number"
         min="0"
@@ -2431,7 +2431,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">시설</span>
+          <span className="text-sm font-bold text-ink-muted">시설</span>
           <select
             value={facilityId}
             onChange={(e) => setFacilityId(e.target.value)}
@@ -2443,7 +2443,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">운영일자</span>
+          <span className="text-sm font-bold text-ink-muted">운영일자</span>
           <input
             type="date"
             value={opsDate}
@@ -2458,7 +2458,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
         {numField('음식가동(h)', 'foodOpHours')}
         {numField('비가동(h)', 'downtimeHours')}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">비가동 사유</span>
+          <span className="text-sm font-bold text-ink-muted">비가동 사유</span>
           <input
             type="text"
             value={form.downtimeReason}
@@ -2476,7 +2476,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
         {numField('음식반출(t)', 'foodTransferTon')}
         {numField('전일전력(kWh)', 'prevDayPowerKwh')}
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">비고</span>
+          <span className="text-sm font-bold text-ink-muted">비고</span>
           <input
             type="text"
             value={form.notes}
@@ -2508,7 +2508,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
         <div>
           <h4 className="text-sm font-extrabold text-ink mb-2">최근 7일 이력</h4>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs min-w-[700px]">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="bg-surface-soft">
                   {['날짜', '일반가동', '음식가동', '비가동', '일반처리', '음식처리', '전일전력'].map((h) => (
@@ -2595,11 +2595,11 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">시작일</span>
+          <span className="text-sm font-bold text-ink-muted">시작일</span>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">종료일</span>
+          <span className="text-sm font-bold text-ink-muted">종료일</span>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
         </label>
         <button
@@ -2633,7 +2633,7 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
               },
             ].map((k) => (
               <div key={k.label} className="bg-surface-soft border border-line rounded-lg p-3 text-center">
-                <div className="text-xs text-ink-muted font-bold mb-1">{k.label}</div>
+                <div className="text-sm text-ink-muted font-bold mb-1">{k.label}</div>
                 <div className={`text-lg font-extrabold ${'highlight' in k && k.highlight ? k.highlight : 'text-ink'}`}>{k.value}</div>
               </div>
             ))}
@@ -2643,7 +2643,7 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
 
       {items.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-xs min-w-[700px]">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="bg-surface-soft">
                 {['날짜', '시설', '일반처리(t)', '음식처리(t)', '일반가동(h)', '음식가동(h)', '전일전력(kWh)', '가동률(%)'].map((h) => (
@@ -2711,7 +2711,7 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">시설 (전체: 선택 안 함)</span>
+          <span className="text-sm font-bold text-ink-muted">시설 (전체: 선택 안 함)</span>
           <select
             value={facilityId}
             onChange={(e) => setFacilityId(e.target.value)}
@@ -2724,11 +2724,11 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">시작일</span>
+          <span className="text-sm font-bold text-ink-muted">시작일</span>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-bold text-ink-muted">종료일</span>
+          <span className="text-sm font-bold text-ink-muted">종료일</span>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-line rounded px-2 py-1.5 text-sm" />
         </label>
       </div>
@@ -2749,7 +2749,7 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
           📄 PDF 다운로드 (A4 가로)
         </button>
       </div>
-      <p className="text-xs text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 14개 컬럼</p>
+      <p className="text-sm text-ink-muted">집하장 / 운영일자 / 가동시간 / 처리량 / 수거량 / 반출량 / 전력 14개 컬럼</p>
     </div>
   );
 }
@@ -2793,7 +2793,7 @@ function DataResetTab() {
         <p className="text-sm text-red-600 font-semibold">
           아래 데이터가 복구 불가능하게 삭제됩니다. 정식 도입 전 테스트 데이터 정리 전용입니다.
         </p>
-        <ul className="text-xs text-red-600 font-bold list-disc ml-4 space-y-0.5">
+        <ul className="text-sm text-red-600 font-bold list-disc ml-4 space-y-0.5">
           <li>근태 기록 (출근/퇴근)</li>
           <li>차량 운행일지</li>
           <li>민원 접수 이력</li>
@@ -2803,14 +2803,14 @@ function DataResetTab() {
           <li>공지사항</li>
           <li>감사 로그</li>
         </ul>
-        <p className="text-xs font-extrabold text-emerald-700 mt-2">
+        <p className="text-sm font-extrabold text-emerald-700 mt-2">
           ✓ 보존: 인원등록(사용자), 차량등록, 출퇴근제한설정, 부서·구역 설정
         </p>
       </div>
 
       <div className="space-y-3">
         <label className="block">
-          <span className="text-xs font-extrabold text-ink block mb-1">대상 위탁업체 *</span>
+          <span className="text-sm font-extrabold text-ink block mb-1">대상 위탁업체 *</span>
           <select value={contractorId} onChange={(e) => setContractorId(e.target.value)}
             className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus:border-red-400">
             <option value="">— 회사 선택 —</option>
@@ -2819,7 +2819,7 @@ function DataResetTab() {
         </label>
 
         <label className="block">
-          <span className="text-xs font-extrabold text-ink block mb-1">
+          <span className="text-sm font-extrabold text-ink block mb-1">
             확인 문구 입력 — <code className="bg-red-100 text-red-700 px-1 rounded">RESET</code> 을 정확히 입력하세요
           </span>
           <input value={confirm} onChange={(e) => setConfirm(e.target.value)}
@@ -2827,7 +2827,7 @@ function DataResetTab() {
             className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-red-400" />
         </label>
 
-        {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-700">{error}</div>}
+        {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-700">{error}</div>}
 
         <button
           onClick={doReset}
@@ -2841,7 +2841,7 @@ function DataResetTab() {
       {result && (
         <div className="bg-green-50 border border-green-300 rounded-xl p-4">
           <div className="text-sm font-extrabold text-success mb-2">✓ 초기화 완료</div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-mono">
             {Object.entries(result).map(([k, v]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-ink-muted">{k}</span>

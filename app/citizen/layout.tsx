@@ -21,7 +21,7 @@ export default function CitizenLayout({ children }: { children: React.ReactNode 
             />
             <div className="flex-1 border-l border-white/15 pl-3">
               <div className="text-[0.8125rem] font-extrabold leading-tight">폐기물 민원 신고</div>
-              <div className="text-[0.5625rem] font-mono font-bold text-slate-500 mt-0.5">시민용 · 특허 10-2024-0084638</div>
+              <div className="text-[0.5625rem] font-mono font-bold text-ink-faint mt-0.5">시민용 · 특허 10-2024-0084638</div>
             </div>
           </div>
         </header>

@@ -438,7 +438,7 @@ export default function SafetyWorkerClient({
               <div className="text-sm font-semibold text-ink-mid mt-0.5">{tbm.signCount}명 서명 완료</div>
             </div>
             <a href="/worker/safety/tbm-history"
-              className="text-xs font-bold text-accent hover:underline">
+              className="text-sm font-bold text-accent hover:underline">
               📋 나의 TBM이력 보기
             </a>
             {tbm.signed && <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border-2 border-green-300">✓ 서명 완료</span>}
@@ -498,7 +498,7 @@ export default function SafetyWorkerClient({
       {/* AVAC: 집하장별 공지 */}
       {isAvac && selectedFacilityId && avacNotices.length > 0 && (
         <section className="space-y-2">
-          <div className="text-xs font-extrabold text-indigo-800 px-1">🏗 집하장 공지</div>
+          <div className="text-sm font-extrabold text-indigo-800 px-1">🏗 집하장 공지</div>
           {avacNotices.map((n) => (
             <div key={n.id} className={`rounded-xl border-2 px-4 py-3 ${
               n.severity === 'CRITICAL' ? 'bg-red-50 border-red-300' :
@@ -555,7 +555,7 @@ export default function SafetyWorkerClient({
               )}
               {/* 제출 완료 후 사유 표시 */}
               {!item.ok && submitted && item.reason && (
-                <div className="px-4 pb-3 text-xs text-warn font-semibold">
+                <div className="px-4 pb-3 text-sm text-warn font-semibold">
                   사유: {item.reason}
                 </div>
               )}
@@ -604,12 +604,12 @@ export default function SafetyWorkerClient({
         </div>
         {reportType && (
           <div className="px-4 pb-4 space-y-3 border-t border-line pt-4">
-            <div className="text-xs font-extrabold text-ink">
+            <div className="text-sm font-extrabold text-ink">
               {reportType === 'NEAR_MISS' ? '아차사고 보고' : '재해 발생 보고'}
             </div>
             {reportType === 'INCIDENT' && (
               <>
-                <label className="block text-xs font-extrabold text-ink mb-1">심각도</label>
+                <label className="block text-sm font-extrabold text-ink mb-1">심각도</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { v: 'MINOR', label: '경미', color: 'border-info text-info' },
@@ -617,7 +617,7 @@ export default function SafetyWorkerClient({
                     { v: 'SEVERE', label: '중상', color: 'border-danger text-danger' },
                     { v: 'FATAL', label: '사망', color: 'border-danger text-danger bg-red-50' },
                   ].map((opt) => (
-                    <button key={opt.v} onClick={() => setSeverity(opt.v as 'MINOR' | 'INJURY' | 'SEVERE' | 'FATAL')} className={`px-2 py-2 rounded-md border-2 text-xs font-extrabold ${opt.color} ${severity === opt.v ? 'ring-2 ring-accent ring-offset-1' : ''}`}>
+                    <button key={opt.v} onClick={() => setSeverity(opt.v as 'MINOR' | 'INJURY' | 'SEVERE' | 'FATAL')} className={`px-2 py-2 rounded-md border-2 text-sm font-extrabold ${opt.color} ${severity === opt.v ? 'ring-2 ring-accent ring-offset-1' : ''}`}>
                       {opt.label}
                     </button>
                   ))}
@@ -645,7 +645,7 @@ export default function SafetyWorkerClient({
         {sosResult && (
           <div className="bg-surface border-2 border-danger rounded-md px-3 py-2 mb-3 text-sm font-bold text-ink">
             ✓ 보고서 #{sosResult.reportId} 생성 · {sosResult.recipients}곳 알림
-            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-mono font-extrabold ${sosResult.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-sm font-mono font-extrabold ${sosResult.provider === 'SIMULATION' ? 'bg-amber-100 text-warn' : 'bg-green-100 text-success'}`}>
               {sosResult.provider === 'SIMULATION' ? 'SIMULATION' : `provider=${sosResult.provider}`}
             </span>
           </div>
@@ -677,11 +677,11 @@ export default function SafetyWorkerClient({
           <section className="bg-surface rounded-xl border-2 border-indigo-300 shadow-card overflow-hidden">
             <header className="px-4 py-3 bg-indigo-50 border-b-2 border-indigo-200">
               <div className="text-base font-extrabold text-indigo-800">🏭 TBM 작성 — {operatorFacility.name}</div>
-              <div className="text-xs text-indigo-600 mt-0.5">시설 담당자 권한 · 오늘의 TBM을 직접 등록합니다</div>
+              <div className="text-sm text-indigo-600 mt-0.5">시설 담당자 권한 · 오늘의 TBM을 직접 등록합니다</div>
             </header>
             <div className="p-4 space-y-3">
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">주제 *</span>
+                <span className="text-sm font-extrabold text-ink-muted">주제 *</span>
                 <input
                   value={opTbmTopic}
                   onChange={(e) => setOpTbmTopic(e.target.value)}
@@ -691,7 +691,7 @@ export default function SafetyWorkerClient({
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-extrabold text-ink-muted">리더 (선택)</span>
+                  <span className="text-sm font-extrabold text-ink-muted">리더 (선택)</span>
                   <input
                     value={opTbmLeader}
                     onChange={(e) => setOpTbmLeader(e.target.value)}
@@ -700,7 +700,7 @@ export default function SafetyWorkerClient({
                   />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-extrabold text-ink-muted">장소 (선택)</span>
+                  <span className="text-sm font-extrabold text-ink-muted">장소 (선택)</span>
                   <input
                     value={opTbmLocation}
                     onChange={(e) => setOpTbmLocation(e.target.value)}
@@ -710,7 +710,7 @@ export default function SafetyWorkerClient({
                 </label>
               </div>
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">위험요인 (선택)</span>
+                <span className="text-sm font-extrabold text-ink-muted">위험요인 (선택)</span>
                 <textarea
                   value={opTbmHazards}
                   onChange={(e) => setOpTbmHazards(e.target.value)}
@@ -720,7 +720,7 @@ export default function SafetyWorkerClient({
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">내용 (선택)</span>
+                <span className="text-sm font-extrabold text-ink-muted">내용 (선택)</span>
                 <textarea
                   value={opTbmContent}
                   onChange={(e) => setOpTbmContent(e.target.value)}
@@ -748,11 +748,11 @@ export default function SafetyWorkerClient({
         <section className="bg-surface rounded-xl border-2 border-cyan-300 shadow-card overflow-hidden">
           <header className="px-4 py-3 bg-cyan-50 border-b-2 border-cyan-200">
             <div className="text-base font-extrabold text-cyan-800">📋 TBM 작성 (TBM 담당자)</div>
-            <div className="text-xs text-cyan-600 mt-0.5">오늘의 안전교육(TBM)을 직접 등록합니다</div>
+            <div className="text-sm text-cyan-600 mt-0.5">오늘의 안전교육(TBM)을 직접 등록합니다</div>
           </header>
           <div className="p-4 space-y-3">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-extrabold text-ink-muted">주제 *</span>
+              <span className="text-sm font-extrabold text-ink-muted">주제 *</span>
               <input
                 value={opTbmTopic}
                 onChange={(e) => setOpTbmTopic(e.target.value)}
@@ -762,7 +762,7 @@ export default function SafetyWorkerClient({
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">리더 (선택)</span>
+                <span className="text-sm font-extrabold text-ink-muted">리더 (선택)</span>
                 <input
                   value={opTbmLeader}
                   onChange={(e) => setOpTbmLeader(e.target.value)}
@@ -771,7 +771,7 @@ export default function SafetyWorkerClient({
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-extrabold text-ink-muted">장소 (선택)</span>
+                <span className="text-sm font-extrabold text-ink-muted">장소 (선택)</span>
                 <input
                   value={opTbmLocation}
                   onChange={(e) => setOpTbmLocation(e.target.value)}
@@ -781,7 +781,7 @@ export default function SafetyWorkerClient({
               </label>
             </div>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-extrabold text-ink-muted">위험요인 (선택)</span>
+              <span className="text-sm font-extrabold text-ink-muted">위험요인 (선택)</span>
               <textarea
                 value={opTbmHazards}
                 onChange={(e) => setOpTbmHazards(e.target.value)}
@@ -791,7 +791,7 @@ export default function SafetyWorkerClient({
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-extrabold text-ink-muted">내용 (선택)</span>
+              <span className="text-sm font-extrabold text-ink-muted">내용 (선택)</span>
               <textarea
                 value={opTbmContent}
                 onChange={(e) => setOpTbmContent(e.target.value)}
@@ -855,7 +855,7 @@ export default function SafetyWorkerClient({
               <div className="text-base font-extrabold text-red-900">⚠ 기상 안전 공지</div>
               <div className="text-sm font-semibold text-red-700 mt-0.5">아래 공지를 확인하고 휴식 인증 사진을 등록해 주세요.</div>
             </div>
-            <a href="/worker/safety/weather-notices" className="text-xs font-bold text-red-700 hover:underline whitespace-nowrap">
+            <a href="/worker/safety/weather-notices" className="text-sm font-bold text-red-700 hover:underline whitespace-nowrap">
               전체 이력 →
             </a>
           </header>
@@ -919,21 +919,21 @@ function WeatherCard({ w }: { w: WeatherSnapshot }) {
           {w.condition === 'CLEAR' ? '☀️' : w.condition === 'CLOUDY' ? '⛅' : w.condition === 'RAIN' ? '🌧' : w.condition === 'SNOW' ? '❄️' : '🌪'}
         </div>
         <div className="flex-1">
-          <div className="text-xs font-extrabold tracking-widest">{w.region.replace('서울특별시 ', '')} · {w.conditionLabel}</div>
+          <div className="text-sm font-extrabold tracking-widest">{w.region.replace('서울특별시 ', '')} · {w.conditionLabel}</div>
           <div className="font-mono text-2xl font-black tracking-tight">
             {w.temp}°C
             <span className="text-sm font-bold ml-2">체감 {w.feelsLike}°C</span>
           </div>
-          <div className="text-xs font-bold mt-0.5 font-mono">
+          <div className="text-sm font-bold mt-0.5 font-mono">
             습도 {w.humidity}% · 풍속 {w.windSpeed}m/s · PM10 {w.pm10}㎍ ({w.pm10Label})
           </div>
         </div>
-        <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-extrabold border bg-white/60">
+        <span className="px-2.5 py-0.5 rounded-full text-sm font-mono font-extrabold border bg-white/60">
           {w.hazardLabel}
         </span>
       </div>
       {w.hazardLevel !== 'NONE' && (
-        <div className="mt-2 pt-2 border-t border-current/20 text-xs font-extrabold">
+        <div className="mt-2 pt-2 border-t border-current/20 text-sm font-extrabold">
           ⚠ {w.hazardReason} — {w.workAdvice}
         </div>
       )}

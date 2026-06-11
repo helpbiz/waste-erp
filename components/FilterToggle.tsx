@@ -41,7 +41,7 @@ export function FilterToggle({
             </span>
           )}
         </span>
-        <span className="ml-auto text-ink-muted text-xs" aria-hidden="true">
+        <span className="ml-auto text-ink-muted text-sm" aria-hidden="true">
           {open ? '▴' : '▾'}
         </span>
       </button>

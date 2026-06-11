@@ -91,7 +91,7 @@ export default function PunchRestrictionsClient({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-black text-ink">출퇴근 제한 관리</h2>
-          <p className="text-xs font-bold text-ink-muted mt-1">부서별 지정 시간대·장소 기반 출퇴근 허용 규칙</p>
+          <p className="text-sm font-bold text-ink-muted mt-1">부서별 지정 시간대·장소 기반 출퇴근 허용 규칙</p>
         </div>
         <button
           onClick={() => setEditing('NEW')}
@@ -159,16 +159,16 @@ export default function PunchRestrictionsClient({
                   </td>
                   <td className="px-4 py-2.5">
                     {r.requireLocation && r.lat != null
-                      ? <span className="text-xs font-bold text-accent">{r.locationLabel ?? '지정 좌표'} ({r.radiusMeters}m)</span>
-                      : <span className="text-ink-faint text-xs">—</span>}
+                      ? <span className="text-sm font-bold text-accent">{r.locationLabel ?? '지정 좌표'} ({r.radiusMeters}m)</span>
+                      : <span className="text-ink-faint text-sm">—</span>}
                   </td>
-                  <td className="px-4 py-2.5 font-bold text-xs text-ink">
+                  <td className="px-4 py-2.5 font-bold text-sm text-ink">
                     {r.allowedDays && r.allowedDays.length > 0
                       ? r.allowedDays.map((d) => ['월','화','수','목','금','토','일'][d]).join('')
                       : <span className="text-ink-faint">매일</span>}
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border ${r.active ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-slate-100 text-slate-500 border-slate-300'}`}>
+                    <span className={`text-[0.6875rem] font-extrabold px-2 py-0.5 rounded border ${r.active ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-slate-100 text-ink-faint border-slate-300'}`}>
                       {r.active ? '활성' : '비활성'}
                     </span>
                   </td>
@@ -177,21 +177,21 @@ export default function PunchRestrictionsClient({
                       <button
                         onClick={() => setEditing(r)}
                         disabled={busy}
-                        className="px-2.5 py-1 rounded text-xs font-extrabold border border-accent text-accent hover:bg-accent hover:text-white disabled:opacity-50 transition-colors"
+                        className="px-2.5 py-1 rounded text-sm font-extrabold border border-accent text-accent hover:bg-accent hover:text-white disabled:opacity-50 transition-colors"
                       >
                         수정
                       </button>
                       <button
                         onClick={() => toggleActive(r)}
                         disabled={busy}
-                        className="px-2.5 py-1 rounded text-xs font-extrabold border border-slate-400 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                        className="px-2.5 py-1 rounded text-sm font-extrabold border border-slate-400 text-ink-faint hover:bg-slate-100 disabled:opacity-50"
                       >
                         {r.active ? '비활성화' : '활성화'}
                       </button>
                       <button
                         onClick={() => del(r)}
                         disabled={busy}
-                        className="px-2.5 py-1 rounded text-xs font-extrabold border border-danger text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-colors"
+                        className="px-2.5 py-1 rounded text-sm font-extrabold border border-danger text-danger hover:bg-danger hover:text-white disabled:opacity-50 transition-colors"
                       >
                         삭제
                       </button>
@@ -316,12 +316,12 @@ function RestrictionFormModal({
               <span className="text-sm font-extrabold text-amber-900">선택 요일 완전 차단 모드</span>
             </label>
             {blockAll ? (
-              <p className="text-xs font-bold text-amber-700">
+              <p className="text-sm font-bold text-amber-700">
                 아래에서 선택한 요일은 출근·퇴근 모두 아예 불가능하게 됩니다.<br />
                 요일을 선택하지 않으면 매일 차단됩니다.
               </p>
             ) : (
-              <p className="text-xs text-amber-700">
+              <p className="text-sm text-amber-700">
                 체크 시 선택 요일의 출·퇴근을 모두 차단합니다.<br />
                 예: 토(5)+일(6) 선택 → 주말 출퇴근 완전 차단
               </p>
@@ -364,7 +364,7 @@ function RestrictionFormModal({
                     key={val}
                     type="button"
                     onClick={() => setAllowedDays(checked ? allowedDays.filter((d) => d !== dayNum) : [...allowedDays, dayNum].sort((a, b) => a - b))}
-                    className={`w-9 h-9 rounded-full text-xs font-extrabold border-2 transition-colors ${checked ? 'bg-accent text-white border-accent' : 'bg-surface text-ink-muted border-line hover:border-accent'} ${(dayNum === 5 || dayNum === 6) ? 'text-red-500' : ''}`}
+                    className={`w-9 h-9 rounded-full text-sm font-extrabold border-2 transition-colors ${checked ? 'bg-accent text-white border-accent' : 'bg-surface text-ink-muted border-line hover:border-accent'} ${(dayNum === 5 || dayNum === 6) ? 'text-red-500' : ''}`}
                   >
                     {label}
                   </button>
@@ -382,7 +382,7 @@ function RestrictionFormModal({
               <input type="checkbox" checked={requireLocation} onChange={(e) => setRequireLocation(e.target.checked)}
                 className="w-4 h-4 rounded border-2 border-line accent-accent" />
               <span className="text-sm font-extrabold text-ink">지정 장소 제한 사용</span>
-              <span className="text-xs font-bold text-slate-500 ml-1">(출근·퇴근 모두 적용)</span>
+              <span className="text-sm font-bold text-ink-faint ml-1">(출근·퇴근 모두 적용)</span>
             </label>
             {requireLocation && (
               <>
@@ -404,7 +404,7 @@ function RestrictionFormModal({
                       className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus:border-accent" />
                   </Field>
                 </div>
-                <p className="text-xs font-mono text-ink-muted">지정 좌표를 모르면 Google Maps에서 우클릭 → 좌표 복사</p>
+                <p className="text-sm font-mono text-ink-muted">지정 좌표를 모르면 Google Maps에서 우클릭 → 좌표 복사</p>
               </>
             )}
           </div>
@@ -415,7 +415,7 @@ function RestrictionFormModal({
             <span className="text-sm font-extrabold text-ink">규칙 활성화</span>
           </label>
 
-          {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-xs font-bold text-red-800">{error}</div>}
+          {error && <div className="bg-red-50 border border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-800">{error}</div>}
         </div>
         <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2">
           <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold">취소</button>

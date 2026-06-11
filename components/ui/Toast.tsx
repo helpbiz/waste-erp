@@ -72,7 +72,7 @@ const VARIANT_STYLES: Record<ToastVariant, string> = {
   success: 'bg-green-600 text-white',
   error: 'bg-red-600 text-white',
   info: 'bg-slate-800 text-white',
-  warning: 'bg-amber-500 text-slate-900',
+  warning: 'bg-amber-500 text-ink-muted',
 };
 
 const ICONS: Record<ToastVariant, string> = {

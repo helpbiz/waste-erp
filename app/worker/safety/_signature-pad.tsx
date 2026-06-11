@@ -114,7 +114,7 @@ export default function SignaturePad({
           type="button"
           onClick={clear}
           disabled={disabled}
-          className="text-xs font-extrabold text-ink-muted hover:text-danger px-3 py-1.5 rounded-md border border-line hover:border-danger transition disabled:opacity-50"
+          className="text-sm font-extrabold text-ink-muted hover:text-danger px-3 py-1.5 rounded-md border border-line hover:border-danger transition disabled:opacity-50"
         >
           지우기
         </button>

@@ -45,7 +45,7 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
         </div>
         <div>
           <div className="text-base font-extrabold text-ink">{name}</div>
-          <div className="text-xs font-mono font-bold text-ink-muted mt-0.5">{role}</div>
+          <div className="text-sm font-mono font-bold text-ink-muted mt-0.5">{role}</div>
         </div>
       </div>
 
@@ -88,12 +88,12 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
           </label>
 
           {error && (
-            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700">
+            <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm font-bold text-red-700">
               {error}
             </div>
           )}
           {done && (
-            <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
+            <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-sm font-bold text-emerald-700">
               ✅ 비밀번호가 변경되었습니다.
             </div>
           )}
@@ -110,7 +110,7 @@ export default function AdminProfileClient({ name, role }: { name: string; role:
       {/* 아이폰 홈 화면 추가 안내 */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <h3 className="text-sm font-extrabold text-blue-900">📱 아이폰 홈 화면 설치 방법</h3>
-        <ol className="text-xs text-blue-800 font-semibold space-y-1 list-decimal list-inside leading-relaxed">
+        <ol className="text-sm text-blue-800 font-semibold space-y-1 list-decimal list-inside leading-relaxed">
           <li>Safari 브라우저로 이 앱에 접속합니다 (Chrome/Firefox 불가)</li>
           <li>화면 하단의 <strong>공유 버튼</strong> (□↑ 아이콘)을 탭합니다</li>
           <li><strong>&quot;홈 화면에 추가&quot;</strong> 를 선택합니다</li>

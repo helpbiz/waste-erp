@@ -24,7 +24,7 @@ const CATS: { id: Cat; label: string; color: string }[] = [
   { id: 'SAFETY',     label: '안전',       color: 'bg-red-100 text-red-800 border-red-200' },
   { id: 'MANAGEMENT', label: '관리/소통',  color: 'bg-violet-100 text-violet-800 border-violet-200' },
   { id: 'WELFARE',    label: '복지/처우',  color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { id: 'OTHER',      label: '기타',       color: 'bg-slate-100 text-slate-800 border-slate-200' },
+  { id: 'OTHER',      label: '기타',       color: 'bg-slate-100 text-ink-muted border-slate-200' },
 ];
 
 type Item = {
@@ -133,7 +133,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-2 rounded-md text-xs font-extrabold transition-colors ${
+      className={`flex-1 py-2 rounded-md text-sm font-extrabold transition-colors ${
         active ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted'
       }`}
     >
@@ -241,7 +241,7 @@ function WriteForm({
             <button
               key={c.id}
               onClick={() => setCategory(c.id)}
-              className={`px-2 py-2 rounded-lg text-xs font-extrabold border-2 transition-all ${
+              className={`px-2 py-2 rounded-lg text-sm font-extrabold border-2 transition-all ${
                 category === c.id ? `${c.color} ring-2 ring-offset-1 ring-indigo-400` : 'bg-surface text-ink-muted border-line'
               }`}
             >
@@ -336,10 +336,10 @@ function WriteForm({
 function ItemList({ items, loading, mineOnly }: { items: Item[]; loading: boolean; mineOnly: boolean }) {
   const filtered = useMemo(() => (mineOnly ? items.filter((i) => i.isMine) : items), [items, mineOnly]);
 
-  if (loading) return <div className="text-center text-xs text-ink-muted py-6">불러오는 중…</div>;
+  if (loading) return <div className="text-center text-sm text-ink-muted py-6">불러오는 중…</div>;
   if (filtered.length === 0) {
     return (
-      <div className="text-center text-xs text-ink-muted py-10 bg-surface-soft rounded-lg">
+      <div className="text-center text-sm text-ink-muted py-10 bg-surface-soft rounded-lg">
         {mineOnly ? '아직 작성한 건의가 없습니다.' : '아직 등록된 건의가 없습니다.'}
       </div>
     );
@@ -363,7 +363,7 @@ function ItemCard({ item }: { item: Item }) {
         {item.isMine && <span className="text-[0.625rem] font-extrabold text-indigo-600">내 글</span>}
         <span className="text-[0.625rem] text-ink-muted ml-auto">{formatDate(item.createdAt)}</span>
       </div>
-      <p className="text-xs text-ink whitespace-pre-wrap leading-relaxed">{item.content}</p>
+      <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">{item.content}</p>
       {item.photos.length > 0 && (
         <div className="flex gap-1.5 mt-2">
           {item.photos.map((p, i) => (
@@ -378,7 +378,7 @@ function ItemCard({ item }: { item: Item }) {
               <div className="text-[0.625rem] font-extrabold text-emerald-900 mb-1">
                 💬 {r.replierName} ({r.replierRole}) · {formatDate(r.createdAt)}
               </div>
-              <p className="text-xs text-emerald-900 whitespace-pre-wrap leading-relaxed">{r.content}</p>
+              <p className="text-sm text-emerald-900 whitespace-pre-wrap leading-relaxed">{r.content}</p>
             </div>
           ))}
         </div>
@@ -392,7 +392,7 @@ function StatusBadge({ status }: { status: Item['status'] }) {
     NEW:       { label: '신규',     cls: 'bg-blue-100 text-blue-800' },
     REVIEWING: { label: '검토 중',  cls: 'bg-amber-100 text-amber-900' },
     ANSWERED:  { label: '답변 완료', cls: 'bg-emerald-100 text-emerald-800' },
-    ARCHIVED:  { label: '보관',     cls: 'bg-slate-100 text-slate-700' },
+    ARCHIVED:  { label: '보관',     cls: 'bg-slate-100 text-ink-muted' },
   };
   const m = map[status];
   return <span className={`px-1.5 py-0.5 rounded text-[0.625rem] font-extrabold ${m.cls}`}>{m.label}</span>;

@@ -79,7 +79,7 @@ export default function DataCleanupClient() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h2 className="text-xl font-black text-ink">데이터 일괄 삭제</h2>
-        <p className="text-xs font-bold text-ink-muted mt-1">
+        <p className="text-sm font-bold text-ink-muted mt-1">
           항목별로 일자 기준 이전 데이터를 일괄 삭제합니다. 사용자·차량 등록 데이터는 삭제 대상에서 제외됩니다.
         </p>
       </div>
@@ -89,7 +89,7 @@ export default function DataCleanupClient() {
         <span className="text-2xl flex-shrink-0">⚠</span>
         <div>
           <div className="font-extrabold text-red-900 text-sm">삭제된 데이터는 복구 불가능합니다</div>
-          <div className="text-xs font-bold text-red-700 mt-1 leading-relaxed">
+          <div className="text-sm font-bold text-red-700 mt-1 leading-relaxed">
             반드시 삭제 전 데이터 백업을 권장합니다.<br />
             모든 삭제 작업은 감사 로그에 영구 기록됩니다.
           </div>
@@ -136,7 +136,7 @@ export default function DataCleanupClient() {
               {busy ? '조회 중…' : '건수 조회'}
             </button>
           </div>
-          <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <p className="text-sm font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
             ⚠ {selected.warn}
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function DataCleanupClient() {
         {/* 건수 미리보기 */}
         {previewCount !== null && (
           <div className={`rounded-xl px-4 py-3 border-2 ${
-            previewCount === 0 ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-red-50 border-red-300 text-red-900'
+            previewCount === 0 ? 'bg-slate-50 border-slate-200 text-ink-faint' : 'bg-red-50 border-red-300 text-red-900'
           }`}>
             <div className="text-sm font-extrabold">
               {previewCount === 0
@@ -197,7 +197,7 @@ export default function DataCleanupClient() {
       {/* 사용 안내 */}
       <div className="bg-slate-50 border border-line rounded-xl px-5 py-4 space-y-2">
         <div className="text-sm font-extrabold text-ink">사용 예시</div>
-        <ul className="text-xs font-bold text-ink-muted space-y-1 list-disc list-inside">
+        <ul className="text-sm font-bold text-ink-muted space-y-1 list-disc list-inside">
           <li>차량일지 5/24까지 삭제 → 차량일지 선택 + 기준일 2026-05-24 입력</li>
           <li>민원일지 5/10까지 삭제 → 민원일지 선택 + 기준일 2026-05-10 입력</li>
           <li>삭제 제외 항목: 사용자 등록, 차량 등록, 부서/직책/직급 설정</li>

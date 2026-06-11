@@ -162,23 +162,23 @@ export default function ContractorInfoSettingsPage() {
 
       {/* 지자체 관할 정보 (읽기 전용) */}
       <div className="bg-surface-soft border border-line rounded-xl p-5 space-y-3">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">지자체 관할 정보 (읽기 전용)</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide mb-1">지자체 관할 정보 (읽기 전용)</div>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs font-bold text-ink-muted">사업자등록번호</dt>
+            <dt className="text-sm font-bold text-ink-muted">사업자등록번호</dt>
             <dd className="font-mono font-bold text-ink mt-0.5">{info.businessNo}</dd>
           </div>
           <div>
-            <dt className="text-xs font-bold text-ink-muted">관할 지자체</dt>
+            <dt className="text-sm font-bold text-ink-muted">관할 지자체</dt>
             <dd className="font-bold text-ink mt-0.5">{info.municipalityName}</dd>
           </div>
           <div>
-            <dt className="text-xs font-bold text-ink-muted">계약 상태</dt>
+            <dt className="text-sm font-bold text-ink-muted">계약 상태</dt>
             <dd className="mt-0.5">
               <span className={`px-2 py-0.5 rounded-full text-[0.625rem] font-extrabold ${
                 info.status === 'ACTIVE'
                   ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-slate-100 text-slate-600'
+                  : 'bg-slate-100 text-ink-faint'
               }`}>
                 {STATUS_LABEL[info.status] ?? info.status}
               </span>
@@ -186,13 +186,13 @@ export default function ContractorInfoSettingsPage() {
           </div>
           {info.contractStart && (
             <div>
-              <dt className="text-xs font-bold text-ink-muted">계약 시작</dt>
+              <dt className="text-sm font-bold text-ink-muted">계약 시작</dt>
               <dd className="font-mono text-sm text-ink mt-0.5">{info.contractStart}</dd>
             </div>
           )}
           {info.contractEnd && (
             <div>
-              <dt className="text-xs font-bold text-ink-muted">계약 종료</dt>
+              <dt className="text-sm font-bold text-ink-muted">계약 종료</dt>
               <dd className="font-mono text-sm text-ink mt-0.5">{info.contractEnd}</dd>
             </div>
           )}
@@ -201,11 +201,11 @@ export default function ContractorInfoSettingsPage() {
 
       {/* 편집 가능 정보 */}
       <div className="bg-surface border border-line rounded-xl p-5 space-y-4">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-1">회사 정보 편집</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide mb-1">회사 정보 편집</div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-xs font-bold text-ink-muted mb-1">회사명</label>
+            <label className="block text-sm font-bold text-ink-muted mb-1">회사명</label>
             <input
               type="text"
               value={form.companyName}
@@ -216,7 +216,7 @@ export default function ContractorInfoSettingsPage() {
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-xs font-bold text-ink-muted mb-1">대표자명</label>
+            <label className="block text-sm font-bold text-ink-muted mb-1">대표자명</label>
             <input
               type="text"
               value={form.ceoName}
@@ -227,7 +227,7 @@ export default function ContractorInfoSettingsPage() {
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <label className="block text-xs font-bold text-ink-muted mb-1">대표 전화</label>
+            <label className="block text-sm font-bold text-ink-muted mb-1">대표 전화</label>
             <input
               type="tel"
               value={form.phoneMain}
@@ -238,7 +238,7 @@ export default function ContractorInfoSettingsPage() {
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-bold text-ink-muted mb-1">대표 이메일</label>
+            <label className="block text-sm font-bold text-ink-muted mb-1">대표 이메일</label>
             <input
               type="email"
               value={form.emailMain}
@@ -249,7 +249,7 @@ export default function ContractorInfoSettingsPage() {
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-bold text-ink-muted mb-1">차고지 주소 (대표)</label>
+            <label className="block text-sm font-bold text-ink-muted mb-1">차고지 주소 (대표)</label>
             <AddressSearchInput
               value={form.garageAddress}
               onChange={(v) => setForm({ ...form, garageAddress: v })}
@@ -282,7 +282,7 @@ export default function ContractorInfoSettingsPage() {
 
       {/* 차고지 관리 */}
       <div className="bg-surface border border-line rounded-xl p-5 space-y-4">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide">차고지 관리</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide">차고지 관리</div>
 
         {/* 목록 */}
         {garages.length === 0 ? (
@@ -297,13 +297,13 @@ export default function ContractorInfoSettingsPage() {
                 <span className="text-base">🏚</span>
                 <div className="flex-1 min-w-0">
                   {g.name && (
-                    <div className="text-xs font-bold text-ink-muted truncate">{g.name}</div>
+                    <div className="text-sm font-bold text-ink-muted truncate">{g.name}</div>
                   )}
                   <div className="text-sm font-bold text-ink truncate">{g.address}</div>
                 </div>
                 <button
                   onClick={() => deleteGarage(g.id)}
-                  className="shrink-0 text-xs text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50 transition"
+                  className="shrink-0 text-sm text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50 transition"
                 >
                   삭제
                 </button>
@@ -328,7 +328,7 @@ export default function ContractorInfoSettingsPage() {
             placeholder="주소 검색 또는 직접 입력 (필수)"
           />
           {garageError && (
-            <p className="text-xs text-red-600 font-bold">{garageError}</p>
+            <p className="text-sm text-red-600 font-bold">{garageError}</p>
           )}
           <button
             onClick={addGarage}
@@ -342,7 +342,7 @@ export default function ContractorInfoSettingsPage() {
 
       {/* 바로가기 */}
       <div className="bg-surface border border-line rounded-xl p-5">
-        <div className="text-xs font-extrabold text-ink-muted uppercase tracking-wide mb-3">관련 설정</div>
+        <div className="text-sm font-extrabold text-ink-muted uppercase tracking-wide mb-3">관련 설정</div>
         <div className="space-y-2">
           <a
             href="/settings/zones"
@@ -351,7 +351,7 @@ export default function ContractorInfoSettingsPage() {
             <span className="text-lg">🗺</span>
             <div>
               <div className="text-sm font-extrabold text-ink">담당구역 관리</div>
-              <div className="text-xs text-ink-muted">수거구역 및 담당 행정동 등록·관리</div>
+              <div className="text-sm text-ink-muted">수거구역 및 담당 행정동 등록·관리</div>
             </div>
             <span className="ml-auto text-ink-faint text-sm">→</span>
           </a>
@@ -362,7 +362,7 @@ export default function ContractorInfoSettingsPage() {
             <span className="text-lg">🏭</span>
             <div>
               <div className="text-sm font-extrabold text-ink">반입장소 설정</div>
-              <div className="text-xs text-ink-muted">차량일지 작업내역에서 선택할 반입장소 목록</div>
+              <div className="text-sm text-ink-muted">차량일지 작업내역에서 선택할 반입장소 목록</div>
             </div>
             <span className="ml-auto text-ink-faint text-sm">→</span>
           </a>

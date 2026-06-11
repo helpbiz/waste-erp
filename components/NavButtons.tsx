@@ -21,7 +21,7 @@ type Props = {
 };
 
 const COLOR: Record<NavApp, string> = {
-  kakaomap: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900',
+  kakaomap: 'bg-yellow-400 hover:bg-yellow-500 text-ink-muted',
   nmap: 'bg-emerald-500 hover:bg-emerald-600 text-white',
   tmap: 'bg-rose-500 hover:bg-rose-600 text-white',
 };
@@ -78,7 +78,7 @@ export default function NavButtons({ lat, lng, name = '민원지', compact = fal
   const showAllNow = !mounted || showAll || !pref;
   const sizeCls = compact
     ? 'px-1.5 py-1 text-[0.625rem]'
-    : 'px-2.5 py-1.5 text-xs';
+    : 'px-2.5 py-1.5 text-sm';
 
   if (!showAllNow && pref) {
     return (
@@ -94,7 +94,7 @@ export default function NavButtons({ lat, lng, name = '민원지', compact = fal
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className={`rounded bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold ${sizeCls}`}
+          className={`rounded bg-slate-200 hover:bg-slate-300 text-ink-muted font-bold ${sizeCls}`}
           aria-label="내비 변경"
         >
           변경

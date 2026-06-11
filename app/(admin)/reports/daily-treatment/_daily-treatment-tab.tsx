@@ -104,7 +104,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
       {/* 컨트롤 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <label htmlFor="f02-date" className="block text-xs font-mono font-extrabold text-slate-600 mb-1">대상 일자</label>
+          <label htmlFor="f02-date" className="block text-sm font-mono font-extrabold text-ink-faint mb-1">대상 일자</label>
           <input
             id="f02-date"
             type="date"
@@ -115,7 +115,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
         </div>
         {needsContractorPicker && (
           <div className="flex-1 min-w-[200px]">
-            <label htmlFor="f02-contractor" className="block text-xs font-mono font-extrabold text-slate-600 mb-1">위탁업체</label>
+            <label htmlFor="f02-contractor" className="block text-sm font-mono font-extrabold text-ink-faint mb-1">위탁업체</label>
             <select
               id="f02-contractor"
               value={contractorId}
@@ -172,15 +172,15 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
           <table className="w-full border-collapse text-sm mb-4">
             <tbody>
               <tr>
-                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-xs font-extrabold w-[100px]">위탁업체</th>
+                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-sm font-extrabold w-[100px]">위탁업체</th>
                 <td className="px-3 py-2 border border-line text-sm">{data.header.contractor.companyName}</td>
-                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-xs font-extrabold w-[100px]">지자체</th>
+                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-sm font-extrabold w-[100px]">지자체</th>
                 <td className="px-3 py-2 border border-line text-sm">{data.header.municipality?.name ?? '—'}</td>
               </tr>
               <tr>
-                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-xs font-extrabold">사업자번호</th>
+                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-sm font-extrabold">사업자번호</th>
                 <td className="px-3 py-2 border border-line text-sm font-mono">{data.header.contractor.businessNo}</td>
-                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-xs font-extrabold">날짜</th>
+                <th className="bg-slate-100 px-3 py-2 border border-line text-left text-sm font-extrabold">날짜</th>
                 <td className="px-3 py-2 border border-line text-sm font-mono font-bold">{formattedDate}</td>
               </tr>
             </tbody>
@@ -194,19 +194,19 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
               .filter((s): s is NonNullable<typeof s> => Boolean(s))
               .map((s) => (
                 <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
-                  <div className="text-xs font-mono font-extrabold text-ink mb-1">{s.label}</div>
-                  <div className="font-mono font-black text-xl text-ink">{s.totalTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span></div>
+                  <div className="text-sm font-mono font-extrabold text-ink mb-1">{s.label}</div>
+                  <div className="font-mono font-black text-xl text-ink">{s.totalTon.toFixed(3)}<span className="text-sm font-bold ml-0.5">t</span></div>
                 </div>
               ))}
             <div className="border border-accent rounded-md p-3 text-center bg-cyan-50">
-              <div className="text-xs font-mono font-extrabold text-accent mb-1">합계</div>
-              <div className="font-mono font-black text-xl text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span></div>
+              <div className="text-sm font-mono font-extrabold text-accent mb-1">합계</div>
+              <div className="font-mono font-black text-xl text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-sm font-bold ml-0.5">t</span></div>
             </div>
           </div>
 
           {/* 테이블 — 사용자 요청 2026-04-29: 번호 컬럼 삭제 + 비고 컬럼 폭 축소 (20% → 12%).
               번호 5% 제거 + 비고 8% 축소 = 13% 여유분을 차량번호/반입시각/처리시설/성상/중량에 분배. */}
-          <table className="w-full border-collapse text-xs">
+          <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-sidebar text-white">
                 <th className="px-2 py-2 border border-sidebar w-[17%]">차량번호</th>
@@ -220,7 +220,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             <tbody>
               {data.rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 border border-line text-center text-slate-500 italic">
+                  <td colSpan={6} className="px-3 py-8 border border-line text-center text-ink-faint italic">
                     반입 데이터가 없습니다.
                   </td>
                 </tr>
@@ -229,10 +229,10 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
                 <tr key={row.no} className="even:bg-slate-50">
                   <td className="px-2 py-1.5 border border-line font-mono">{row.vehiclePlate ?? '—'}</td>
                   <td className="px-2 py-1.5 border border-line font-mono text-center">{row.intakeTime}</td>
-                  <td className="px-2 py-1.5 border border-line">{row.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}</td>
+                  <td className="px-2 py-1.5 border border-line">{row.facilityName ?? <span className="text-ink-faint italic">(미지정)</span>}</td>
                   <td className="px-2 py-1.5 border border-line text-center">{MATERIAL_LABEL[row.materialCategory] ?? row.materialCategory}</td>
                   <td className="px-2 py-1.5 border border-line text-right font-mono font-bold">{row.weightTon.toFixed(3)}</td>
-                  <td className="px-2 py-1.5 border border-line text-xs">{row.note ?? ''}</td>
+                  <td className="px-2 py-1.5 border border-line text-sm">{row.note ?? ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -247,7 +247,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             )}
           </table>
 
-          <div className="mt-6 text-right text-xs font-mono text-slate-500">
+          <div className="mt-6 text-right text-sm font-mono text-ink-faint">
             생성: {new Date(data.meta.generatedAt).toLocaleString('ko-KR')} · 생성자: {data.meta.generatedBy.name}
           </div>
         </article>

@@ -112,7 +112,7 @@ export default function SignaturePad({
           onPointerCancel={end}
         />
         {showHint && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 text-sm font-bold select-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-ink-faint text-sm font-bold select-none">
             ✍ 여기에 서명해 주세요
           </div>
         )}
@@ -122,7 +122,7 @@ export default function SignaturePad({
           type="button"
           onClick={clear}
           disabled={disabled}
-          className="text-xs font-extrabold text-slate-600 hover:text-red-600 px-3 py-1 rounded-md border border-line hover:border-red-300 transition disabled:opacity-50"
+          className="text-sm font-extrabold text-ink-faint hover:text-red-600 px-3 py-1 rounded-md border border-line hover:border-red-300 transition disabled:opacity-50"
         >
           지우기
         </button>

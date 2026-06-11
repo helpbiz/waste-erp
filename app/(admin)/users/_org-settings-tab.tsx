@@ -52,7 +52,7 @@ export default function OrgSettingsTab() {
         <SubTabBtn active={sub === 'ranks'} onClick={() => setSub('ranks')}>직급 관리</SubTabBtn>
       </div>
 
-      {loading && <p className="text-sm text-slate-400 py-4 text-center">불러오는 중…</p>}
+      {loading && <p className="text-sm text-ink-faint py-4 text-center">불러오는 중…</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {!loading && sub === 'departments' && (
@@ -73,7 +73,7 @@ function SubTabBtn({ active, onClick, children }: { active: boolean; onClick: ()
     <button
       onClick={onClick}
       className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
-        active ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-ink'
+        active ? 'border-primary text-primary' : 'border-transparent text-ink-faint hover:text-ink'
       }`}
     >
       {children}
@@ -132,12 +132,12 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
     <div className="space-y-3">
       <div className="flex justify-between items-center">
         <div>
-          <span className="text-sm text-slate-500">부서 {rows.length}개</span>
-          <span className="text-xs text-slate-400 ml-2">· 출근대장 인쇄 순서는 표시순서(숫자)에 따라 적용됩니다</span>
+          <span className="text-sm text-ink-faint">부서 {rows.length}개</span>
+          <span className="text-sm text-ink-faint ml-2">· 출근대장 인쇄 순서는 표시순서(숫자)에 따라 적용됩니다</span>
         </div>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="px-3 py-1.5 rounded-md text-xs font-bold bg-primary text-white hover:bg-primary/90"
+          className="px-3 py-1.5 rounded-md text-sm font-bold bg-primary text-white hover:bg-primary/90"
         >+ 부서 추가</button>
       </div>
 
@@ -158,12 +158,12 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
               onChange={(e) => setAddForm({ ...addForm, sortOrder: Number(e.target.value) })}
             />
           </div>
-          {errMsg && <p className="text-xs text-red-500">{errMsg}</p>}
+          {errMsg && <p className="text-sm text-red-500">{errMsg}</p>}
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={submitting || !addForm.name}
-              className="px-3 py-1.5 rounded text-xs font-bold bg-primary text-white disabled:opacity-40">저장</button>
+              className="px-3 py-1.5 rounded text-sm font-bold bg-primary text-white disabled:opacity-40">저장</button>
             <button onClick={() => { setShowAdd(false); setErrMsg(''); }}
-              className="px-3 py-1.5 rounded text-xs font-bold border border-line text-slate-600">취소</button>
+              className="px-3 py-1.5 rounded text-sm font-bold border border-line text-ink-faint">취소</button>
           </div>
         </div>
       )}
@@ -171,7 +171,7 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-slate-100 text-xs text-slate-500">
+            <tr className="bg-slate-100 text-sm text-ink-faint">
               <th className="px-3 py-2 text-center font-semibold w-16">순서</th>
               <th className="px-3 py-2 text-left font-semibold">부서명</th>
               <th className="px-3 py-2 text-center font-semibold w-24">TBM 대상</th>
@@ -186,14 +186,14 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
                   <EditDeptRow row={row} onSave={(d) => handleSave(row.id, d)} onCancel={() => setEditId(null)} colSpan={5} />
                 ) : (
                   <>
-                    <td className="px-3 py-2 text-center font-mono text-slate-500">{row.sortOrder}</td>
+                    <td className="px-3 py-2 text-center font-mono text-ink-faint">{row.sortOrder}</td>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
                     <td className="px-3 py-2 text-center">
                       <button
                         onClick={() => handleSave(row.id, { excludeFromTbm: !row.excludeFromTbm })}
-                        className={`px-2 py-0.5 rounded text-xs font-semibold border ${
+                        className={`px-2 py-0.5 rounded text-sm font-semibold border ${
                           row.excludeFromTbm
-                            ? 'bg-slate-100 text-slate-500 border-slate-300'
+                            ? 'bg-slate-100 text-ink-faint border-slate-300'
                             : 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         }`}
                         title={row.excludeFromTbm ? '클릭하면 TBM 대상으로 변경' : '클릭하면 TBM 제외로 변경'}
@@ -206,7 +206,7 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
                       <select
                         value={row.headUserId ?? ''}
                         onChange={(e) => handleSave(row.id, { headUserId: e.target.value || null })}
-                        className="w-full px-2 py-1 rounded border border-line text-xs bg-white focus:outline-none focus:border-accent"
+                        className="w-full px-2 py-1 rounded border border-line text-sm bg-white focus:outline-none focus:border-accent"
                         disabled={row.excludeFromTbm}
                         title={row.excludeFromTbm ? 'TBM 제외 부서는 담당자 지정 불가' : 'TBM 담당자 선택'}
                       >
@@ -222,9 +222,9 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
                     <td className="px-3 py-2 text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditId(row.id)}
-                          className="px-2 py-0.5 rounded text-xs border border-line hover:bg-slate-50">수정</button>
+                          className="px-2 py-0.5 rounded text-sm border border-line hover:bg-slate-50">수정</button>
                         <button onClick={() => handleDelete(row)}
-                          className="px-2 py-0.5 rounded text-xs border border-red-200 text-red-600 hover:bg-red-50">삭제</button>
+                          className="px-2 py-0.5 rounded text-sm border border-red-200 text-red-600 hover:bg-red-50">삭제</button>
                       </div>
                     </td>
                   </>
@@ -232,7 +232,7 @@ function DepartmentsPanel({ rows, workers, onRefresh }: { rows: DeptRow[]; worke
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 부서가 없습니다</td></tr>
+              <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-faint text-sm">등록된 부서가 없습니다</td></tr>
             )}
           </tbody>
         </table>
@@ -257,17 +257,17 @@ function EditDeptRow({ row, onSave, onCancel, colSpan: _cs }: { row: DeptRow; on
         <button
           type="button"
           onClick={() => setExcludeFromTbm((v) => !v)}
-          className={`px-2 py-0.5 rounded text-xs font-semibold border ${excludeFromTbm ? 'bg-slate-100 text-slate-500 border-slate-300' : 'bg-emerald-50 text-emerald-700 border-emerald-300'}`}
+          className={`px-2 py-0.5 rounded text-sm font-semibold border ${excludeFromTbm ? 'bg-slate-100 text-ink-faint border-slate-300' : 'bg-emerald-50 text-emerald-700 border-emerald-300'}`}
         >
           {excludeFromTbm ? '제외' : '대상'}
         </button>
       </td>
       {/* TBM 담당자는 인라인 드롭다운으로 처리 — 수정 행에서는 빈 셀 */}
-      <td className="px-3 py-1 text-xs text-slate-400 italic">인라인 드롭다운으로 변경</td>
+      <td className="px-3 py-1 text-sm text-ink-faint italic">인라인 드롭다운으로 변경</td>
       <td className="px-3 py-1">
         <div className="flex gap-1 justify-center">
-          <button onClick={() => onSave({ name, sortOrder, excludeFromTbm })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
-          <button onClick={onCancel} className="px-2 py-0.5 rounded text-xs border border-line">취소</button>
+          <button onClick={() => onSave({ name, sortOrder, excludeFromTbm })} className="px-2 py-0.5 rounded text-sm bg-primary text-white">저장</button>
+          <button onClick={onCancel} className="px-2 py-0.5 rounded text-sm border border-line">취소</button>
         </div>
       </td>
     </>
@@ -326,10 +326,10 @@ function PositionsPanel({ rows, onRefresh }: { rows: PosRow[]; onRefresh: () => 
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <span className="text-sm text-slate-500">직책 {rows.length}개</span>
+        <span className="text-sm text-ink-faint">직책 {rows.length}개</span>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="px-3 py-1.5 rounded-md text-xs font-bold bg-primary text-white hover:bg-primary/90"
+          className="px-3 py-1.5 rounded-md text-sm font-bold bg-primary text-white hover:bg-primary/90"
         >+ 직책 추가</button>
       </div>
 
@@ -357,12 +357,12 @@ function PositionsPanel({ rows, onRefresh }: { rows: PosRow[]; onRefresh: () => 
               onChange={(e) => setAddForm({ ...addForm, sortOrder: Number(e.target.value) })}
             />
           </div>
-          {errMsg && <p className="text-xs text-red-500">{errMsg}</p>}
+          {errMsg && <p className="text-sm text-red-500">{errMsg}</p>}
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={submitting || !addForm.name}
-              className="px-3 py-1.5 rounded text-xs font-bold bg-primary text-white disabled:opacity-40">저장</button>
+              className="px-3 py-1.5 rounded text-sm font-bold bg-primary text-white disabled:opacity-40">저장</button>
             <button onClick={() => { setShowAdd(false); setErrMsg(''); }}
-              className="px-3 py-1.5 rounded text-xs font-bold border border-line text-slate-600">취소</button>
+              className="px-3 py-1.5 rounded text-sm font-bold border border-line text-ink-faint">취소</button>
           </div>
         </div>
       )}
@@ -370,7 +370,7 @@ function PositionsPanel({ rows, onRefresh }: { rows: PosRow[]; onRefresh: () => 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-slate-100 text-xs text-slate-500">
+            <tr className="bg-slate-100 text-sm text-ink-faint">
               <th className="px-3 py-2 text-left font-semibold">직책명</th>
               <th className="px-3 py-2 text-left font-semibold">구분</th>
               <th className="px-3 py-2 text-center font-semibold">순서</th>
@@ -388,21 +388,21 @@ function PositionsPanel({ rows, onRefresh }: { rows: PosRow[]; onRefresh: () => 
                   <>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
                     <td className="px-3 py-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{CATEGORY_LABEL[row.category] ?? row.category}</span>
+                      <span className="text-sm px-2 py-0.5 rounded-full bg-slate-100 text-ink-faint">{CATEGORY_LABEL[row.category] ?? row.category}</span>
                     </td>
-                    <td className="px-3 py-2 text-center text-slate-500">{row.sortOrder}</td>
+                    <td className="px-3 py-2 text-center text-ink-faint">{row.sortOrder}</td>
                     <td className="px-3 py-2 text-center">{row.userCount}</td>
                     <td className="px-3 py-2 text-center">
-                      <span className={`text-xs font-semibold ${row.active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      <span className={`text-sm font-semibold ${row.active ? 'text-emerald-600' : 'text-ink-faint'}`}>
                         {row.active ? '활성' : '비활성'}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditId(row.id)}
-                          className="px-2 py-0.5 rounded text-xs border border-line hover:bg-slate-50">수정</button>
+                          className="px-2 py-0.5 rounded text-sm border border-line hover:bg-slate-50">수정</button>
                         <button onClick={() => handleToggleActive(row)}
-                          className={`px-2 py-0.5 rounded text-xs border ${row.active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
+                          className={`px-2 py-0.5 rounded text-sm border ${row.active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
                           {row.active ? '비활성화' : '활성화'}
                         </button>
                       </div>
@@ -412,7 +412,7 @@ function PositionsPanel({ rows, onRefresh }: { rows: PosRow[]; onRefresh: () => 
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 직책이 없습니다</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-ink-faint text-sm">등록된 직책이 없습니다</td></tr>
             )}
           </tbody>
         </table>
@@ -438,8 +438,8 @@ function EditPosRow({ row, onSave, onCancel }: { row: PosRow; onSave: (d: Partia
       <td className="px-3 py-1 text-center">{row.active ? '활성' : '비활성'}</td>
       <td className="px-3 py-1">
         <div className="flex gap-1 justify-center">
-          <button onClick={() => onSave({ name, category, sortOrder })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
-          <button onClick={onCancel} className="px-2 py-0.5 rounded text-xs border border-line">취소</button>
+          <button onClick={() => onSave({ name, category, sortOrder })} className="px-2 py-0.5 rounded text-sm bg-primary text-white">저장</button>
+          <button onClick={onCancel} className="px-2 py-0.5 rounded text-sm border border-line">취소</button>
         </div>
       </td>
     </>
@@ -497,10 +497,10 @@ function RanksPanel({ rows, onRefresh }: { rows: RankRow[]; onRefresh: () => voi
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <span className="text-sm text-slate-500">직급 {rows.length}개</span>
+        <span className="text-sm text-ink-faint">직급 {rows.length}개</span>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="px-3 py-1.5 rounded-md text-xs font-bold bg-primary text-white hover:bg-primary/90"
+          className="px-3 py-1.5 rounded-md text-sm font-bold bg-primary text-white hover:bg-primary/90"
         >+ 직급 추가</button>
       </div>
 
@@ -528,12 +528,12 @@ function RanksPanel({ rows, onRefresh }: { rows: RankRow[]; onRefresh: () => voi
               onChange={(e) => setAddForm({ ...addForm, sortOrder: Number(e.target.value) })}
             />
           </div>
-          {errMsg && <p className="text-xs text-red-500">{errMsg}</p>}
+          {errMsg && <p className="text-sm text-red-500">{errMsg}</p>}
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={submitting || !addForm.name}
-              className="px-3 py-1.5 rounded text-xs font-bold bg-primary text-white disabled:opacity-40">저장</button>
+              className="px-3 py-1.5 rounded text-sm font-bold bg-primary text-white disabled:opacity-40">저장</button>
             <button onClick={() => { setShowAdd(false); setErrMsg(''); }}
-              className="px-3 py-1.5 rounded text-xs font-bold border border-line text-slate-600">취소</button>
+              className="px-3 py-1.5 rounded text-sm font-bold border border-line text-ink-faint">취소</button>
           </div>
         </div>
       )}
@@ -541,7 +541,7 @@ function RanksPanel({ rows, onRefresh }: { rows: RankRow[]; onRefresh: () => voi
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-slate-100 text-xs text-slate-500">
+            <tr className="bg-slate-100 text-sm text-ink-faint">
               <th className="px-3 py-2 text-left font-semibold">직급명</th>
               <th className="px-3 py-2 text-center font-semibold">급수</th>
               <th className="px-3 py-2 text-center font-semibold">순서</th>
@@ -558,20 +558,20 @@ function RanksPanel({ rows, onRefresh }: { rows: RankRow[]; onRefresh: () => voi
                 ) : (
                   <>
                     <td className="px-3 py-2 font-medium">{row.name}</td>
-                    <td className="px-3 py-2 text-center text-slate-500">{row.level}</td>
-                    <td className="px-3 py-2 text-center text-slate-500">{row.sortOrder}</td>
+                    <td className="px-3 py-2 text-center text-ink-faint">{row.level}</td>
+                    <td className="px-3 py-2 text-center text-ink-faint">{row.sortOrder}</td>
                     <td className="px-3 py-2 text-center">{row.userCount}</td>
                     <td className="px-3 py-2 text-center">
-                      <span className={`text-xs font-semibold ${row.active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      <span className={`text-sm font-semibold ${row.active ? 'text-emerald-600' : 'text-ink-faint'}`}>
                         {row.active ? '활성' : '비활성'}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-center">
                       <div className="flex gap-1 justify-center">
                         <button onClick={() => setEditId(row.id)}
-                          className="px-2 py-0.5 rounded text-xs border border-line hover:bg-slate-50">수정</button>
+                          className="px-2 py-0.5 rounded text-sm border border-line hover:bg-slate-50">수정</button>
                         <button onClick={() => handleToggleActive(row)}
-                          className={`px-2 py-0.5 rounded text-xs border ${row.active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
+                          className={`px-2 py-0.5 rounded text-sm border ${row.active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
                           {row.active ? '비활성화' : '활성화'}
                         </button>
                       </div>
@@ -581,7 +581,7 @@ function RanksPanel({ rows, onRefresh }: { rows: RankRow[]; onRefresh: () => voi
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-slate-400 text-sm">등록된 직급이 없습니다</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-ink-faint text-sm">등록된 직급이 없습니다</td></tr>
             )}
           </tbody>
         </table>
@@ -603,8 +603,8 @@ function EditRankRow({ row, onSave, onCancel }: { row: RankRow; onSave: (d: Part
       <td className="px-3 py-1 text-center">{row.active ? '활성' : '비활성'}</td>
       <td className="px-3 py-1">
         <div className="flex gap-1 justify-center">
-          <button onClick={() => onSave({ name, level, sortOrder })} className="px-2 py-0.5 rounded text-xs bg-primary text-white">저장</button>
-          <button onClick={onCancel} className="px-2 py-0.5 rounded text-xs border border-line">취소</button>
+          <button onClick={() => onSave({ name, level, sortOrder })} className="px-2 py-0.5 rounded text-sm bg-primary text-white">저장</button>
+          <button onClick={onCancel} className="px-2 py-0.5 rounded text-sm border border-line">취소</button>
         </div>
       </td>
     </>

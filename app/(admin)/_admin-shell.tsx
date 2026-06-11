@@ -160,7 +160,7 @@ function SidebarBody({
       <nav className="flex-1 py-3 text-sm overflow-y-auto">
         {groups.map((g) => (
           <div key={g.group}>
-            <div className="px-5 pt-4 pb-1.5 text-[0.6875rem] font-mono font-semibold text-slate-400 tracking-widest first:pt-2">
+            <div className="px-5 pt-4 pb-1.5 text-[0.6875rem] font-mono font-semibold text-ink-faint tracking-widest first:pt-2">
               {g.group}
             </div>
             {g.items.map((it) => {
@@ -200,7 +200,7 @@ function SidebarBody({
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-white text-sm font-extrabold truncate">{session.name}</div>
-          <div className="text-slate-300 text-xs font-mono font-bold mt-0.5">{session.role}</div>
+          <div className="text-slate-300 text-sm font-mono font-bold mt-0.5">{session.role}</div>
         </div>
       </Link>
     </aside>
@@ -220,5 +220,5 @@ function NowStamp({ className = '' }: { className?: string }) {
     const t = setInterval(update, 30_000);
     return () => clearInterval(t);
   }, []);
-  return <span className={`font-mono text-xs font-bold text-ink ${className}`}>{stamp}</span>;
+  return <span className={`font-mono text-sm font-bold text-ink ${className}`}>{stamp}</span>;
 }

@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<string, string> = {
   DRAFT: '작성중', SUBMITTED: '제출됨', APPROVED: '승인완료',
 };
 const STATUS_COLOR: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600',
+  DRAFT: 'bg-slate-100 text-ink-faint',
   SUBMITTED: 'bg-amber-100 text-amber-700',
   APPROVED: 'bg-emerald-100 text-emerald-700',
 };
@@ -69,7 +69,7 @@ function LogDetail({ item }: { item: LogItem }) {
   const operationPeriod = typeof d.operationPeriod === 'string' ? d.operationPeriod : null;
 
   return (
-    <div className="text-xs space-y-2 pt-1">
+    <div className="text-sm space-y-2 pt-1">
       {/* 기본 수치 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {item.startMileage != null && item.endMileage != null && (
@@ -219,7 +219,7 @@ export default function LogsOverviewClient() {
     <div className="space-y-4">
       {/* 헤더 */}
       <div className="flex items-center gap-3">
-        <a href="/vehicles" className="text-xs font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
+        <a href="/vehicles" className="text-sm font-bold text-ink-muted hover:text-ink border border-line rounded px-2 py-1 bg-white">
           ← 차량관리
         </a>
         <h2 className="text-xl font-black text-ink tracking-tight">차량일지 현황</h2>
@@ -236,7 +236,7 @@ export default function LogsOverviewClient() {
                 statusFilter === s ? 'ring-2 ring-accent border-accent' : 'border-line bg-surface'
               }`}
             >
-              <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{STATUS_LABEL[s]}</div>
+              <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">{STATUS_LABEL[s]}</div>
               <div className="text-2xl font-black text-ink">{data.statusCounts[s]}</div>
             </button>
           ))}
@@ -246,17 +246,17 @@ export default function LogsOverviewClient() {
       {/* 필터 */}
       <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
         <div>
-          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
         </div>
         <div>
-          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
         </div>
         <div>
-          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">상태</div>
+          <div className="text-sm font-mono font-extrabold text-ink-faint mb-1">상태</div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold">
             <option value="">전체</option>
@@ -270,18 +270,18 @@ export default function LogsOverviewClient() {
           조회
         </button>
         {data && (
-          <span className="ml-auto text-xs text-ink-muted">총 {data.total}건</span>
+          <span className="ml-auto text-sm text-ink-muted">총 {data.total}건</span>
         )}
       </div>
 
-      {loading && <div className="py-10 text-center text-slate-500 text-sm">로딩 중…</div>}
+      {loading && <div className="py-10 text-center text-ink-faint text-sm">로딩 중…</div>}
       {error && <div className="px-4 py-2 bg-red-50 border border-red-300 rounded text-sm text-red-700">{error}</div>}
 
       {data && !loading && (
         <>
           <div className="bg-surface border border-line rounded-xl overflow-hidden">
             {data.items.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-sm">해당 조건의 차량일지가 없습니다.</div>
+              <div className="py-12 text-center text-ink-faint text-sm">해당 조건의 차량일지가 없습니다.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: '1080px' }}>
@@ -307,7 +307,7 @@ export default function LogsOverviewClient() {
                         '일자', '차량번호', '차종', '톤급', '운전자', '구역', '상태',
                         '시작계기(km)', '종료계기(km)', '주행거리(km)', '주유량(L)', '수거량(kg)', '운행횟수', '상세',
                       ].map((h) => (
-                        <th key={h} className="py-2 px-2 text-xs border border-slate-200"
+                        <th key={h} className="py-2 px-2 text-sm border border-slate-200"
                           style={{ textAlign: 'center', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           {h}
                         </th>
@@ -338,7 +338,7 @@ export default function LogsOverviewClient() {
                             <td style={tdC}>{l.driverName}</td>
                             <td style={tdC}>{l.zoneName || '—'}</td>
                             <td style={tdC}>
-                              <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-sm font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-ink-faint'}`}>
                                 {STATUS_LABEL[l.status] ?? l.status}
                               </span>
                             </td>
@@ -351,7 +351,7 @@ export default function LogsOverviewClient() {
                             <td style={tdC}>
                               <button
                                 onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
-                                className="px-2 py-0.5 rounded text-xs font-extrabold border border-line hover:bg-surface-soft"
+                                className="px-2 py-0.5 rounded text-sm font-extrabold border border-line hover:bg-surface-soft"
                               >
                                 {expandedId === l.id ? '접기' : '상세'}
                               </button>
