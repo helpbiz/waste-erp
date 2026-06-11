@@ -196,7 +196,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   useEffect(() => {
     if (step !== 2 || munis.length > 0) return;
     fetch('/api/super-admin/municipalities?limit=500')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((j) => setMunis(j.items ?? []))
       .catch(() => setError('지자체 목록 로드 실패'));
   }, [step, munis.length]);

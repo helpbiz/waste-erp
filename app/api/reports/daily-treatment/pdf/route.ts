@@ -10,6 +10,7 @@ import { loadReportTemplate } from '@/lib/report/template-loader';
 import { resolveReportData } from '@/lib/report/data-resolver';
 import { renderReportHtml } from '@/lib/report/html-renderer';
 import { renderPdf } from '@/lib/report/pdf-renderer';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -72,7 +73,7 @@ export async function GET(req: Request) {
         ipAddress: ip,
         metadata: { code: 'F-02', date, contractorId } as object,
       },
-    }).catch(() => undefined);
+    }).catch((err) => logger.error('audit_log_write_failed', { action: 'REPORT_DOWNLOAD', resourceType: 'report', resourceId: `f02:${date}` }, err));
 
     const filename = `F-02_${data.header.contractor.companyName}_${date}.pdf`;
     return new Response(new Uint8Array(pdf), {

@@ -4,6 +4,7 @@
  *  - 매니저는 서명 불가 (워커만)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   const today = todayKstDate();
-  const facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
+  const facilityId = parseId(parsed.data.facilityId ?? null);
 
   const tbm = await prisma.tbmSession.findFirst({
     where: {

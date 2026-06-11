@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import SwRegister from './_sw-register';
 import GlobalNotifications from '@/components/GlobalNotifications';
@@ -27,6 +28,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  /* P1-3: middleware가 요청별로 생성한 nonce를 x-nonce 헤더로 전달.
+     이 nonce를 inline script에 적용해 unsafe-inline 없이도 실행 허용. */
+  const nonce = headers().get('x-nonce') ?? '';
   return (
     <html lang="ko">
       <head>
@@ -43,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap"
         />
         {/* SW 즉시 업데이트 — HTML은 network-first로 항상 신선. 캐시된 청크 무관하게 실행 */}
-        <script dangerouslySetInnerHTML={{ __html: `
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: `
           if('serviceWorker' in navigator){
             navigator.serviceWorker.getRegistration('/').then(function(r){if(r)r.update();});
           }

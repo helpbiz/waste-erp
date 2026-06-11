@@ -545,6 +545,7 @@ model MonthlyAttendanceSummary {
   finalizedBy     BigInt?   @map("finalized_by")
 
   @@unique([workerId, yearMonth])
+  @@index([isFinalized, yearMonth])
   @@map("monthly_attendance_summary")
 }
 
@@ -573,9 +574,9 @@ model Vehicle {
   totalMileage       Int?      @map("total_mileage") // 자동 갱신 = initial + sum approved logs
 
   contractor  Contractor              @relation(fields: [contractorId], references: [id])
-  driver      User?                   @relation("VehicleDriver", fields: [driverId], references: [id])
-  passenger1  User?                   @relation("VehiclePassenger1", fields: [passenger1Id], references: [id])
-  passenger2  User?                   @relation("VehiclePassenger2", fields: [passenger2Id], references: [id])
+  driver      User?                   @relation("VehicleDriver",     fields: [driverId],     references: [id], onDelete: SetNull)
+  passenger1  User?                   @relation("VehiclePassenger1", fields: [passenger1Id], references: [id], onDelete: SetNull)
+  passenger2  User?                   @relation("VehiclePassenger2", fields: [passenger2Id], references: [id], onDelete: SetNull)
   logs        VehicleLog[]
   intakes     RecyclingCenterIntake[] @relation("VehicleIntake")
   gpsPosition VehicleGpsPosition?
@@ -600,11 +601,12 @@ model VehicleLog {
   status        VehicleLogStatus @default(DRAFT)
   updatedAt     DateTime         @updatedAt @map("updated_at")
 
-  vehicle Vehicle       @relation(fields: [vehicleId], references: [id])
-  driver  User          @relation(fields: [driverId], references: [id])
-  zone    CleaningZone? @relation(fields: [zoneId], references: [id])
+  vehicle Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver  User          @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  zone    CleaningZone? @relation(fields: [zoneId], references: [id], onDelete: SetNull)
 
   @@index([vehicleId, logDate])
+  @@index([driverId])
   @@map("vehicle_logs")
 }
 
@@ -692,8 +694,8 @@ model Complaint {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   contractor Contractor    @relation(fields: [contractorId], references: [id])
-  reporter   User?         @relation("ReportedComplaints", fields: [reportedBy], references: [id])
-  assignee   User?         @relation("AssignedComplaints", fields: [assignedTo], references: [id])
+  reporter   User?         @relation("ReportedComplaints", fields: [reportedBy], references: [id], onDelete: SetNull)
+  assignee   User?         @relation("AssignedComplaints", fields: [assignedTo], references: [id], onDelete: SetNull)
   zone       CleaningZone? @relation(fields: [zoneId], references: [id])
 
   @@index([contractorId, status])
@@ -812,7 +814,7 @@ model SafetyReport {
 
   contractor Contractor @relation(fields: [contractorId], references: [id])
   reporter   User       @relation("ReportedSafety", fields: [reportedBy], references: [id])
-  reviewer   User?      @relation("ReviewedSafety", fields: [reviewedBy], references: [id])
+  reviewer   User?      @relation("ReviewedSafety", fields: [reviewedBy], references: [id], onDelete: SetNull)
 
   // 일일 체크리스트 중복 방지는 application-level (POST에서 검증)
   // INCIDENT/NEAR_MISS/SOS는 동일자 다회 발생 가능하므로 unique 제거
@@ -879,7 +881,7 @@ model Department {
   contractor        Contractor         @relation(fields: [contractorId], references: [id])
   parent            Department?        @relation("DeptTree", fields: [parentId], references: [id])
   children          Department[]       @relation("DeptTree")
-  head              User?              @relation("DepartmentHead", fields: [headUserId], references: [id])
+  head              User?              @relation("DepartmentHead", fields: [headUserId], references: [id], onDelete: SetNull)
   users             User[]
   workerSuggestions WorkerSuggestion[]
   punchRestrictions PunchRestriction[]
@@ -998,18 +1000,20 @@ model BulkyWasteImport {
 /// 성상 코드: GENERAL/FOOD/RECYCLING/WOOD/COAL_ASH/MIXED_BLDG/PLASTIC/BATTERY/
 ///            FLUORESCENT/MILK_CARTON/VINYL/POCKET_SPRING/SCRAP_IRON/STYROFOAM
 model WasteTreatmentRecord {
-  id           BigInt   @id @default(autoincrement())
-  contractorId BigInt   @map("contractor_id")
-  recordDate   DateTime @map("record_date") @db.Date
-  materialCode String   @map("material_code") @db.VarChar(20)
-  weightTon    Decimal  @map("weight_ton") @db.Decimal(10, 3)
-  note         String?  @db.Text
-  recordedBy   BigInt   @map("recorded_by")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             BigInt  @id @default(autoincrement())
+  contractorId   BigInt  @map("contractor_id")
+  recordDate     DateTime @map("record_date") @db.Date
+  materialCode   String  @map("material_code") @db.VarChar(20)
+  weightTon      Decimal @map("weight_ton") @db.Decimal(10, 3)
+  note           String? @db.Text
+  disposalSiteId BigInt? @map("disposal_site_id")
+  recordedBy     BigInt  @map("recorded_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  contractor Contractor @relation(fields: [contractorId], references: [id])
-  recorder   User       @relation("WasteRecorder", fields: [recordedBy], references: [id])
+  contractor   Contractor   @relation(fields: [contractorId], references: [id])
+  recorder     User         @relation("WasteRecorder", fields: [recordedBy], references: [id])
+  disposalSite DisposalSite? @relation("WasteDisposalSite", fields: [disposalSiteId], references: [id], onDelete: SetNull)
 
   @@unique([contractorId, recordDate, materialCode])
   @@index([contractorId, recordDate])
@@ -1025,6 +1029,7 @@ model RecyclingCenterIntake {
   vehicleId        BigInt   @map("vehicle_id")
   // Design Ref: §3.1.2 — facilityId NULL 허용으로 기존 row backward-compat 보장
   facilityId       BigInt?  @map("facility_id")
+  disposalSiteId   BigInt?  @map("disposal_site_id")
   materialCategory String   @map("material_category") @db.VarChar(20) // GENERAL/FOOD/RECYCLING/WOOD
   weightTon        Decimal  @map("weight_ton") @db.Decimal(10, 3)
   note             String?  @db.Text
@@ -1032,10 +1037,11 @@ model RecyclingCenterIntake {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  contractor Contractor              @relation(fields: [contractorId], references: [id])
-  vehicle    Vehicle                 @relation("VehicleIntake", fields: [vehicleId], references: [id])
-  facility   WasteTreatmentFacility? @relation(fields: [facilityId], references: [id])
-  recorder   User                    @relation("IntakeRecorder", fields: [recordedBy], references: [id])
+  contractor   Contractor              @relation(fields: [contractorId], references: [id])
+  vehicle      Vehicle                 @relation("VehicleIntake", fields: [vehicleId], references: [id])
+  facility     WasteTreatmentFacility? @relation(fields: [facilityId], references: [id])
+  disposalSite DisposalSite?           @relation("IntakeDisposalSite", fields: [disposalSiteId], references: [id], onDelete: SetNull)
+  recorder     User                    @relation("IntakeRecorder", fields: [recordedBy], references: [id])
 
   @@index([contractorId, intakeDate])
   @@index([vehicleId, intakeDate])
@@ -1127,7 +1133,7 @@ model VehicleGpsPosition {
   source       String?  @db.VarChar(50)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
-  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id])
+  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   contractor Contractor @relation(fields: [contractorId], references: [id])
 
   @@index([contractorId])
@@ -1190,7 +1196,7 @@ model ApprovalEvent {
   createdAt       DateTime @default(now()) @map("created_at")
 
   actor             User          @relation("ApprovalActor", fields: [actorId], references: [id])
-  delegatedFrom     User?         @relation("ApprovalDelegatedFrom", fields: [delegatedFromId], references: [id])
+  delegatedFrom     User?         @relation("ApprovalDelegatedFrom", fields: [delegatedFromId], references: [id], onDelete: SetNull)
   signature         Signature?    @relation(fields: [signatureId], references: [id])
   leaveRequest      LeaveRequest? @relation("LeaveRequestApproval")
   leaveRequestFirst LeaveRequest? @relation("LeaveRequestFirstApproval")
@@ -1327,7 +1333,7 @@ model FacilityDailyOps {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   facility WasteTreatmentFacility @relation(fields: [facilityId], references: [id])
-  creator  User?                  @relation("FacilityOpsCreator", fields: [createdBy], references: [id])
+  creator  User?                  @relation("FacilityOpsCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@unique([facilityId, opsDate])
   @@index([opsDate])
@@ -1439,7 +1445,7 @@ model PayslipRecord {
   contractor Contractor @relation("ContractorPayslips", fields: [contractorId], references: [id], onDelete: Cascade)
   worker     User       @relation("WorkerPayslips",     fields: [workerId],     references: [id], onDelete: Cascade)
   creator    User       @relation("PayslipCreator",     fields: [createdBy],    references: [id])
-  approver   User?      @relation("PayslipApprover",   fields: [approvedBy],   references: [id])
+  approver   User?      @relation("PayslipApprover",   fields: [approvedBy],   references: [id], onDelete: SetNull)
 
   @@unique([contractorId, workerId, yearMonth])
   @@index([contractorId, yearMonth])
@@ -1470,7 +1476,9 @@ model DisposalSite {
   isActive     Boolean @default(true) @map("is_active")
   sortOrder    Int     @default(0) @map("sort_order")
 
-  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  contractor     Contractor               @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  wasteRecords   WasteTreatmentRecord[]   @relation("WasteDisposalSite")
+  intakeRecords  RecyclingCenterIntake[]  @relation("IntakeDisposalSite")
 
   @@unique([contractorId, name])
   @@map("disposal_sites")
@@ -1498,7 +1506,7 @@ model PayrollPolicy {
   createdAt          DateTime @default(now()) @map("created_at")
 
   contractor      Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
-  payslipApprover User?      @relation("PayrollPolicyApprover", fields: [payslipApproverId], references: [id])
+  payslipApprover User?      @relation("PayrollPolicyApprover", fields: [payslipApproverId], references: [id], onDelete: SetNull)
 
   @@map("payroll_policies")
 }

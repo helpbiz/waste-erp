@@ -2,6 +2,7 @@
  * DELETE /api/contractor/zones/[id]/dongs/[dongId] — 행정동 제거
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 
@@ -16,11 +17,15 @@ export async function DELETE(
   if (!ALLOWED.has(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
+  const dongIdBig = parseId(params.dongId);
+  const zoneIdBig = parseId(params.id);
+  const dCid = parseId(session.contractorId);
+  if (!dongIdBig || !zoneIdBig || !dCid) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const dong = await prisma.adminDong.findFirst({
     where: {
-      id: BigInt(params.dongId),
-      zoneId: BigInt(params.id),
-      contractorId: BigInt(session.contractorId),
+      id: dongIdBig,
+      zoneId: zoneIdBig,
+      contractorId: dCid,
     },
   });
   if (!dong) return NextResponse.json({ error: 'not_found' }, { status: 404 });

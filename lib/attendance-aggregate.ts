@@ -142,24 +142,112 @@ export async function aggregateWorkerMonth(
   };
 }
 
-/** 위탁업체 단위 다수 집계 */
+/** 위탁업체 단위 다수 집계 — P3-3: N+1 → 2-query 배치 */
 export async function aggregateContractorMonth(
   contractorId: bigint,
   yearMonth: string,
   policy: PayrollPolicyData = DEFAULT_POLICY
 ): Promise<{ aggregates: MonthAggregate[]; workers: { id: string; name: string }[] }> {
+  const { start, end } = ymRange(yearMonth);
+
+  /* 쿼리 1: 활성 근로자 목록 */
   const workers = await prisma.user.findMany({
     where: { role: 'WORKER', status: 'ACTIVE', contractorId },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
-  const aggregates: MonthAggregate[] = [];
-  for (const w of workers) {
-    aggregates.push(await aggregateWorkerMonth(w.id, yearMonth, policy));
+  if (workers.length === 0) return { aggregates: [], workers: [] };
+
+  /* 쿼리 2: 해당 월 전체 근태 레코드를 한 번에 조회 */
+  const allRecords = await prisma.attendanceRecord.findMany({
+    where: {
+      workerId: { in: workers.map((w) => w.id) },
+      workDate: { gte: start, lt: end },
+    },
+    orderBy: { workDate: 'asc' },
+  });
+
+  /* 근로자별 그룹핑 */
+  const recordsByWorker = new Map<string, typeof allRecords>();
+  for (const r of allRecords) {
+    const key = r.workerId.toString();
+    const arr = recordsByWorker.get(key) ?? [];
+    arr.push(r);
+    recordsByWorker.set(key, arr);
   }
+
+  /* 메모리 내 집계 (DB 호출 없음) */
+  const aggregates: MonthAggregate[] = workers.map((w) => {
+    const records = recordsByWorker.get(w.id.toString()) ?? [];
+    return computeAggregate(w.id, yearMonth, records, policy);
+  });
+
   return {
     aggregates,
     workers: workers.map((w) => ({ id: w.id.toString(), name: w.name })),
+  };
+}
+
+/** records가 이미 로드된 경우 DB 호출 없이 집계 계산 */
+function computeAggregate(
+  workerId: bigint,
+  yearMonth: string,
+  records: Awaited<ReturnType<typeof prisma.attendanceRecord.findMany>>,
+  policy: PayrollPolicyData
+): MonthAggregate {
+  let totalWorkHours = 0;
+  let overtimeHours = 0;
+  let nightHours = 0;
+  let holidayHours = 0;
+  let workedDays = 0;
+
+  for (const r of records) {
+    const h = hoursBetween(r.checkInTime, r.checkOutTime);
+    if (r.checkInTime) workedDays++;
+    totalWorkHours += h;
+
+    switch (r.workType as WorkType) {
+      case 'HOLIDAY':
+        holidayHours += h;
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(r.checkInTime, r.checkOutTime, policy.nightStartHour, policy.nightEndHour);
+        }
+        break;
+      case 'NIGHT':
+        if (r.checkInTime && r.checkOutTime) {
+          const autoNight = calcNightHours(r.checkInTime, r.checkOutTime, policy.nightStartHour, policy.nightEndHour);
+          nightHours += autoNight > 0 ? autoNight : h;
+        } else {
+          nightHours += h;
+        }
+        if (h > policy.dailyWorkHours) overtimeHours += h - policy.dailyWorkHours;
+        break;
+      case 'EXTENDED':
+        overtimeHours += h;
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(r.checkInTime, r.checkOutTime, policy.nightStartHour, policy.nightEndHour);
+        }
+        break;
+      default: // NORMAL
+        if (h > policy.dailyWorkHours) overtimeHours += h - policy.dailyWorkHours;
+        if (r.checkInTime && r.checkOutTime) {
+          nightHours += calcNightHours(r.checkInTime, r.checkOutTime, policy.nightStartHour, policy.nightEndHour);
+        }
+        break;
+    }
+  }
+
+  const expectedDays = weekdayCountInMonth(yearMonth);
+  return {
+    workerId: workerId.toString(),
+    yearMonth,
+    totalWorkDays: workedDays,
+    totalWorkHours: Number(totalWorkHours.toFixed(2)),
+    overtimeHours: Number(overtimeHours.toFixed(2)),
+    nightHours: Number(nightHours.toFixed(2)),
+    holidayHours: Number(holidayHours.toFixed(2)),
+    absenceDays: Math.max(0, expectedDays - workedDays),
+    recordCount: records.length,
   };
 }
 

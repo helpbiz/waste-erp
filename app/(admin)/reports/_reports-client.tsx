@@ -106,6 +106,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
   const [to, setTo] = useState(ymEnd);
   const [data, setData] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   /* 사용자 요청 2026-04-29: 위탁업체별 개별/통합 보고서.
      contractorId='' = 통합 (전체) / 특정 id = 개별 보고서. */
   const [contractorId, setContractorId] = useState<string>('');
@@ -114,7 +115,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
   /* SUPER/MUNI/CONTRACTOR 모두 본인 가시범위 안의 업체 목록 fetch */
   useEffect(() => {
     fetch('/api/contractors')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setContractorOpts(d.items ?? []))
       .catch(() => null);
   }, []);
@@ -143,6 +144,8 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
   function printNow() { if (typeof window !== 'undefined') window.print(); }
 
   async function exportComplaints() {
+    if (exporting) return;
+    setExporting(true);
     try {
       const params = new URLSearchParams({ format: 'xlsx', from, to });
       if (contractorId) params.set('contractorId', contractorId);
@@ -156,9 +159,12 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
       a.click();
       URL.revokeObjectURL(url);
     } catch { /* ignore */ }
+    finally { setExporting(false); }
   }
 
   async function exportAttendance() {
+    if (exporting) return;
+    setExporting(true);
     try {
       const ym = from.slice(0, 7);
       const params = new URLSearchParams({ ym });
@@ -173,6 +179,7 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
       a.click();
       URL.revokeObjectURL(url);
     } catch { /* ignore */ }
+    finally { setExporting(false); }
   }
 
   const max = (arr: number[]) => Math.max(1, ...arr);
@@ -219,22 +226,22 @@ function MasterStatsView({ session, isAvac = false }: { session: { role: string;
           {loading ? '조회 중…' : '조회'}
         </button>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
-          <button onClick={exportComplaints}
-            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5">
+          <button onClick={exportComplaints} disabled={exporting}
+            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5 disabled:opacity-50">
             <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            민원 Excel
+            {exporting ? '처리 중…' : '민원 Excel'}
           </button>
-          <button onClick={exportAttendance}
-            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5">
+          <button onClick={exportAttendance} disabled={exporting}
+            className="px-3 py-1.5 rounded border border-line bg-surface text-sm font-extrabold text-ink hover:bg-surface-soft flex items-center gap-1.5 disabled:opacity-50">
             <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             출근대장 Excel
           </button>
-          <button onClick={printNow}
-            className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
+          <button onClick={printNow} disabled={loading || exporting}
+            className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
             🖨 보고서 출력
           </button>
         </div>

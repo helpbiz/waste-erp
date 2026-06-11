@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
+import { todayKstDate } from '@/lib/dates';
 import TemperatureClient from './_temperature-client';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ export default async function TemperaturePage({
   const isManager = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(session.role);
   if (!isManager) redirect('/safety');
 
-  const thisMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = todayKstDate().toISOString().slice(0, 7);
   const yearMonth = searchParams.yearMonth ?? thisMonth;
 
   return <TemperatureClient initialYearMonth={yearMonth} />;

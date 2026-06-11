@@ -30,13 +30,17 @@ const INTAKE_CATEGORIES = [
 
 type Vehicle = { id: string; vehicleNo: string; vehicleType: string };
 
+type DisposalSite = { id: string; name: string; address: string | null };
+
 type WasteRecord = {
   id: string; recordDate: string; materialCode: string; weightTon: number;
-  note: string | null; recorderName: string;
+  note: string | null; disposalSiteId: string | null; disposalSiteName: string | null;
+  recorderName: string;
 };
 type IntakeRecord = {
   id: string; intakeDate: string; intakeTime: string; vehicleId: string;
   vehicleNo: string; materialCategory: string; weightTon: number; note: string | null;
+  disposalSiteId: string | null; disposalSiteName: string | null;
   recorderName: string;
 };
 type OpsRecord = {
@@ -100,10 +104,18 @@ export default function PerformanceClient({ vehicles, isFacilityOperator = false
 function WasteTab() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<WasteRecord[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, { weight: string; note: string }>>({});
+  const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, { weight: string; note: string; siteId: string }>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/worker/disposal-sites')
+      .then((r) => r.json())
+      .then((d) => setDisposalSites(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   function load() {
     fetch(`/api/waste-records?from=${date}&to=${date}`)
@@ -139,6 +151,7 @@ function WasteTab() {
           materialCode,
           weightTon: weight,
           note: draft.note?.trim() || undefined,
+          disposalSiteId: draft.siteId || null,
         }),
       });
       if (!r.ok) {
@@ -147,7 +160,7 @@ function WasteTab() {
         return;
       }
       setSuccess(`${MAT_LABEL[materialCode]} ${weight}t 저장됨`);
-      setDrafts((p) => ({ ...p, [materialCode]: { weight: '', note: '' } }));
+      setDrafts((p) => ({ ...p, [materialCode]: { weight: '', note: '', siteId: '' } }));
       load();
     } finally {
       setSaving(null);
@@ -188,7 +201,7 @@ function WasteTab() {
         <div className="space-y-2">
           {WASTE_MATERIALS.map((m) => {
             const existing = byMaterial.get(m.code);
-            const draft = drafts[m.code] ?? { weight: '', note: '' };
+            const draft = drafts[m.code] ?? { weight: '', note: '', siteId: existing?.disposalSiteId ?? '' };
             const isOpen = !!draft.weight || !!existing;
             return (
               <div key={m.code} className={`rounded-lg border-2 transition ${existing ? 'border-emerald-300 bg-emerald-50' : 'border-line bg-surface'}`}>
@@ -196,9 +209,12 @@ function WasteTab() {
                   <span className="text-xl flex-shrink-0">{m.emoji}</span>
                   <span className="flex-1 text-sm font-extrabold text-ink">{m.label}</span>
                   {existing ? (
-                    <span className="text-xs font-mono font-bold text-emerald-700">
-                      ✓ {Number(existing.weightTon).toFixed(2)}t
-                    </span>
+                    <div className="text-right">
+                      <div className="text-xs font-mono font-bold text-emerald-700">✓ {Number(existing.weightTon).toFixed(2)}t</div>
+                      {existing.disposalSiteName && (
+                        <div className="text-[0.625rem] text-emerald-600 font-semibold">{existing.disposalSiteName}</div>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs font-mono text-ink-muted">미입력</span>
                   )}
@@ -225,7 +241,19 @@ function WasteTab() {
                   </button>
                 </div>
                 {isOpen && (
-                  <div className="px-3 pb-2.5">
+                  <div className="px-3 pb-2.5 space-y-1.5">
+                    {disposalSites.length > 0 && (
+                      <select
+                        value={draft.siteId}
+                        onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, siteId: e.target.value } }))}
+                        className="w-full px-3 py-1.5 rounded-md border border-line text-xs font-bold focus:outline-none focus:border-accent"
+                      >
+                        <option value="">— 처리장소 선택 (선택사항) —</option>
+                        {disposalSites.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
+                        ))}
+                      </select>
+                    )}
                     <input
                       type="text"
                       placeholder="비고 (선택)"
@@ -252,6 +280,8 @@ const CAT_LABEL: Record<string, string> = Object.fromEntries(INTAKE_CATEGORIES.m
 function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<IntakeRecord[]>([]);
+  const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? '');
   const [time, setTime] = useState(() => {
     const d = new Date();
@@ -263,6 +293,13 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/worker/disposal-sites')
+      .then((r) => r.json())
+      .then((d) => setDisposalSites(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   function load() {
     fetch(`/api/recycling-intake?from=${date}&to=${date}`)
@@ -289,6 +326,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
           materialCategory: category,
           weightTon: Number(weight),
           note: note.trim() || undefined,
+          disposalSiteId: selectedSiteId || null,
         }),
       });
       if (!r.ok) {
@@ -393,6 +431,21 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
               </div>
             </Field>
 
+            {disposalSites.length > 0 && (
+              <Field label="반입장소">
+                <select
+                  value={selectedSiteId}
+                  onChange={(e) => setSelectedSiteId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus:border-accent"
+                >
+                  <option value="">— 선택 안함 —</option>
+                  {disposalSites.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
             <Field label="비고 (선택)">
               <input
                 type="text"
@@ -420,11 +473,16 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
         <Section label={`오늘 입력 이력 (${items.length}건)`}>
           <div className="space-y-1.5">
             {items.map((it) => (
-              <div key={it.id} className="bg-surface-soft border border-line rounded-md px-3 py-2 flex items-center gap-2 text-xs">
-                <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
-                <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
-                <span className="text-xs font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
-                <span className="font-mono font-black text-accent flex-shrink-0">{Number(it.weightTon).toFixed(2)}t</span>
+              <div key={it.id} className="bg-surface-soft border border-line rounded-md px-3 py-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
+                  <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
+                  <span className="text-xs font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
+                  <span className="font-mono font-black text-accent flex-shrink-0">{Number(it.weightTon).toFixed(2)}t</span>
+                </div>
+                {it.disposalSiteName && (
+                  <div className="mt-0.5 ml-14 text-[0.625rem] text-emerald-600 font-semibold">📍 {it.disposalSiteName}</div>
+                )}
               </div>
             ))}
           </div>

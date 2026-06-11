@@ -90,7 +90,13 @@ export default function SafetyWorkerClient({
           canvas.height = Math.round(img.height * scale);
           canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
           URL.revokeObjectURL(url);
-          resolve(canvas.toDataURL('image/jpeg', 0.75));
+          let quality = 0.7;
+          let data = canvas.toDataURL('image/jpeg', quality);
+          while (data.length > 270_000 && quality > 0.3) {
+            quality -= 0.1;
+            data = canvas.toDataURL('image/jpeg', quality);
+          }
+          resolve(data);
         };
         img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
         img.src = url;

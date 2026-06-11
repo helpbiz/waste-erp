@@ -75,7 +75,11 @@ export async function GET(req: Request) {
   if (!canManageUsers(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const url = new URL(req.url);
-  const year = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  const yearRaw = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  if (!Number.isInteger(yearRaw) || yearRaw < 2020 || yearRaw > 2100) {
+    return NextResponse.json({ error: 'invalid_year' }, { status: 400 });
+  }
+  const year = yearRaw;
 
   const items = await findCandidates(session, year);
   return NextResponse.json({ year, candidates: items });

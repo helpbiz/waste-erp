@@ -8,6 +8,7 @@
  *  - 기타: 자사만
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -47,11 +48,15 @@ export async function GET(req: Request) {
 
   if (session.role === 'SUPER_ADMIN') {
     /* SUPER_ADMIN — ?municipalityId 옵션으로 특정 지자체만 필터 */
-    if (queryMuniId) where.municipalityId = BigInt(queryMuniId);
+    if (queryMuniId) {
+      const mid = parseId(queryMuniId);
+      if (mid == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
+      where.municipalityId = mid;
+    }
   } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
-    where.municipalityId = BigInt(session.municipalityId);
+    where.municipalityId = parseId(session.municipalityId) ?? undefined;
   } else if (session.contractorId) {
-    where.id = BigInt(session.contractorId);
+    where.id = parseId(session.contractorId) ?? undefined;
   } else {
     return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
   }
@@ -104,8 +109,10 @@ export async function POST(req: Request) {
   }
 
   /* 지자체 존재 확인 */
+  const muniId = parseId(b.municipalityId);
+  if (!muniId) return NextResponse.json({ error: 'invalid_municipalityId' }, { status: 400 });
   const muni = await prisma.municipality.findUnique({
-    where: { id: BigInt(b.municipalityId) },
+    where: { id: muniId },
     select: { id: true, name: true, status: true },
   });
   if (!muni) return NextResponse.json({ error: 'municipality_not_found' }, { status: 400 });

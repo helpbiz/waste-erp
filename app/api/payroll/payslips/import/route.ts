@@ -165,6 +165,17 @@ export async function POST(req: Request) {
       야간기본: toNum(obj['야간기본'] ?? ''),
       야간추가: toNum(obj['야간추가'] ?? ''),
     };
+    /* 연장·야간 미기재 시 MonthlyAttendanceSummary에서 자동 조회 (출근일수와 동일 패턴) */
+    if (workHours.연장기본 === 0 && workHours.야간기본 === 0) {
+      const attendSummary = await prisma.monthlyAttendanceSummary.findUnique({
+        where: { workerId_yearMonth: { workerId: worker.id, yearMonth } },
+        select: { overtimeHours: true, nightHours: true },
+      });
+      if (attendSummary) {
+        if (Number(attendSummary.overtimeHours) > 0) workHours.연장기본 = Number(attendSummary.overtimeHours);
+        if (Number(attendSummary.nightHours) > 0)    workHours.야간기본 = Number(attendSummary.nightHours);
+      }
+    }
 
     /* 합계: 엑셀값 우선, 없으면 자동계산 (실수령액 = 임금+기타-공제) */
     const grossRaw  = toNum(obj['지급합계'] ?? '');
@@ -199,16 +210,19 @@ export async function POST(req: Request) {
     upserts.push({ workerId: worker.id, data });
   }
 
-  /* PayslipRecord upsert (isPublished=false — 발송 전 저장) */
-  let savedCount = 0;
-  for (const u of upserts) {
-    await prisma.payslipRecord.upsert({
-      where:  { contractorId_workerId_yearMonth: { contractorId, workerId: u.workerId, yearMonth } },
-      update: { data: u.data, updatedAt: new Date(), createdBy: BigInt(session.userId) },
-      create: { contractorId, workerId: u.workerId, yearMonth, data: u.data, isPublished: false, createdBy: BigInt(session.userId) },
-    });
-    savedCount++;
-  }
+  /* P0-4: 전체 upsert를 단일 $transaction으로 묶어 부분 저장 방지 */
+  const now = new Date();
+  const createdBy = BigInt(session.userId);
+  await prisma.$transaction(
+    upserts.map((u) =>
+      prisma.payslipRecord.upsert({
+        where:  { contractorId_workerId_yearMonth: { contractorId, workerId: u.workerId, yearMonth } },
+        update: { data: u.data, updatedAt: now, createdBy },
+        create: { contractorId, workerId: u.workerId, yearMonth, data: u.data, isPublished: false, createdBy },
+      })
+    )
+  );
+  const savedCount = upserts.length;
 
   await prisma.auditLog.create({
     data: {

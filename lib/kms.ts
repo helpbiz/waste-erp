@@ -24,6 +24,7 @@
  *  VAULT_ENCRYPTED_DEK=vault:v1:...
  */
 import { createHash } from 'crypto';
+import { logger } from '@/lib/logger';
 
 export interface KmsProvider {
   name: string;
@@ -40,10 +41,11 @@ class LocalKmsProvider implements KmsProvider {
     if (b64) {
       const buf = Buffer.from(b64, 'base64');
       if (buf.length === 32) return buf;
+      throw new Error(`KMS_LOCAL_KEY: base64 decoded length=${buf.length}, expected 32 bytes`);
     }
-    /* dev fallback */
-    const seed = process.env.JWT_SECRET ?? 'dev-secret-change-me-please-32-bytes-minimum-required';
-    return createHash('sha256').update(seed + ':wci-health-encryption').digest();
+    /* P3-10: KMS_LOCAL_KEY 미설정 시 예외 — JWT_SECRET 파생 키 fallback 제거.
+       .env에 KMS_LOCAL_KEY 명시 필수. */
+    throw new Error('KMS_LOCAL_KEY (or MASTER_KEY_BASE64) is not set. Set a 32-byte base64 key in your .env file.');
   }
 }
 
@@ -132,21 +134,17 @@ function selectProvider(): KmsProvider {
   return new LocalKmsProvider();
 }
 
-/** 외부 호출 진입점 — 메모리 캐시 + 폴백 */
+/**
+ * 외부 호출 진입점 — 메모리 캐시
+ * P0-3: KMS 장애 시 폴백 없이 즉시 예외 throw.
+ * 잘못된 키가 캐시되어 기존 PII를 다른 키로 복호화하는 사고를 방지한다.
+ */
 export async function getMasterKey(): Promise<{ key: Buffer; provider: string }> {
   if (cached) return { key: cached.key, provider: cached.provider };
   const provider = selectProvider();
-  let key: Buffer;
-  let providerName = provider.name;
-  try {
-    key = await provider.getDataKey();
-  } catch (e) {
-    console.warn(`[kms] ${provider.name} failed, falling back to LOCAL:`, e);
-    key = await new LocalKmsProvider().getDataKey();
-    providerName = `${provider.name}-fallback`;
-  }
-  cached = { provider: providerName, key };
-  return { key, provider: providerName };
+  const key = await provider.getDataKey(); // 실패 시 예외가 상위로 전파됨
+  cached = { provider: provider.name, key };
+  return { key, provider: provider.name };
 }
 
 export function clearKeyCache(): void {

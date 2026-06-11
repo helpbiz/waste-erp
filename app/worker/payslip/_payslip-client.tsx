@@ -136,7 +136,7 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
   function handlePrint() {
     const win = window.open('', '_blank', 'width=780,height=1100');
     if (!win) return;
-    win.document.write(buildPrintHtml({ item, workerName, month, year }));
+    win.document.write(buildPrintHtml({ item, workerName, month, year, template }));
     win.document.close();
   }
 
@@ -239,15 +239,15 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
 }
 
 /* ─── 인쇄 HTML 생성 ─────────────────────────────────────────────── */
-function buildPrintHtml({ item, workerName, month, year }: { item: PayslipItem; workerName: string; month: string; year: string }) {
+function buildPrintHtml({ item, workerName, month, year, template }: { item: PayslipItem; workerName: string; month: string; year: string; template: Template | null }) {
   const d = item.data;
   const pt = normTotals(d.totals);
   const fmt = (n: number) => n ? n.toLocaleString('ko-KR') : '-';
 
-  const earningsRows = Object.entries(d.earnings).map(([k, v]) =>
+  const earningsRows = sortByTemplate(Object.entries(d.earnings) as [string, number][], template?.earnings).map(([k, v]) =>
     `<tr><td class="label">${k}</td><td class="val">${fmt(v)}</td></tr>`).join('');
 
-  const deductRows = Object.entries(d.deductions).map(([k, v]) =>
+  const deductRows = sortByTemplate(Object.entries(d.deductions) as [string, number][], template?.deductions).map(([k, v]) =>
     `<tr><td class="label">${k}</td><td class="val">${fmt(v)}</td></tr>`).join('');
 
   const extraRows = Object.entries(d.extras ?? {}).map(([k, v]) =>

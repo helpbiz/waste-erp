@@ -18,6 +18,7 @@ const Body = z.object({
   materialCode: z.string().min(1).max(20),
   weightTon: z.number().min(0).max(99_999),
   note: z.string().max(500).optional(),
+  disposalSiteId: z.string().nullable().optional(),
 });
 
 function contractorScope(session: { role: string; contractorId: string | null; municipalityId: string | null }) {
@@ -44,7 +45,10 @@ export async function GET(req: Request) {
 
   const items = await prisma.wasteTreatmentRecord.findMany({
     where,
-    include: { recorder: { select: { id: true, name: true, role: true } } },
+    include: {
+      recorder: { select: { id: true, name: true, role: true } },
+      disposalSite: { select: { id: true, name: true } },
+    },
     orderBy: [{ recordDate: 'desc' }, { materialCode: 'asc' }],
     take: 1000,
   });
@@ -56,6 +60,8 @@ export async function GET(req: Request) {
       materialCode: r.materialCode,
       weightTon: Number(r.weightTon.toString()),
       note: r.note,
+      disposalSiteId: r.disposalSiteId?.toString() ?? null,
+      disposalSiteName: r.disposalSite?.name ?? null,
       recorderId: r.recordedBy.toString(),
       recorderName: r.recorder.name,
       recorderRole: r.recorder.role,
@@ -79,6 +85,17 @@ export async function POST(req: Request) {
   const contractorId = BigInt(session.contractorId);
   const recordDate = new Date(b.recordDate);
 
+  /* disposalSiteId 가시범위 검증 */
+  let disposalSiteIdBig: bigint | null = null;
+  if (b.disposalSiteId) {
+    const site = await prisma.disposalSite.findFirst({
+      where: { id: BigInt(b.disposalSiteId), contractorId, isActive: true },
+      select: { id: true },
+    });
+    if (!site) return NextResponse.json({ error: 'invalid_disposal_site' }, { status: 400 });
+    disposalSiteIdBig = site.id;
+  }
+
   const upserted = await prisma.wasteTreatmentRecord.upsert({
     where: { contractorId_recordDate_materialCode: { contractorId, recordDate, materialCode: b.materialCode } },
     create: {
@@ -86,11 +103,13 @@ export async function POST(req: Request) {
       materialCode: b.materialCode,
       weightTon: b.weightTon,
       note: b.note ?? null,
+      disposalSiteId: disposalSiteIdBig,
       recordedBy: BigInt(session.userId),
     },
     update: {
       weightTon: b.weightTon,
       note: b.note ?? null,
+      disposalSiteId: disposalSiteIdBig,
       recordedBy: BigInt(session.userId),
     },
   });

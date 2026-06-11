@@ -33,8 +33,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
   }
 
-  const body = await req.json();
-  const parsed = PatchBody.safeParse(body);
+  const parsed = PatchBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const data = parsed.data;
 

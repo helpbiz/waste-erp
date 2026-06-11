@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { recommendedAnnualLeaveDays, leaveRemaining } from '@/lib/users';
+import { isCronAuthorized } from '@/lib/cron-auth';
 
 export const runtime = 'nodejs';
 
@@ -28,13 +29,7 @@ const Body = z.object({
   contractorId: z.string().optional(), // 특정 위탁업체만 (선택)
 });
 
-function authorized(req: Request): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return false; // 운영 단계에서 반드시 설정
-  const auth = req.headers.get('authorization');
-  if (!auth) return false;
-  return auth === `Bearer ${expected}`;
-}
+const authorized = isCronAuthorized;
 
 export async function POST(req: Request) {
   if (!authorized(req)) {

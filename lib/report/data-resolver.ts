@@ -40,6 +40,7 @@ export async function resolveReportData(
       include: {
         vehicle: { select: { vehicleNo: true } },
         facility: { select: { name: true } },
+        disposalSite: { select: { name: true } },
       },
     }),
   ]);
@@ -63,6 +64,7 @@ export async function resolveReportData(
     vehiclePlate: i.vehicle?.vehicleNo ?? null,
     intakeTime: i.intakeTime,
     facilityName: i.facility?.name ?? null,
+    disposalSiteName: i.disposalSite?.name ?? null,
     materialCategory: i.materialCategory,
     weightTon: round3(Number(i.weightTon)),
     note: i.note,

@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useUsernameCheck } from '@/lib/use-username-check';
+import { todayLocalStr } from '@/lib/dates';
 
 const ROLE_LABEL: Record<string, string> = {
   SUPER_ADMIN: '시스템관리자',
@@ -311,8 +312,8 @@ export function AuditLogTab() {
   const [actorRole, setActorRole] = useState('');
   const [contractorFilter, setContractorFilter] = useState(''); // contractorId 또는 회사명
   const [municipalityFilter, setMunicipalityFilter] = useState(''); // muni id/name
-  const [from, setFrom] = useState(() => new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10));
-  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [from, setFrom] = useState(() => { const d = new Date(Date.now() - 7 * 24 * 3600_000); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; });
+  const [to, setTo] = useState(() => todayLocalStr());
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
 

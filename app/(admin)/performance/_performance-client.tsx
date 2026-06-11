@@ -31,9 +31,12 @@ const INTAKE_CATEGORIES = [
 ];
 const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(INTAKE_CATEGORIES.map((m) => [m.code, m.label]));
 
+type DisposalSite = { id: string; name: string; address: string | null };
+
 type WasteRecord = {
   id: string; recordDate: string; materialCode: string; weightTon: number;
   note: string | null; recorderName: string; recorderRole: string;
+  disposalSiteId: string | null; disposalSiteName: string | null;
 };
 type IntakeRecord = {
   id: string; intakeDate: string; intakeTime: string; vehicleId: string;
@@ -42,6 +45,8 @@ type IntakeRecord = {
   facilityId: string | null;     // Design Ref: §3.1.2
   facilityName: string | null;
   facilityType: string | null;
+  disposalSiteId: string | null;
+  disposalSiteName: string | null;
 };
 
 type WasteStats = {
@@ -108,10 +113,18 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 function WasteTab({ canEdit }: { canEdit: boolean }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<WasteRecord[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, { weight: string; note: string }>>({});
+  const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, { weight: string; note: string; siteId: string }>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/admin/disposal-sites')
+      .then((r) => r.json())
+      .then((d) => setDisposalSites(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   function load() {
     const url = view === 'daily'
@@ -126,18 +139,22 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
   for (const r of items.filter((i) => i.recordDate === date)) byMaterial.set(r.materialCode, r);
 
   async function saveOne(materialCode: string) {
-    const draft = drafts[materialCode] ?? { weight: '', note: '' };
+    const draft = drafts[materialCode] ?? { weight: '', note: '', siteId: '' };
     const w = Number(draft.weight);
     if (!Number.isFinite(w) || w < 0) { alert('실적(ton)은 0 이상 숫자'); return; }
     setSaving(materialCode);
     const res = await fetch('/api/waste-records', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ recordDate: date, materialCode, weightTon: w, note: draft.note || undefined }),
+      body: JSON.stringify({
+        recordDate: date, materialCode, weightTon: w,
+        note: draft.note || undefined,
+        disposalSiteId: draft.siteId || null,
+      }),
     });
     setSaving(null);
     if (res.ok) {
-      setDrafts({ ...drafts, [materialCode]: { weight: '', note: '' } });
+      setDrafts({ ...drafts, [materialCode]: { weight: '', note: '', siteId: '' } });
       load();
       router.refresh();
     } else alert('실패: ' + (await res.json().catch(() => ({}))).error);
@@ -145,7 +162,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-surface border border-line rounded-lg p-4 flex items-center gap-3">
+      <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
           <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">기준일</div>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
@@ -165,7 +182,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
             </button>
           </div>
         </div>
-        <div className="ml-auto text-xs font-mono">
+        <div className="ml-auto text-xs font-mono self-center">
           {view === 'daily' ? date : date.slice(0, 7)} · 합계 <span className="font-extrabold text-accent">
             {items.filter((i) => view === 'daily' ? i.recordDate === date : i.recordDate.startsWith(date.slice(0, 7)))
               .reduce((s, i) => s + i.weightTon, 0).toFixed(3)}
@@ -188,44 +205,64 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         <div className="divide-y divide-line">
           {WASTE_MATERIALS.map((m, idx) => {
             const cur = byMaterial.get(m.code);
-            const draft = drafts[m.code] ?? { weight: '', note: '' };
+            const draft = drafts[m.code] ?? { weight: '', note: '', siteId: cur?.disposalSiteId ?? '' };
             return (
-              <div
-                key={m.code}
-                className={`flex items-center gap-1 px-1.5 py-1.5 ${cur ? 'bg-emerald-50/30' : ''}`}
-              >
-                <span className="w-5 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
-                  {idx + 1}
-                </span>
-                <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-xs">
-                  {m.label}
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  pattern="[0-9]*\.?[0-9]*"
-                  value={draft.weight}
-                  disabled={!canEdit}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/[^0-9.]/g, '');
-                    setDrafts({ ...drafts, [m.code]: { ...draft, weight: v } });
-                  }}
-                  placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
-                  className="px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
-                  style={{ width: 'clamp(36px, 11vw, 56px)' }}
-                />
-                <span className="hidden sm:block flex-shrink-0 w-28 text-[0.625rem] text-slate-600 truncate">
-                  {cur ? `${cur.recorderName} (${cur.recorderRole})` : '—'}
-                </span>
-                {canEdit && (
-                  <button
-                    onClick={() => saveOne(m.code)}
-                    disabled={saving === m.code || !draft.weight}
-                    className="py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40 flex-shrink-0"
-                    style={{ width: 'clamp(40px, 13vw, 56px)' }}
-                  >
-                    {saving === m.code ? '…' : cur ? '갱신' : '등록'}
-                  </button>
+              <div key={m.code} className={`${cur ? 'bg-emerald-50/30' : ''}`}>
+                <div className="flex items-center gap-1 px-1.5 py-1.5">
+                  <span className="w-5 text-center font-mono font-extrabold text-slate-600 text-xs flex-shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="flex-1 min-w-0 truncate font-extrabold text-ink text-xs">
+                    {m.label}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={draft.weight}
+                    disabled={!canEdit}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9.]/g, '');
+                      setDrafts({ ...drafts, [m.code]: { ...draft, weight: v } });
+                    }}
+                    placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
+                    className="px-1 py-1 rounded border border-line text-xs font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
+                    style={{ width: 'clamp(36px, 11vw, 56px)' }}
+                  />
+                  <span className="hidden sm:block flex-shrink-0 w-36 text-[0.625rem] text-slate-600 truncate">
+                    {cur ? (
+                      <>
+                        {cur.recorderName} ({cur.recorderRole})
+                        {cur.disposalSiteName && (
+                          <span className="block text-emerald-700 font-bold">📍 {cur.disposalSiteName}</span>
+                        )}
+                      </>
+                    ) : '—'}
+                  </span>
+                  {canEdit && (
+                    <button
+                      onClick={() => saveOne(m.code)}
+                      disabled={saving === m.code || !draft.weight}
+                      className="py-1 rounded text-[0.625rem] font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-40 flex-shrink-0"
+                      style={{ width: 'clamp(40px, 13vw, 56px)' }}
+                    >
+                      {saving === m.code ? '…' : cur ? '갱신' : '등록'}
+                    </button>
+                  )}
+                </div>
+                {canEdit && disposalSites.length > 0 && draft.weight && (
+                  <div className="px-1.5 pb-1.5">
+                    <select
+                      value={draft.siteId}
+                      onChange={(e) => setDrafts({ ...drafts, [m.code]: { ...draft, siteId: e.target.value } })}
+                      className="w-full px-2 py-1 rounded border border-line text-[0.625rem] font-bold bg-white"
+                    >
+                      <option value="">— 처리장소 선택 (선택사항) —</option>
+                      {disposalSites.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
               </div>
             );
@@ -245,6 +282,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                 <th className="px-3 py-1.5 text-left">일자</th>
                 <th className="px-3 py-1.5 text-left">성상</th>
                 <th className="px-3 py-1.5 text-right">실적(ton)</th>
+                <th className="px-3 py-1.5 text-left">처리장소</th>
                 <th className="px-3 py-1.5 text-left">기록자</th>
               </tr>
             </thead>
@@ -254,6 +292,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                   <td className="px-3 py-1.5 font-mono">{r.recordDate}</td>
                   <td className="px-3 py-1.5 font-bold">{MATERIAL_LABEL[r.materialCode] ?? r.materialCode}</td>
                   <td className="px-3 py-1.5 text-right font-mono font-extrabold">{r.weightTon.toFixed(3)}</td>
+                  <td className="px-3 py-1.5 text-xs">{r.disposalSiteName ?? <span className="text-slate-400 italic">(미지정)</span>}</td>
                   <td className="px-3 py-1.5 text-xs">{r.recorderName}</td>
                 </tr>
               ))}
@@ -338,6 +377,7 @@ function IntakeTab({ canEdit, vehicles }: {
               <th className="px-3 py-2 text-left">반입시간</th>
               <th className="px-3 py-2 text-left">차량</th>
               <th className="px-3 py-2 text-left">처리시설</th>
+              <th className="px-3 py-2 text-left">반입장소</th>
               <th className="px-3 py-2 text-left">성상</th>
               <th className="px-3 py-2 text-right">반입량(ton)</th>
               <th className="px-3 py-2 text-left">비고</th>
@@ -347,7 +387,7 @@ function IntakeTab({ canEdit, vehicles }: {
           </thead>
           <tbody className="divide-y divide-line">
             {items.length === 0 && (
-              <tr><td colSpan={9} className="px-3 py-10 text-center text-slate-500">반입 기록이 없습니다.</td></tr>
+              <tr><td colSpan={10} className="px-3 py-10 text-center text-slate-500">반입 기록이 없습니다.</td></tr>
             )}
             {items.map((i) => (
               <tr key={i.id} className="hover:bg-slate-50">
@@ -355,7 +395,12 @@ function IntakeTab({ canEdit, vehicles }: {
                 <td className="px-3 py-1.5 font-mono font-extrabold">{i.intakeTime}</td>
                 <td className="px-3 py-1.5 font-bold">{i.vehicleNo}</td>
                 <td className="px-3 py-1.5 text-xs">
-                  {i.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}
+                  {i.facilityName ?? <span className="text-slate-400 italic">—</span>}
+                </td>
+                <td className="px-3 py-1.5 text-xs">
+                  {i.disposalSiteName
+                    ? <span className="font-bold text-emerald-700">📍 {i.disposalSiteName}</span>
+                    : <span className="text-slate-400 italic">(미지정)</span>}
                 </td>
                 <td className="px-3 py-1.5">
                   <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-accent-soft text-accent border border-accent">
@@ -402,11 +447,20 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     intakeTime: initial?.intakeTime ?? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
     vehicleId: initial?.vehicleId ?? (vehicles[0]?.id ?? ''),
     facilityId: initial?.facilityId ?? null,  // Design Ref: §3.1.2
+    disposalSiteId: initial?.disposalSiteId ?? null,
     materialCategory: initial?.materialCategory ?? 'GENERAL',
     weightTon: initial ? String(initial.weightTon) : '',
     note: initial?.note ?? '',
   });
+  const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/disposal-sites')
+      .then((r) => r.json())
+      .then((d) => setDisposalSites(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   async function submit() {
     const w = Number(form.weightTon);
@@ -418,7 +472,8 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     const body: Record<string, unknown> = {
       intakeDate: form.intakeDate, intakeTime: form.intakeTime,
       materialCategory: form.materialCategory, weightTon: w, note: form.note || undefined,
-      facilityId: form.facilityId,  // null 허용
+      facilityId: form.facilityId,
+      disposalSiteId: form.disposalSiteId,
     };
     if (!initial) body.vehicleId = form.vehicleId;
     const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -472,6 +527,18 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
               className="w-full"
             />
           </div>
+          {disposalSites.length > 0 && (
+            <div className="col-span-2">
+              <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">반입장소</div>
+              <select value={form.disposalSiteId ?? ''} onChange={(e) => setForm({ ...form, disposalSiteId: e.target.value || null })}
+                className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
+                <option value="">— 반입장소 선택 (선택사항) —</option>
+                {disposalSites.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="col-span-2">
             <div className="text-[0.625rem] font-mono font-extrabold text-slate-600 mb-1">비고</div>
             <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}

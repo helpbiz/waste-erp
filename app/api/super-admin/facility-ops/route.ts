@@ -7,6 +7,7 @@
  * Plan SC: FR-02 (upsert), FR-03 (기간 조회), FR-04 (권한 분기)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -121,9 +122,7 @@ export async function GET(req: Request) {
   }
 
   // 시설 담당자: 본인 담당 집하장만 조회 가능
-  const effectiveFacilityId = operatorFacilityId
-    ? operatorFacilityId
-    : (facilityIdParam ? BigInt(facilityIdParam) : null);
+  const effectiveFacilityId = operatorFacilityId ?? parseId(facilityIdParam);
 
   let muniFilter: { municipalityId: bigint } | undefined;
   if (isAdmin) {
@@ -167,7 +166,8 @@ export async function POST(req: Request) {
   }
 
   const data = parsed.data;
-  const facilityIdBig = BigInt(data.facilityId);
+  const facilityIdBig = parseId(data.facilityId);
+  if (!facilityIdBig) return NextResponse.json({ error: 'invalid_facilityId' }, { status: 400 });
 
   // 시설 담당자: 본인 담당 집하장만 기록 가능
   if (operatorFacilityId && operatorFacilityId !== facilityIdBig) {

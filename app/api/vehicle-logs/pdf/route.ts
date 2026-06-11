@@ -13,6 +13,7 @@ import path from 'path';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
+import { logger } from '@/lib/logger';
 import { vehicleTypeLabel } from '@/lib/vehicle-types';
 import { todayKstDate } from '@/lib/dates';
 import { renderVehicleLogHtml } from '@/lib/vehicle-log/pdf-html';
@@ -111,7 +112,7 @@ export async function GET(req: Request) {
         pageCount: logs.length,
         createdBy: BigInt(session.userId),
       },
-    }).catch(() => undefined);
+    }).catch((err) => logger.error('vehicle_pdf_archive_write_failed', { date: dateStr }, err));
   }
 
   /* 감사 로그 */
@@ -125,7 +126,7 @@ export async function GET(req: Request) {
       ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
       metadata: { date: dateStr, vehicleId: vehicleIdParam, pages: logs.length } as object,
     },
-  }).catch(() => undefined);
+  }).catch((err) => logger.error('audit_log_write_failed', { action: 'REPORT_DOWNLOAD', resourceType: 'vehicle_pdf' }, err));
 
   const downloadName = `차량운행일지${vehicleNoSuffix}_${dateStr}.pdf`;
   return new Response(new Uint8Array(pdfBuffer), {

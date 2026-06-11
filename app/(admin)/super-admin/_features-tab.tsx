@@ -57,7 +57,7 @@ export default function ContractorFeaturesTab() {
 
   function loadList() {
     fetch('/api/super-admin/contractor-features')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
         setList(d);
         if (!selected && d.contractors?.length > 0) setSelected(d.contractors[0].id);
@@ -67,7 +67,7 @@ export default function ContractorFeaturesTab() {
 
   function loadDetail(id: string) {
     fetch(`/api/super-admin/contractor-features?contractorId=${id}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setDetail)
       .catch(() => null);
   }

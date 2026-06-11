@@ -22,7 +22,11 @@ export async function GET(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const url = new URL(req.url);
-  const year = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  const yearRaw = Number(url.searchParams.get('year') ?? new Date().getFullYear());
+  if (!Number.isInteger(yearRaw) || yearRaw < 2020 || yearRaw > 2100) {
+    return NextResponse.json({ error: 'invalid_year' }, { status: 400 });
+  }
+  const year = yearRaw;
   const from = new Date(Date.UTC(year, 0, 1));
   const to = new Date(Date.UTC(year + 1, 0, 1));
 

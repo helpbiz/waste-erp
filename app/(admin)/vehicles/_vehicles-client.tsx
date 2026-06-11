@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VEHICLE_TYPE_OPTIONS, VEHICLE_TYPE_LABEL, type VehicleTypeKey } from '@/lib/vehicle-types';
+import { todayLocalStr, thisMonthLocalStr } from '@/lib/dates';
 
 const INSPECTION_KEY_LABEL: Record<string, string> = {
   safetyBar: '안전멈춤Bar', handSwitch: '양손조작안전스위치', dashcam: '블랙박스',
@@ -91,7 +92,7 @@ export default function VehiclesClient({
   async function handleExport() {
     setExporting(true);
     try {
-      const from = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+      const from = thisMonthLocalStr() + '-01';
       const to   = dateInput;
       const res  = await fetch(`/api/vehicle-logs/export?from=${from}&to=${to}`);
       if (!res.ok) return;

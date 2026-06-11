@@ -27,6 +27,21 @@ export function isLateCheckIn(checkInTime: Date): boolean {
   return minutesOfDayKst(checkInTime) > LATE_THRESHOLD_MIN;
 }
 
+/**
+ * 브라우저 클라이언트 전용 — 시스템 로컬 시각(KST) 기준 YYYY-MM-DD
+ * toISOString()은 UTC 기준이므로 자정~오전 9시에 전날 날짜를 반환하는 문제를 방지.
+ */
+export function todayLocalStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** 브라우저 클라이언트 전용 — 로컬 기준 YYYY-MM */
+export function thisMonthLocalStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 /** HH:MM 포맷 (KST) */
 export function formatHmKst(d: Date): string {
   const k = new Date(d.getTime() + KST_OFFSET_MS);

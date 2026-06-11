@@ -36,18 +36,15 @@ export async function decryptField(blob: string | null | undefined): Promise<str
   if (!blob.startsWith(VERSION + ':')) return blob;
   const parts = blob.split(':');
   if (parts.length !== 4) return null;
-  try {
-    const { key } = await getMasterKey();
-    const iv = Buffer.from(parts[1], 'base64');
-    const tag = Buffer.from(parts[2], 'base64');
-    const ct = Buffer.from(parts[3], 'base64');
-    const dec = createDecipheriv(ALGO, key, iv);
-    dec.setAuthTag(tag);
-    const out = Buffer.concat([dec.update(ct), dec.final()]).toString('utf8');
-    return out;
-  } catch {
-    return null; // 복호화 실패 = 위변조 또는 키 불일치
-  }
+  /* P0-3: 복호화 실패 시 null 반환 대신 예외 전파 — KMS 키 불일치나 위변조를 무음 처리하지 않음 */
+  const { key } = await getMasterKey();
+  const iv = Buffer.from(parts[1], 'base64');
+  const tag = Buffer.from(parts[2], 'base64');
+  const ct = Buffer.from(parts[3], 'base64');
+  const dec = createDecipheriv(ALGO, key, iv);
+  dec.setAuthTag(tag);
+  const out = Buffer.concat([dec.update(ct), dec.final()]).toString('utf8');
+  return out;
 }
 
 export async function encryptNumber(n: number | null | undefined): Promise<string | null> {

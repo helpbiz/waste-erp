@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { todayLocalStr } from '@/lib/dates';
 import type { ChecklistItem as BaseChecklistItem } from '@/lib/safety';
 type ChecklistItem = BaseChecklistItem & { reason?: string };
 import type { WeatherSnapshot } from '@/lib/weather';
@@ -129,8 +130,8 @@ export default function SafetyClient({
   async function handleExport() {
     setExporting(true);
     try {
-      const from = new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
-      const to   = new Date().toISOString().slice(0, 10);
+      const from = `${new Date().getFullYear()}-01-01`;
+      const to   = todayLocalStr();
       const res  = await fetch(`/api/safety/reports/export?from=${from}&to=${to}`);
       if (!res.ok) return;
       const blob = await res.blob();

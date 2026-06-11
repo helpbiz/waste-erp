@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { nowKst } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -22,8 +23,9 @@ export async function GET(req: Request) {
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const url = new URL(req.url);
-  const from = url.searchParams.get('from') ?? new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
-  const to = url.searchParams.get('to') ?? new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
+  const kstYear = nowKst().getUTCFullYear();
+  const from = url.searchParams.get('from') ?? `${kstYear}-01-01`;
+  const to = url.searchParams.get('to') ?? `${kstYear}-12-31`;
 
   const where: Prisma.WasteTreatmentRecordWhereInput = {
     ...contractorScope(session),

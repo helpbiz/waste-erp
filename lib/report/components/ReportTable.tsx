@@ -115,6 +115,7 @@ function readField(path: string, row: ReportData['rows'][number]): unknown {
     'vehicle.plateNumber': 'vehiclePlate',
     intakeTime: 'intakeTime',
     'facility.name': 'facilityName',
+    'disposal_site.name': 'disposalSiteName',
     materialCategory: 'materialCategory',
     weightTon: 'weightTon',
     note: 'note',

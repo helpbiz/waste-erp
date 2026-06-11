@@ -4,6 +4,7 @@
  * safety는 reviewNote 필수 (공통 메모 사용)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -39,25 +40,27 @@ export async function POST(req: Request) {
   const results: Array<{ kind: string; id: string; ok: boolean; error?: string }> = [];
 
   for (const item of items) {
+    const itemId = parseId(item.id);
+    if (!itemId) { results.push({ kind: item.kind, id: item.id, ok: false, error: 'invalid_id' }); continue; }
     try {
       if (item.kind === 'leave') {
         await prisma.leaveRequest.update({
-          where: { id: BigInt(item.id) },
+          where: { id: itemId },
           data: { status: 'APPROVED' },
         });
         results.push({ kind: item.kind, id: item.id, ok: true });
 
       } else if (item.kind === 'attendance') {
         await prisma.attendanceRecord.update({
-          where: { id: BigInt(item.id) },
+          where: { id: itemId },
           data: { status: 'APPROVED' },
         });
         results.push({ kind: item.kind, id: item.id, ok: true });
 
       } else if (item.kind === 'vehicleLog') {
         const log = await prisma.vehicleLog.findUnique({
-          where: { id: BigInt(item.id) },
-          select: { endMileage: true, startMileage: true, vehicle: { select: { totalMileage: true } } },
+          where: { id: itemId },
+          select: { vehicleId: true, endMileage: true, startMileage: true },
         });
         if (!log) { results.push({ kind: item.kind, id: item.id, ok: false, error: 'not_found' }); continue; }
 
@@ -66,11 +69,11 @@ export async function POST(req: Request) {
 
         await prisma.$transaction([
           prisma.vehicleLog.update({
-            where: { id: BigInt(item.id) },
+            where: { id: itemId },
             data: { status: 'APPROVED' },
           }),
           ...(delta > 0 ? [prisma.vehicle.update({
-            where: { id: (await prisma.vehicleLog.findUnique({ where: { id: BigInt(item.id) }, select: { vehicleId: true } }))!.vehicleId },
+            where: { id: log.vehicleId },
             data: { totalMileage: { increment: delta } },
           })] : []),
         ]);
@@ -78,11 +81,12 @@ export async function POST(req: Request) {
 
       } else if (item.kind === 'safety') {
         const note = reviewNote?.trim() || '일괄 검토 완료';
+        const reviewerId = parseId(session.userId);
         await prisma.safetyReport.update({
-          where: { id: BigInt(item.id) },
+          where: { id: itemId },
           data: {
             status: 'REVIEWED',
-            reviewedBy: BigInt(session.userId),
+            reviewedBy: reviewerId,
             reviewedAt: new Date(),
             reviewNote: note,
           },

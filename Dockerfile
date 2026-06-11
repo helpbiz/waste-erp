@@ -12,16 +12,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-# 빌드 단계 stub envvars — Next.js의 'Collecting page data' 단계에서
-# lib/auth.ts 등 module-level env 검증 통과용. Runtime엔 .env.prod 값 사용.
-ARG JWT_SECRET=build-time-stub-secret-32chars-padding-x
-ARG KMS_LOCAL_KEY=build-time-stub-kms-key-32chars-padding-x
-ARG DATABASE_URL=postgresql://stub:stub@localhost:5432/stub
-ENV JWT_SECRET=$JWT_SECRET
-ENV KMS_LOCAL_KEY=$KMS_LOCAL_KEY
-ENV DATABASE_URL=$DATABASE_URL
+# P2-8: BuildKit secret mount — 빌드타임 env 값을 레이어에 평문으로 굽지 않음.
+# 'Collecting page data' 단계 lib/auth.ts module-level 검증 통과용 stub.
+# Runtime 실제 값은 docker compose env_file(.env/.env.prod)로 주입됨.
 RUN npx prisma generate
-RUN npm run build
+RUN --mount=type=secret,id=jwt_secret \
+    --mount=type=secret,id=kms_local_key \
+    JWT_SECRET=$(cat /run/secrets/jwt_secret 2>/dev/null || echo 'build-time-stub-secret-32chars-padding') \
+    KMS_LOCAL_KEY=$(cat /run/secrets/kms_local_key 2>/dev/null || echo 'build-time-stub-kms-key-32chars-pad') \
+    DATABASE_URL=postgresql://stub:stub@localhost:5432/stub \
+    npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

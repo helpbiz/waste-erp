@@ -67,20 +67,23 @@ export async function POST(req: Request) {
     ? { id: { in: ids.map((i) => BigInt(i)) }, contractorId, yearMonth }
     : { contractorId, yearMonth, isPublished: false };
 
-  const { count } = await prisma.payslipRecord.updateMany({
-    where,
-    data: { isPublished: true, publishedAt: now },
+  /* P2-3: updateMany + auditLog를 단일 트랜잭션으로 묶어 로그 누락 방지 */
+  const publishedCount = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.payslipRecord.updateMany({
+      where,
+      data: { isPublished: true, publishedAt: now },
+    });
+    await tx.auditLog.create({
+      data: {
+        actorId: BigInt(session.userId), actorRole: session.role,
+        action: 'PAYSLIP_PUBLISH', resourceType: 'payslip_record',
+        resourceId: contractorId.toString(),
+        contractorId,
+        metadata: { yearMonth, publishedCount: count } as object,
+      },
+    });
+    return count;
   });
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: BigInt(session.userId), actorRole: session.role,
-      action: 'PAYSLIP_PUBLISH', resourceType: 'payslip_record',
-      resourceId: contractorId.toString(),
-      contractorId,
-      metadata: { yearMonth, publishedCount: count } as object,
-    },
-  });
-
-  return NextResponse.json({ ok: true, publishedCount: count });
+  return NextResponse.json({ ok: true, publishedCount });
 }

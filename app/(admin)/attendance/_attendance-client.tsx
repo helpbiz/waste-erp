@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AccessibleConfirmDialog from '@/components/ui/AccessibleConfirmDialog';
+import { todayLocalStr } from '@/lib/dates';
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: '대기', APPROVED: '승인', REJECTED: '반려', ADJUSTED: '조정됨',
@@ -37,6 +38,7 @@ export default function AttendanceClient({
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [editingInitTab, setEditingInitTab] = useState<'adjust' | 'history'>('adjust');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [exporting, setExporting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -58,7 +60,7 @@ export default function AttendanceClient({
     finally { setExporting(false); }
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayLocalStr();
   const isToday = selectedDate === todayStr;
 
   // 오늘 날짜 조회 시 60초마다 자동 새로고침
@@ -203,12 +205,23 @@ export default function AttendanceClient({
                 {canManage && (
                   <td className="px-3 py-2">
                     {r.recordId ? (
-                      <button
-                        onClick={() => setEditing(r)}
-                        className="px-3 py-1.5 rounded-md text-xs font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
-                      >
-                        조정/반려
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => { setEditing(r); setEditingInitTab('adjust'); }}
+                          className="px-3 py-1.5 rounded-md text-xs font-extrabold border-2 border-accent text-accent hover:bg-accent hover:text-white transition active:scale-95"
+                        >
+                          조정/반려
+                        </button>
+                        {r.status === 'ADJUSTED' && (
+                          <button
+                            onClick={() => { setEditing(r); setEditingInitTab('history'); }}
+                            title="정정 이력 조회"
+                            className="px-2 py-1.5 rounded-md text-xs font-extrabold border-2 border-slate-300 text-slate-600 hover:bg-slate-100 transition active:scale-95"
+                          >
+                            이력
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-[0.625rem] font-mono text-slate-400">출근 전</span>
                     )}
@@ -221,11 +234,12 @@ export default function AttendanceClient({
         </div>
       </div>
 
-      {/* 조정/반려 모달 (사용자 요청 2026-04-28). */}
+      {/* 조정/반려 + 정정 이력 모달 */}
       {editing && editing.recordId && (
         <AdjustModal
           row={editing}
           dateStr={selectedDate}
+          defaultTab={editingInitTab}
           onClose={() => setEditing(null)}
           onSuccess={() => { setEditing(null); router.refresh(); }}
         />
@@ -237,11 +251,57 @@ export default function AttendanceClient({
 
 /* ─────────────── 조정/반려 모달 ─────────────── */
 
+type AdjustHistoryEntry = {
+  id: string;
+  adjustedBy: string;
+  adjustedByName: string | null;
+  adjustmentType: string;
+  reason: string;
+  original: { checkIn: string | null; checkOut: string | null; workType: string | null };
+  adjusted: { checkIn: string | null; checkOut: string | null; workType: string | null };
+  createdAt: string;
+};
+
+const ADJUSTMENT_TYPE_LABEL: Record<string, string> = {
+  CORRECTION: '정정', ADDITION: '추가', DELETION: '삭제', LEAVE: '휴가처리',
+};
+
+function HistoryCard({ entry, index }: { entry: AdjustHistoryEntry; index: number }) {
+  function fmt(iso: string | null) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  }
+  return (
+    <div className="border border-line rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[0.6875rem] font-mono text-ink-muted">#{index}</span>
+          <span className="px-2 py-0.5 rounded text-[0.6875rem] font-extrabold bg-blue-100 text-blue-800 border border-blue-300">
+            {ADJUSTMENT_TYPE_LABEL[entry.adjustmentType] ?? entry.adjustmentType}
+          </span>
+        </div>
+        <span className="text-[0.6875rem] font-mono text-ink-muted">
+          {new Date(entry.createdAt).toLocaleString('ko-KR')}
+          {entry.adjustedByName ? ` · ${entry.adjustedByName}` : ''}
+        </span>
+      </div>
+      <div className="text-sm font-bold text-ink bg-amber-50 border border-amber-200 rounded px-3 py-2">
+        사유: {entry.reason}
+      </div>
+      <div className="text-xs font-mono text-ink-muted space-y-0.5">
+        <div>출근: {fmt(entry.original.checkIn)} → {fmt(entry.adjusted.checkIn)}</div>
+        <div>퇴근: {fmt(entry.original.checkOut)} → {fmt(entry.adjusted.checkOut)}</div>
+      </div>
+    </div>
+  );
+}
+
 function AdjustModal({
-  row, dateStr, onClose, onSuccess,
+  row, dateStr, defaultTab = 'adjust', onClose, onSuccess,
 }: {
   row: Row;
   dateStr: string;
+  defaultTab?: 'adjust' | 'history';
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -260,6 +320,10 @@ function AdjustModal({
     return local.toISOString();
   }
 
+  const [tab, setTab] = useState<'adjust' | 'history'>(defaultTab);
+  const [history, setHistory] = useState<{ entries: AdjustHistoryEntry[]; chainOk: boolean } | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const [checkIn, setCheckIn] = useState(isoToHm(row.checkInTime));
   const [checkOut, setCheckOut] = useState(isoToHm(row.checkOutTime));
   const [workType, setWorkType] = useState<string>(row.workType ?? 'NORMAL');
@@ -268,6 +332,22 @@ function AdjustModal({
   const [error, setError] = useState<string | null>(null);
   const [confirmReject, setConfirmReject] = useState(false);
   const [confirmNightReset, setConfirmNightReset] = useState(false);
+
+  /* 이력 탭 활성화 시 데이터 조회 */
+  useEffect(() => {
+    if (tab !== 'history' || !row.recordId || history !== null) return;
+    setHistoryLoading(true);
+    fetch(`/api/attendance/${row.recordId}/history`)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((d) => {
+        setHistory({
+          entries: d.adjustments ?? [],
+          chainOk: d.chain?.verified ?? true,
+        });
+      })
+      .catch(() => setHistory({ entries: [], chainOk: false }))
+      .finally(() => setHistoryLoading(false));
+  }, [tab, row.recordId, history]);
 
   const shiftComplete = !!(row.checkInTime && row.checkOutTime);
 
@@ -351,13 +431,27 @@ function AdjustModal({
     <>
       <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-center justify-center px-4" onClick={onClose}>
         <div className="w-full max-w-[520px] bg-surface rounded-xl shadow-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <header className="px-5 py-4 bg-surface-soft border-b-2 border-line">
-            <h3 className="text-base font-extrabold text-ink">근태 조정/반려 — {row.workerName}</h3>
-            <div className="text-[0.6875rem] font-mono font-bold text-ink-muted mt-0.5">
-              기준일 {dateStr} · 사유 + 출퇴근 시각 변경 시 attendance_adjustments(SHA-256) + audit_log 기록
+          <header className="px-5 pt-4 pb-0 bg-surface-soft border-b-2 border-line">
+            <h3 className="text-base font-extrabold text-ink mb-3">근태 조정 — {row.workerName}</h3>
+            <div className="flex gap-0 border-b border-transparent -mb-[2px]">
+              {(['adjust', 'history'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`px-4 py-2 text-xs font-extrabold border-b-2 transition-colors ${
+                    tab === t
+                      ? 'border-accent text-accent bg-white'
+                      : 'border-transparent text-ink-muted hover:text-ink'
+                  }`}
+                >
+                  {t === 'adjust' ? '조정 / 반려' : `정정 이력${history ? ` (${history.entries.length}건)` : ''}`}
+                </button>
+              ))}
             </div>
           </header>
 
+          {/* ── 조정/반려 탭 ── */}
+          {tab === 'adjust' && (<>
           <div className="p-5 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
@@ -431,6 +525,44 @@ function AdjustModal({
               </button>
             </div>
           </footer>
+          </>)}
+
+          {/* ── 정정 이력 탭 ── */}
+          {tab === 'history' && (
+            <div className="p-5">
+              {historyLoading && (
+                <div className="text-center py-8 text-sm text-ink-muted font-bold">이력 불러오는 중…</div>
+              )}
+              {!historyLoading && history && (
+                <>
+                  {/* 체인 무결성 */}
+                  <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-extrabold ${
+                    history.chainOk
+                      ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
+                      : 'bg-red-50 border border-red-300 text-red-800'
+                  }`}>
+                    {history.chainOk ? '✓ SHA-256 체인 무결성 검증 완료' : '⚠ 체인 무결성 오류 — 감사 필요'}
+                  </div>
+
+                  {history.entries.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-ink-muted">정정 이력이 없습니다.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {history.entries.map((e, i) => (
+                        <HistoryCard key={e.id} entry={e} index={i + 1} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="mt-4 flex justify-end">
+                <button onClick={onClose}
+                  className="px-4 py-2 rounded-md border-2 border-line-strong text-sm font-bold hover:bg-surface">
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

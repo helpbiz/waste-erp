@@ -14,14 +14,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { runBulkyImport } from '@/lib/bulky-waste';
+import { isCronAuthorized } from '@/lib/cron-auth';
 
 export const runtime = 'nodejs';
 
-function authorized(req: Request): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return false;
-  return req.headers.get('authorization') === `Bearer ${expected}`;
-}
+const authorized = isCronAuthorized;
 
 function nowKstHHMM(): string {
   const d = new Date();

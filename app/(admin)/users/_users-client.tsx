@@ -512,7 +512,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
 
   useEffect(() => {
     fetch(`/api/users/${user.id}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
         const u = d.user;
         setDetail({
@@ -529,6 +529,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
           emergencyPhone: u.emergencyPhone ?? '',
         }));
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [user.id]);
 
@@ -835,19 +836,20 @@ function ProfileTab({
 }
 
 function ProfileEditor({ user, canManage, positions, departments }: { user: UserRow; canManage: boolean; positions: PositionRow[]; departments: DepartmentRow[] }) {
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: user.name,
     phone: user.phone ?? '',
     employeeNo: user.employeeNo ?? '',
     birthDate: user.birthDate ?? '',
     gender: user.gender ?? '',
-    address: user.address ?? '',
+    address: '',
     hireDate: user.hireDate ?? '',
     resignDate: user.resignDate ?? '',
     emergencyContact: user.emergencyContact ?? '',
     emergencyPhone: user.emergencyPhone ?? '',
     bankName: user.bankName ?? '',
-    bankAccount: user.bankAccount ?? '',
+    bankAccount: '',
     memo: user.memo ?? '',
     password: '',
     positionCode: user.position?.code ?? '',
@@ -857,9 +859,22 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
   });
   const [orgOptions, setOrgOptions] = useState<{ positions: { id: string; name: string }[]; ranks: { id: string; name: string }[] }>({ positions: [], ranks: [] });
   useEffect(() => {
-    fetch('/api/contractor/positions').then((r) => r.json()).then((d) => setOrgOptions((o) => ({ ...o, positions: d.positions ?? [] }))).catch(() => {});
-    fetch('/api/contractor/ranks').then((r) => r.json()).then((d) => setOrgOptions((o) => ({ ...o, ranks: d.ranks ?? [] }))).catch(() => {});
-  }, []);
+    fetch('/api/contractor/positions').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => setOrgOptions((o) => ({ ...o, positions: d.positions ?? [] }))).catch(() => {});
+    fetch('/api/contractor/ranks').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => setOrgOptions((o) => ({ ...o, ranks: d.ranks ?? [] }))).catch(() => {});
+    /* PII 복호화 값 로드 (page props의 address·bankAccount는 암호문) */
+    fetch(`/api/users/${user.id}`)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((d) => {
+        const u = d.user;
+        setForm((f) => ({
+          ...f,
+          address: u.address ?? '',
+          bankAccount: u.bankAccount ?? '',
+        }));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [user.id]);
   const [photo, setPhoto] = useState<string | null>(user.profilePhotoUrl);
   const [photoChanged, setPhotoChanged] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
@@ -1029,9 +1044,9 @@ function ProfileEditor({ user, canManage, positions, departments }: { user: User
       </div>
       {canManage && (
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end">
-          <button disabled={saving} onClick={save}
+          <button disabled={saving || loading} onClick={save}
             className="px-5 py-1.5 rounded-md text-sm font-extrabold bg-accent text-white hover:bg-accent-strong disabled:opacity-50">
-            {saving ? '저장 중…' : '저장'}
+            {saving ? '저장 중…' : loading ? '로딩 중…' : '저장'}
           </button>
         </div>
       )}
@@ -1066,7 +1081,7 @@ function AuditHistory({ userId }: { userId: string }) {
   useEffect(() => {
     if (!open) return;
     fetch(`/api/users/${userId}/audit`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setItems(d.items ?? []))
       .catch(() => setItems([]));
   }, [open, userId]);
@@ -1376,7 +1391,7 @@ function CalendarTab() {
   useEffect(() => {
     setLoading(true);
     fetch(`/api/leave-requests/calendar?ym=${ym}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setData(d))
       .catch(() => setData({ items: [], dayMap: {} }))
       .finally(() => setLoading(false));
@@ -1548,7 +1563,7 @@ function OrgChartTab({ canManage, allUsers, positions }: { canManage: boolean; a
   function load() {
     setLoading(true);
     fetch('/api/org-chart')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
@@ -2217,7 +2232,7 @@ function ApprovalCertModal({ leaveRequestId, onClose }: { leaveRequestId: string
 
   useEffect(() => {
     fetch(`/api/leave-requests/${leaveRequestId}/signature`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setData)
       .catch(() => setData({ error: 'load_failed' }));
   }, [leaveRequestId]);
@@ -2694,7 +2709,7 @@ function LeaveNotifyModal({ year, onClose }: { year: number; onClose: () => void
 
   useEffect(() => {
     fetch(`/api/users/leave-notify?year=${year}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
         setCandidates(d.candidates ?? []);
         setSelectedIds(new Set((d.candidates ?? []).filter((c: { phone: string | null }) => c.phone).map((c: { id: string }) => c.id)));

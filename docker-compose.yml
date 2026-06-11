@@ -1,4 +1,10 @@
 services:
+  # ──────────────────────────────────────────────────────────────────────
+  # P1-4: cleanerp 앱 DB는 docker-compose.prod.yml 의 postgres 서비스 또는
+  #        별도 실행 중인 cleanerp-postgres 컨테이너를 사용한다.
+  #        아래 wci-waste-erp-db 는 WCI 레거시 프로젝트용 별도 DB 이며
+  #        cleanerp 앱과 무관하다. (자격증명·DB명 다름)
+  # ──────────────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     container_name: wci-waste-erp-db
@@ -17,5 +23,43 @@ services:
       timeout: 5s
       retries: 10
 
+  # 포트 정책: 앱 컨테이너는 항상 내부 3000 → 외부 3001 고정.
+  # 절대 포트를 변경하지 말 것 (앱이 설치되어 실제 사용 중).
+  # 테스트가 필요하면 별도 컨테이너(cleanerp-app-test 등)를 3002:3000 으로 띄울 것.
+  app:
+    image: cleanerp-app:latest
+    container_name: cleanerp-app
+    restart: unless-stopped
+    # cleanerp-postgres 컨테이너가 waste-erp_default 네트워크에 존재해야 함
+    # (docker network connect waste-erp_default cleanerp-postgres)
+    # P1-6 보안 주의: 운영 환경에서는 .env 대신 .env.prod 사용 권장
+    #   -> env_file: .env.prod  (JWT_SECRET, KMS_LOCAL_KEY, CRON_SECRET 실제 값 사용)
+    #   현재 .env는 dev 기본값 포함. 시크릿 교체 후 env_file을 .env.prod로 전환할 것.
+    env_file: .env
+    environment:
+      # P1-4: DATABASE_URL은 cleanerp-postgres (내부 Docker 호스트명) 사용
+      # 이 값은 .env 의 localhost URL 을 컨테이너 네트워크용으로 오버라이드한다
+      DATABASE_URL: postgresql://cleanerp:tV7FRpcWgD+G+1r+YqW5L85ajaX9OIFnFaIRsmZFaA8@cleanerp-postgres:5432/cleanerp_prod
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./storage:/app/storage
+    networks:
+      - default
+      - wci_cost_bridge
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 volumes:
   wci-pg-data:
+
+# P2-6: wci-cost-bridge 외부 네트워크 — cost-mvp-api 통신용
+# 'docker network create wci_cost_bridge' 로 사전 생성 또는 scripts/deploy.sh 에서 자동 생성
+networks:
+  default: {}
+  wci_cost_bridge:
+    external: true

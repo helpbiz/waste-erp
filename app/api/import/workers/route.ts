@@ -2,13 +2,15 @@
  * POST /api/import/workers
  * 파싱된 행 데이터 + 컬럼 매핑을 받아 WORKER 계정을 일괄 생성한다.
  * - username: employeeNo 우선, 없으면 자동 생성
- * - password: 기본값 'Qwer1234!' (첫 로그인 후 변경 권장)
+ * - password: 계정마다 crypto.randomBytes(9) 개별 생성 (P0-6: 하드코딩 제거)
  * - role: WORKER, status: ACTIVE
+ * ⚠ 기존 사용자 계정은 절대 변경하지 않음 — 신규 생성 계정에만 적용
  */
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/db';
 import { readSession, hashPassword } from '@/lib/auth';
 import { canManageUsers } from '@/lib/users';
@@ -25,7 +27,10 @@ const BodySchema = z.object({
   contractorId: z.union([z.string(), z.number()]).optional(),
 });
 
-const DEFAULT_PASSWORD = 'Qwer1234!';
+/** P0-6: 계정마다 개별 초기 비밀번호 생성 (9 random bytes → 12자 base64url) */
+function generateInitialPassword(): string {
+  return randomBytes(9).toString('base64url');
+}
 
 async function makeUniqueUsername(base: string): Promise<string> {
   const clean = base.replace(/[^a-zA-Z0-9_\-가-힣]/g, '').slice(0, 40) || 'worker';
@@ -60,11 +65,9 @@ export async function POST(req: Request) {
     contractorId = BigInt(session.contractorId);
   }
 
-  const passwordHash = await hashPassword(DEFAULT_PASSWORD);
-
   type RowResult = {
     rowNo: number; status: 'OK' | 'SKIP' | 'ERROR';
-    message: string; name?: string; username?: string;
+    message: string; name?: string; username?: string; initialPassword?: string;
   };
   const results: RowResult[] = [];
   let okCount = 0;
@@ -98,6 +101,9 @@ export async function POST(req: Request) {
     try {
       const usernameBase = employeeNo ?? `w_${name.replace(/\s+/g, '')}`;
       const username = await makeUniqueUsername(usernameBase);
+      /* P0-6: 계정마다 개별 랜덤 초기 비밀번호 — 기존 계정과 무관 */
+      const initialPassword = generateInitialPassword();
+      const passwordHash = await hashPassword(initialPassword);
 
       const created = await prisma.user.create({
         data: {
@@ -114,7 +120,7 @@ export async function POST(req: Request) {
         },
       });
       okCount++;
-      results.push({ rowNo, status: 'OK', message: `등록 완료 (ID=${created.id})`, name, username });
+      results.push({ rowNo, status: 'OK', message: `등록 완료 (ID=${created.id})`, name, username, initialPassword });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message.slice(0, 80) : 'DB 오류';
       results.push({ rowNo, status: 'ERROR', message: msg, name });

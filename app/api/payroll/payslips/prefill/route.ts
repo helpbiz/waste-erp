@@ -49,13 +49,18 @@ export async function POST(req: Request) {
 
   let contractorId: bigint;
   if (session.role === 'SUPER_ADMIN' || session.role === 'MUNI_ADMIN') {
-    const c = await prisma.contractor.findFirst({
-      where: session.role === 'MUNI_ADMIN' && session.municipalityId
-        ? { municipalityId: BigInt(session.municipalityId) }
-        : {},
-    });
-    if (!c) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
-    contractorId = c.id;
+    /* P2-2: contractorId 필수 — body 또는 query param */
+    const cidRaw = body?.contractorId ?? new URL(req.url).searchParams.get('contractorId');
+    if (!cidRaw) return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+    const cid = (() => { try { return BigInt(cidRaw); } catch { return null; } })();
+    if (!cid) return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+    if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+      const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { municipalityId: true } });
+      if (!c || c.municipalityId.toString() !== session.municipalityId) {
+        return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
+      }
+    }
+    contractorId = cid;
   } else {
     if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
     contractorId = BigInt(session.contractorId);
@@ -88,72 +93,68 @@ export async function POST(req: Request) {
   const payDayLabel = (tmplConfig.payDayLabel as string | undefined) ?? DEFAULT_TEMPLATE.payDayLabel;
   const autoPayDate = derivePayDate(payDayLabel, yearMonth);
 
-  let createdCount = 0;
+  /* P0-4: 읽기(집계)를 선행 후 upsert 전체를 단일 $transaction으로 묶어 부분 저장 방지 */
+  // 1단계: 이미 발송된 명세서 조회 (읽기 전용)
+  const existingMap = new Map(
+    (await prisma.payslipRecord.findMany({
+      where: {
+        contractorId,
+        yearMonth,
+        workerId: { in: mySummaries.map((s) => s.workerId) },
+      },
+      select: { workerId: true, isPublished: true },
+    })).map((r) => [r.workerId.toString(), r.isPublished])
+  );
+
+  // 2단계: 처리 대상 집계 (병렬 읽기)
+  const toUpsert: Array<{ workerId: bigint; draftData: object }> = [];
   let skippedCount = 0;
 
-  for (const s of mySummaries) {
-    // 이미 발송된 명세서는 건너뜀
-    const existing = await prisma.payslipRecord.findUnique({
-      where: { contractorId_workerId_yearMonth: { contractorId, workerId: s.workerId, yearMonth } },
-    });
-    if (existing?.isPublished) {
-      skippedCount++;
-      continue;
-    }
+  await Promise.all(
+    mySummaries.map(async (s) => {
+      if (existingMap.get(s.workerId.toString())) {
+        skippedCount++;
+        return;
+      }
+      const agg = await aggregateWorkerMonth(s.workerId, yearMonth, policy);
+      const draftData = {
+        workDays: agg.totalWorkDays,
+        payDate: autoPayDate,
+        hourlyRate: null,
+        earnings: {
+          기본급: 0, 주휴수당: 0, 연장근로수당: 0, 야간근로수당: 0, 법정휴일근로수당: 0,
+        },
+        deductions: {
+          근로소득세: 0, 지방소득세: 0, 건강보험: 0, 국민연금: 0, 고용보험: 0,
+        },
+        extras: {},
+        workHours: {
+          overtimeBasic: agg.overtimeHours,
+          overtimeExtra: 0,
+          nightBasic: agg.nightHours,
+          nightExtra: 0,
+        },
+        totals: { 임금소계: 0, 공제소계: 0, 실지급액: 0, 총계: 0 },
+      };
+      toUpsert.push({ workerId: s.workerId, draftData });
+    })
+  );
 
-    // 근태 집계에서 draft 데이터 구성
-    const agg = await aggregateWorkerMonth(s.workerId, yearMonth, policy);
-
-    const draftData = {
-      workDays: agg.totalWorkDays,
-      payDate: autoPayDate,
-      hourlyRate: null,
-      earnings: {
-        기본급: 0,
-        주휴수당: 0,
-        연장근로수당: 0,
-        야간근로수당: 0,
-        법정휴일근로수당: 0,
-      },
-      deductions: {
-        근로소득세: 0,
-        지방소득세: 0,
-        건강보험: 0,
-        국민연금: 0,
-        고용보험: 0,
-      },
-      extras: {},
-      workHours: {
-        overtimeBasic: agg.overtimeHours,
-        overtimeExtra: 0,
-        nightBasic: agg.nightHours,
-        nightExtra: 0,
-      },
-      totals: {
-        임금소계: 0,
-        공제소계: 0,
-        실지급액: 0,
-        총계: 0,
-      },
-    };
-
-    await prisma.payslipRecord.upsert({
-      where: { contractorId_workerId_yearMonth: { contractorId, workerId: s.workerId, yearMonth } },
-      create: {
-        contractorId,
-        workerId: s.workerId,
-        yearMonth,
-        data: draftData,
-        isPublished: false,
-        createdBy: BigInt(session.userId),
-      },
-      update: {
-        // 미발송 draft만 업데이트
-        data: draftData,
-      },
-    });
-    createdCount++;
+  // 3단계: 쓰기 전체를 단일 트랜잭션으로 실행
+  if (toUpsert.length > 0) {
+    const createdBy = BigInt(session.userId);
+    await prisma.$transaction(
+      toUpsert.map(({ workerId, draftData }) =>
+        prisma.payslipRecord.upsert({
+          where: { contractorId_workerId_yearMonth: { contractorId, workerId, yearMonth } },
+          create: { contractorId, workerId, yearMonth, data: draftData, isPublished: false, createdBy },
+          update: { data: draftData },
+        })
+      )
+    );
   }
+
+  const createdCount = toUpsert.length;
 
   return NextResponse.json({
     message: `${createdCount}명 초안 생성 완료 (${skippedCount}명 발송완료로 건너뜀)`,

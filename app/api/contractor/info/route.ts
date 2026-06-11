@@ -3,6 +3,7 @@
  * PATCH /api/contractor/info — 회사정보·차고지 수정 (CONTRACTOR_ADMIN+)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -37,8 +38,10 @@ export async function GET(req: Request) {
 
   if (!targetId) return NextResponse.json({ contractor: null });
 
+  const cid = parseId(targetId);
+  if (!cid) return NextResponse.json({ contractor: null });
   const c = await prisma.contractor.findUnique({
-    where: { id: BigInt(targetId) },
+    where: { id: cid },
     include: { municipality: { select: { name: true, code: true } } },
   });
   if (!c) return NextResponse.json({ contractor: null });
@@ -79,8 +82,10 @@ export async function PATCH(req: Request) {
   }
   if (!targetId) return NextResponse.json({ error: 'no_contractor_scope' }, { status: 403 });
 
+  const patchCid = parseId(targetId);
+  if (!patchCid) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   await prisma.contractor.update({
-    where: { id: BigInt(targetId) },
+    where: { id: patchCid },
     data: {
       ...(b.companyName !== undefined ? { companyName: b.companyName } : {}),
       ...(b.ceoName !== undefined ? { ceoName: b.ceoName } : {}),

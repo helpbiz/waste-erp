@@ -25,6 +25,7 @@ const Body = z.object({
   type: z.enum(TYPES),
   cutoffDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   dryRun: z.boolean().default(true),
+  contractorId: z.union([z.string(), z.number()]).optional(),
 });
 
 function isAdmin(role: string) {
@@ -41,10 +42,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { type, cutoffDate, dryRun } = parsed.data;
+  const { type, cutoffDate, dryRun, contractorId: rawCid } = parsed.data;
   const cutoff = new Date(cutoffDate + 'T23:59:59Z');
+
+  /* P1-7: SUPER_ADMIN은 contractorId 필수 — 미제공 시 전사 삭제 차단 */
+  if (session.role === 'SUPER_ADMIN' && !rawCid) {
+    return NextResponse.json({ error: 'contractor_id_required', message: 'SUPER_ADMIN은 삭제 대상 업체(contractorId)를 명시해야 합니다.' }, { status: 400 });
+  }
+
   const scope = contractorScopeWhere(session);
-  const contractorId = session.contractorId ? BigInt(session.contractorId) : undefined;
+  const contractorId = rawCid
+    ? BigInt(rawCid)
+    : session.contractorId ? BigInt(session.contractorId) : undefined;
 
   let count = 0;
 

@@ -26,10 +26,10 @@ export default function OrgSettingsTab() {
     setError('');
     try {
       const [pr, rr, dr, wr] = await Promise.all([
-        fetch('/api/contractor/positions?active=all').then((r) => r.json()),
-        fetch('/api/contractor/ranks?active=all').then((r) => r.json()),
-        fetch('/api/departments').then((r) => r.json()),
-        fetch('/api/users?role=WORKER&status=ACTIVE').then((r) => r.json()).catch(() => ({})),
+        fetch('/api/contractor/positions?active=all').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+        fetch('/api/contractor/ranks?active=all').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+        fetch('/api/departments').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+        fetch('/api/users?role=WORKER&status=ACTIVE').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).catch(() => ({})),
       ]);
       setPositions(pr.positions ?? []);
       setRanks(rr.ranks ?? []);

@@ -1,5 +1,6 @@
 // Design Ref: §4.3 — 업체별 직급 목록/추가. Plan SC: FR-06
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -12,10 +13,9 @@ async function resolveContractorId(
   queryContractorId: string | null,
 ): Promise<bigint | null> {
   if (session.role === 'SUPER_ADMIN') {
-    return queryContractorId ? BigInt(queryContractorId) : null;
+    return parseId(queryContractorId);
   }
-  if (session.contractorId) return BigInt(session.contractorId);
-  return null;
+  return parseId(session.contractorId);
 }
 
 export async function GET(req: Request) {
@@ -63,8 +63,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const body = await req.json();
-  const parsed = PostBody.safeParse(body);
+  const parsed = PostBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const data = parsed.data;
 

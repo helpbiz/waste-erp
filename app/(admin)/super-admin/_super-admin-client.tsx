@@ -179,6 +179,7 @@ function MunicipalitiesTab() {
   /* P1-3 — 광역-기초 아코디언 뷰 */
   const [viewMode, setViewMode] = useState<'table' | 'grouped'>('grouped');
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
+  const [syncBusy, setSyncBusy] = useState(false);
 
   /* 광역별 그룹핑 — 검색·필터 결과를 region 기준으로 묶음 */
   const grouped = useMemo(() => {
@@ -316,21 +317,25 @@ function MunicipalitiesTab() {
 
         <div className="ml-auto flex items-center gap-2">
           <button
+            disabled={syncBusy}
             onClick={async () => {
               if (!confirm('위탁업체 운영 여부 기준으로 모든 지자체 상태를 DB에 일괄 반영합니다.\n• 위탁 없음 → 비활성\n• 위탁 있음 → 활성\n진행하시겠습니까?')) return;
-              const r = await fetch('/api/super-admin/municipalities/sync-status', { method: 'POST' });
-              if (r.ok) {
-                const d = await r.json();
-                alert(`동기화 완료\n• 비활성 전환: ${d.suspended}건\n• 활성 전환: ${d.activated}건`);
-                load();
-              } else {
-                alert('실패: ' + (await r.json().catch(() => ({}))).error);
-              }
+              setSyncBusy(true);
+              try {
+                const r = await fetch('/api/super-admin/municipalities/sync-status', { method: 'POST' });
+                if (r.ok) {
+                  const d = await r.json();
+                  alert(`동기화 완료\n• 비활성 전환: ${d.suspended}건\n• 활성 전환: ${d.activated}건`);
+                  load();
+                } else {
+                  alert('실패: ' + (await r.json().catch(() => ({}))).error);
+                }
+              } finally { setSyncBusy(false); }
             }}
-            className="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 text-xs font-extrabold hover:bg-slate-300 border border-slate-300"
+            className="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 text-xs font-extrabold hover:bg-slate-300 border border-slate-300 disabled:opacity-50"
             title="위탁업체 운영 기준으로 모든 지자체 상태를 DB에 일괄 반영"
           >
-            🔄 DB 동기화
+            {syncBusy ? '처리 중…' : '🔄 DB 동기화'}
           </button>
           <button
             onClick={() => setCreating(true)}
@@ -817,7 +822,7 @@ function CompanyInfoTab() {
 
   function load() {
     if (!selectedId) return;
-    fetch(`/api/contractor/info?contractorId=${selectedId}`).then((r) => r.json()).then((d) => {
+    fetch(`/api/contractor/info?contractorId=${selectedId}`).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => {
       const x = d.contractor;
       setC(x);
       if (x) setForm({
@@ -999,30 +1004,33 @@ function CompanyInfoTab() {
           <button
             type="button"
             onClick={async () => {
-              if (!c) return;
+              if (!c || saving) return;
               const ok = confirm(
                 `'${c.companyName}'을(를) 영구 삭제합니다.\n` +
                   `연결된 사용자/차량/실적/민원이 있으면 삭제 불가 (409 차단).\n` +
                   `정말 삭제하시겠습니까?`
               );
               if (!ok) return;
-              const res = await fetch(`/api/contractors/${selectedId}`, { method: 'DELETE' });
-              const j = await res.json().catch(() => ({}));
-              if (res.ok) {
-                alert('삭제 완료');
-                setSelectedId('');
-                setC(null);
-                loadContractors();
-              } else if (res.status === 409) {
-                alert(`삭제 차단:\n${j.detail ?? '연결된 데이터가 있습니다'}`);
-              } else {
-                alert(`실패: ${j.error ?? `HTTP ${res.status}`}`);
-              }
+              setSaving(true);
+              try {
+                const res = await fetch(`/api/contractors/${selectedId}`, { method: 'DELETE' });
+                const j = await res.json().catch(() => ({}));
+                if (res.ok) {
+                  alert('삭제 완료');
+                  setSelectedId('');
+                  setC(null);
+                  loadContractors();
+                } else if (res.status === 409) {
+                  alert(`삭제 차단:\n${j.detail ?? '연결된 데이터가 있습니다'}`);
+                } else {
+                  alert(`실패: ${j.error ?? `HTTP ${res.status}`}`);
+                }
+              } finally { setSaving(false); }
             }}
-            disabled={!c}
+            disabled={!c || saving}
             className="px-4 py-1.5 rounded text-sm font-extrabold bg-danger text-white hover:bg-red-800 disabled:opacity-50"
           >
-            🗑 업체 삭제
+            {saving ? '처리 중…' : '🗑 업체 삭제'}
           </button>
         </div>
         <button disabled={saving} onClick={save}
@@ -1061,8 +1069,9 @@ function PoliciesTab() {
   function load() {
     setLoading(true);
     fetch('/api/super-admin/muni-policies')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setMunis(d.items ?? []))
+      .catch(() => setMunis([]))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
@@ -1277,10 +1286,10 @@ function AggregateTab() {
   }
 
   useEffect(() => {
-    fetch('/api/super-admin/muni-policies').then((r) => r.json()).then((d) => {
+    fetch('/api/super-admin/muni-policies').then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => {
       setMunis(d.items ?? []);
       if (d.items?.[0]) setMuniId(d.items[0].id);
-    });
+    }).catch(() => {});
   }, []);
 
   async function load() {
@@ -1632,7 +1641,7 @@ function GisConfigTab() {
     if (!cid.trim()) return;
     setLoadStatus('loading');
     const qs = `?contractorId=${encodeURIComponent(cid.trim())}`;
-    fetch(`/api/live-tracking/config${qs}`).then((r) => r.json()).then((d) => {
+    fetch(`/api/live-tracking/config${qs}`).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => {
       const c = d.config;
       setConfig(c ?? null);
       setLoadStatus(c ? 'found' : 'empty');
@@ -2325,7 +2334,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
     const from = date;
     const to = date;
     fetch(`/api/super-admin/facility-ops?facilityId=${fId}&from=${from}&to=${to}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
         const item: OpsRecord | undefined = d.items?.[0];
         if (item) {
@@ -2357,7 +2366,7 @@ function RecordSubtab({ facilities }: { facilities: FacilityItem[] }) {
     const to = today();
     const from = daysAgo(6);
     fetch(`/api/super-admin/facility-ops?facilityId=${fId}&from=${from}&to=${to}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setHistory(d.items ?? []))
       .catch(() => undefined);
   }
@@ -2541,7 +2550,7 @@ function SummarySubtab({ facilities }: { facilities: FacilityItem[] }) {
     setError('');
     setLoading(true);
     fetch(`/api/super-admin/facility-ops?from=${from}&to=${to}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setItems(d.items ?? []))
       .catch(() => setError('조회 중 오류가 발생했습니다.'))
       .finally(() => setLoading(false));
@@ -2756,7 +2765,7 @@ function DataResetTab() {
 
   useEffect(() => {
     fetch('/api/contractors')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setContractors(d.items ?? []))
       .catch(() => {});
   }, []);

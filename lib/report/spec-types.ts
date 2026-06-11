@@ -79,6 +79,7 @@ export type ReportData = {
     vehiclePlate: string | null;
     intakeTime: string;       // HH:mm
     facilityName: string | null;
+    disposalSiteName: string | null;
     materialCategory: string;
     weightTon: number;
     note: string | null;

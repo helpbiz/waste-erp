@@ -20,21 +20,30 @@ type DeptNode = {
   children: DeptNode[];
 };
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const cidParam = new URL(req.url).searchParams.get('contractorId');
   let contractorId: bigint | null = null;
   if (session.role === 'SUPER_ADMIN') {
-    const c = await prisma.contractor.findFirst({ where: { status: 'ACTIVE' } });
-    contractorId = c?.id ?? null;
+    /* P2-2: SUPER_ADMIN은 contractorId 필수 */
+    if (!cidParam) return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+    const cid = (() => { try { return BigInt(cidParam); } catch { return null; } })();
+    if (!cid) return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+    contractorId = cid;
   } else if (session.contractorId) {
     contractorId = BigInt(session.contractorId);
   } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
-    const c = await prisma.contractor.findFirst({
-      where: { municipalityId: BigInt(session.municipalityId), status: 'ACTIVE' },
-    });
-    contractorId = c?.id ?? null;
+    /* P2-2: MUNI_ADMIN도 contractorId 필수 */
+    if (!cidParam) return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+    const cid = (() => { try { return BigInt(cidParam); } catch { return null; } })();
+    if (!cid) return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+    const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { id: true, municipalityId: true } });
+    if (!c || c.municipalityId.toString() !== session.municipalityId) {
+      return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
+    }
+    contractorId = cid;
   }
   if (!contractorId) {
     return NextResponse.json({ contractorName: null, tree: [], unassigned: [] });

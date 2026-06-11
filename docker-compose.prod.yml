@@ -86,8 +86,9 @@ services:
     networks:
       - default
       - wci-cost-bridge
+    # 포트 정책: 항상 3001:3000 고정. 환경변수로 변경 불가.
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "3001:3000"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
       interval: 30s

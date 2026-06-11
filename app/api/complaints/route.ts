@@ -14,6 +14,8 @@ export const runtime = 'nodejs';
 /* 사진은 클라이언트에서 1024px·1MB 이하로 리사이즈된 data URL */
 const DATA_URL_MAX = 2_000_000; // 2MB / 사진 (안전 마진)
 const PHOTOS_MAX = 5;
+/* P1-3: 허용 이미지 MIME 타입만 수락 — SVG/HTML 포함 XSS 차단 */
+const ALLOWED_IMAGE_PREFIX = /^data:image\/(jpeg|png|webp|gif);base64,/;
 
 const PostBody = z.object({
   type: z.enum(['PICKUP_MISS', 'ILLEGAL_DUMP', 'ODOR_NOISE', 'BULKY_WASTE', 'OTHER']),
@@ -79,6 +81,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'no_contractor_assigned' }, { status: 400 });
     }
     contractorId = BigInt(session.contractorId);
+  }
+
+  /* P1-3: MIME 타입 검증 — SVG/HTML 인젝션 차단 */
+  const allImages = [
+    ...(b.requestImages ?? []),
+    ...(b.requestImage ? [b.requestImage] : []),
+  ];
+  for (const img of allImages) {
+    if (!ALLOWED_IMAGE_PREFIX.test(img)) {
+      return NextResponse.json({ error: 'invalid_image_type', message: 'jpeg, png, webp, gif만 허용됩니다.' }, { status: 400 });
+    }
   }
 
   /* 사진 정규화 — 다중이면 JSON 배열로, 단일이면 그대로 저장 */
@@ -198,7 +211,11 @@ export async function GET(req: Request) {
       orderBy: [{ reportedAt: 'desc' }],
       take: limit,
       skip: offset,
-      include: {
+      /* P2-9: requestImage/completionImage 는 base64 최대 2MB — 목록에서 제외, 상세에서만 제공 */
+      select: {
+        id: true, type: true, status: true, description: true, reportedAt: true,
+        locationAddress: true, dueDate: true, resolveNote: true, resolvedAt: true,
+        complainantPhone: true, citizenName: true,
         reporter: { select: { id: true, name: true, role: true } },
         assignee: { select: { id: true, name: true } },
         zone: { select: { zoneName: true } },
@@ -225,7 +242,6 @@ export async function GET(req: Request) {
       dueDate: c.dueDate?.toISOString() ?? null,
       isOverdue: isOverdue({ dueDate: c.dueDate, status: c.status }),
       complainantPhone: c.complainantPhone,
-      requestImage: c.requestImage,
       resolveNote: c.resolveNote,
       resolvedAt: c.resolvedAt?.toISOString() ?? null,
     })),

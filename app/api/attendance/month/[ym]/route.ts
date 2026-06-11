@@ -10,7 +10,7 @@ import { aggregateContractorMonth, isAttendanceManager } from '@/lib/attendance-
 
 export const runtime = 'nodejs';
 
-export async function GET(_req: Request, { params }: { params: { ym: string } }) {
+export async function GET(req: Request, { params }: { params: { ym: string } }) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
@@ -42,17 +42,20 @@ export async function GET(_req: Request, { params }: { params: { ym: string } })
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  /* 위탁업체 결정 */
+  /* 위탁업체 결정 — P2-2: SUPER_ADMIN/MUNI_ADMIN은 ?contractorId= 필수 */
   let contractorId: bigint | null = null;
   if (session.role === 'SUPER_ADMIN' || session.role === 'MUNI_ADMIN') {
-    /* 시안 단계: 첫 번째 위탁업체 사용. Phase 1B에서 ?contractorId= 파라미터 추가 */
-    const c = await prisma.contractor.findFirst({
-      where: session.role === 'MUNI_ADMIN' && session.municipalityId
-        ? { municipalityId: BigInt(session.municipalityId) }
-        : {},
-    });
-    if (!c) return NextResponse.json({ error: 'no_contractor' }, { status: 404 });
-    contractorId = c.id;
+    const cidParam = new URL(req.url).searchParams.get('contractorId');
+    if (!cidParam) return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+    const cid = (() => { try { return BigInt(cidParam); } catch { return null; } })();
+    if (!cid) return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+    if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+      const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { id: true, municipalityId: true } });
+      if (!c || c.municipalityId.toString() !== session.municipalityId) {
+        return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
+      }
+    }
+    contractorId = cid;
   } else {
     if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
     contractorId = BigInt(session.contractorId);

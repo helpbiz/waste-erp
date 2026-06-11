@@ -67,10 +67,26 @@ export default function WeatherNoticesWorkerClient({
       let photoData: string | undefined;
       if (f.photoFile) {
         photoData = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(f.photoFile!);
+          const img = new Image();
+          const url = URL.createObjectURL(f.photoFile!);
+          img.onload = () => {
+            const MAX = 800;
+            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            let quality = 0.7;
+            let data = canvas.toDataURL('image/jpeg', quality);
+            while (data.length > 270_000 && quality > 0.3) {
+              quality -= 0.1;
+              data = canvas.toDataURL('image/jpeg', quality);
+            }
+            resolve(data);
+          };
+          img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+          img.src = url;
         });
       }
       const body: Record<string, unknown> = {

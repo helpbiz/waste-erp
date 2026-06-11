@@ -50,8 +50,9 @@ export function FacilitiesTab() {
     if (!selectedMuniId) { setItems([]); return; }
     setLoading(true);
     fetch(`/api/super-admin/facilities?municipalityId=${selectedMuniId}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => setItems(d.items ?? []))
+      .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [selectedMuniId]);

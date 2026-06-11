@@ -77,36 +77,34 @@ export async function POST(req: Request) {
     );
   }
 
-  /* 트랜잭션: 집계 후 upsert + finalized=true 일괄 적용 */
   const finalizedAt = new Date();
   const finalizedBy = BigInt(session.userId);
 
-  const results = [];
-  for (const w of workers) {
-    const agg = await aggregateWorkerMonth(w.id, yearMonth);
-    const data = summaryUpsertData(agg);
-    const summary = await prisma.monthlyAttendanceSummary.upsert({
-      where: { workerId_yearMonth: { workerId: w.id, yearMonth } },
-      update: {
-        ...data,
-        isFinalized: true,
-        finalizedAt,
-        finalizedBy,
-      },
-      create: {
-        ...data,
-        isFinalized: true,
-        finalizedAt,
-        finalizedBy,
-      },
-    });
-    results.push({
-      workerId: w.id.toString(),
-      workerName: w.name,
-      summaryId: summary.id.toString(),
-      totals: agg,
-    });
-  }
+  /* P0-4: 집계(읽기)는 병렬 선행, 쓰기(upsert 전체)는 단일 $transaction으로 묶어 부분 마감 방지 */
+  const aggregations = await Promise.all(
+    workers.map(async (w) => ({
+      worker: w,
+      agg: await aggregateWorkerMonth(w.id, yearMonth),
+    }))
+  );
+
+  const summaries = await prisma.$transaction(
+    aggregations.map(({ worker, agg }) => {
+      const data = summaryUpsertData(agg);
+      return prisma.monthlyAttendanceSummary.upsert({
+        where: { workerId_yearMonth: { workerId: worker.id, yearMonth } },
+        update: { ...data, isFinalized: true, finalizedAt, finalizedBy },
+        create: { ...data, isFinalized: true, finalizedAt, finalizedBy },
+      });
+    })
+  );
+
+  const results = aggregations.map(({ worker, agg }, i) => ({
+    workerId: worker.id.toString(),
+    workerName: worker.name,
+    summaryId: summaries[i].id.toString(),
+    totals: agg,
+  }));
 
   await prisma.auditLog.create({
     data: {

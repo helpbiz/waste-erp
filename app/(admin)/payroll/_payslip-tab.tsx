@@ -146,24 +146,45 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
     const win = window.open('', '_blank');
     if (!win) return;
     const d = r.data;
-    const rows = (entries: Record<string, number> | undefined) =>
-      Object.entries(entries ?? {}).map(([k, v]) => `<tr><td>${k}</td><td>${v.toLocaleString()}원</td></tr>`).join('');
+    const fmt = (v: number) => v.toLocaleString('ko-KR') + '원';
+    const earningRows = sortByTemplate(Object.entries(d.earnings ?? {}) as [string, number][], tmpl?.earnings)
+      .map(([k, v]) => `<tr><td class="label">${k}</td><td class="val">${fmt(v)}</td></tr>`).join('');
+    const extrasRows = Object.entries(d.extras ?? {}).filter(([, v]) => (v as number) > 0)
+      .map(([k, v]) => `<tr><td class="label">${k}</td><td class="val">${fmt(v as number)}</td></tr>`).join('');
+    const deductRows = sortByTemplate(Object.entries(d.deductions ?? {}) as [string, number][], tmpl?.deductions)
+      .map(([k, v]) => `<tr><td class="label">${k}</td><td class="val">${fmt(v)}</td></tr>`).join('');
+    const wh = d.workHours;
+    const overtimeH = wh ? (wh['연장기본'] ?? wh['overtimeBasic'] ?? 0) + (wh['연장추가'] ?? wh['overtimeExtra'] ?? 0) : 0;
+    const nightH    = wh ? (wh['야간기본'] ?? wh['nightBasic'] ?? 0) + (wh['야간추가'] ?? wh['nightExtra'] ?? 0) : 0;
     win.document.write([
       '<html><head><meta charset="utf-8"><title>임금명세서</title>',
-      '<style>body{font-family:\'맑은 고딕\',sans-serif;padding:20px}',
-      'table{width:100%;border-collapse:collapse;margin-bottom:12px}',
-      'td,th{border:1px solid #ccc;padding:6px 10px}th{background:#f5f5f5;font-weight:700}',
-      '.net{background:#dbeafe;font-weight:900;font-size:1.1em}</style></head><body>',
+      '<style>',
+      'body{font-family:\'맑은 고딕\',sans-serif;padding:20px;font-size:13px}',
+      'h2{font-size:1.1em;margin-bottom:8px}',
+      '.meta{color:#555;margin-bottom:12px;font-size:12px}',
+      'table{width:100%;border-collapse:collapse;margin-bottom:10px}',
+      'td{border:1px solid #ccc;padding:5px 9px}',
+      'thead td{background:#f5f5f5;font-weight:700}',
+      'td.label{width:55%}td.val{text-align:right;font-family:monospace;font-weight:700}',
+      '.net{background:#dbeafe;font-weight:900;font-size:1.05em;padding:8px 9px;border:1px solid #93c5fd}',
+      '.hours{color:#555;font-size:12px;margin-top:4px}',
+      '@media print{body{padding:8px}}',
+      '</style></head><body>',
       `<h2>${r.workerName} (${r.yearMonth}) 임금명세서</h2>`,
-      d.workDays != null ? `<p>출근일수: ${d.workDays}일</p>` : '',
-      d.payDate ? `<p>급여지급일: ${d.payDate}</p>` : '',
-      '<table><thead><tr><th>지급항목</th><th>금액</th></tr></thead><tbody>',
-      rows(d.earnings), rows(d.extras),
+      '<div class="meta">',
+      d.workDays != null ? `출근일수: <b>${d.workDays}일</b>&nbsp;&nbsp;` : '',
+      d.payDate ? `지급일: <b>${d.payDate}</b>` : '',
+      '</div>',
+      '<table><thead><tr><td>지급항목</td><td style="text-align:right">금액</td></tr></thead><tbody>',
+      earningRows, extrasRows,
       '</tbody></table>',
-      '<table><thead><tr><th>공제항목</th><th>금액</th></tr></thead><tbody>',
-      rows(d.deductions),
+      '<table><thead><tr><td>공제항목</td><td style="text-align:right">금액</td></tr></thead><tbody>',
+      deductRows,
       '</tbody></table>',
-      `<p class="net">실수령액: ${getNetPay(d.totals).toLocaleString()}원</p>`,
+      `<div class="net">실수령액: ${getNetPay(d.totals).toLocaleString('ko-KR')}원</div>`,
+      (wh && (overtimeH > 0 || nightH > 0))
+        ? `<div class="hours">연장근로: <b>${overtimeH}시간</b>&nbsp;&nbsp;야간근로: <b>${nightH}시간</b></div>`
+        : '',
       '</body></html>',
     ].join(''));
     win.document.close();
@@ -171,6 +192,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
   }
   const [loadingList, setLoadingList] = useState(false);
   const [expandRow,   setExpandRow]   = useState<number | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -439,15 +461,21 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                             {expandedId === r.id ? '닫기' : '내용보기'}
                           </button>
                           <button
+                            disabled={deletingIds.has(r.id)}
                             onClick={async () => {
                               if (!confirm(`${r.workerName}(${r.yearMonth}) 명세서를 삭제하시겠습니까?`)) return;
-                              const res = await fetch(`/api/payroll/payslips?id=${r.id}`, { method: 'DELETE' });
-                              if (res.ok) { await loadList(); }
-                              else { const d = await res.json().catch(()=>({})); alert(d.error ?? '삭제 실패'); }
+                              setDeletingIds((s) => new Set(s).add(r.id));
+                              try {
+                                const res = await fetch(`/api/payroll/payslips?id=${r.id}`, { method: 'DELETE' });
+                                if (res.ok) { await loadList(); }
+                                else { const d = await res.json().catch(()=>({})); alert(d.error ?? '삭제 실패'); }
+                              } finally {
+                                setDeletingIds((s) => { const n = new Set(s); n.delete(r.id); return n; });
+                              }
                             }}
-                            className="text-xs font-extrabold text-danger hover:underline"
+                            className="text-xs font-extrabold text-danger hover:underline disabled:opacity-50"
                           >
-                            삭제
+                            {deletingIds.has(r.id) ? '삭제 중…' : '삭제'}
                           </button>
                         </div>
                       </td>

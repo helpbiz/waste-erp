@@ -45,6 +45,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     },
   });
 
+  /* 담당자 이름 조회 */
+  const adjusterIds = [...new Set(adjustments.map((a) => a.adjustedBy))];
+  const adjusters = await prisma.user.findMany({
+    where: { id: { in: adjusterIds } },
+    select: { id: true, name: true },
+  });
+  const adjusterMap = new Map(adjusters.map((u) => [u.id.toString(), u.name]));
+
   /* 체인 검증 — 저장된 payload와 동일한 형태로 재구성 */
   const links: ChainLink[] = adjustments.map((a) => ({
     id: a.id,
@@ -77,6 +85,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     adjustments: adjustments.map((a) => ({
       id: a.id.toString(),
       adjustedBy: a.adjustedBy.toString(),
+      adjustedByName: adjusterMap.get(a.adjustedBy.toString()) ?? null,
       adjustmentType: a.adjustmentType,
       reason: a.reason,
       original: {

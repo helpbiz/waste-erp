@@ -162,14 +162,20 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   const target = await prisma.vehicle.findFirst({ where: { id, ...vehicleWhere(session) } });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  /* 진행 중(DRAFT/SUBMITTED) 운행일지가 있으면 삭제 불가 */
-  const activeLog = await prisma.vehicleLog.findFirst({
-    where: { vehicleId: id, status: { in: ['DRAFT', 'SUBMITTED'] } },
-    select: { id: true },
-  });
-  if (activeLog) {
+  /* 운행일지 또는 재활용센터 반입기록이 있으면 삭제 불가 (FK Restrict 보호) */
+  const [hasLog, hasIntake] = await Promise.all([
+    prisma.vehicleLog.findFirst({ where: { vehicleId: id }, select: { id: true } }),
+    prisma.recyclingCenterIntake.findFirst({ where: { vehicleId: id }, select: { id: true } }),
+  ]);
+  if (hasLog) {
     return NextResponse.json(
-      { error: 'has_active_logs', message: '진행 중인 운행일지가 있어 삭제할 수 없습니다. 먼저 운행일지를 처리하세요.' },
+      { error: 'has_vehicle_logs', message: '운행일지가 있어 삭제할 수 없습니다. 운행일지를 먼저 삭제하거나 차량을 비활성화하세요.' },
+      { status: 409 }
+    );
+  }
+  if (hasIntake) {
+    return NextResponse.json(
+      { error: 'has_intake_records', message: '재활용센터 반입기록이 있어 삭제할 수 없습니다.' },
       { status: 409 }
     );
   }

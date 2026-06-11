@@ -5,6 +5,7 @@
  * facilityId 쿼리: AVAC 업체는 시설별 TBM 조회. 미전달 시 facilityId=NULL (전사 TBM).
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -55,7 +56,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const facilityIdParam = url.searchParams.get('facilityId');
-  const facilityId = facilityIdParam ? BigInt(facilityIdParam) : null;
+  const facilityId = parseId(facilityIdParam);
 
   const today = todayKstDate();
   const tbm = await prisma.tbmSession.findFirst({
@@ -155,7 +156,7 @@ export async function POST(req: Request) {
   }
 
   // 시설 담당자: 본인 집하장으로 강제 (다른 집하장 작성 차단)
-  let facilityId = parsed.data.facilityId ? BigInt(parsed.data.facilityId) : null;
+  let facilityId = parseId(parsed.data.facilityId ?? null);
   if (!isManager(session.role)) {
     const opScope = await getFacilityOperatorScope(session.userId);
     if (opScope.primaryFacilityId) facilityId = opScope.primaryFacilityId;

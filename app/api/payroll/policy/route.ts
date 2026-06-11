@@ -8,24 +8,34 @@ import { readSession } from '@/lib/auth';
 import { canManageUsers } from '@/lib/users';
 import { DEFAULT_POLICY } from '@/lib/payroll-policy';
 
-async function resolveContractorId(session: Awaited<ReturnType<typeof readSession>>): Promise<bigint | null> {
+/* P2-2: SUPER_ADMIN/MUNI_ADMIN은 ?contractorId= 필수 */
+async function resolveContractorId(
+  session: Awaited<ReturnType<typeof readSession>>,
+  cidParam: string | null,
+): Promise<bigint | null | 'missing' | 'invalid' | 'forbidden'> {
   if (!session) return null;
   if (session.role === 'SUPER_ADMIN' || session.role === 'MUNI_ADMIN') {
-    const c = await prisma.contractor.findFirst({
-      where: session.role === 'MUNI_ADMIN' && session.municipalityId
-        ? { municipalityId: BigInt(session.municipalityId) }
-        : {},
-    });
-    return c?.id ?? null;
+    if (!cidParam) return 'missing';
+    const cid = (() => { try { return BigInt(cidParam); } catch { return null; } })();
+    if (!cid) return 'invalid';
+    if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+      const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { municipalityId: true } });
+      if (!c || c.municipalityId.toString() !== session.municipalityId) return 'forbidden';
+    }
+    return cid;
   }
   return session.contractorId ? BigInt(session.contractorId) : null;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const contractorId = await resolveContractorId(session);
+  const cidParam = new URL(req.url).searchParams.get('contractorId');
+  const contractorId = await resolveContractorId(session, cidParam);
+  if (contractorId === 'missing') return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+  if (contractorId === 'invalid') return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+  if (contractorId === 'forbidden') return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
   if (!contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
 
   const [row, candidates] = await Promise.all([
@@ -68,7 +78,11 @@ export async function PUT(req: Request) {
   const isManager = canManageUsers(session.role);
   if (!isManager) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const contractorId = await resolveContractorId(session);
+  const cidParam = new URL(req.url).searchParams.get('contractorId');
+  const contractorId = await resolveContractorId(session, cidParam);
+  if (contractorId === 'missing') return NextResponse.json({ error: 'contractor_id_required' }, { status: 400 });
+  if (contractorId === 'invalid') return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+  if (contractorId === 'forbidden') return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
   if (!contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
 
   const body = await req.json().catch(() => null);

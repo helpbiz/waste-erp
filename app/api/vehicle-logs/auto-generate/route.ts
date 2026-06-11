@@ -6,6 +6,7 @@
  *  - 실서비스: 차량 GPS 추적 데이터 → DBSCAN 클러스터링 → 거점 자동 추출 (Phase 2)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -32,14 +33,21 @@ export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  /* P0-2: 운행일지 자동생성은 관리자 이상만 허용 */
+  if (session.role !== 'CONTRACTOR_ADMIN' && session.role !== 'SUPER_ADMIN' && session.role !== 'INTERNAL_ADMIN') {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
   const { vehicleId, date, driverId } = parsed.data;
 
+  const vehicleIdBig = parseId(vehicleId);
+  if (!vehicleIdBig) return NextResponse.json({ error: 'invalid_vehicleId' }, { status: 400 });
   const v = await prisma.vehicle.findUnique({
-    where: { id: BigInt(vehicleId) },
+    where: { id: vehicleIdBig },
     include: { driver: true },
   });
   if (!v) return NextResponse.json({ error: 'vehicle_not_found' }, { status: 404 });
@@ -83,7 +91,7 @@ export async function POST(req: Request) {
     where: { vehicleId: v.id, logDate },
   });
 
-  const driverIdToUse = driverId ? BigInt(driverId) : v.driverId;
+  const driverIdToUse = driverId ? parseId(driverId) : v.driverId;
   if (!driverIdToUse) {
     return NextResponse.json({ error: 'driver_required', hint: '차량에 운전자가 지정되지 않았습니다.' }, { status: 400 });
   }

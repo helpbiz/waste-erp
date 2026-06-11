@@ -25,6 +25,7 @@
  *   });
  */
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import type { SessionPayload } from '@/lib/auth';
 
 export type AuditInput = {
@@ -63,18 +64,27 @@ export async function writeAudit(
       ? toBigIntOrNull(input.municipalityId)
       : sessionMunicipalityId;
 
-  await prisma.auditLog.create({
-    data: {
-      actorId: session ? toBigIntOrNull(session.userId) : null,
-      actorRole: session?.role ?? null,
-      contractorId,
-      municipalityId,
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: session ? toBigIntOrNull(session.userId) : null,
+        actorRole: session?.role ?? null,
+        contractorId,
+        municipalityId,
+        action: input.action,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId ?? null,
+        ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+        userAgent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
+        metadata: (input.metadata ?? undefined) as object | undefined,
+      },
+    });
+  } catch (err) {
+    logger.error('audit_log_write_failed', {
       action: input.action,
       resourceType: input.resourceType,
       resourceId: input.resourceId ?? null,
-      ipAddress: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
-      userAgent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
-      metadata: (input.metadata ?? undefined) as object | undefined,
-    },
-  });
+      actorId: session?.userId ?? null,
+    }, err);
+  }
 }

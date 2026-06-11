@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
+import { todayKstDate } from '@/lib/dates';
 import WeatherPrintClient from './_print-client';
 
 export const dynamic = 'force-dynamic';
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return todayKstDate().toISOString().slice(0, 10);
 }
 
 function monthStartStr() {
-  const d = new Date();
-  d.setDate(1);
-  return d.toISOString().slice(0, 10);
+  const t = todayKstDate();
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-01`;
 }
 
 export default async function WeatherNoticesPrintPage({

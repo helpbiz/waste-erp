@@ -3,6 +3,7 @@
  * 월별 TBM 세션 전체 조회 (관리자 전용)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 
@@ -40,8 +41,9 @@ export async function GET(req: Request) {
   const [y, m] = yearMonth.split('-').map(Number);
   const from = new Date(Date.UTC(y, m - 1, 1));
   const to   = new Date(Date.UTC(y, m, 1));
-  const contractorId = BigInt(session.contractorId);
-  const facilityId = facilityIdParam ? BigInt(facilityIdParam) : null;
+  const contractorId = parseId(session.contractorId);
+  if (!contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
+  const facilityId = parseId(facilityIdParam);
 
   const [sessions, allWorkers] = await Promise.all([
     prisma.tbmSession.findMany({

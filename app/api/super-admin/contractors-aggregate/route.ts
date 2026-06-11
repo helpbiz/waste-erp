@@ -4,8 +4,10 @@
  *  - 권한: SUPER_ADMIN (전체) / MUNI_ADMIN (본인 muni 만)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { nowKst } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -18,8 +20,9 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   let municipalityIdStr = url.searchParams.get('municipalityId');
-  const from = url.searchParams.get('from') ?? new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10);
-  const to = url.searchParams.get('to') ?? new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
+  const kstYear = nowKst().getUTCFullYear();
+  const from = url.searchParams.get('from') ?? `${kstYear}-01-01`;
+  const to = url.searchParams.get('to') ?? `${kstYear}-12-31`;
   const fromDate = new Date(from);
   const toDate = new Date(to);
   toDate.setHours(23, 59, 59, 999);
@@ -33,7 +36,8 @@ export async function GET(req: Request) {
   if (!municipalityIdStr) {
     return NextResponse.json({ error: 'municipalityId_required' }, { status: 400 });
   }
-  const municipalityId = BigInt(municipalityIdStr);
+  const municipalityId = parseId(municipalityIdStr);
+  if (!municipalityId) return NextResponse.json({ error: 'invalid_municipalityId' }, { status: 400 });
 
   const muni = await prisma.municipality.findUnique({ where: { id: municipalityId } });
   if (!muni) return NextResponse.json({ error: 'not_found' }, { status: 404 });

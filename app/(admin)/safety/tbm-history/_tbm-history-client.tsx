@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 
 type Session = {
   id: string;
@@ -148,8 +148,8 @@ export default function TbmHistoryClient() {
                     {hData.sessions.map((s) => {
                       const isOpen = expanded === s.id;
                       return (
-                        <>
-                          <tr key={s.id} className="hover:bg-surface-soft transition">
+                        <Fragment key={s.id}>
+                          <tr className="hover:bg-surface-soft transition">
                             <td className="px-4 py-2 font-mono text-xs whitespace-nowrap">{s.sessionDate}</td>
                             <td className="px-4 py-2 font-bold text-sm max-w-[200px] truncate">{s.topic}</td>
                             <td className="px-4 py-2 text-xs text-ink-muted hidden sm:table-cell">
@@ -169,7 +169,7 @@ export default function TbmHistoryClient() {
                             </td>
                           </tr>
                           {isOpen && (
-                            <tr key={s.id + '-detail'} className="bg-slate-50">
+                            <tr className="bg-slate-50">
                               <td colSpan={6} className="px-4 py-3">
                                 {s.content && (
                                   <p className="text-xs text-ink-muted mb-2 whitespace-pre-wrap">{s.content}</p>
@@ -189,7 +189,7 @@ export default function TbmHistoryClient() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>

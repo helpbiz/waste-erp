@@ -65,7 +65,7 @@ export default async function SafetyPage({
     prisma.safetyReport.findMany({
       where: baseWhere,
       orderBy: { createdAt: 'desc' },
-      take: 500,
+      take: 200,
       include: {
         reporter: { select: { id: true, name: true } },
         reviewer: { select: { id: true, name: true } },

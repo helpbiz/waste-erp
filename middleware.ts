@@ -10,11 +10,54 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-/* deploy-readiness P0-1: fallback 제거. middleware는 edge runtime — throw 시 모든 요청 500.
+/* P1-3: 요청별 nonce 생성 (Edge Crypto API 사용 — Buffer 불가) */
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function buildCsp(nonce: string): string {
+  return [
+    "default-src 'self'",
+    /* unsafe-eval 제거, unsafe-inline 제거 → nonce 기반으로 전환 */
+    `script-src 'self' 'nonce-${nonce}'`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://nominatim.openstreetmap.org https://api.openrouteservice.org https://router.project-osrm.org",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+}
+
+/* nonce + CSP를 request/response 헤더에 주입하는 pass-through 응답 생성 */
+function nextWithNonce(req: NextRequest): NextResponse {
+  const nonce = generateNonce();
+  const reqHeaders = new Headers(req.headers);
+  reqHeaders.set('x-nonce', nonce);
+  const res = NextResponse.next({ request: { headers: reqHeaders } });
+  res.headers.set('Content-Security-Policy', buildCsp(nonce));
+  return res;
+}
+
+/* deploy-readiness P0-1 / P1-6: fallback 제거. middleware는 edge runtime — throw 시 모든 요청 500.
    prod 환경 변수 미설정 = 즉각 실패가 의도된 안전장치. */
 const RAW_SECRET = process.env.JWT_SECRET;
 if (!RAW_SECRET || RAW_SECRET.length < 32) {
   throw new Error('JWT_SECRET 환경변수가 설정되지 않았거나 32자 미만입니다.');
+}
+/* P1-6: 알려진 약한 기본값 경고 (throw 금지 — 기존 운영 영향 없이 로그만)
+   TODO: 시크릿 교체 후 throw Error 로 전환하여 재배포 차단 */
+const WEAK_JWT_DEFAULTS = [
+  'dev-secret-change-me',
+  'secret',
+  'jwt_secret',
+  'changeme',
+];
+if (process.env.NODE_ENV === 'production' && WEAK_JWT_DEFAULTS.some((w) => RAW_SECRET.startsWith(w))) {
+  console.error('[SECURITY] JWT_SECRET이 알려진 dev 기본값입니다. 운영 환경에서는 무작위 시크릿으로 교체하세요.');
 }
 const SECRET = new TextEncoder().encode(RAW_SECRET);
 
@@ -131,7 +174,7 @@ export async function middleware(req: NextRequest) {
     return new NextResponse('token_not_configured', { status: 404 });
   }
 
-  if (isPublic(pathname)) return NextResponse.next();
+  if (isPublic(pathname)) return nextWithNonce(req);
 
   const token = req.cookies.get('wciSession')?.value;
   if (!token) {
@@ -182,7 +225,7 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  return nextWithNonce(req);
 }
 
 export const config = {

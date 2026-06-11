@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server';
 import { readSession } from '@/lib/auth';
 import { fetchJson } from '@/lib/fetch-ipv4';
+import { todayKstDate } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -122,13 +123,11 @@ async function fetchWeather(startDate: string, endDate: string): Promise<Map<str
   const fields = 'temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_sum,relative_humidity_2m_max,wind_speed_10m_mean,weather_code';
   const base = `latitude=${lat}&longitude=${lng}&daily=${fields}&timezone=Asia%2FSeoul`;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = todayKstDate();
   const todayStr = today.toISOString().slice(0, 10);
 
   // archive API는 보통 5~7일 전까지 제공
-  const archiveCutoff = new Date(today);
-  archiveCutoff.setDate(archiveCutoff.getDate() - 7);
+  const archiveCutoff = new Date(today.getTime() - 7 * 86400_000);
   const archiveCutoffStr = archiveCutoff.toISOString().slice(0, 10);
 
   const effectiveEnd = endDate > todayStr ? todayStr : endDate;
@@ -188,7 +187,7 @@ export async function GET(req: Request) {
 
     // 월간 모든 날짜 생성 (데이터 없는 날은 null로 표시)
     const days: DayRecord[] = [];
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayKstDate().toISOString().slice(0, 10);
     for (let d = 1; d <= lastDay; d++) {
       const dateStr = `${yearMonth}-${String(d).padStart(2, '0')}`;
       const emptyDay: DayRecord = { date: dateStr, maxTemp: null, minTemp: null, feelsLikeMax: null, precip: null, humidityMax: null, windSpeedAvg: null, weatherCode: null, skyLabel: null, hazard: null, hazardLabel: null };

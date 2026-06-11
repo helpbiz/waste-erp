@@ -9,6 +9,7 @@
  *      POST = SUPER_ADMIN, MUNI_ADMIN(자기 지자체만)
  */
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
@@ -64,9 +65,18 @@ export async function GET(req: Request) {
 
   let where: { municipalityId?: bigint | { in: bigint[] }; active?: boolean } = {};
   if (visible === 'all') {
-    if (queryMuniId) where.municipalityId = BigInt(queryMuniId);
-  } else if (queryMuniId && visible.some((id) => id === BigInt(queryMuniId))) {
-    where.municipalityId = BigInt(queryMuniId);
+    if (queryMuniId) {
+      const qmid = parseId(queryMuniId);
+      if (qmid == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
+      where.municipalityId = qmid;
+    }
+  } else if (queryMuniId) {
+    const qmid = parseId(queryMuniId);
+    if (qmid != null && visible.some((id) => id === qmid)) {
+      where.municipalityId = qmid;
+    } else {
+      where.municipalityId = { in: visible };
+    }
   } else {
     where.municipalityId = { in: visible };
   }
@@ -117,9 +127,10 @@ export async function POST(req: Request) {
   let municipalityId: bigint | null = null;
   if (session.role === 'SUPER_ADMIN') {
     if (!b.municipalityId) return NextResponse.json({ error: 'municipality_required' }, { status: 400 });
-    municipalityId = BigInt(b.municipalityId);
+    municipalityId = parseId(b.municipalityId);
+    if (!municipalityId) return NextResponse.json({ error: 'invalid_municipalityId' }, { status: 400 });
   } else if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
-    municipalityId = BigInt(session.municipalityId);
+    municipalityId = parseId(session.municipalityId);
   }
   if (!municipalityId) return NextResponse.json({ error: 'no_scope' }, { status: 403 });
 

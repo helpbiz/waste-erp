@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { todayLocalStr, thisMonthLocalStr } from '@/lib/dates';
 
 type LogItem = {
   id: string;
@@ -185,8 +186,8 @@ function LogDetail({ item }: { item: LogItem }) {
   );
 }
 
-const thisMonth = () => new Date().toISOString().slice(0, 7);
-const today = () => new Date().toISOString().slice(0, 10);
+const thisMonth = () => thisMonthLocalStr();
+const today = () => todayLocalStr();
 
 export default function LogsOverviewClient() {
   const [from, setFrom] = useState(thisMonth() + '-01');

@@ -37,8 +37,15 @@ export default async function ComplaintsPage({
         { zone: { zoneName: 'asc' } },
         { reportedAt: 'desc' },
       ],
-      take: 500,
-      include: {
+      take: 200,
+      /* P2-9: include 대신 select 명시 — completionImage(완료사진) 목록에서 제외.
+         requestImage는 목록 인라인 표시용으로 유지. 장기 개선은 파일스토리지 이관으로 처리. */
+      select: {
+        id: true, type: true, status: true, description: true,
+        locationAddress: true, locationLat: true, locationLng: true,
+        reportedAt: true, dueDate: true, resolveNote: true, resolvedAt: true,
+        complainantPhone: true, citizenName: true, contractorId: true,
+        requestImage: true, zoneId: true,
         reporter: { select: { id: true, name: true } },
         assignee: { select: { id: true, name: true } },
         zone: { select: { zoneName: true, contractor: { select: { companyName: true } } } },

@@ -6,6 +6,7 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
+import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { canManageUsers } from '@/lib/users';
@@ -30,8 +31,7 @@ export async function GET(req: Request) {
   }
 
   if (isAdmin) {
-    const contractorId = session.contractorId ? BigInt(session.contractorId)
-      : (url.searchParams.get('contractorId') ? BigInt(url.searchParams.get('contractorId')!) : null);
+    const contractorId = parseId(session.contractorId) ?? parseId(url.searchParams.get('contractorId'));
     if (!contractorId) return NextResponse.json({ error: 'contractor_required' }, { status: 400 });
 
     const records = await prisma.payslipRecord.findMany({
@@ -93,19 +93,22 @@ export async function DELETE(req: Request) {
   const workerIdStr = url.searchParams.get('workerId');
 
   if (id) {
-    const rec = await prisma.payslipRecord.findUnique({ where: { id: BigInt(id) } });
+    const recId = parseId(id);
+    if (!recId) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
+    const rec = await prisma.payslipRecord.findUnique({ where: { id: recId } });
     if (!rec) return NextResponse.json({ error: 'not_found' }, { status: 404 });
     if (session.contractorId && rec.contractorId.toString() !== session.contractorId) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
-    await prisma.payslipRecord.delete({ where: { id: BigInt(id) } });
+    await prisma.payslipRecord.delete({ where: { id: recId } });
     return NextResponse.json({ ok: true });
   }
 
   if (ym && workerIdStr) {
     if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
-    const contractorId = BigInt(session.contractorId);
-    const workerId     = BigInt(workerIdStr);
+    const contractorId = parseId(session.contractorId);
+    const workerId     = parseId(workerIdStr);
+    if (!contractorId || !workerId) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
     await prisma.payslipRecord.deleteMany({ where: { contractorId, workerId, yearMonth: ym } });
     return NextResponse.json({ ok: true });
   }
