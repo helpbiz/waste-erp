@@ -266,7 +266,7 @@ export default function ProfileClient({ user }: { user: UserData }) {
           <li>앱 이름 확인 후 <strong>&quot;추가&quot;</strong> 버튼을 탭합니다</li>
           <li>홈 화면에서 앱 아이콘을 탭하면 전체화면 앱으로 실행됩니다</li>
         </ol>
-        <p className="text-[11px] font-mono text-blue-600">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
+        <p className="text-xs font-mono text-blue-600">※ iOS 16.4 이상 권장 · Safari 브라우저 전용</p>
       </div>
 
       {/* 로그아웃은 AppBar 우상단으로 이동 (PWA Mobile UX Mastering 2026-04-28).

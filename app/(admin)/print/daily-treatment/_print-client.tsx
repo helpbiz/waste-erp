@@ -97,14 +97,14 @@ export default function DailyTreatmentPrintClient({
               <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
                 <div className="text-xs font-mono font-extrabold text-ink mb-1">{s.label}</div>
                 <div className="font-mono font-black text-xl text-ink">
-                  {s.totalTon.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span>
+                  {s.totalTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span>
                 </div>
               </div>
             ))}
           <div className="border border-accent rounded-md p-3 text-center bg-cyan-50">
             <div className="text-xs font-mono font-extrabold text-accent mb-1">합계</div>
             <div className="font-mono font-black text-xl text-accent">
-              {totalWeight.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span>
+              {totalWeight.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function DailyTreatmentPrintClient({
           )}
         </table>
 
-        <div className="mt-6 text-right text-[10px] font-mono text-slate-500">
+        <div className="mt-6 text-right text-xs font-mono text-slate-500">
           생성: {new Date().toLocaleString('ko-KR')} · 생성자: {generatedBy}
         </div>
       </article>

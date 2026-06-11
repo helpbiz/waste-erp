@@ -104,7 +104,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
       {/* 컨트롤 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3">
         <div>
-          <label htmlFor="f02-date" className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">대상 일자</label>
+          <label htmlFor="f02-date" className="block text-xs font-mono font-extrabold text-slate-600 mb-1">대상 일자</label>
           <input
             id="f02-date"
             type="date"
@@ -115,7 +115,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
         </div>
         {needsContractorPicker && (
           <div className="flex-1 min-w-[200px]">
-            <label htmlFor="f02-contractor" className="block text-[10px] font-mono font-extrabold text-slate-600 mb-1">위탁업체</label>
+            <label htmlFor="f02-contractor" className="block text-xs font-mono font-extrabold text-slate-600 mb-1">위탁업체</label>
             <select
               id="f02-contractor"
               value={contractorId}
@@ -195,12 +195,12 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
               .map((s) => (
                 <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
                   <div className="text-xs font-mono font-extrabold text-ink mb-1">{s.label}</div>
-                  <div className="font-mono font-black text-xl text-ink">{s.totalTon.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span></div>
+                  <div className="font-mono font-black text-xl text-ink">{s.totalTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span></div>
                 </div>
               ))}
             <div className="border border-accent rounded-md p-3 text-center bg-cyan-50">
               <div className="text-xs font-mono font-extrabold text-accent mb-1">합계</div>
-              <div className="font-mono font-black text-xl text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-[11px] font-bold ml-0.5">t</span></div>
+              <div className="font-mono font-black text-xl text-accent">{data.totals.weightTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span></div>
             </div>
           </div>
 
@@ -247,7 +247,7 @@ export default function DailyTreatmentTab({ role }: { role: string }) {
             )}
           </table>
 
-          <div className="mt-6 text-right text-[10px] font-mono text-slate-500">
+          <div className="mt-6 text-right text-xs font-mono text-slate-500">
             생성: {new Date(data.meta.generatedAt).toLocaleString('ko-KR')} · 생성자: {data.meta.generatedBy.name}
           </div>
         </article>

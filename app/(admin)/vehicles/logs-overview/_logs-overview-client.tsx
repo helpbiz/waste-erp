@@ -236,7 +236,7 @@ export default function LogsOverviewClient() {
                 statusFilter === s ? 'ring-2 ring-accent border-accent' : 'border-line bg-surface'
               }`}
             >
-              <div className="text-[10px] font-mono font-extrabold text-slate-500 mb-1">{STATUS_LABEL[s]}</div>
+              <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{STATUS_LABEL[s]}</div>
               <div className="text-2xl font-black text-ink">{data.statusCounts[s]}</div>
             </button>
           ))}
@@ -246,17 +246,17 @@ export default function LogsOverviewClient() {
       {/* 필터 */}
       <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">상태</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">상태</div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold">
             <option value="">전체</option>
@@ -338,7 +338,7 @@ export default function LogsOverviewClient() {
                             <td style={tdC}>{l.driverName}</td>
                             <td style={tdC}>{l.zoneName || '—'}</td>
                             <td style={tdC}>
-                              <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-bold ${STATUS_COLOR[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
                                 {STATUS_LABEL[l.status] ?? l.status}
                               </span>
                             </td>
@@ -351,7 +351,7 @@ export default function LogsOverviewClient() {
                             <td style={tdC}>
                               <button
                                 onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
-                                className="px-2 py-0.5 rounded text-[11px] font-extrabold border border-line hover:bg-surface-soft"
+                                className="px-2 py-0.5 rounded text-xs font-extrabold border border-line hover:bg-surface-soft"
                               >
                                 {expandedId === l.id ? '접기' : '상세'}
                               </button>

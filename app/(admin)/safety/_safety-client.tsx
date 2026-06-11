@@ -378,7 +378,7 @@ export default function SafetyClient({
             </svg>
             {exporting ? '생성 중…' : '보고서 Excel'}
           </button>
-          <span className="text-[10px] text-slate-400">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
+          <span className="text-xs text-slate-400">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
         </div>
       )}
 

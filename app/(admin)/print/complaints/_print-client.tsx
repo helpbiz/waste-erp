@@ -90,7 +90,7 @@ export default function ComplaintsPrintClient({
           </table>
         )}
 
-        <div className="mt-8 text-right text-[10px] font-mono text-slate-400 print:block">
+        <div className="mt-8 text-right text-xs font-mono text-slate-400 print:block">
           출력일: {new Date().toLocaleDateString('ko-KR')}
         </div>
       </div>

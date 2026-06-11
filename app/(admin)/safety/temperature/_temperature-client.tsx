@@ -85,7 +85,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
       {/* 컨트롤 */}
       <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">조회 년월</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">조회 년월</div>
           <input
             type="month"
             value={yearMonth}
@@ -226,9 +226,9 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
                         </td>
                         <td className="px-3 py-1.5 text-center">
                           {isFuture ? (
-                            <span className="text-[10px] text-slate-300">미래</span>
+                            <span className="text-xs text-slate-300">미래</span>
                           ) : day.hazard && day.hazard !== 'NORMAL' ? (
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-extrabold ${
                               day.hazard === 'HIGH_RISK' ? 'bg-red-500 text-white' :
                               day.hazard === 'HEAT_WAVE' ? 'bg-orange-400 text-white' :
                               'bg-sky-500 text-white'
@@ -236,9 +236,9 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
                               {HAZARD_LABEL[day.hazard]}
                             </span>
                           ) : noData ? (
-                            <span className="text-[10px] text-slate-300">데이터없음</span>
+                            <span className="text-xs text-slate-300">데이터없음</span>
                           ) : (
-                            <span className="text-[10px] text-slate-400">정상</span>
+                            <span className="text-xs text-slate-400">정상</span>
                           )}
                         </td>
                       </tr>
@@ -257,7 +257,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
             <span className="ml-auto">⋯ = 데이터 준비 중 (Archive 약 5일 지연)</span>
           </div>
 
-          <div className="mt-2 text-center text-[10px] font-mono text-slate-500 print:block hidden">
+          <div className="mt-2 text-center text-xs font-mono text-slate-500 print:block hidden">
             출력일시: {new Date().toLocaleString('ko-KR')} · 데이터 출처: Open-Meteo (archive-api.open-meteo.com)
           </div>
         </div>
@@ -291,9 +291,9 @@ function SummaryCard({
     'text-ink';
   return (
     <div className={`border rounded-xl p-4 text-center print:border-slate-700 ${colors}`}>
-      <div className="text-[10px] font-mono font-extrabold text-slate-500 mb-1">{label}</div>
+      <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{label}</div>
       <div className={`text-2xl font-black ${valueColor}`}>{value}</div>
-      {sub && <div className="text-[10px] text-slate-500 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-slate-500 mt-0.5">{sub}</div>}
     </div>
   );
 }

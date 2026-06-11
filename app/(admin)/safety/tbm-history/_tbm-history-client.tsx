@@ -99,12 +99,12 @@ export default function TbmHistoryClient() {
           {/* 필터 */}
           <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
             <div>
-              <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">시작일</div>
               <input type="date" value={hFrom} onChange={(e) => setHFrom(e.target.value)}
                 className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
             </div>
             <div>
-              <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">종료일</div>
               <input type="date" value={hTo} onChange={(e) => setHTo(e.target.value)}
                 className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono" />
             </div>
@@ -176,10 +176,10 @@ export default function TbmHistoryClient() {
                                 )}
                                 {s.signers.length > 0 && (
                                   <div>
-                                    <div className="text-[11px] font-bold text-slate-600 mb-1">서명자</div>
+                                    <div className="text-xs font-bold text-slate-600 mb-1">서명자</div>
                                     <div className="flex flex-wrap gap-1.5">
                                       {s.signers.map((sig) => (
-                                        <span key={sig.id} className="text-[11px] bg-white border border-slate-200 rounded px-2 py-0.5">
+                                        <span key={sig.id} className="text-xs bg-white border border-slate-200 rounded px-2 py-0.5">
                                           {sig.name}{sig.employeeNo ? ` (${sig.employeeNo})` : ''}
                                         </span>
                                       ))}
@@ -206,7 +206,7 @@ export default function TbmHistoryClient() {
           {/* 필터 */}
           <div className="bg-surface border border-line rounded-xl p-4 flex flex-wrap items-end gap-3">
             <div>
-              <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">연도</div>
+              <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">연도</div>
               <input type="number" value={eduYear} onChange={(e) => setEduYear(Number(e.target.value))}
                 min={2020} max={2100}
                 className="w-24 px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
@@ -240,7 +240,7 @@ export default function TbmHistoryClient() {
                     ? `${Math.round(eduData.participantCount / eduData.totalWorkers * 100)}%` : '0%' },
                 ].map((c) => (
                   <div key={c.label} className="bg-surface border border-line rounded-xl p-4 text-center">
-                    <div className="text-[10px] font-mono font-extrabold text-slate-500 mb-1">{c.label}</div>
+                    <div className="text-xs font-mono font-extrabold text-slate-500 mb-1">{c.label}</div>
                     <div className="text-xl font-black text-ink">{c.value}</div>
                   </div>
                 ))}

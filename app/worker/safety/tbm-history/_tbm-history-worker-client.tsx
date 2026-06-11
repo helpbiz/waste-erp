@@ -47,7 +47,7 @@ export default function TbmHistoryWorkerClient() {
       {/* 연도 선택 */}
       <div className="bg-surface border border-line rounded-xl p-4 flex items-end gap-3">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">연도</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">연도</div>
           <select value={year} onChange={(e) => setYear(Number(e.target.value))}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold">
             {Array.from({ length: 5 }, (_, i) => currentYear - i).map((y) => (
@@ -90,13 +90,13 @@ export default function TbmHistoryWorkerClient() {
                     {item.content && (
                       <div className="text-xs text-ink-muted mt-1 line-clamp-2 whitespace-pre-wrap">{item.content}</div>
                     )}
-                    <div className="text-[11px] text-slate-400 mt-1.5">
+                    <div className="text-xs text-slate-400 mt-1.5">
                       {item.department ?? item.facilityName ?? ''}{(item.department ?? item.facilityName) ? ' · ' : ''}
                       작성: {item.createdBy}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-[10px] text-slate-400">서명시각</div>
+                    <div className="text-xs text-slate-400">서명시각</div>
                     <div className="text-xs font-bold text-emerald-600">{signTime}</div>
                   </div>
                 </div>

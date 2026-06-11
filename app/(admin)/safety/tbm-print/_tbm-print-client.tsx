@@ -67,7 +67,7 @@ export default function TbmPrintClient({
       {/* ── 컨트롤 바 ── */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">대상 월</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">대상 월</div>
           <input
             type="month" value={yearMonth}
             onChange={(e) => setYearMonth(e.target.value)}

@@ -99,12 +99,12 @@ export default function WeatherPrintClient({
       {/* 컨트롤 바 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">시작일</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">시작일</div>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">종료일</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">종료일</div>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>

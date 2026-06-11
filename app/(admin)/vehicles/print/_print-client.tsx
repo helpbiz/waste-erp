@@ -412,12 +412,12 @@ export default function VehiclePrintClient({
       {/* 컨트롤 바 */}
       <div className="bg-surface border border-line rounded-lg p-4 flex flex-wrap items-end gap-3 print:hidden">
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">날짜</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">날짜</div>
           <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div>
-          <div className="text-[10px] font-mono font-extrabold text-slate-600 mb-1">대상</div>
+          <div className="text-xs font-mono font-extrabold text-slate-600 mb-1">대상</div>
           <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold min-w-[200px]">
             <option value="">전체 차량 (일괄 출력)</option>
