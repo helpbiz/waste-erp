@@ -318,14 +318,8 @@ export default function WeatherPrintClient({
           main, section { overflow: visible !important; height: auto !important; max-height: none !important; }
 
           body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
             font-size: 9pt !important;
             background: white !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
           }
 
           .wn-wrap { margin: 0 !important; }
@@ -337,9 +331,12 @@ export default function WeatherPrintClient({
           .wn-notice-title { font-size: 11pt !important; }
           .wn-notice-date  { font-size: 10pt !important; }
 
+          .wn-notice-header { background: transparent !important; }
+          .wn-alert-badge   { background: transparent !important; border-color: #9ca3af !important; }
+
           .wn-tbl th, .wn-tbl td { font-size: 8.5pt !important; padding: 3px 4px !important; }
-          .wn-tbl th { background: #e2e8f0 !important; }
-          .wn-even td { background: #f8fafc !important; }
+          .wn-tbl th { background: transparent !important; }
+          .wn-even td { background: transparent !important; }
 
           .wn-photo { width: 55px !important; height: 42px !important; }
         }

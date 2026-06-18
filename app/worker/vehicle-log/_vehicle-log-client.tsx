@@ -70,7 +70,7 @@ type LargeWasteWork = {
   extinguisher: string; household: string; other: string; illegalTotal: string;
 };
 
-type OperationRow = { startTime: string; endTime: string; zone: string; note: string };
+type OperationRow = { startTime: string; endTime: string; zone: string; disposalSiteId: string; note: string };
 
 type FormState = {
   logDate: string;
@@ -101,7 +101,7 @@ function defaultForm(lastEndMileage: number | null): FormState {
     logDate: today,
     prevMileage: lastEndMileage != null ? String(lastEndMileage) : '',
     todayMileage: '',
-    operationRows: Array.from({ length: 4 }, () => ({ startTime: '', endTime: '', zone: '', note: '' })),
+    operationRows: Array.from({ length: 4 }, () => ({ startTime: '', endTime: '', zone: '', disposalSiteId: '', note: '' })),
     fuelUsed: '',
     ureaUsed: '',
     ureaCost: '',
@@ -211,7 +211,12 @@ export default function VehicleLogClient({
 
     const routeDetail = JSON.stringify({
       passengers: selectedPassengerNames.join(', '),
-      operationRows: form.operationRows.filter((r) => r.startTime || r.endTime || r.zone || r.note),
+      operationRows: form.operationRows
+        .filter((r) => r.startTime || r.endTime || r.zone || r.disposalSiteId || r.note)
+        .map((r) => ({
+          ...r,
+          disposalSiteName: disposalSites.find((s) => s.id === r.disposalSiteId)?.name ?? null,
+        })),
       ...(showUrea && { ureaUsed: Number(form.ureaUsed) || 0, ureaCost: Number(form.ureaCost) || 0 }),
       bagWork: form.bagWork.map((row) => ({
         general: Number(row.general) || 0,
@@ -453,13 +458,16 @@ export default function VehicleLogClient({
             <div className="flex flex-col gap-1">
               <span className="text-sm font-mono font-extrabold text-ink-faint">차량운행내역 (4차)</span>
               <div className="overflow-x-auto -mx-1">
-                <table className="w-full text-sm border-collapse min-w-[420px]">
+                <table className="w-full text-sm border-collapse min-w-[560px]">
                   <thead>
                     <tr className="bg-slate-100">
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-8">차수</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">시작시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">종료시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center">작업구간</th>
+                      {disposalSites.length > 0 && (
+                        <th className="border border-slate-300 px-1 py-1 font-bold text-center min-w-[90px]">반입장소</th>
+                      )}
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[80px]">비고</th>
                     </tr>
                   </thead>
@@ -483,6 +491,18 @@ export default function VehicleLogClient({
                             placeholder="구간/경로"
                             className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
+                        {disposalSites.length > 0 && (
+                          <td className="border border-slate-300 p-0.5">
+                            <select value={row.disposalSiteId}
+                              onChange={(e) => setOperationRow(i, 'disposalSiteId', e.target.value)}
+                              className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent">
+                              <option value="">—</option>
+                              {disposalSites.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.note}
                             onChange={(e) => setOperationRow(i, 'note', e.target.value)}
@@ -888,6 +908,7 @@ export default function VehicleLogClient({
           vehicle={selectedVehicle ?? null}
           passengerNames={selectedPassengerNames}
           driverName={driverName}
+          disposalSites={disposalSites}
           onConfirm={submit}
           onCancel={() => setShowPreview(false)}
           submitting={submitting}
@@ -902,12 +923,13 @@ export default function VehicleLogClient({
 /* ─── 미리보기 모달 ─── */
 
 function VehicleLogPreview({
-  form, vehicle, passengerNames, driverName, onConfirm, onCancel, submitting,
+  form, vehicle, passengerNames, driverName, disposalSites, onConfirm, onCancel, submitting,
 }: {
   form: FormState;
   vehicle: { vehicleNo: string; vehicleType: string; vehicleTon: string | null } | null;
   passengerNames: string[];
   driverName: string;
+  disposalSites: DisposalSite[];
   onConfirm: () => void;
   onCancel: () => void;
   submitting: boolean;
@@ -964,6 +986,7 @@ function VehicleLogPreview({
                     <span className="text-ink-muted w-8 flex-shrink-0">{form.operationRows.indexOf(r) + 1}차</span>
                     <span>{r.startTime && r.endTime ? `${r.startTime}~${r.endTime}` : r.startTime || ''}</span>
                     {r.zone && <span className="text-ink">{r.zone}</span>}
+                    {r.disposalSiteId && <span className="text-accent">→ {disposalSites.find((s) => s.id === r.disposalSiteId)?.name ?? ''}</span>}
                     {r.note && <span className="text-ink-muted ml-auto">{r.note}</span>}
                   </div>
                 ))}
@@ -1186,8 +1209,8 @@ function HistoryPanel() {
                   {typeof detail.passengers === 'string' && detail.passengers && <span>동승: {detail.passengers}</span>}
                   {Array.isArray(detail.operationRows) && (detail.operationRows as OperationRow[]).some((r) => r.startTime || r.zone) && (
                     <div className="col-span-2">
-                      {(detail.operationRows as OperationRow[]).filter((r) => r.startTime || r.zone).map((r, i) => (
-                        <div key={i} className="font-mono">{i + 1}차: {r.startTime}{r.endTime ? `–${r.endTime}` : ''}{r.zone ? ` ${r.zone}` : ''}{r.note ? ` (${r.note})` : ''}</div>
+                      {(detail.operationRows as (OperationRow & { disposalSiteName?: string | null })[]).filter((r) => r.startTime || r.zone).map((r, i) => (
+                        <div key={i} className="font-mono">{i + 1}차: {r.startTime}{r.endTime ? `–${r.endTime}` : ''}{r.zone ? ` ${r.zone}` : ''}{r.disposalSiteName ? ` → ${r.disposalSiteName}` : ''}{r.note ? ` (${r.note})` : ''}</div>
                       ))}
                     </div>
                   )}

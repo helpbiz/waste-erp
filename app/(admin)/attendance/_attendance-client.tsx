@@ -37,6 +37,7 @@ export default function AttendanceClient({
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
+  const [view, setView] = useState<'daily' | 'adjustments'>('daily');
   const [editing, setEditing] = useState<Row | null>(null);
   const [editingInitTab, setEditingInitTab] = useState<'adjust' | 'history'>('adjust');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -145,7 +146,29 @@ export default function AttendanceClient({
         </div>
       </div>
 
-      {/* 6 KPI — 결재 대기 클릭 시 승인/반려/조정 모달 (canManage 시만 활성) */}
+      {/* 뷰 탭 */}
+      <div className="flex gap-0 border-b border-line -mb-1">
+        {(['daily', 'adjustments'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`px-4 py-2 text-sm font-extrabold border-b-2 transition-colors ${
+              view === v
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            {v === 'daily' ? '일별 현황' : '정정 이력 조회'}
+          </button>
+        ))}
+      </div>
+
+      {view === 'adjustments' && (
+        <AdjustmentsTab defaultMonth={selectedDate.slice(0, 7)} />
+      )}
+
+      {/* 6 KPI + 일별 테이블 + 모달 — view === 'daily' 에서만 표시 */}
+      {view === 'daily' && (<>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         <KpiCard label="전체" value={summary.total} unit="명" />
         <KpiCard label="출근" value={summary.checkedIn} unit="명" tone="success" />
@@ -244,6 +267,7 @@ export default function AttendanceClient({
           onSuccess={() => { setEditing(null); router.refresh(); }}
         />
       )}
+      </>)}
 
     </div>
   );
@@ -311,12 +335,15 @@ function AdjustModal({
     const d = new Date(iso);
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
-  /* HH:MM + dateStr → ISO datetime (KST → 서버 정규화). 빈 값은 null. */
-  function hmToIso(hm: string): string | null {
+  /* HH:MM + dateStr → ISO datetime. nextDay=true 시 날짜 +1 (야간 익일 퇴근). */
+  function hmToIso(hm: string, nextDay = false): string | null {
     if (!hm) return null;
     const [h, m] = hm.split(':').map((s) => parseInt(s, 10));
     if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    const local = new Date(`${dateStr}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
+    const base = new Date(`${dateStr}T00:00:00`);
+    if (nextDay) base.setDate(base.getDate() + 1);
+    const d = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+    const local = new Date(`${d}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
     return local.toISOString();
   }
 
@@ -327,6 +354,9 @@ function AdjustModal({
   const [checkIn, setCheckIn] = useState(isoToHm(row.checkInTime));
   const [checkOut, setCheckOut] = useState(isoToHm(row.checkOutTime));
   const [workType, setWorkType] = useState<string>(row.workType ?? 'NORMAL');
+  /* 야간 출근(20시 이후) + 퇴근 미등록 → 익일 퇴근 자동 제안 */
+  const isLikelyNightShift = row.checkInTime ? new Date(row.checkInTime).getHours() >= 20 : false;
+  const [checkOutNextDay, setCheckOutNextDay] = useState(isLikelyNightShift && !row.checkOutTime);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -362,7 +392,7 @@ function AdjustModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           adjustedCheckIn: hmToIso(checkIn),
-          adjustedCheckOut: hmToIso(checkOut),
+          adjustedCheckOut: hmToIso(checkOut, checkOutNextDay),
           adjustedWorkType: workType,
           reason: reason.trim(),
           adjustmentType: 'CORRECTION',
@@ -465,6 +495,24 @@ function AdjustModal({
                   className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </label>
             </div>
+            {/* 야간근무 익일 퇴근 옵션 */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={checkOutNextDay}
+                onChange={(e) => setCheckOutNextDay(e.target.checked)}
+                className="w-4 h-4 rounded accent-accent"
+              />
+              <span className="text-sm font-bold text-ink">
+                익일 퇴근
+                <span className="ml-1.5 text-[0.6875rem] font-normal text-ink-muted">(야간근무 — 다음날 오전 퇴근인 경우)</span>
+              </span>
+              {checkOutNextDay && (
+                <span className="ml-auto text-[0.6875rem] font-extrabold text-amber-700 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded whitespace-nowrap">
+                  퇴근 기준일 +1일
+                </span>
+              )}
+            </label>
             <label className="block">
               <span className="block text-[0.6875rem] font-extrabold text-ink mb-1.5">근무 유형</span>
               <select value={workType} onChange={(e) => setWorkType(e.target.value)}
@@ -545,7 +593,19 @@ function AdjustModal({
                   </div>
 
                   {history.entries.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-ink-muted">정정 이력이 없습니다.</div>
+                    <div className="text-center py-8 space-y-2">
+                      <div className="text-sm text-ink-muted">정정 이력이 없습니다.</div>
+                      {row.status === 'APPROVED' && (
+                        <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-1.5 inline-block">
+                          ✓ 이 기록은 수정 없이 그대로 승인되었습니다.
+                        </div>
+                      )}
+                      {row.status === 'ADJUSTED' && (
+                        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 inline-block">
+                          ⚠ 상태가 ADJUSTED이나 이력 레코드가 없습니다 — 마이그레이션 데이터 불일치
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {history.entries.map((e, i) => (
@@ -874,6 +934,149 @@ function AdminPunchWidget({ selfRecord, onSuccess }: { selfRecord: SelfRecord; o
         )}
       </div>
       {error && <div className="w-full text-sm font-bold text-red-700">{error}</div>}
+    </div>
+  );
+}
+
+/* ─────────────── 정정 이력 통합 조회 탭 ─────────────── */
+
+const ADJ_TYPE_LABEL: Record<string, string> = {
+  CORRECTION: '정정', ADDITION: '추가', DELETION: '삭제', LEAVE: '휴가처리',
+};
+
+type AdjRow = {
+  id: string; recordId: string; workDate: string;
+  workerName: string; employeeNo: string | null;
+  adjustmentType: string; reason: string;
+  original: { checkIn: string | null; checkOut: string | null; workType: string | null };
+  adjusted: { checkIn: string | null; checkOut: string | null; workType: string | null };
+  adjustedByName: string | null;
+  createdAt: string;
+};
+
+function AdjustmentsTab({ defaultMonth }: { defaultMonth: string }) {
+  const [startDate, setStartDate] = useState(`${defaultMonth}-01`);
+  const [endDate, setEndDate] = useState(`${defaultMonth}-${new Date(parseInt(defaultMonth.slice(0,4)), parseInt(defaultMonth.slice(5,7)), 0).getDate().toString().padStart(2,'0')}`);
+  const [rows, setRows] = useState<AdjRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function fmtTime(iso: string | null) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  async function load() {
+    if (!startDate || !endDate) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/attendance/adjustments?startDate=${startDate}&endDate=${endDate}`);
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? '조회 실패'); return; }
+      setRows(data.adjustments ?? []);
+      setTotal(data.total ?? 0);
+    } catch {
+      setError('네트워크 오류');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* 필터 */}
+      <div className="bg-surface border border-line rounded-lg px-4 py-3 flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-[0.6875rem] font-extrabold text-ink-muted">시작일</span>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+            className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[0.6875rem] font-extrabold text-ink-muted">종료일</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+            className="px-3 py-1.5 rounded border border-line text-sm font-mono font-bold bg-white" />
+        </label>
+        <button onClick={load} disabled={loading}
+          className="px-4 py-1.5 rounded bg-accent text-white text-sm font-extrabold hover:bg-cyan-800 disabled:opacity-50">
+          {loading ? '조회 중…' : '조회'}
+        </button>
+        {total !== null && (
+          <span className="text-sm font-bold text-ink-muted ml-auto">총 {total}건</span>
+        )}
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-300 rounded px-3 py-2 text-sm font-bold text-red-700">{error}</div>
+      )}
+
+      {/* 테이블 */}
+      {rows.length > 0 && (
+        <div className="bg-surface border border-line rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[780px] text-sm">
+              <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase tracking-wider">
+                <tr>
+                  <th className="px-3 py-2 text-left">근로자</th>
+                  <th className="px-3 py-2 text-left">날짜</th>
+                  <th className="px-3 py-2 text-left">유형</th>
+                  <th className="px-3 py-2 text-left">출근 전→후</th>
+                  <th className="px-3 py-2 text-left">퇴근 전→후</th>
+                  <th className="px-3 py-2 text-left">사유</th>
+                  <th className="px-3 py-2 text-left">정정자</th>
+                  <th className="px-3 py-2 text-left">정정일시</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {rows.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-3 py-2 font-extrabold text-ink">
+                      {r.workerName}
+                      {r.employeeNo && <span className="ml-1 text-[0.6875rem] text-ink-muted font-mono">({r.employeeNo})</span>}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-sm">{r.workDate}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-1.5 py-0.5 rounded text-[0.6875rem] font-extrabold border ${
+                        r.adjustmentType === 'CORRECTION' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                        r.adjustmentType === 'ADDITION'   ? 'bg-green-50 text-green-800 border-green-300' :
+                        r.adjustmentType === 'DELETION'   ? 'bg-red-50 text-red-800 border-red-300' :
+                        'bg-amber-50 text-amber-800 border-amber-300'
+                      }`}>
+                        {ADJ_TYPE_LABEL[r.adjustmentType] ?? r.adjustmentType}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-sm">
+                      <span className="text-ink-muted">{fmtTime(r.original.checkIn)}</span>
+                      <span className="mx-1 text-ink-faint">→</span>
+                      <span className="font-extrabold text-emerald-700">{fmtTime(r.adjusted.checkIn)}</span>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-sm">
+                      <span className="text-ink-muted">{fmtTime(r.original.checkOut)}</span>
+                      <span className="mx-1 text-ink-faint">→</span>
+                      <span className="font-extrabold text-accent">{fmtTime(r.adjusted.checkOut)}</span>
+                    </td>
+                    <td className="px-3 py-2 text-sm max-w-[180px] truncate" title={r.reason}>{r.reason}</td>
+                    <td className="px-3 py-2 text-sm text-ink-muted">{r.adjustedByName ?? '—'}</td>
+                    <td className="px-3 py-2 text-[0.6875rem] font-mono text-ink-muted whitespace-nowrap">
+                      {new Date(r.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!loading && total === 0 && (
+        <div className="text-center py-10 text-sm text-ink-faint">해당 기간에 정정 이력이 없습니다.</div>
+      )}
+
+      {total === null && !loading && (
+        <div className="text-center py-10 text-sm text-ink-muted">기간을 선택하고 조회 버튼을 눌러주세요.</div>
+      )}
     </div>
   );
 }

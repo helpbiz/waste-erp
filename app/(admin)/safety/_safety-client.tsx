@@ -10,7 +10,7 @@ import WeatherAlertCard, { type WorkerOpt } from './_weather-alert';
 
 type TbmInfo = {
   id: string; topic: string; content: string | null; photoDataUrl: string | null;
-  leader: string | null; location: string | null; hazards: string | null;
+  leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
   department: string | null; signCount: number; createdBy: string;
   signedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
   unsignedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
@@ -154,6 +154,7 @@ export default function SafetyClient({
   const [tbmLeader, setTbmLeader] = useState(tbm?.leader ?? '');
   const [tbmLocation, setTbmLocation] = useState(tbm?.location ?? '');
   const [tbmHazards, setTbmHazards] = useState(tbm?.hazards ?? '');
+  const [tbmPreWorkCheck, setTbmPreWorkCheck] = useState(tbm?.preWorkCheck ?? '');
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return rows;
@@ -211,9 +212,10 @@ export default function SafetyClient({
           content: tbmContent.trim() || undefined,
           department: tbmDept.trim() || undefined,
           photoDataUrl: tbmPhoto || undefined,
-          leader: tbmLeader.trim() || undefined,
-          location: tbmLocation.trim() || undefined,
-          hazards: tbmHazards.trim() || undefined,
+          leader:       tbmLeader.trim()       || undefined,
+          location:     tbmLocation.trim()     || undefined,
+          hazards:      tbmHazards.trim()      || undefined,
+          preWorkCheck: tbmPreWorkCheck.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -333,6 +335,7 @@ export default function SafetyClient({
           leader={tbmLeader}
           location={tbmLocation}
           hazards={tbmHazards}
+          preWorkCheck={tbmPreWorkCheck}
           onTopicChange={setTbmTopic}
           onContentChange={setTbmContent}
           onDeptChange={setTbmDept}
@@ -340,6 +343,7 @@ export default function SafetyClient({
           onLeaderChange={setTbmLeader}
           onLocationChange={setTbmLocation}
           onHazardsChange={setTbmHazards}
+          onPreWorkCheckChange={setTbmPreWorkCheck}
           onEdit={() => {
             setTbmEdit(true);
             setTbmTopic(tbm?.topic ?? '');
@@ -349,6 +353,7 @@ export default function SafetyClient({
             setTbmLeader(tbm?.leader ?? '');
             setTbmLocation(tbm?.location ?? '');
             setTbmHazards(tbm?.hazards ?? '');
+            setTbmPreWorkCheck(tbm?.preWorkCheck ?? '');
           }}
           onCancel={() => setTbmEdit(false)}
           onSave={saveTbm}
@@ -774,9 +779,9 @@ function WeatherWidget({ w }: { w: WeatherSnapshot }) {
 }
 
 function TbmWidget({
-  tbm, isManager, editing, topic, content, dept, photo, leader, location, hazards,
+  tbm, isManager, editing, topic, content, dept, photo, leader, location, hazards, preWorkCheck,
   onTopicChange, onContentChange, onDeptChange, onPhotoChange,
-  onLeaderChange, onLocationChange, onHazardsChange,
+  onLeaderChange, onLocationChange, onHazardsChange, onPreWorkCheckChange,
   onEdit, onCancel, onSave, busy,
 }: {
   tbm: TbmInfo | null;
@@ -789,6 +794,7 @@ function TbmWidget({
   leader: string;
   location: string;
   hazards: string;
+  preWorkCheck: string;
   onTopicChange: (s: string) => void;
   onContentChange: (s: string) => void;
   onDeptChange: (s: string) => void;
@@ -796,6 +802,7 @@ function TbmWidget({
   onLeaderChange: (s: string) => void;
   onLocationChange: (s: string) => void;
   onHazardsChange: (s: string) => void;
+  onPreWorkCheckChange: (s: string) => void;
   onEdit: () => void;
   onCancel: () => void;
   onSave: () => void;
@@ -851,6 +858,7 @@ function TbmWidget({
               <input value={location} onChange={(e) => onLocationChange(e.target.value)} placeholder="교육 장소 (예: 차고지)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             </div>
             <textarea rows={2} value={hazards} onChange={(e) => onHazardsChange(e.target.value)} placeholder="위험요인 (예: 폭염, 탈수, 교통사고)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
+            <textarea rows={2} value={preWorkCheck} onChange={(e) => onPreWorkCheckChange(e.target.value)} placeholder="작업 전 안전점검 내용 (예: 안전장구 착용 확인, 장비 점검)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
             <input value={dept} onChange={(e) => onDeptChange(e.target.value)} placeholder="팀명 (선택, 예: 1팀)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
             <textarea rows={2} value={content} onChange={(e) => onContentChange(e.target.value)} placeholder="기타 내용 (선택)" className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent resize-none" />
             <div className="flex items-center gap-2">
@@ -884,6 +892,11 @@ function TbmWidget({
             {tbm.hazards && (
               <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-900">
                 <span className="font-extrabold">위험요인: </span>{tbm.hazards}
+              </div>
+            )}
+            {tbm.preWorkCheck && (
+              <div className="mt-1 px-2 py-1.5 rounded bg-green-50 border border-green-200 text-sm font-semibold text-green-900">
+                <span className="font-extrabold">작업전 안전점검: </span>{tbm.preWorkCheck}
               </div>
             )}
             {tbm.content && <p className="text-sm font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}

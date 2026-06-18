@@ -60,6 +60,7 @@ export default function AnnouncementsClient({
   const [tab, setTab] = useState<'general' | 'weather'>('general');
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showExpired, setShowExpired] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Announcement | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -71,9 +72,10 @@ export default function AnnouncementsClient({
   const [weatherItems, setWeatherItems] = useState<WeatherNotice[]>([]);
   const [weatherLoading, setWeatherLoading] = useState(false);
 
-  function load() {
+  function load(includeExpired = false) {
     setLoading(true);
-    fetch('/api/announcements?admin=true&includeExpired=true')
+    const qs = includeExpired ? 'admin=true&includeExpired=true' : 'admin=true';
+    fetch(`/api/announcements?${qs}`)
       .then((r) => r.json())
       .then((d) => setItems(d.items ?? []))
       .finally(() => setLoading(false));
@@ -88,13 +90,13 @@ export default function AnnouncementsClient({
       .finally(() => setWeatherLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(showExpired); }, [showExpired]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'weather') loadWeather(weatherDate); }, [tab, weatherDate]);
 
   async function del(id: string, title: string) {
     if (!confirm(`⚠ 공지 삭제\n\n'${title}'\n\n이 공지를 영구 삭제합니다. 복구 불가.\n진행하시겠습니까?`)) return;
     const r = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
-    if (r.ok) load();
+    if (r.ok) load(showExpired);
     else {
       const j = await r.json().catch(() => ({}));
       alert('실패: ' + (j.error ?? 'unknown'));
@@ -122,12 +124,20 @@ export default function AnnouncementsClient({
           </button>
         )}
         {tab === 'general' && (
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
-          >
-            ＋ 일반 공지 작성
-          </button>
+          <>
+            <button
+              onClick={() => window.open('/announcements/print', '_blank')}
+              className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-ink text-sm font-extrabold border border-line active:scale-95"
+            >
+              출력
+            </button>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+            >
+              ＋ 일반 공지 작성
+            </button>
+          </>
         )}
         {tab === 'weather' && (
           <a
@@ -139,7 +149,8 @@ export default function AnnouncementsClient({
         )}
       </div>
 
-      {/* 탭 — 일반공지 / 날씨관리대장 */}
+      {/* 탭 — 일반공지 / 날씨관리대장 + 만료 포함 토글 */}
+      <div className="flex items-center gap-3 flex-wrap">
       <div className="flex gap-1 bg-surface-soft border border-line rounded-xl p-1 max-w-xs">
         <button
           onClick={() => setTab('general')}
@@ -153,6 +164,15 @@ export default function AnnouncementsClient({
         >
           🌡 날씨관리대장
         </button>
+      </div>
+      {tab === 'general' && (
+        <button
+          onClick={() => setShowExpired((v) => !v)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition ${showExpired ? 'bg-slate-600 text-white border-slate-600' : 'bg-white text-ink-muted border-line hover:bg-slate-50'}`}
+        >
+          {showExpired ? '✓ 만료 포함' : '만료 포함'}
+        </button>
+      )}
       </div>
 
       {createOpen && <CreateModal role={session.isNoticeManager ? 'INTERNAL_ADMIN' : session.role} facilities={isAvac ? facilities : []} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
@@ -293,6 +313,12 @@ export default function AnnouncementsClient({
                     className="px-2.5 py-1 rounded text-sm font-extrabold bg-cyan-600 hover:bg-cyan-700 text-white active:scale-95"
                   >
                     ✏ 수정
+                  </button>
+                  <button
+                    onClick={() => window.open(`/announcements/print?id=${a.id}`, '_blank')}
+                    className="px-2.5 py-1 rounded text-sm font-extrabold bg-slate-100 hover:bg-slate-200 text-ink border border-line active:scale-95"
+                  >
+                    🖨 출력
                   </button>
                   <button
                     onClick={() => del(a.id, a.title)}

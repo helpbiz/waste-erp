@@ -175,15 +175,17 @@ export default async function SafetyPage({
             let leader: string | null = null;
             let location: string | null = null;
             let hazards: string | null = null;
+            let preWorkCheck: string | null = null;
             if (tbm.content) {
               try {
                 const p = JSON.parse(tbm.content);
                 if (p && typeof p === 'object') {
-                  contentText = p.text ?? null;
-                  photoDataUrl = p.photoDataUrl ?? null;
-                  leader = p.leader ?? null;
-                  location = p.location ?? null;
-                  hazards = p.hazards ?? null;
+                  contentText   = p.text         ?? null;
+                  photoDataUrl  = p.photoDataUrl ?? null;
+                  leader        = p.leader       ?? null;
+                  location      = p.location     ?? null;
+                  hazards       = p.hazards      ?? null;
+                  preWorkCheck  = p.preWorkCheck ?? null;
                 }
               } catch {}
             }
@@ -195,6 +197,7 @@ export default async function SafetyPage({
               leader,
               location,
               hazards,
+              preWorkCheck,
               department: tbm.department ?? null,
               signCount: tbm.signatures.length,
               createdBy: tbm.creator.name,

@@ -4,6 +4,7 @@ import { todayKstDate } from '@/lib/dates';
 import { DAILY_CHECKLIST_ITEMS } from '@/lib/safety';
 import { fetchWeatherCached } from '@/lib/weather-providers';
 import { isAvacContractor, getAvacFacilities, hasFeature } from '@/lib/features';
+import { decryptField } from '@/lib/crypto';
 import SafetyWorkerClient from './_safety-worker-client';
 import type { FacilityOption } from './_safety-worker-client';
 
@@ -68,18 +69,25 @@ export default async function SafetyWorkerPage() {
   let tbmLeader: string | null = null;
   let tbmLocation: string | null = null;
   let tbmHazards: string | null = null;
+  let tbmPreWorkCheck: string | null = null;
   if (tbm?.content) {
     try {
       const p = JSON.parse(tbm.content);
       if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
-        tbmContentText = p.text ?? null;
+        tbmContentText  = p.text         ?? null;
         tbmPhotoDataUrl = p.photoDataUrl ?? null;
-        tbmLeader = p.leader ?? null;
-        tbmLocation = p.location ?? null;
-        tbmHazards = p.hazards ?? null;
+        tbmLeader       = p.leader       ?? null;
+        tbmLocation     = p.location     ?? null;
+        tbmHazards      = p.hazards      ?? null;
+        tbmPreWorkCheck = p.preWorkCheck ?? null;
       }
     } catch {}
   }
+
+  const [guardianName, guardianPhone] = await Promise.all([
+    decryptField(me?.emergencyContact ?? null).catch(() => null),
+    decryptField(me?.emergencyPhone ?? null).catch(() => null),
+  ]);
 
   return (
     <SafetyWorkerClient
@@ -88,11 +96,11 @@ export default async function SafetyWorkerPage() {
       submittedAt={todayChecklist?.createdAt.toISOString() ?? null}
       allChecked={todayChecklist?.allChecked ?? false}
       tbm={tbm
-        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, leader: tbmLeader, location: tbmLocation, hazards: tbmHazards, signed: tbmSigned, signCount: tbm.signatures.length }
+        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, leader: tbmLeader, location: tbmLocation, hazards: tbmHazards, preWorkCheck: tbmPreWorkCheck, signed: tbmSigned, signCount: tbm.signatures.length }
         : null
       }
       weather={weather}
-      guardian={{ name: me?.emergencyContact ?? null, phone: me?.emergencyPhone ?? null }}
+      guardian={{ name: guardianName, phone: guardianPhone }}
       isAvac={isAvac}
       facilities={facilities.map((f): FacilityOption => ({ id: f.id.toString(), name: f.name }))}
       isFacilityOperator={userDetail?.isFacilityOperator ?? false}

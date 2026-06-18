@@ -125,7 +125,7 @@ export default function TbmPrintClient({
                   <article key={s.id} className="tbm-sheet border-2 border-slate-700 mb-6">
 
                     {/* 인쇄 전용 반복 헤더 */}
-                    <div className="screen-hidden border-b-2 border-double border-slate-700 px-3 py-2 text-center">
+                    <div className="screen-hidden border-b-2 border-double border-slate-700 px-3 py-2 text-center tbm-print-header">
                       <div className="font-black underline underline-offset-2 tracking-tight" style={{ fontSize: '14pt' }}>
                         TBM 안전교육
                       </div>
@@ -142,7 +142,7 @@ export default function TbmPrintClient({
                     </header>
 
                     {/* 인쇄용 날짜 헤더 — 팀·등록자 포함 */}
-                    <header className="screen-hidden border-b border-slate-700 px-3 py-1.5 grid grid-cols-3 gap-2">
+                    <header className="screen-hidden border-b border-slate-700 px-3 py-1.5 grid grid-cols-3 gap-2 tbm-print-header">
                       <div><span className="font-bold">날짜:</span> {dateLabel}</div>
                       {s.department
                         ? <div><span className="font-bold">팀:</span> {s.department}</div>
@@ -199,7 +199,7 @@ export default function TbmPrintClient({
 
               {/* 월별 집계 */}
               <div className="tbm-sheet-last border-2 border-slate-700 px-3 py-3 mb-4 tbm-body">
-                <div className="screen-hidden border-b-2 border-double border-slate-700 -mx-3 px-3 py-2 mb-3 text-center">
+                <div className="screen-hidden border-b-2 border-double border-slate-700 -mx-3 px-3 py-2 mb-3 text-center tbm-print-header">
                   <div className="font-black underline underline-offset-2" style={{ fontSize: '14pt' }}>TBM 안전교육</div>
                   <div className="font-bold text-ink-faint mt-0.5" style={{ fontSize: '10pt' }}>{ymLabel} · 월별 요약</div>
                 </div>
@@ -246,25 +246,23 @@ export default function TbmPrintClient({
 
           @page { size: A4 portrait; margin: 8mm; }
 
+          /* 모든 배경색 제거 — 회색 사이드 막대 방지 */
+          * { background: white !important; background-color: white !important;
+              -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
           /* 스크롤 컨테이너 해제 → 전체 내용 인쇄 */
           html, body { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
           main, section { overflow: visible !important; height: auto !important; max-height: none !important; }
 
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            font-size: 9pt !important;
-            background: white !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          body { font-size: 9pt !important; }
 
           /* 글자 크기 통일 */
           .tbm-body, .tbm-body * { font-size: 9pt !important; }
           table { width: 100% !important; table-layout: fixed !important; }
           td, th { font-size: 9pt !important; }
+
+          /* 좌우 세로 테두리 제거 */
+          .tbm-sheet, .tbm-sheet-last { border-left: none !important; border-right: none !important; }
 
           /* 서명 그리드: 잘리지 않도록 페이지 내 유지 */
           .tbm-sheet { break-after: page; page-break-after: always; margin-bottom: 0 !important; break-inside: avoid-page; }

@@ -14,7 +14,7 @@ const ALERT_LABEL: Record<string, string> = {
   HEATWAVE: '🌡 폭염', COLDWAVE: '❄️ 한파', TYPHOON: '🌀 태풍', STORM: '⛈ 강풍·폭우', OTHER: '⚠️ 기타',
 };
 const ACTION_PRESETS = [
-  '물 500ml 이상 섭취', '10분 이상 그늘 휴식', '휴게실 냉방 이용', '작업 중단 후 안전한 장소로 이동',
+  '물 500ml 이상 섭취', '20분 이상 그늘 휴식', '휴게실 냉방 이용', '작업 중단 후 안전한 장소로 이동',
   '냉각 조끼 착용', '온열 증상 없음 확인', '핫팩 사용', '방한복 착용', '실내 작업으로 전환',
 ];
 
@@ -79,9 +79,13 @@ export default function WeatherNoticesWorkerClient({
             URL.revokeObjectURL(url);
             let quality = 0.7;
             let data = canvas.toDataURL('image/jpeg', quality);
-            while (data.length > 270_000 && quality > 0.3) {
+            while (data.length > 200_000 && quality > 0.1) {
               quality -= 0.1;
               data = canvas.toDataURL('image/jpeg', quality);
+            }
+            if (data.length > 280_000) {
+              reject(new Error('이미지가 너무 큽니다. 더 작은 사진을 사용해 주세요.'));
+              return;
             }
             resolve(data);
           };
@@ -104,7 +108,9 @@ export default function WeatherNoticesWorkerClient({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setError(d.error ?? '저장 실패');
+        const msg = d.error === 'invalid_request' ? '입력값이 올바르지 않습니다. 사진 크기를 확인해 주세요.'
+          : d.message ?? d.error ?? '저장 실패';
+        setError(msg);
         return;
       }
       setActiveForm(null);

@@ -47,7 +47,7 @@ export async function GET(req: Request) {
   const now = new Date();
   const where: Prisma.AnnouncementWhereInput = {};
 
-  if (!includeExpired && !adminMode) {
+  if (!includeExpired) {
     where.OR = [
       { expiresAt: null },
       { expiresAt: { gte: now } },
@@ -90,7 +90,8 @@ export async function GET(req: Request) {
   const items = await prisma.announcement.findMany({
     where,
     orderBy: [{ pinned: 'desc' }, { publishedAt: 'desc' }],
-    take: 50,
+    /* 관리자 모드(만료 포함 전체 조회)는 많은 자동공지(민원 등)로 50건 한도 초과 문제 발생 */
+    take: adminMode ? 500 : 50,
   });
 
   /* author batch */

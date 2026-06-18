@@ -12,13 +12,24 @@ function isManager(role: string) {
   return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'].includes(role);
 }
 
-function parseTbmContent(raw: string | null): { text: string | null; photoDataUrl: string | null } {
-  if (!raw) return { text: null, photoDataUrl: null };
+function parseTbmContent(raw: string | null): {
+  text: string | null; photoDataUrl: string | null;
+  leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
+} {
+  const empty = { text: null, photoDataUrl: null, leader: null, location: null, hazards: null, preWorkCheck: null };
+  if (!raw) return empty;
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === 'object') return { text: p.text ?? null, photoDataUrl: p.photoDataUrl ?? null };
+    if (p && typeof p === 'object') return {
+      text:         p.text         ?? null,
+      photoDataUrl: p.photoDataUrl ?? null,
+      leader:       p.leader       ?? null,
+      location:     p.location     ?? null,
+      hazards:      p.hazards      ?? null,
+      preWorkCheck: p.preWorkCheck ?? null,
+    };
   } catch { /* ignore */ }
-  return { text: raw, photoDataUrl: null };
+  return { text: raw, photoDataUrl: null, leader: null, location: null, hazards: null, preWorkCheck: null };
 }
 
 export async function GET(req: Request) {
@@ -81,7 +92,11 @@ export async function GET(req: Request) {
         id: s.id.toString(),
         sessionDate: s.sessionDate.toISOString().slice(0, 10),
         topic: s.topic,
-        content: parsed.text,
+        content:      parsed.text,
+        leader:       parsed.leader,
+        location:     parsed.location,
+        hazards:      parsed.hazards,
+        preWorkCheck: parsed.preWorkCheck,
         department: s.department ?? null,
         facilityName: s.facility?.name ?? null,
         createdBy: s.creator.name,

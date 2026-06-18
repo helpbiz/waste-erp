@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 const Patch = z.object({
   phone: z.string().regex(/^01[0-9]-?\d{3,4}-?\d{4}$/).nullable().optional(),
   emergencyContact: z.string().max(50).nullable().optional(),
-  emergencyPhone: z.string().regex(/^01[0-9]-?\d{3,4}-?\d{4}$/).nullable().optional(),
+  emergencyPhone: z.string().regex(/^0\d{8,10}$/).nullable().optional(),
   address: z.string().max(255).nullable().optional(),
   bankName: z.string().max(30).nullable().optional(),
   bankAccount: z.string().max(50).nullable().optional(),

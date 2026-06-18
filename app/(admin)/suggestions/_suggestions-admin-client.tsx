@@ -90,7 +90,20 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
             🔒 작성자 식별 정보(userId/IP/UA)는 저장되지 않습니다. 부서 인원 3명 미만은 마스킹.
           </p>
         </div>
-        <div className="text-[0.625rem] text-ink-muted font-mono">role: {role} · {canMutate ? '편집 가능' : '읽기 전용'}</div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { window.location.href = '/api/admin/suggestions/export'; }}
+            className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            📊 엑셀 다운로드
+          </button>
+          <button
+            onClick={() => window.open('/admin/suggestions/print', '_blank')}
+            className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-slate-100 text-ink border border-line hover:bg-slate-200"
+          >
+            🖨 출력
+          </button>
+        </div>
       </header>
 
       {/* 통계 */}

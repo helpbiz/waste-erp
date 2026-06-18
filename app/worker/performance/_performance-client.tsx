@@ -240,20 +240,22 @@ function WasteTab() {
                     {saving === m.code ? '저장중' : (existing ? '갱신' : '저장')}
                   </button>
                 </div>
+                {disposalSites.length > 0 && (
+                  <div className="px-3 pb-1.5">
+                    <select
+                      value={draft.siteId}
+                      onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, siteId: e.target.value } }))}
+                      className="w-full px-3 py-1.5 rounded-md border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
+                    >
+                      <option value="">— 반입장소 선택 (선택사항) —</option>
+                      {disposalSites.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {isOpen && (
-                  <div className="px-3 pb-2.5 space-y-1.5">
-                    {disposalSites.length > 0 && (
-                      <select
-                        value={draft.siteId}
-                        onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, siteId: e.target.value } }))}
-                        className="w-full px-3 py-1.5 rounded-md border border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
-                      >
-                        <option value="">— 처리장소 선택 (선택사항) —</option>
-                        {disposalSites.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}{s.address ? ` (${s.address})` : ''}</option>
-                        ))}
-                      </select>
-                    )}
+                  <div className="px-3 pb-2.5">
                     <input
                       type="text"
                       placeholder="비고 (선택)"

@@ -23,26 +23,29 @@ const PostBody = z.object({
   leader: z.string().trim().max(50).optional(),
   location: z.string().trim().max(100).optional(),
   hazards: z.string().trim().max(1000).optional(),
+  preWorkCheck: z.string().trim().max(1000).optional(),
 });
 
 function parseTbmContent(raw: string | null): {
   text: string | null; photoDataUrl: string | null;
-  leader: string | null; location: string | null; hazards: string | null;
+  leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
 } {
-  if (!raw) return { text: null, photoDataUrl: null, leader: null, location: null, hazards: null };
+  const empty = { text: null, photoDataUrl: null, leader: null, location: null, hazards: null, preWorkCheck: null };
+  if (!raw) return empty;
   try {
     const p = JSON.parse(raw);
     if (p && typeof p === 'object') {
       return {
-        text: p.text ?? null,
+        text:         p.text         ?? null,
         photoDataUrl: p.photoDataUrl ?? null,
-        leader: p.leader ?? null,
-        location: p.location ?? null,
-        hazards: p.hazards ?? null,
+        leader:       p.leader       ?? null,
+        location:     p.location     ?? null,
+        hazards:      p.hazards      ?? null,
+        preWorkCheck: p.preWorkCheck ?? null,
       };
     }
   } catch {}
-  return { text: raw, photoDataUrl: null, leader: null, location: null, hazards: null };
+  return { text: raw, photoDataUrl: null, leader: null, location: null, hazards: null, preWorkCheck: null };
 }
 
 function isManager(role: string): boolean {
@@ -98,9 +101,10 @@ export async function GET(req: Request) {
           topic: tbm.topic,
           content: parsed.text,
           photoDataUrl: parsed.photoDataUrl,
-          leader: parsed.leader,
-          location: parsed.location,
-          hazards: parsed.hazards,
+          leader:       parsed.leader,
+          location:     parsed.location,
+          hazards:      parsed.hazards,
+          preWorkCheck: parsed.preWorkCheck,
           createdBy: tbm.creator.name,
           signCount: tbm.signatures.length,
           totalWorkers,
@@ -143,15 +147,16 @@ export async function POST(req: Request) {
   const department = parsed.data.department ?? null;
 
   /* 사진, 텍스트, 리더/장소/위험요인이 있으면 JSON으로 묶어 content 필드에 저장 */
-  const { content: txt, photoDataUrl, leader, location, hazards } = parsed.data;
+  const { content: txt, photoDataUrl, leader, location, hazards, preWorkCheck } = parsed.data;
   let contentToStore: string | null = null;
-  if (txt || photoDataUrl || leader || location || hazards) {
+  if (txt || photoDataUrl || leader || location || hazards || preWorkCheck) {
     contentToStore = JSON.stringify({
-      text: txt ?? null,
+      text:         txt          ?? null,
       photoDataUrl: photoDataUrl ?? null,
-      leader: leader ?? null,
-      location: location ?? null,
-      hazards: hazards ?? null,
+      leader:       leader       ?? null,
+      location:     location     ?? null,
+      hazards:      hazards      ?? null,
+      preWorkCheck: preWorkCheck ?? null,
     });
   }
 

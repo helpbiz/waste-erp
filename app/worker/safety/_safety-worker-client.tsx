@@ -9,7 +9,7 @@ import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 
 type ChecklistDef = { key: string; label: string };
 type ItemState = ChecklistDef & { ok: boolean; reason: string };
-type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; leader: string | null; location: string | null; hazards: string | null; signed: boolean; signCount: number };
+type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null; signed: boolean; signCount: number };
 export type FacilityOption = { id: string; name: string };
 
 const ICONS: Record<string, string> = {
@@ -142,9 +142,10 @@ export default function SafetyWorkerClient({
           topic: data.session.topic,
           content: data.session.content,
           photoDataUrl: data.session.photoDataUrl ?? null,
-          leader: data.session.leader ?? null,
-          location: data.session.location ?? null,
-          hazards: data.session.hazards ?? null,
+          leader:       data.session.leader       ?? null,
+          location:     data.session.location     ?? null,
+          hazards:      data.session.hazards      ?? null,
+          preWorkCheck: data.session.preWorkCheck ?? null,
           signed: data.signed,
           signCount: data.session.signCount,
         });
@@ -175,6 +176,7 @@ export default function SafetyWorkerClient({
   const [opTbmLeader, setOpTbmLeader] = useState(defaultTbmLeader);
   const [opTbmLocation, setOpTbmLocation] = useState('');
   const [opTbmHazards, setOpTbmHazards] = useState('');
+  const [opTbmPreWorkCheck, setOpTbmPreWorkCheck] = useState('');
   const [opTbmSaving, setOpTbmSaving] = useState(false);
 
   async function saveTbm(facilityId?: string) {
@@ -186,6 +188,7 @@ export default function SafetyWorkerClient({
       if (opTbmLeader.trim()) body.leader = opTbmLeader.trim();
       if (opTbmLocation.trim()) body.location = opTbmLocation.trim();
       if (opTbmHazards.trim()) body.hazards = opTbmHazards.trim();
+      if (opTbmPreWorkCheck.trim()) body.preWorkCheck = opTbmPreWorkCheck.trim();
       if (facilityId) body.facilityId = facilityId;
       const res = await fetch('/api/tbm/today', {
         method: 'POST',
@@ -194,7 +197,7 @@ export default function SafetyWorkerClient({
       });
       if (res.ok) {
         setOpTbmTopic(''); setOpTbmContent('');
-        setOpTbmLeader(''); setOpTbmLocation(''); setOpTbmHazards('');
+        setOpTbmLeader(''); setOpTbmLocation(''); setOpTbmHazards(''); setOpTbmPreWorkCheck('');
         router.refresh();
       } else {
         alert('TBM 저장 실패');
@@ -445,11 +448,12 @@ export default function SafetyWorkerClient({
           </header>
           <div className="p-4">
             <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
-            {(tbm.leader || tbm.location || tbm.hazards) && (
+            {(tbm.leader || tbm.location || tbm.hazards || tbm.preWorkCheck) && (
               <div className="bg-slate-50 border border-line rounded-lg px-3 py-2 mb-3 space-y-1 text-sm">
                 {tbm.leader && <div><span className="font-extrabold text-ink-muted">리더:</span> <span className="font-semibold text-ink">{tbm.leader}</span></div>}
                 {tbm.location && <div><span className="font-extrabold text-ink-muted">장소:</span> <span className="font-semibold text-ink">{tbm.location}</span></div>}
                 {tbm.hazards && <div><span className="font-extrabold text-ink-muted">위험요인:</span> <span className="font-semibold text-ink">{tbm.hazards}</span></div>}
+                {tbm.preWorkCheck && <div><span className="font-extrabold text-ink-muted">작업전 안전점검:</span> <span className="font-semibold text-ink">{tbm.preWorkCheck}</span></div>}
               </div>
             )}
             {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
@@ -716,6 +720,16 @@ export default function SafetyWorkerClient({
                   onChange={(e) => setOpTbmHazards(e.target.value)}
                   rows={2}
                   placeholder="오늘 작업 중 주의할 위험요인을 입력하세요"
+                  className="border border-line rounded px-3 py-2 text-sm resize-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-sm font-extrabold text-ink-muted">작업 전 안전점검 (선택)</span>
+                <textarea
+                  value={opTbmPreWorkCheck}
+                  onChange={(e) => setOpTbmPreWorkCheck(e.target.value)}
+                  rows={2}
+                  placeholder="작업 전 안전점검 내용 (예: 안전장구 착용 확인, 장비 점검)"
                   className="border border-line rounded px-3 py-2 text-sm resize-none"
                 />
               </label>

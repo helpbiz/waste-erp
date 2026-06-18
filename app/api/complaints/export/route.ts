@@ -78,9 +78,9 @@ export async function GET(req: Request) {
     zoneName: c.zone
       ? `${c.zone.contractor?.companyName ?? c.contractor?.companyName ?? ''}(${c.zone.zoneName})`
       : (c.contractor?.companyName ?? ''),
-    reportedAt: c.reportedAt.toLocaleString('ko-KR'),
+    reportedAt: c.reportedAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
     resolveNote: c.resolveNote ?? '',
-    resolvedAt: c.resolvedAt?.toLocaleString('ko-KR') ?? '',
+    resolvedAt: c.resolvedAt?.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) ?? '',
   }));
 
   if (format === 'csv') {

@@ -172,7 +172,7 @@ function buildHtml(params: {
     </tr>` : ''}
   </tbody>
 </table>
-<p class="generated">생성: ${new Date().toLocaleString('ko-KR')}</p>
+<p class="generated">생성: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
 </body>
 </html>`;
 }

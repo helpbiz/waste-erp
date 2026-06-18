@@ -11,6 +11,34 @@ export const dynamic = 'force-dynamic';
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 
+/**
+ * 텍스트 내용과 열 너비 기준으로 행 높이(pt) 자동 계산.
+ * 한글/CJK는 2칸, ASCII는 1칸으로 환산 후 열 너비 대비 줄바꿈 횟수 산출.
+ */
+function calcRowHeight(
+  entries: Array<{ text: string; colWidth: number }>,
+  fontSizePt = 9
+): number {
+  const lineHeightPt = fontSizePt * 1.5;
+  let maxLines = 1;
+
+  const charWidth = (s: string) =>
+    [...s].reduce((n, c) => n + (c.codePointAt(0)! > 0x7f ? 2 : 1), 0);
+
+  for (const { text, colWidth } of entries) {
+    if (!text) continue;
+    const charsPerLine = Math.max(5, Math.floor(colWidth));
+    let lines = 0;
+    for (const para of text.split('\n')) {
+      if (para === '') { lines++; continue; }
+      lines += Math.max(1, Math.ceil(charWidth(para) / charsPerLine));
+    }
+    maxLines = Math.max(maxLines, lines);
+  }
+
+  return Math.max(18, Math.min(240, Math.ceil(maxLines * lineHeightPt) + 4));
+}
+
 function parseTbmContent(raw: string | null): string | null {
   if (!raw) return null;
   try {
@@ -86,18 +114,23 @@ export async function GET(req: Request) {
     const dateStr = `${mm}월 ${dd}일 (${dow})`;
     const signerList = s.signatures.map((sig) => sig.worker.name).join(', ');
 
+    const contentText = parseTbmContent(s.content ?? null) ?? '';
     const row = ws.addRow([
       dateStr,
       s.department ?? '',
       s.topic,
-      parseTbmContent(s.content ?? null) ?? '',
+      contentText,
       s.creator.name,
       s.signatures.length,
       signerList,
     ]);
     row.font = { size: 9 };
     row.alignment = { wrapText: true, vertical: 'top' };
-    row.height = Math.max(20, Math.min(80, 14 + s.signatures.length * 3));
+    row.height = calcRowHeight([
+      { text: s.topic,          colWidth: 28 },
+      { text: contentText,      colWidth: 40 },
+      { text: signerList,       colWidth: 40 },
+    ]);
     if (idx % 2 === 1)
       row.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }; });
     row.eachCell((c) => {

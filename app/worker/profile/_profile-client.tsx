@@ -102,7 +102,21 @@ export default function ProfileClient({ user }: { user: UserData }) {
       setSignatureChanged(false);
       router.refresh();
     } else {
-      alert('실패: ' + (await res.json().catch(() => ({}))).error);
+      const body = await res.json().catch(() => ({}));
+      if (body.issues) {
+        const FIELD_LABEL: Record<string, string> = {
+          phone: '휴대전화', emergencyContact: '비상연락 이름', emergencyPhone: '비상연락 전화',
+          address: '주소', bankName: '은행명', bankAccount: '계좌번호',
+        };
+        const msg = Object.entries(body.issues as Record<string, string[]>)
+          .map(([k, v]) => `• ${FIELD_LABEL[k] ?? k}: ${v.join(', ')}`)
+          .join('\n');
+        alert('저장 실패:\n' + msg);
+      } else if (body.error === 'invalid_request') {
+        alert('저장 실패: 입력값을 확인해 주세요.\n(전화번호 형식: 010-1234-5678 또는 02-1234-5678)');
+      } else {
+        alert('저장 실패: ' + (body.error ?? '알 수 없는 오류'));
+      }
     }
   }
 

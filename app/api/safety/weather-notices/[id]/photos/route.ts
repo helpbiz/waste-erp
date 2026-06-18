@@ -15,7 +15,7 @@ function isManager(role: string) {
 }
 
 const PostBody = z.object({
-  photoData:   z.string().max(300_000).optional().nullable(),
+  photoData:   z.string().max(400_000, '사진 크기가 너무 큽니다. 더 작은 사진을 사용해 주세요.').optional().nullable(),
   recordTime:  z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
   feelsLike:   z.number().int().min(-50).max(60).optional().nullable(),
   actionTaken: z.string().trim().max(1000).optional().nullable(),
@@ -85,7 +85,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const parsed = PostBody.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
+    const photoErr = parsed.error.flatten().fieldErrors.photoData?.[0];
+    return NextResponse.json(
+      { error: 'invalid_request', message: photoErr ?? '입력값이 올바르지 않습니다.', issues: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    );
   }
 
   const { photoData, recordTime, feelsLike, actionTaken, managerName } = parsed.data;

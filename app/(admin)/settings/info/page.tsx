@@ -356,6 +356,17 @@ export default function ContractorInfoSettingsPage() {
             <span className="ml-auto text-ink-faint text-sm">→</span>
           </a>
           <a
+            href="/settings/worker-zones"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-soft transition"
+          >
+            <span className="text-lg">👷</span>
+            <div>
+              <div className="text-sm font-extrabold text-ink">작업자 담당구역 배정</div>
+              <div className="text-sm text-ink-muted">작업자별 담당 구역·행정동 및 도로명/지번 관리</div>
+            </div>
+            <span className="ml-auto text-ink-faint text-sm">→</span>
+          </a>
+          <a
             href="/settings/disposal-sites"
             className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-soft transition"
           >

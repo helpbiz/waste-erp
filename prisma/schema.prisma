@@ -244,6 +244,7 @@ model Contractor {
   weatherNotices      WeatherSafetyNotice[]
   payrollPolicy       PayrollPolicy?
   vehiclePdfArchives  VehiclePdfArchive[]
+  workerZones         WorkerZone[]
 
   @@index([municipalityId])
   @@map("contractors")
@@ -293,11 +294,12 @@ model CleaningZone {
   areaKm2      Decimal? @map("area_km2") @db.Decimal(10, 4)
   createdAt    DateTime @default(now()) @map("created_at")
 
-  contractor  Contractor         @relation(fields: [contractorId], references: [id])
-  adminDongs  AdminDong[]
-  attendances AttendanceRecord[]
-  vehicleLogs VehicleLog[]
-  complaints  Complaint[]
+  contractor   Contractor         @relation(fields: [contractorId], references: [id])
+  adminDongs   AdminDong[]
+  attendances  AttendanceRecord[]
+  vehicleLogs  VehicleLog[]
+  complaints   Complaint[]
+  workerZones  WorkerZone[]
 
   @@index([contractorId])
   @@map("cleaning_zones")
@@ -317,6 +319,7 @@ model AdminDong {
   municipality Municipality @relation(fields: [municipalityId], references: [id])
   contractor   Contractor   @relation(fields: [contractorId], references: [id])
   zone         CleaningZone @relation(fields: [zoneId], references: [id])
+  workerZones  WorkerZone[]
 
   @@index([contractorId, zoneId])
   @@map("admin_dongs")
@@ -419,6 +422,7 @@ model User {
   payslipsCreated            PayslipRecord[]      @relation("PayslipCreator")
   payslipsApproved           PayslipRecord[]      @relation("PayslipApprover")
   payrollPoliciesApproving   PayrollPolicy[]      @relation("PayrollPolicyApprover")
+  workerZones                WorkerZone[]
 
   @@index([contractorId])
   @@index([role])
@@ -1570,4 +1574,26 @@ model VehiclePdfArchive {
 
   @@index([contractorId, logDate])
   @@map("vehicle_pdf_archives")
+}
+
+/// 작업자별 담당구역 지정 — 구역(zone) + 행정동(dong, optional) + 세부주소(도로명/지번)
+model WorkerZone {
+  id           BigInt   @id @default(autoincrement())
+  userId       BigInt   @map("user_id")
+  contractorId BigInt   @map("contractor_id")
+  zoneId       BigInt   @map("zone_id")
+  dongId       BigInt?  @map("dong_id")
+  addressType  String?  @map("address_type") @db.VarChar(10)  // "road" | "lot"
+  address      String?  @db.VarChar(200)
+  memo         String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User         @relation(fields: [userId], references: [id])
+  contractor Contractor   @relation(fields: [contractorId], references: [id])
+  zone       CleaningZone @relation(fields: [zoneId], references: [id])
+  dong       AdminDong?   @relation(fields: [dongId], references: [id])
+
+  @@unique([userId, zoneId, dongId])
+  @@index([contractorId, userId])
+  @@map("worker_zones")
 }

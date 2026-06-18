@@ -14,13 +14,23 @@ function isManager(role: string) {
   return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(role);
 }
 
-function parseTbmContent(raw: string | null): { text: string | null } {
-  if (!raw) return { text: null };
+function parseTbmContent(raw: string | null): {
+  text: string | null; leader: string | null; location: string | null;
+  hazards: string | null; preWorkCheck: string | null;
+} {
+  const empty = { text: null, leader: null, location: null, hazards: null, preWorkCheck: null };
+  if (!raw) return empty;
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === 'object') return { text: p.text ?? null };
+    if (p && typeof p === 'object') return {
+      text:         p.text         ?? null,
+      leader:       p.leader       ?? null,
+      location:     p.location     ?? null,
+      hazards:      p.hazards      ?? null,
+      preWorkCheck: p.preWorkCheck ?? null,
+    };
   } catch { /* ignore */ }
-  return { text: raw };
+  return { text: raw, leader: null, location: null, hazards: null, preWorkCheck: null };
 }
 
 export async function GET(req: Request) {
@@ -79,21 +89,22 @@ export async function GET(req: Request) {
 
   // 5행~: 데이터
   sessions.forEach((s, idx) => {
-    parseTbmContent(s.content ?? null);
+    const parsed = parseTbmContent(s.content ?? null);
+    const location = parsed.location ?? s.facility?.name ?? '';
     const row = ws.addRow([
       idx + 1,
       s.sessionDate.toISOString().slice(0, 10),
       s.creator.name,
-      '(미입력)',
-      s.facility?.name ?? '(미입력)',
+      parsed.leader ?? '',
+      location,
       10,
       s.topic ?? '',
-      '(미입력)',
-      '(미입력)',
-      '(미입력)',
+      parsed.hazards ?? '',
+      parsed.text ?? '',
+      parsed.preWorkCheck ?? '',
       s.signatures.length,
       `${s.signatures.length}명 서명`,
-      s.createdAt.toLocaleString('ko-KR'),
+      s.createdAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
     ]);
     styleDataRow(row, idx + 1);
     row.height = 20;
@@ -104,8 +115,8 @@ export async function GET(req: Request) {
       } else {
         cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
       }
-      if (String(cell.value) === '(미입력)') {
-        cell.font = { name: '맑은 고딕', size: 9, color: { argb: 'FFAAAAAA' } };
+      if (!cell.value || cell.value === '') {
+        cell.font = { name: '맑은 고딕', size: 9, color: { argb: 'FFCCCCCC' } };
       }
     });
   });
@@ -136,7 +147,7 @@ export async function GET(req: Request) {
         s.sessionDate.toISOString().slice(0, 10),
         s.topic ?? '',
         sig.worker.name,
-        sig.signedAt.toLocaleString('ko-KR'),
+        sig.signedAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
       ]);
       styleDataRow(row, signNo);
       row.height = 18;

@@ -217,26 +217,28 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* KPI — 시설 운영 3종 (v2 신규) */}
+      {/* KPI — 시설 운영 (AVAC 시설 등록 업체만 노출) */}
       <section className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3 md:gap-3.5">
-        <KpiCard
-          label="처리시설 가동"
-          value={String(activeFacilityCount)}
-          unit="개소"
-          sub={facilities.filter((f) => f.type === 'AVAC').length > 0
-            ? `🏭 자동집하시설 ${facilities.filter((f) => f.type === 'AVAC').length}개 포함`
-            : '운영 중'}
-          tone="info"
-          href="/super-admin?tab=facilities"
-        />
-        <KpiCard
-          label="시설 인원 배치"
-          value={String(totalAssignedUsers)}
-          unit="명"
-          sub={totalActiveWorkers > 0 ? `전체 활성 인원 ${totalActiveWorkers}명 중` : '인원 등록 필요'}
-          tone={totalAssignedUsers > 0 ? 'success' : 'warn'}
-          href="/users"
-        />
+        {avacFacilityIds.length > 0 && (
+          <KpiCard
+            label="처리시설 가동"
+            value={String(activeFacilityCount)}
+            unit="개소"
+            sub={`🏭 자동집하시설 ${avacFacilityIds.length}개 포함`}
+            tone="info"
+            href="/super-admin?tab=facilities"
+          />
+        )}
+        {avacFacilityIds.length > 0 && (
+          <KpiCard
+            label="시설 인원 배치"
+            value={String(totalAssignedUsers)}
+            unit="명"
+            sub={totalActiveWorkers > 0 ? `전체 활성 인원 ${totalActiveWorkers}명 중` : '인원 등록 필요'}
+            tone={totalAssignedUsers > 0 ? 'success' : 'warn'}
+            href="/users"
+          />
+        )}
         <KpiCard
           label="오늘 출근"
           value={`${todayCheckIns}/${totalActiveWorkers}`}
@@ -247,8 +249,8 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {/* 시설별 운영 현황 — 패널 (v2 신규) */}
-      {activeFacilityCount > 0 && (
+      {/* 시설별 운영 현황 — AVAC 시설 등록 업체만 노출 */}
+      {avacFacilityIds.length > 0 && (
         <section>
           <Panel
             title="시설별 운영 현황"

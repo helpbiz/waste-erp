@@ -20,7 +20,12 @@ export default async function WorkerProfilePage() {
   });
   if (!u) throw new Error('not_found');
 
-  const [address, bankAccount] = await Promise.all([decryptField(u.address), decryptField(u.bankAccount)]);
+  const [address, bankAccount, emergencyContact, emergencyPhone] = await Promise.all([
+    decryptField(u.address).catch(() => null),
+    decryptField(u.bankAccount).catch(() => null),
+    decryptField(u.emergencyContact).catch(() => null),
+    decryptField(u.emergencyPhone).catch(() => null),
+  ]);
 
   return (
     <ProfileClient
@@ -34,8 +39,8 @@ export default async function WorkerProfilePage() {
         address,
         bankName: u.bankName,
         bankAccount,
-        emergencyContact: u.emergencyContact,
-        emergencyPhone: u.emergencyPhone,
+        emergencyContact,
+        emergencyPhone,
         positionLabel: u.position?.label ?? null,
         positionCategory: u.position?.category ?? null,
         departmentName: u.department?.name ?? null,
