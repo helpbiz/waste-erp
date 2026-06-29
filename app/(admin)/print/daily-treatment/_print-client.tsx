@@ -97,14 +97,14 @@ export default function DailyTreatmentPrintClient({
               <div key={s.category} className="border border-line rounded-md p-3 text-center bg-slate-50">
                 <div className="text-xs font-mono font-extrabold text-ink mb-1">{s.label}</div>
                 <div className="font-mono font-black text-xl text-ink">
-                  {s.totalTon.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span>
+                  {(s.totalTon * 1000).toFixed(0)}<span className="text-xs font-bold ml-0.5">kg</span>
                 </div>
               </div>
             ))}
           <div className="border border-accent rounded-md p-3 text-center bg-cyan-50">
             <div className="text-xs font-mono font-extrabold text-accent mb-1">합계</div>
             <div className="font-mono font-black text-xl text-accent">
-              {totalWeight.toFixed(3)}<span className="text-xs font-bold ml-0.5">t</span>
+              {(totalWeight * 1000).toFixed(0)}<span className="text-xs font-bold ml-0.5">kg</span>
             </div>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function DailyTreatmentPrintClient({
               <th className="px-2 py-2 border border-slate-600 w-[12%]">반입시각</th>
               <th className="px-2 py-2 border border-slate-600 w-[30%]">처리시설</th>
               <th className="px-2 py-2 border border-slate-600 w-[14%]">성상</th>
-              <th className="px-2 py-2 border border-slate-600 w-[15%]">중량(t)</th>
+              <th className="px-2 py-2 border border-slate-600 w-[15%]">중량(kg)</th>
               <th className="px-2 py-2 border border-slate-600 w-[12%]">비고</th>
             </tr>
           </thead>
@@ -134,7 +134,7 @@ export default function DailyTreatmentPrintClient({
                 <td className="px-2 py-1.5 border border-line font-mono text-center">{row.intakeTime}</td>
                 <td className="px-2 py-1.5 border border-line">{row.facilityName ?? <span className="text-slate-400 italic">(미지정)</span>}</td>
                 <td className="px-2 py-1.5 border border-line text-center">{MATERIAL_LABEL[row.materialCategory] ?? row.materialCategory}</td>
-                <td className="px-2 py-1.5 border border-line text-right font-mono font-bold">{row.weightTon.toFixed(3)}</td>
+                <td className="px-2 py-1.5 border border-line text-right font-mono font-bold">{(row.weightTon * 1000).toFixed(0)}</td>
                 <td className="px-2 py-1.5 border border-line text-xs">{row.note ?? ''}</td>
               </tr>
             ))}
@@ -143,7 +143,7 @@ export default function DailyTreatmentPrintClient({
             <tfoot>
               <tr className="bg-slate-100 font-extrabold">
                 <td colSpan={4} className="px-2 py-2 border border-line text-right">합계</td>
-                <td className="px-2 py-2 border border-line text-right font-mono">{totalWeight.toFixed(3)}</td>
+                <td className="px-2 py-2 border border-line text-right font-mono">{(totalWeight * 1000).toFixed(0)}</td>
                 <td className="px-2 py-2 border border-line"></td>
               </tr>
             </tfoot>

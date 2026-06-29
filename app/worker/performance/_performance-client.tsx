@@ -149,7 +149,7 @@ function WasteTab() {
         body: JSON.stringify({
           recordDate: date,
           materialCode,
-          weightTon: weight,
+          weightTon: Number(weight) / 1000,
           note: draft.note?.trim() || undefined,
           disposalSiteId: draft.siteId || null,
         }),
@@ -159,7 +159,7 @@ function WasteTab() {
         setError(d.error ?? '저장 실패');
         return;
       }
-      setSuccess(`${MAT_LABEL[materialCode]} ${weight}t 저장됨`);
+      setSuccess(`${MAT_LABEL[materialCode]} ${weight}kg 저장됨`);
       setDrafts((p) => ({ ...p, [materialCode]: { weight: '', note: '', siteId: '' } }));
       load();
     } finally {
@@ -185,7 +185,7 @@ function WasteTab() {
       <div className="bg-accent/10 border border-accent rounded-lg px-4 py-3 flex items-center justify-between">
         <span className="text-sm font-extrabold text-accent">📊 오늘 합계</span>
         <span className="font-mono text-2xl font-black text-accent">
-          {total.toFixed(2)}<span className="text-sm ml-1 font-bold">톤</span>
+          {(total * 1000).toFixed(0)}<span className="text-sm ml-1 font-bold">kg</span>
         </span>
       </div>
 
@@ -210,7 +210,7 @@ function WasteTab() {
                   <span className="flex-1 text-sm font-extrabold text-ink">{m.label}</span>
                   {existing ? (
                     <div className="text-right">
-                      <div className="text-sm font-mono font-bold text-emerald-700">✓ {Number(existing.weightTon).toFixed(2)}t</div>
+                      <div className="text-sm font-mono font-bold text-emerald-700">✓ {Math.round(Number(existing.weightTon) * 1000)}kg</div>
                       {existing.disposalSiteName && (
                         <div className="text-[0.625rem] text-emerald-600 font-semibold">{existing.disposalSiteName}</div>
                       )}
@@ -222,15 +222,15 @@ function WasteTab() {
                 <div className="px-3 pb-2.5 flex gap-2">
                   <input
                     type="number"
-                    inputMode="decimal"
-                    step="0.01"
+                    inputMode="numeric"
+                    step="1"
                     min="0"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={draft.weight}
                     onChange={(e) => setDrafts((p) => ({ ...p, [m.code]: { ...draft, weight: e.target.value } }))}
                     className="flex-1 px-3 py-2 rounded-md border border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                   />
-                  <span className="self-center text-xs font-mono font-bold text-ink-muted">톤</span>
+                  <span className="self-center text-xs font-mono font-bold text-ink-muted">kg</span>
                   <button
                     type="button"
                     onClick={() => save(m.code)}
@@ -326,7 +326,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
           intakeTime: time,
           vehicleId,
           materialCategory: category,
-          weightTon: Number(weight),
+          weightTon: Number(weight) / 1000,
           note: note.trim() || undefined,
           disposalSiteId: selectedSiteId || null,
         }),
@@ -337,7 +337,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
         return;
       }
       const v = vehicles.find((x) => x.id === vehicleId);
-      setSuccess(`${v?.vehicleNo} ${CAT_LABEL[category]} ${weight}t 저장됨`);
+      setSuccess(`${v?.vehicleNo} ${CAT_LABEL[category]} ${weight}kg 저장됨`);
       setWeight('');
       setNote('');
       load();
@@ -362,7 +362,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
       <div className="bg-emerald-50 border border-emerald-300 rounded-lg px-4 py-3 flex items-center justify-between">
         <span className="text-sm font-extrabold text-emerald-700">🚚 오늘 합계 ({items.length}건)</span>
         <span className="font-mono text-2xl font-black text-emerald-700">
-          {total.toFixed(2)}<span className="text-sm ml-1 font-bold">톤</span>
+          {(total * 1000).toFixed(0)}<span className="text-sm ml-1 font-bold">kg</span>
         </span>
       </div>
 
@@ -399,15 +399,15 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                   className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </Field>
-              <Field label="무게(톤)">
+              <Field label="무게(kg)">
                 <input
                   type="number"
-                  inputMode="decimal"
-                  step="0.01"
+                  inputMode="numeric"
+                  step="1"
                   min="0"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  placeholder="0.00"
+                  placeholder="0"
                   className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
                 />
               </Field>
@@ -480,7 +480,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                   <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
                   <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
                   <span className="text-sm font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
-                  <span className="font-mono font-black text-accent flex-shrink-0">{Number(it.weightTon).toFixed(2)}t</span>
+                  <span className="font-mono font-black text-accent flex-shrink-0">{Math.round(Number(it.weightTon) * 1000)}kg</span>
                 </div>
                 {it.disposalSiteName && (
                   <div className="mt-0.5 ml-14 text-[0.625rem] text-emerald-600 font-semibold">📍 {it.disposalSiteName}</div>

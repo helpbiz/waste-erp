@@ -490,9 +490,10 @@ function EditUserModal({ user, positions, departments, onClose }: {
   });
   const [facilities, setFacilities] = useState<FacilityRow[]>([]);
 
-  /* 본 contractor·munis 산하 active facility 목록 로드 */
+  /* 본 contractor·munis 산하 active facility 목록 로드 — 해당 지자체 시설만 표시 */
   useEffect(() => {
-    fetch('/api/super-admin/facilities?active=true')
+    const muniParam = user.municipalityId ? `&municipalityId=${user.municipalityId}` : '';
+    fetch(`/api/super-admin/facilities?active=true${muniParam}`)
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((j) => {
         const items: FacilityRow[] = (j.items ?? []).map((f: { id: string; name: string; type: string }) => ({
