@@ -141,13 +141,13 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
   async function saveOne(materialCode: string) {
     const draft = drafts[materialCode] ?? { weight: '', note: '', siteId: '' };
     const w = Number(draft.weight);
-    if (!Number.isFinite(w) || w < 0) { alert('실적(ton)은 0 이상 숫자'); return; }
+    if (!Number.isFinite(w) || w < 0) { alert('실적(kg)은 0 이상 숫자'); return; }
     setSaving(materialCode);
     const res = await fetch('/api/waste-records', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        recordDate: date, materialCode, weightTon: w,
+        recordDate: date, materialCode, weightTon: w / 1000,
         note: draft.note || undefined,
         disposalSiteId: draft.siteId || null,
       }),
@@ -184,9 +184,9 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         </div>
         <div className="ml-auto text-sm font-mono self-center">
           {view === 'daily' ? date : date.slice(0, 7)} · 합계 <span className="font-extrabold text-accent">
-            {items.filter((i) => view === 'daily' ? i.recordDate === date : i.recordDate.startsWith(date.slice(0, 7)))
-              .reduce((s, i) => s + i.weightTon, 0).toFixed(3)}
-          </span> ton
+            {(items.filter((i) => view === 'daily' ? i.recordDate === date : i.recordDate.startsWith(date.slice(0, 7)))
+              .reduce((s, i) => s + i.weightTon, 0) * 1000).toFixed(0)}
+          </span> kg
         </div>
       </div>
 
@@ -198,7 +198,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
         <div className="flex items-center gap-1 px-1.5 py-2 bg-slate-100 text-[0.625rem] font-mono font-extrabold text-ink-muted uppercase">
           <span className="w-5 text-center flex-shrink-0">No</span>
           <span className="flex-1 min-w-0">성상</span>
-          <span className="text-right flex-shrink-0" style={{ width: 'clamp(36px, 11vw, 56px)' }}>입력(t)</span>
+          <span className="text-right flex-shrink-0" style={{ width: 'clamp(36px, 11vw, 56px)' }}>입력(kg)</span>
           <span className="hidden sm:block flex-shrink-0 w-28 text-left">기록자</span>
           <span className="flex-shrink-0 text-center" style={{ width: 'clamp(40px, 13vw, 56px)' }}>저장</span>
         </div>
@@ -225,7 +225,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                       const v = e.target.value.replace(/[^0-9.]/g, '');
                       setDrafts({ ...drafts, [m.code]: { ...draft, weight: v } });
                     }}
-                    placeholder={cur ? cur.weightTon.toFixed(3) : '0.000'}
+                    placeholder={cur ? String(Math.round(cur.weightTon * 1000)) : '0'}
                     className="px-1 py-1 rounded border border-line text-sm font-mono font-bold text-right disabled:bg-slate-50 flex-shrink-0"
                     style={{ width: 'clamp(36px, 11vw, 56px)' }}
                   />
@@ -281,7 +281,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
               <tr>
                 <th className="px-3 py-1.5 text-left">일자</th>
                 <th className="px-3 py-1.5 text-left">성상</th>
-                <th className="px-3 py-1.5 text-right">실적(ton)</th>
+                <th className="px-3 py-1.5 text-right">실적(kg)</th>
                 <th className="px-3 py-1.5 text-left">처리장소</th>
                 <th className="px-3 py-1.5 text-left">기록자</th>
               </tr>
@@ -291,7 +291,7 @@ function WasteTab({ canEdit }: { canEdit: boolean }) {
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-3 py-1.5 font-mono">{r.recordDate}</td>
                   <td className="px-3 py-1.5 font-bold">{MATERIAL_LABEL[r.materialCode] ?? r.materialCode}</td>
-                  <td className="px-3 py-1.5 text-right font-mono font-extrabold">{r.weightTon.toFixed(3)}</td>
+                  <td className="px-3 py-1.5 text-right font-mono font-extrabold">{(r.weightTon * 1000).toFixed(0)}</td>
                   <td className="px-3 py-1.5 text-sm">{r.disposalSiteName ?? <span className="text-ink-faint italic">(미지정)</span>}</td>
                   <td className="px-3 py-1.5 text-sm">{r.recorderName}</td>
                 </tr>
@@ -613,7 +613,7 @@ function StatsTab() {
           <section className="mb-6">
             <h3 className="font-extrabold text-ink text-xl mb-2 border-l-4 border-accent pl-2">📊 생활폐기물 처리실적</h3>
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <KCard label="총 처리량" value={`${waste.total.toFixed(3)} ton`} tone="accent" />
+              <KCard label="총 처리량" value={`${(waste.total * 1000).toFixed(0)} kg`} tone="accent" />
               <KCard label="기록 일수" value={`${waste.daily.length}일`} />
               <KCard label="성상 종류" value={`${waste.byMaterial.length}종`} />
             </div>
@@ -622,7 +622,7 @@ function StatsTab() {
                 <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별 분포</div>
                 <div className="space-y-1">
                   {waste.byMaterial.sort((a, b) => b.weight - a.weight).map((m) => (
-                    <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight} max={wasteMaxByMaterial} suffix="t" />
+                    <BarRow key={m.code} label={MATERIAL_LABEL[m.code] ?? m.code} value={m.weight * 1000} max={wasteMaxByMaterial * 1000} suffix="kg" />
                   ))}
                   {waste.byMaterial.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
@@ -631,8 +631,8 @@ function StatsTab() {
                 <div className="text-[0.6875rem] font-extrabold text-ink mb-2">월별 추이</div>
                 <div className="space-y-1">
                   {waste.monthly.sort((a, b) => a.ym.localeCompare(b.ym)).map((m) => (
-                    <BarRow key={m.ym} label={m.ym} value={m.weight}
-                      max={Math.max(1, ...waste.monthly.map((x) => x.weight))} suffix="t" color="bg-amber-400" />
+                    <BarRow key={m.ym} label={m.ym} value={m.weight * 1000}
+                      max={Math.max(1, ...waste.monthly.map((x) => x.weight)) * 1000} suffix="kg" color="bg-amber-400" />
                   ))}
                   {waste.monthly.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
