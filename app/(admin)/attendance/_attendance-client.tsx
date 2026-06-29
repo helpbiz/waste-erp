@@ -605,7 +605,7 @@ function AdjustModal({
             )}
 
             {/* 출근 초기화 — 잘못 등록된 출근 시각을 null 로 초기화, 근로자가 재등록 가능 */}
-            {row.checkInTime && !shiftComplete && (
+            {row.checkInTime && (
               <div className="bg-orange-50 border border-orange-300 rounded-lg px-3 py-2.5 space-y-1.5">
                 <div className="text-sm font-extrabold text-orange-800">출근 초기화</div>
                 <div className="text-[0.6875rem] text-orange-700 leading-relaxed">
