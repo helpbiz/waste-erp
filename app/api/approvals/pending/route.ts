@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { safetyWhere } from '@/lib/safety';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import { contractorScopeWhere } from '@/lib/scopes';
-import { canManageUsers } from '@/lib/users';
+import { canManageUsers, userScope } from '@/lib/users';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +16,9 @@ export async function GET() {
   const aWhere = contractorScopeWhere(session);
   const vlWhere = vehicleLogWhere(session);
   const sWhere = safetyWhere(session);
-  const leaveWhere = session.contractorId
-    ? { worker: { contractorId: BigInt(session.contractorId) } }
-    : {};
+  /* userScope 사용 — INTERNAL_ADMIN(contractorId 없음) 이 전체 카운트를 보던 버그 수정 */
+  const leaveScope = userScope(session);
+  const leaveWhere = Object.keys(leaveScope).length > 0 ? { worker: leaveScope } : {};
 
   const [leaves, attendance, vehicleLogs, safetyReports] = await Promise.all([
     prisma.leaveRequest.count({ where: { ...leaveWhere, status: { in: ['PENDING', 'IN_REVIEW'] } } }),

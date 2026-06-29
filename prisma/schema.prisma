@@ -1525,6 +1525,7 @@ model WeatherSafetyNotice {
   alertType    String   @default("HEATWAVE") @map("alert_type") @db.VarChar(20)
   title        String   @db.VarChar(100)
   content      String?  @db.Text
+  noticePhoto  String?  @map("notice_photo") @db.Text  // 관리자 등록 사진 (base64)
   createdBy    BigInt   @map("created_by")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -1545,7 +1546,7 @@ model WeatherSafetyPhoto {
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
   recordTime   String?  @map("record_time") @db.VarChar(5)   // HH:MM
-  feelsLike    Int?     @map("feels_like")                   // 체감온도(℃)
+  feelsLike    Float?   @map("feels_like")                   // 체감온도(℃) — 소수점 1자리 허용
   actionTaken  String?  @map("action_taken") @db.Text        // 조치사항
   managerName  String?  @map("manager_name") @db.VarChar(50) // 담당자
 

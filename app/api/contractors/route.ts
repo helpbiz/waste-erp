@@ -117,6 +117,17 @@ export async function POST(req: Request) {
   });
   if (!muni) return NextResponse.json({ error: 'municipality_not_found' }, { status: 400 });
 
+  /* 집하시설이 등록된 지자체에만 위탁업체 등록 가능 */
+  const facilityCount = await prisma.wasteTreatmentFacility.count({
+    where: { municipalityId: muni.id, active: true },
+  });
+  if (facilityCount === 0) {
+    return NextResponse.json(
+      { error: 'no_facilities', detail: `${muni.name}에 등록된 처리시설이 없습니다. 먼저 집하시설을 등록해 주세요.` },
+      { status: 400 },
+    );
+  }
+
   /* SUSPENDED (시드만 된 미운영) 지자체에 위탁업체가 등록되면 자동으로 ACTIVE 승급.
      사용자 요청 2026-04-29: 용산구 검색 안 되던 원인 (status=ACTIVE 필터)을
      해결하면서 새 위탁업체 추가 시 muni 상태도 자연 정합성 있게 갱신. */

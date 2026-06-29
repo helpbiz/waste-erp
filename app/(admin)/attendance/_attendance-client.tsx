@@ -363,6 +363,7 @@ function AdjustModal({
   const [confirmReject, setConfirmReject] = useState(false);
   const [confirmNightReset, setConfirmNightReset] = useState(false);
   const [confirmCheckInReset, setConfirmCheckInReset] = useState(false);
+  const [confirmCheckOutReset, setConfirmCheckOutReset] = useState(false);
 
   /* 이력 탭 활성화 시 데이터 조회 */
   useEffect(() => {
@@ -422,6 +423,30 @@ function AdjustModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           adjustedCheckIn: null,
+          reason: reason.trim(),
+          adjustmentType: 'CORRECTION',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data?.message ?? data?.error ?? '처리 실패'); return; }
+      onSuccess();
+    } catch {
+      setError('네트워크 오류');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doCheckOutReset() {
+    setConfirmCheckOutReset(false);
+    if (!reasonValid || busy) return;
+    setBusy(true); setError(null);
+    try {
+      const res = await fetch(`/api/attendance/${row.recordId}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adjustedCheckOut: null,
           reason: reason.trim(),
           adjustmentType: 'CORRECTION',
         }),
@@ -597,6 +622,28 @@ function AdjustModal({
               </div>
             )}
 
+            {/* 퇴근 초기화 — 잘못 등록된 퇴근 시각을 null 로 초기화, 근로자가 재등록 가능 */}
+            {row.checkOutTime && (
+              <div className="bg-sky-50 border border-sky-300 rounded-lg px-3 py-2.5 space-y-1.5">
+                <div className="text-sm font-extrabold text-sky-800">퇴근 초기화</div>
+                <div className="text-[0.6875rem] text-sky-700 leading-relaxed">
+                  퇴근 시각({isoToHm(row.checkOutTime)})이 잘못 등록된 경우 초기화하면 근로자가 다시 퇴근 등록할 수 있습니다.
+                  기존 기록은 정정 이력에 보존됩니다.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmCheckOutReset(true)}
+                  disabled={busy || !reasonValid}
+                  className="w-full py-2 rounded-md bg-sky-500 text-white text-sm font-extrabold hover:bg-sky-600 disabled:opacity-50"
+                >
+                  퇴근 초기화
+                </button>
+                {!reasonValid && (
+                  <p className="text-[0.6875rem] text-sky-600">* 위 사유란을 먼저 입력해 주세요 (2자 이상)</p>
+                )}
+              </div>
+            )}
+
             {error && (
               <div role="alert" className="bg-red-50 border-2 border-red-300 rounded-md px-3 py-2 text-sm font-bold text-red-800">
                 {error}
@@ -702,6 +749,16 @@ function AdjustModal({
         cancelLabel="취소"
         onConfirm={doCheckInReset}
         onCancel={() => setConfirmCheckInReset(false)}
+      />
+      <AccessibleConfirmDialog
+        open={confirmCheckOutReset}
+        tone="destructive"
+        title="퇴근 시각을 초기화하시겠습니까?"
+        message={`현재 퇴근 시각(${isoToHm(row.checkOutTime)})이 null로 초기화됩니다. 기존 기록은 정정 이력에 보존되며, 근로자가 퇴근을 다시 등록할 수 있게 됩니다.`}
+        confirmLabel="초기화"
+        cancelLabel="취소"
+        onConfirm={doCheckOutReset}
+        onCancel={() => setConfirmCheckOutReset(false)}
       />
     </>
   );

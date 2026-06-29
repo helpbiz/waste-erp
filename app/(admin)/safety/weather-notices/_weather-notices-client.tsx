@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const ALERT_COLOR: Record<string, string> = {
   HEATWAVE: 'bg-red-100 text-red-800 border-red-300',
@@ -12,7 +12,7 @@ const ALERT_COLOR: Record<string, string> = {
 
 type Notice = {
   id: string; noticeDate: string; alertType: string; alertLabel: string;
-  title: string; content: string | null; createdBy: string; createdAt: string; photoCount: number;
+  title: string; content: string | null; noticePhoto: string | null; createdBy: string; createdAt: string; photoCount: number;
 };
 type PhotoRecord = {
   id: string; workerName: string; employeeNo: string | null;
@@ -46,6 +46,8 @@ export default function WeatherNoticesClient() {
   const [formTitle, setFormTitle] = useState('');
   const [formContent, setFormContent] = useState('');
   const [formDate, setFormDate] = useState(today);
+  const [formPhoto, setFormPhoto] = useState<string | null>(null);
+  const formFileRef = useRef<HTMLInputElement | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -54,6 +56,8 @@ export default function WeatherNoticesClient() {
   const [editAlertType, setEditAlertType] = useState('HEATWAVE');
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const editPhotoRef = useRef<HTMLInputElement | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -81,6 +85,32 @@ export default function WeatherNoticesClient() {
     } finally { setRecordsLoading(false); }
   }
 
+  async function compressPhoto(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1000;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        let quality = 0.8;
+        let data = canvas.toDataURL('image/jpeg', quality);
+        while (data.length > 300_000 && quality > 0.2) {
+          quality -= 0.1;
+          data = canvas.toDataURL('image/jpeg', quality);
+        }
+        if (data.length > 400_000) { reject(new Error('사진 크기가 너무 큽니다.')); return; }
+        resolve(data);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+      img.src = url;
+    });
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!formTitle.trim()) { setSaveError('제목을 입력하세요.'); return; }
@@ -88,11 +118,11 @@ export default function WeatherNoticesClient() {
     const r = await fetch('/api/safety/weather-notices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alertType: formAlertType, title: formTitle.trim(), content: formContent.trim() || undefined, noticeDate: formDate }),
+      body: JSON.stringify({ alertType: formAlertType, title: formTitle.trim(), content: formContent.trim() || undefined, noticeDate: formDate, noticePhoto: formPhoto ?? undefined }),
     });
     setSaving(false);
     if (!r.ok) { const j = await r.json().catch(() => ({})); setSaveError(j.error ?? '등록 실패'); return; }
-    setShowForm(false); setFormTitle(''); setFormContent('');
+    setShowForm(false); setFormTitle(''); setFormContent(''); setFormPhoto(null);
     load(filterDate);
   }
 
@@ -101,6 +131,7 @@ export default function WeatherNoticesClient() {
     setEditAlertType(n.alertType);
     setEditTitle(n.title);
     setEditContent(n.content ?? '');
+    setEditPhoto(n.noticePhoto ?? null);
     setEditError(null);
   }
 
@@ -111,7 +142,7 @@ export default function WeatherNoticesClient() {
     const r = await fetch(`/api/safety/weather-notices/${editingNotice.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alertType: editAlertType, title: editTitle.trim(), content: editContent.trim() || null }),
+      body: JSON.stringify({ alertType: editAlertType, title: editTitle.trim(), content: editContent.trim() || null, noticePhoto: editPhoto }),
     });
     setEditSaving(false);
     if (!r.ok) { const j = await r.json().catch(() => ({})); setEditError(j.error ?? '수정 실패'); return; }
@@ -191,6 +222,34 @@ export default function WeatherNoticesClient() {
               rows={3} maxLength={2000}
               className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
+          <div className="space-y-1">
+            <label className="text-sm font-extrabold text-ink-muted">첨부 사진 (선택)</label>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => formFileRef.current?.click()}
+                className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
+                📷 {formPhoto ? '사진 변경' : '사진 첨부'}
+              </button>
+              {formPhoto && (
+                <div className="flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={formPhoto} alt="첨부사진" className="w-12 h-12 object-cover rounded border border-line" />
+                  <button type="button" onClick={() => setFormPhoto(null)} className="text-sm font-bold text-danger hover:underline">삭제</button>
+                </div>
+              )}
+            </div>
+            <input ref={formFileRef} type="file" accept="image/*" className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                e.target.value = '';
+                try {
+                  const data = await compressPhoto(file);
+                  setFormPhoto(data);
+                } catch (err) {
+                  setSaveError(err instanceof Error ? err.message : '사진 처리 오류');
+                }
+              }} />
+          </div>
           {saveError && <p className="text-sm font-bold text-red-600">{saveError}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={saving}
@@ -245,6 +304,12 @@ export default function WeatherNoticesClient() {
                   {n.noticeDate} · {n.createdBy} 등록 · <span className="font-bold text-accent">기록 {n.photoCount}명</span>
                 </div>
               </div>
+              {n.noticePhoto && (
+                <button type="button" onClick={() => setLightbox(n.noticePhoto!)} className="flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={n.noticePhoto} alt="공지 사진" className="w-14 h-14 object-cover rounded-lg border border-line hover:opacity-80" />
+                </button>
+              )}
               <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={() => openRecords(n)}
                   className="px-3 py-1.5 rounded-lg border border-line text-sm font-extrabold hover:bg-surface-soft">
@@ -301,6 +366,34 @@ export default function WeatherNoticesClient() {
                 <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)}
                   rows={3} maxLength={2000}
                   className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-extrabold text-ink-muted">첨부 사진</label>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => editPhotoRef.current?.click()}
+                    className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
+                    📷 {editPhoto ? '사진 변경' : '사진 첨부'}
+                  </button>
+                  {editPhoto && (
+                    <div className="flex items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editPhoto} alt="첨부사진" className="w-12 h-12 object-cover rounded border border-line" />
+                      <button type="button" onClick={() => setEditPhoto(null)} className="text-sm font-bold text-danger hover:underline">삭제</button>
+                    </div>
+                  )}
+                </div>
+                <input ref={editPhotoRef} type="file" accept="image/*" className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    e.target.value = '';
+                    try {
+                      const data = await compressPhoto(file);
+                      setEditPhoto(data);
+                    } catch (err) {
+                      setEditError(err instanceof Error ? err.message : '사진 처리 오류');
+                    }
+                  }} />
               </div>
               {editError && <p className="text-sm font-bold text-red-600">{editError}</p>}
               <div className="flex gap-2">

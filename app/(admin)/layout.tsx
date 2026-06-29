@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { readSession } from '@/lib/auth';
 import { canMutate } from '@/lib/rbac';
-import { canManageUsers } from '@/lib/users';
+import { canManageUsers, userScope } from '@/lib/users';
 import { prisma } from '@/lib/db';
 import { complaintWhere, PENDING_STATUSES } from '@/lib/complaints';
 import { safetyWhere } from '@/lib/safety';
@@ -34,9 +34,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const isManager = canManageUsers(session.role);
   const aWhere = contractorScopeWhere(session);
   const vlWhere = vehicleLogWhere(session);
-  const leaveWhere = session.contractorId
-    ? { worker: { contractorId: BigInt(session.contractorId) } }
-    : {};
+  const leaveScope = userScope(session);
+  const leaveWhere = Object.keys(leaveScope).length > 0 ? { worker: leaveScope } : {};
 
   const [pendingComplaints, pendingSafety, pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyApprovals] = await Promise.all([
     prisma.complaint.count({
@@ -185,6 +184,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             items: [
               ...(isComplaintManagerWorker ? [{ href: '/complaints', label: '민원관리' }] : []),
               ...(isNoticeManagerWorker ? [{ href: '/announcements', label: '📢 공지사항' }] : []),
+              ...(isNoticeManagerWorker ? [{ href: '/safety/weather-notices', label: '🌡 날씨관리대장' }] : []),
               ...(isPayrollManagerWorker ? [{ href: '/payroll', label: '💰 급여관리' }] : []),
             ],
           },

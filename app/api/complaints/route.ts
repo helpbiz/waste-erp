@@ -211,11 +211,12 @@ export async function GET(req: Request) {
       orderBy: [{ reportedAt: 'desc' }],
       take: limit,
       skip: offset,
-      /* P2-9: requestImage/completionImage 는 base64 최대 2MB — 목록에서 제외, 상세에서만 제공 */
+      /* P2-9: completionImage 는 base64 최대 2MB — 관리자 목록에서는 제외.
+         requestImage/completionImage 는 작업자 내 민원 목록 인라인 표시용으로 포함. */
       select: {
         id: true, type: true, status: true, description: true, reportedAt: true,
         locationAddress: true, dueDate: true, resolveNote: true, resolvedAt: true,
-        complainantPhone: true, citizenName: true,
+        complainantPhone: true, citizenName: true, requestImage: true, completionImage: true,
         reporter: { select: { id: true, name: true, role: true } },
         assignee: { select: { id: true, name: true } },
         zone: { select: { zoneName: true } },
@@ -242,6 +243,8 @@ export async function GET(req: Request) {
       dueDate: c.dueDate?.toISOString() ?? null,
       isOverdue: isOverdue({ dueDate: c.dueDate, status: c.status }),
       complainantPhone: c.complainantPhone,
+      requestImage: c.requestImage ?? null,
+      completionImage: c.completionImage ?? null,
       resolveNote: c.resolveNote,
       resolvedAt: c.resolvedAt?.toISOString() ?? null,
     })),

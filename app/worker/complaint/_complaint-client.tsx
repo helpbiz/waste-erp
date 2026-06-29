@@ -382,6 +382,7 @@ type InboxComplaint = {
   isOverdue: boolean;
   complainantPhone: string | null;
   requestImage: string | null;
+  completionImage: string | null;
   resolveNote: string | null;
   resolvedAt: string | null;
   assignee: { id: string; name: string } | null;
@@ -485,12 +486,18 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
               {c.assignee && (
                 <div className="text-sm text-ink-faint mt-1">담당: <span className="font-bold">{c.assignee.name}</span></div>
               )}
-              {parseImages(c.requestImage).length > 0 && (
+              {(parseImages(c.requestImage).length > 0 || parseImages(c.completionImage).length > 0) && (
                 <div className="flex gap-1.5 mt-2 overflow-x-auto">
                   {parseImages(c.requestImage).map((src, i) => (
-                    <button key={i} onClick={() => setLightboxSrc(src)} className="flex-shrink-0">
+                    <button key={`req-${i}`} onClick={() => setLightboxSrc(src)} className="flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={src} alt={`민원사진${i + 1}`} className="h-16 w-16 object-cover rounded-md border border-line" />
+                    </button>
+                  ))}
+                  {parseImages(c.completionImage).map((src, i) => (
+                    <button key={`cmp-${i}`} onClick={() => setLightboxSrc(src)} className="flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`완료사진${i + 1}`} className="h-16 w-16 object-cover rounded-md border-2 border-emerald-400" />
                     </button>
                   ))}
                 </div>

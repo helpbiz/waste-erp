@@ -16,13 +16,14 @@ export const runtime = 'nodejs';
 const Body = z.object({
   resolveNote: z.string().trim().max(2000).optional(),
   note: z.string().trim().max(2000).optional(),
+  /* 완료 사진 — requestImage/requestImages 는 하위 호환용 필드명; DB는 completionImage에 저장 */
   requestImage: z.string().max(2_000_000).optional(),
   requestImages: z.array(z.string().max(2_000_000)).max(3).optional(),
   taggedUserId: z.string().optional(),
 }).transform((d) => ({
   resolveNote: (d.resolveNote || d.note || '처리 완료').slice(0, 2000),
-  requestImage: d.requestImages?.length
-    ? JSON.stringify(d.requestImages)
+  completionImage: d.requestImages?.length
+    ? (d.requestImages.length === 1 ? d.requestImages[0] : JSON.stringify(d.requestImages))
     : (d.requestImage ?? null),
   taggedUserId: d.taggedUserId ?? null,
 }));
@@ -42,7 +43,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       { status: 400 }
     );
   }
-  const { resolveNote, requestImage, taggedUserId } = parsed.data;
+  const { resolveNote, completionImage, taggedUserId } = parsed.data;
 
   const id = parseId(params.id);
   if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
@@ -71,7 +72,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     resolveNote,
     resolvedAt: now,
   };
-  if (requestImage) updateData.requestImage = requestImage;
+  if (completionImage) updateData.completionImage = completionImage;
 
   const updated = await prisma.complaint.update({ where: { id }, data: updateData });
 
@@ -99,7 +100,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         ODOR_NOISE: '악취/소음', BULKY_WASTE: '대형폐기물', OTHER: '기타',
       };
       const typeLabel = TYPE_KO[target.type] ?? target.type;
-      const hasPhoto = !!requestImage || !!target.requestImage;
+      const hasPhoto = !!completionImage || !!target.requestImage;
       const lines = [
         `■ 민원 유형: ${typeLabel}`,
         target.locationAddress ? `■ 위치: ${target.locationAddress}` : null,

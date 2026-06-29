@@ -48,10 +48,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const target = await prisma.leaveRequest.findFirst({
-    where: { id, worker: userScope(session) },
+    where: { id },
     include: { worker: { select: { id: true, contractorId: true } } },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  /* 관리자 가시범위 확인 — id 조회와 분리하여 Prisma 관계필터 결합 이슈 방지 */
+  const scope = userScope(session);
+  if (Object.keys(scope).length > 0) {
+    const inScope = await prisma.user.findFirst({
+      where: { AND: [{ id: target.worker.id }, scope] },
+      select: { id: true },
+    });
+    if (!inScope) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   if (target.status === 'APPROVED' || target.status === 'REJECTED') {
     return NextResponse.json({ error: 'already_decided', current: target.status }, { status: 409 });
@@ -135,7 +145,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const sigResult = await resolveApprovalSignature({
     actorId: BigInt(session.userId),
     dataUrl: parsed.data.signature ?? null,
-    useStoredSignature: parsed.data.useStoredSignature ?? isAdminRole,
+    useStoredSignature: parsed.data.useStoredSignature ?? (isAdminRole && !parsed.data.signature),
   });
   const sig = 'error' in sigResult ? null : sigResult;
   if (!sig && !isAdminRole) {

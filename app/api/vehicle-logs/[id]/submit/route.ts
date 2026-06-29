@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { todayKstDate } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
   if (log.status !== 'DRAFT') {
     return NextResponse.json({ error: 'invalid_transition', from: log.status, to: 'SUBMITTED' }, { status: 409 });
+  }
+
+  /* 근로자는 당일 일지만 제출 가능 */
+  if (log.logDate.getTime() !== todayKstDate().getTime()) {
+    return NextResponse.json({ error: 'date_not_today' }, { status: 422 });
   }
 
   /* 필수 필드 보장 — endMileage(금일누적거리)만 필수, startMileage는 선택 */

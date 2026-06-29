@@ -17,7 +17,7 @@ function isManager(role: string) {
 const PostBody = z.object({
   photoData:   z.string().max(400_000, '사진 크기가 너무 큽니다. 더 작은 사진을 사용해 주세요.').optional().nullable(),
   recordTime:  z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
-  feelsLike:   z.number().int().min(-50).max(60).optional().nullable(),
+  feelsLike:   z.number().min(-50).max(60).optional().nullable(),
   actionTaken: z.string().trim().max(1000).optional().nullable(),
   managerName: z.string().trim().max(50).optional().nullable(),
 });

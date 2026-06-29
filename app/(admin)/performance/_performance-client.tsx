@@ -346,7 +346,7 @@ function IntakeTab({ canEdit, vehicles }: {
             className="px-3 py-1.5 rounded border border-line bg-white text-sm font-mono font-bold" />
         </div>
         <div className="text-sm font-mono ml-auto">
-          {items.length}건 · 합계 <span className="font-extrabold text-accent">{items.reduce((s, i) => s + i.weightTon, 0).toFixed(3)}</span> ton
+          {items.length}건 · 합계 <span className="font-extrabold text-accent">{(items.reduce((s, i) => s + i.weightTon, 0) * 1000).toFixed(0)}</span> kg
         </div>
         {/* Plan FR-08: 일자별 카드 PDF 출력 버튼 — from===to 일 때만 활성 (단일 일자 전제) */}
         {from === to && items.length > 0 && (
@@ -379,7 +379,7 @@ function IntakeTab({ canEdit, vehicles }: {
               <th className="px-3 py-2 text-left">처리시설</th>
               <th className="px-3 py-2 text-left">반입장소</th>
               <th className="px-3 py-2 text-left">성상</th>
-              <th className="px-3 py-2 text-right">반입량(ton)</th>
+              <th className="px-3 py-2 text-right">반입량(kg)</th>
               <th className="px-3 py-2 text-left">비고</th>
               <th className="px-3 py-2 text-left">기록자</th>
               <th className="px-3 py-2"></th>
@@ -407,7 +407,7 @@ function IntakeTab({ canEdit, vehicles }: {
                     {CATEGORY_LABEL[i.materialCategory] ?? i.materialCategory}
                   </span>
                 </td>
-                <td className="px-3 py-1.5 text-right font-mono font-extrabold">{i.weightTon.toFixed(3)}</td>
+                <td className="px-3 py-1.5 text-right font-mono font-extrabold">{(i.weightTon * 1000).toFixed(0)}</td>
                 <td className="px-3 py-1.5 text-sm max-w-[150px] truncate" title={i.note ?? ''}>{i.note ?? '—'}</td>
                 <td className="px-3 py-1.5 text-[0.625rem]">{i.recorderName}</td>
                 <td className="px-3 py-1.5 text-right whitespace-nowrap">
@@ -449,7 +449,7 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     facilityId: initial?.facilityId ?? null,  // Design Ref: §3.1.2
     disposalSiteId: initial?.disposalSiteId ?? null,
     materialCategory: initial?.materialCategory ?? 'GENERAL',
-    weightTon: initial ? String(initial.weightTon) : '',
+    weightTon: initial ? String(Math.round(initial.weightTon * 1000)) : '',
     note: initial?.note ?? '',
   });
   const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
@@ -464,14 +464,14 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
 
   async function submit() {
     const w = Number(form.weightTon);
-    if (!Number.isFinite(w) || w <= 0) { alert('반입량(ton)은 0 초과 숫자'); return; }
+    if (!Number.isFinite(w) || w <= 0) { alert('반입량(kg)은 0 초과 숫자'); return; }
     if (!form.vehicleId) { alert('차량을 선택하세요'); return; }
     setSaving(true);
     const url = initial ? `/api/recycling-intake/${initial.id}` : '/api/recycling-intake';
     const method = initial ? 'PATCH' : 'POST';
     const body: Record<string, unknown> = {
       intakeDate: form.intakeDate, intakeTime: form.intakeTime,
-      materialCategory: form.materialCategory, weightTon: w, note: form.note || undefined,
+      materialCategory: form.materialCategory, weightTon: w / 1000, note: form.note || undefined,
       facilityId: form.facilityId,
       disposalSiteId: form.disposalSiteId,
     };
@@ -515,9 +515,9 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             </select>
           </div>
           <div>
-            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입량 (ton)</div>
-            <input type="number" step="0.001" value={form.weightTon} onChange={(e) => setForm({ ...form, weightTon: e.target.value })}
-              placeholder="0.000" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
+            <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">반입량 (kg)</div>
+            <input type="number" step="1" value={form.weightTon} onChange={(e) => setForm({ ...form, weightTon: e.target.value })}
+              placeholder="0" className="w-full px-3 py-1.5 rounded border border-line text-sm font-mono font-bold" />
           </div>
           <div className="col-span-2">
             <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">처리시설 (Design §3.1.2)</div>
@@ -645,7 +645,7 @@ function StatsTab() {
           <section className="mb-6">
             <h3 className="font-extrabold text-ink text-xl mb-2 border-l-4 border-emerald-500 pl-2">🚚 자원순환센터 반입실적</h3>
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <KCard label="총 반입량" value={`${intake.total.toFixed(3)} ton`} tone="success" />
+              <KCard label="총 반입량" value={`${(intake.total * 1000).toFixed(0)} kg`} tone="success" />
               <KCard label="반입 차량" value={`${intake.byVehicle.length}대`} />
               <KCard label="반입 일수" value={`${intake.daily.length}일`} />
             </div>
@@ -654,7 +654,7 @@ function StatsTab() {
                 <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별 (4종)</div>
                 <div className="space-y-1">
                   {intake.byCategory.sort((a, b) => b.weight - a.weight).map((m) => (
-                    <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight} max={intakeMaxByCategory} suffix="t" color="bg-emerald-500" />
+                    <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight * 1000} max={intakeMaxByCategory * 1000} suffix="kg" color="bg-emerald-500" />
                   ))}
                   {intake.byCategory.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>
@@ -663,7 +663,7 @@ function StatsTab() {
                 <div className="text-[0.6875rem] font-extrabold text-ink mb-2">차량별 Top</div>
                 <div className="space-y-1">
                   {intake.byVehicle.sort((a, b) => b.weight - a.weight).slice(0, 10).map((v) => (
-                    <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight} max={intakeMaxByVehicle} suffix="t" color="bg-blue-400" />
+                    <BarRow key={v.vehicleId} label={`${v.vehicleNo} (${v.count}회)`} value={v.weight * 1000} max={intakeMaxByVehicle * 1000} suffix="kg" color="bg-blue-400" />
                   ))}
                   {intake.byVehicle.length === 0 && <div className="text-[0.6875rem] text-ink-faint text-center py-3">데이터 없음</div>}
                 </div>

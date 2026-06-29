@@ -1,18 +1,27 @@
 /**
  * GET  /api/safety/weather-notices?date=YYYY-MM-DD  — 공지 목록
- * POST /api/safety/weather-notices                  — 공지 등록 (관리자)
+ * POST /api/safety/weather-notices                  — 공지 등록 (관리자 또는 isNoticeManager 근로자)
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { readSession } from '@/lib/auth';
+import { readSession, type SessionPayload } from '@/lib/auth';
 import { todayKstDate } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 function isManager(role: string) {
-  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'].includes(role);
+  return ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'].includes(role);
+}
+
+async function canManageNotice(session: SessionPayload): Promise<boolean> {
+  if (isManager(session.role)) return true;
+  if (session.role === 'WORKER' && session.contractorId) {
+    const u = await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isNoticeManager: true } });
+    return u?.isNoticeManager === true;
+  }
+  return false;
 }
 
 const ALERT_LABELS: Record<string, string> = {
@@ -24,6 +33,7 @@ const PostBody = z.object({
   title: z.string().trim().min(2).max(100),
   content: z.string().trim().max(2000).optional(),
   noticeDate: z.string().optional(),
+  noticePhoto: z.string().max(400_000, '사진 크기가 너무 큽니다.').optional().nullable(),
 });
 
 export async function GET(req: Request) {
@@ -67,6 +77,7 @@ export async function GET(req: Request) {
         alertLabel: ALERT_LABELS[n.alertType] ?? n.alertType,
         title: n.title,
         content: n.content ?? null,
+        noticePhoto: n.noticePhoto ?? null,
         createdBy: n.creator.name,
         createdAt: n.createdAt.toISOString(),
         photoCount: n._count.photos,
@@ -79,7 +90,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  if (!isManager(session.role)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!await canManageNotice(session)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (!session.contractorId) return NextResponse.json({ error: 'no_contractor' }, { status: 400 });
 
   const parsed = PostBody.safeParse(await req.json().catch(() => null));
@@ -96,6 +107,7 @@ export async function POST(req: Request) {
       alertType: b.alertType,
       title: b.title,
       content: b.content ?? null,
+      noticePhoto: b.noticePhoto ?? null,
       createdBy: BigInt(session.userId),
     },
   });

@@ -91,8 +91,13 @@ type FormState = {
   note: string;
 };
 
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function defaultForm(lastEndMileage: number | null): FormState {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const defaultInspection = Object.fromEntries(
     INSPECTION_ITEMS.map((i) => [i.key, i.opts[0]])
   ) as Record<InspectionKey, string>;
@@ -405,8 +410,7 @@ export default function VehicleLogClient({
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Field label="작성일자">
-                <input type="date" value={form.logDate}
-                  onChange={(e) => setField('logDate', e.target.value)} className={INPUT_CLS} />
+                <div className={`${INPUT_CLS} bg-surface-soft text-ink-muted select-none`}>{form.logDate}</div>
               </Field>
               <Field label="작성자">
                 <div className={`${INPUT_CLS} bg-surface-soft text-ink-muted`}>{driverName}</div>
@@ -465,9 +469,6 @@ export default function VehicleLogClient({
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">시작시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[90px]">종료시간</th>
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center">작업구간</th>
-                      {disposalSites.length > 0 && (
-                        <th className="border border-slate-300 px-1 py-1 font-bold text-center min-w-[90px]">반입장소</th>
-                      )}
                       <th className="border border-slate-300 px-1 py-1 font-bold text-center w-[80px]">비고</th>
                     </tr>
                   </thead>
@@ -491,18 +492,6 @@ export default function VehicleLogClient({
                             placeholder="구간/경로"
                             className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent" />
                         </td>
-                        {disposalSites.length > 0 && (
-                          <td className="border border-slate-300 p-0.5">
-                            <select value={row.disposalSiteId}
-                              onChange={(e) => setOperationRow(i, 'disposalSiteId', e.target.value)}
-                              className="w-full px-1 py-1 text-sm border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 bg-transparent">
-                              <option value="">—</option>
-                              {disposalSites.map((s) => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                              ))}
-                            </select>
-                          </td>
-                        )}
                         <td className="border border-slate-300 p-0.5">
                           <input type="text" value={row.note}
                             onChange={(e) => setOperationRow(i, 'note', e.target.value)}
@@ -1263,6 +1252,7 @@ function translateVehicleLogError(code?: string): string | null {
     case 'vehicle_retired': return '폐차 처리된 차량입니다.';
     case 'duplicate_log_today': return '오늘 이미 제출된 차량일지가 있습니다. 반려 처리 후 재작성하세요.';
     case 'not_deletable': return '제출 완료·승인된 일지는 삭제할 수 없습니다.';
+    case 'date_not_today': return '차량일지는 당일에만 작성·제출할 수 있습니다.';
     case 'mileage_required': return '금일누적거리를 입력해 주세요.';
     case 'unauthenticated': return '로그인이 만료되었습니다.';
     default: return null;

@@ -135,9 +135,11 @@ function PayslipDetail({ item, workerName, month, year, template }: { item: Pays
 
   function handlePrint() {
     const win = window.open('', '_blank', 'width=780,height=1100');
-    if (!win) return;
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 주소창 우측의 팝업 허용 버튼을 클릭한 후 다시 시도하세요.'); return; }
     win.document.write(buildPrintHtml({ item, workerName, month, year, template }));
     win.document.close();
+    win.focus();
+    setTimeout(() => { try { win.print(); } catch { /* ignore */ } }, 400);
   }
 
   return (

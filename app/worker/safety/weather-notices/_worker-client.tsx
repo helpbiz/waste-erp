@@ -20,7 +20,7 @@ const ACTION_PRESETS = [
 
 type Notice = {
   id: string; alertType: string; title: string; content: string | null;
-  noticeDate: string;
+  noticeDate: string; noticePhoto: string | null;
   myPhoto: { id: string; uploadedAt: string; recordTime: string | null; feelsLike: number | null; actionTaken: string | null; managerName: string | null } | null;
 };
 
@@ -35,6 +35,7 @@ export default function WeatherNoticesWorkerClient({
   const [error, setError] = useState<string | null>(null);
   const [activeForm, setActiveForm] = useState<string | null>(null);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   /* 폼 상태: noticeId → 입력값 */
   const [forms, setForms] = useState<Record<string, {
@@ -159,6 +160,12 @@ export default function WeatherNoticesWorkerClient({
                   </div>
                   <h3 className="font-extrabold text-ink text-base">{n.title}</h3>
                   {n.content && <p className="text-sm text-ink-muted mt-1 leading-relaxed">{n.content}</p>}
+                  {n.noticePhoto && (
+                    <button type="button" onClick={() => setLightbox(n.noticePhoto!)} className="mt-2 inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={n.noticePhoto} alt="공지 사진" className="h-28 w-auto rounded-xl border border-line object-cover hover:opacity-80" />
+                    </button>
+                  )}
                 </div>
 
                 {/* 기록 현황 (완료 시) */}
@@ -189,7 +196,7 @@ export default function WeatherNoticesWorkerClient({
                       {/* 체감온도 */}
                       <label className="flex flex-col gap-1">
                         <span className="text-[0.6875rem] font-extrabold text-ink-muted">체감온도 (℃)</span>
-                        <input type="number" value={f.feelsLike} min="-50" max="60"
+                        <input type="number" value={f.feelsLike} min="-50" max="60" step="0.1"
                           placeholder="예: 38"
                           onChange={(e) => updateForm(n.id, 'feelsLike', e.target.value)}
                           className="px-3 py-2 rounded-xl border-2 border-line text-sm font-mono bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
@@ -266,6 +273,14 @@ export default function WeatherNoticesWorkerClient({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 공지 사진 라이트박스 */}
+      {lightbox && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center px-4" onClick={() => setLightbox(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="공지 사진 확대" className="max-w-full max-h-[90vh] rounded-xl shadow-2xl" />
         </div>
       )}
     </div>

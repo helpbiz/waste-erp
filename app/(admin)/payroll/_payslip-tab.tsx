@@ -144,7 +144,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
 
   function printPayslip(r: PublishedRecord) {
     const win = window.open('', '_blank');
-    if (!win) return;
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 주소창 우측의 팝업 허용 버튼을 클릭한 후 다시 시도하세요.'); return; }
     const d = r.data;
     const fmt = (v: number) => v.toLocaleString('ko-KR') + '원';
     const earningRows = sortByTemplate(Object.entries(d.earnings ?? {}) as [string, number][], tmpl?.earnings)

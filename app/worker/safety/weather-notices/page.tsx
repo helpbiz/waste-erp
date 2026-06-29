@@ -41,6 +41,7 @@ export default async function WorkerWeatherNoticesPage() {
     title: n.title,
     content: n.content,
     noticeDate: n.noticeDate.toISOString().slice(0, 10),
+    noticePhoto: n.noticePhoto ?? null,
     myPhoto: n.photos[0]
       ? {
           id: n.photos[0].id.toString(),

@@ -99,7 +99,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'vehicle_retired' }, { status: 409 });
   }
 
-  const logDate = b.logDate ? new Date(b.logDate + 'T00:00:00.000Z') : todayKstDate();
+  const today = todayKstDate();
+  const logDate = b.logDate ? new Date(b.logDate + 'T00:00:00.000Z') : today;
+
+  /* 근로자는 당일에만 작성 가능 */
+  if (logDate.getTime() !== today.getTime()) {
+    return NextResponse.json({ error: 'date_not_today' }, { status: 422 });
+  }
 
   /* 1일 1회 제출 제한 — 해당 날짜에 SUBMITTED/APPROVED 기록이 있으면 중복 차단 */
   const todayLog = await prisma.vehicleLog.findFirst({

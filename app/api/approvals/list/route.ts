@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { canManageUsers } from '@/lib/users';
+import { canManageUsers, userScope } from '@/lib/users';
 import { safetyWhere } from '@/lib/safety';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import { contractorScopeWhere } from '@/lib/scopes';
@@ -42,9 +42,9 @@ export async function GET(req: Request) {
   const aWhere = contractorScopeWhere(session);
   const vlWhere = vehicleLogWhere(session);
   const sWhere = safetyWhere(session);
-  const leaveBase = session.contractorId
-    ? { worker: { contractorId: BigInt(session.contractorId) } }
-    : {};
+  /* userScope 사용 — INTERNAL_ADMIN(contractorId 없음) 이 전체 목록을 보던 버그 수정 */
+  const leaveScope = userScope(session);
+  const leaveBase = Object.keys(leaveScope).length > 0 ? { worker: leaveScope } : {};
 
   /* status filters per tab */
   const leaveStatuses = tab === 'pending'
