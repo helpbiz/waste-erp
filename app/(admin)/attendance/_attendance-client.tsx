@@ -354,9 +354,13 @@ function AdjustModal({
   const [checkIn, setCheckIn] = useState(isoToHm(row.checkInTime));
   const [checkOut, setCheckOut] = useState(isoToHm(row.checkOutTime));
   const [workType, setWorkType] = useState<string>(row.workType ?? 'NORMAL');
-  /* 야간 출근(20시 이후) + 퇴근 미등록 → 익일 퇴근 자동 제안 */
+  /* 야간 출근(20시 이후) + 퇴근 미등록 또는 퇴근이 출근보다 이른 경우 → 익일 퇴근 자동 제안 */
   const isLikelyNightShift = row.checkInTime ? new Date(row.checkInTime).getHours() >= 20 : false;
-  const [checkOutNextDay, setCheckOutNextDay] = useState(isLikelyNightShift && !row.checkOutTime);
+  const checkOutBeforeCheckIn = !!(row.checkInTime && row.checkOutTime &&
+    new Date(row.checkOutTime) < new Date(row.checkInTime));
+  const [checkOutNextDay, setCheckOutNextDay] = useState(
+    isLikelyNightShift && (!row.checkOutTime || checkOutBeforeCheckIn)
+  );
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
