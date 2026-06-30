@@ -27,7 +27,7 @@ const PatchBody = z.object({
   alertType: z.enum(['HEATWAVE', 'COLDWAVE', 'TYPHOON', 'STORM', 'OTHER']).optional(),
   title: z.string().trim().min(2).max(100).optional(),
   content: z.string().trim().max(2000).nullable().optional(),
-  noticePhoto: z.string().max(400_000, '사진 크기가 너무 큽니다.').nullable().optional(),
+  noticePhoto: z.string().max(1_200_000, '사진 크기가 너무 큽니다.').nullable().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {

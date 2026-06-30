@@ -33,7 +33,7 @@ const PostBody = z.object({
   title: z.string().trim().min(2).max(100),
   content: z.string().trim().max(2000).optional(),
   noticeDate: z.string().optional(),
-  noticePhoto: z.string().max(400_000, '사진 크기가 너무 큽니다.').optional().nullable(),
+  noticePhoto: z.string().max(1_200_000, '사진 크기가 너무 큽니다.').optional().nullable(),
 });
 
 export async function GET(req: Request) {

@@ -133,8 +133,9 @@ function readLabelMap(
 }
 
 function fmtByCol(c: ReportColumnSpec, value: unknown): string {
-  if (c.format === '0.000' && typeof value === 'number') {
-    return value.toFixed(3);
+  if (typeof value === 'number') {
+    if (c.format === '0.000') return value.toFixed(3);
+    if (c.format === '0') return Math.round(value).toString();
   }
   return value == null ? '' : String(value);
 }

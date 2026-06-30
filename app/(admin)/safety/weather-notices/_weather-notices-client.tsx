@@ -46,7 +46,7 @@ export default function WeatherNoticesClient() {
   const [formTitle, setFormTitle] = useState('');
   const [formContent, setFormContent] = useState('');
   const [formDate, setFormDate] = useState(today);
-  const [formPhoto, setFormPhoto] = useState<string | null>(null);
+  const [formPhotos, setFormPhotos] = useState<string[]>([]);
   const formFileRef = useRef<HTMLInputElement | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export default function WeatherNoticesClient() {
   const [editAlertType, setEditAlertType] = useState('HEATWAVE');
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
-  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [editPhotos, setEditPhotos] = useState<string[]>([]);
   const editPhotoRef = useRef<HTMLInputElement | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -118,12 +118,18 @@ export default function WeatherNoticesClient() {
     const r = await fetch('/api/safety/weather-notices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alertType: formAlertType, title: formTitle.trim(), content: formContent.trim() || undefined, noticeDate: formDate, noticePhoto: formPhoto ?? undefined }),
+      body: JSON.stringify({ alertType: formAlertType, title: formTitle.trim(), content: formContent.trim() || undefined, noticeDate: formDate, noticePhoto: formPhotos.length === 0 ? undefined : formPhotos.length === 1 ? formPhotos[0] : JSON.stringify(formPhotos) }),
     });
     setSaving(false);
     if (!r.ok) { const j = await r.json().catch(() => ({})); setSaveError(j.error ?? '등록 실패'); return; }
-    setShowForm(false); setFormTitle(''); setFormContent(''); setFormPhoto(null);
+    setShowForm(false); setFormTitle(''); setFormContent(''); setFormPhotos([]);
     load(filterDate);
+  }
+
+  function parseNoticePhotos(photo: string | null): string[] {
+    if (!photo) return [];
+    try { const p = JSON.parse(photo); if (Array.isArray(p)) return p; } catch {}
+    return [photo];
   }
 
   function openEdit(n: Notice) {
@@ -131,7 +137,7 @@ export default function WeatherNoticesClient() {
     setEditAlertType(n.alertType);
     setEditTitle(n.title);
     setEditContent(n.content ?? '');
-    setEditPhoto(n.noticePhoto ?? null);
+    setEditPhotos(parseNoticePhotos(n.noticePhoto));
     setEditError(null);
   }
 
@@ -142,7 +148,7 @@ export default function WeatherNoticesClient() {
     const r = await fetch(`/api/safety/weather-notices/${editingNotice.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alertType: editAlertType, title: editTitle.trim(), content: editContent.trim() || null, noticePhoto: editPhoto }),
+      body: JSON.stringify({ alertType: editAlertType, title: editTitle.trim(), content: editContent.trim() || null, noticePhoto: editPhotos.length === 0 ? null : editPhotos.length === 1 ? editPhotos[0] : JSON.stringify(editPhotos) }),
     });
     setEditSaving(false);
     if (!r.ok) { const j = await r.json().catch(() => ({})); setEditError(j.error ?? '수정 실패'); return; }
@@ -223,18 +229,20 @@ export default function WeatherNoticesClient() {
               className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-extrabold text-ink-muted">첨부 사진 (선택)</label>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => formFileRef.current?.click()}
-                className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
-                📷 {formPhoto ? '사진 변경' : '사진 첨부'}
-              </button>
-              {formPhoto && (
-                <div className="flex items-center gap-2">
+            <label className="text-sm font-extrabold text-ink-muted">첨부 사진 (선택, 최대 3장)</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {formPhotos.map((src, i) => (
+                <div key={i} className="flex items-center gap-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={formPhoto} alt="첨부사진" className="w-12 h-12 object-cover rounded border border-line" />
-                  <button type="button" onClick={() => setFormPhoto(null)} className="text-sm font-bold text-danger hover:underline">삭제</button>
+                  <img src={src} alt={`첨부사진 ${i + 1}`} className="w-12 h-12 object-cover rounded border border-line" />
+                  <button type="button" onClick={() => setFormPhotos(formPhotos.filter((_, j) => j !== i))} className="text-sm font-bold text-danger hover:underline">삭제</button>
                 </div>
+              ))}
+              {formPhotos.length < 3 && (
+                <button type="button" onClick={() => formFileRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
+                  📷 사진 추가
+                </button>
               )}
             </div>
             <input ref={formFileRef} type="file" accept="image/*" className="hidden"
@@ -244,7 +252,7 @@ export default function WeatherNoticesClient() {
                 e.target.value = '';
                 try {
                   const data = await compressPhoto(file);
-                  setFormPhoto(data);
+                  setFormPhotos((prev) => [...prev, data].slice(0, 3));
                 } catch (err) {
                   setSaveError(err instanceof Error ? err.message : '사진 처리 오류');
                 }
@@ -304,12 +312,19 @@ export default function WeatherNoticesClient() {
                   {n.noticeDate} · {n.createdBy} 등록 · <span className="font-bold text-accent">기록 {n.photoCount}명</span>
                 </div>
               </div>
-              {n.noticePhoto && (
-                <button type="button" onClick={() => setLightbox(n.noticePhoto!)} className="flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={n.noticePhoto} alt="공지 사진" className="w-14 h-14 object-cover rounded-lg border border-line hover:opacity-80" />
-                </button>
-              )}
+              {n.noticePhoto && (() => {
+                const photos = parseNoticePhotos(n.noticePhoto);
+                return (
+                  <div className="flex gap-1 flex-shrink-0">
+                    {photos.map((src, i) => (
+                      <button key={i} type="button" onClick={() => setLightbox(src)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt={`공지 사진 ${i + 1}`} className="w-12 h-12 object-cover rounded-lg border border-line hover:opacity-80" />
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
               <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={() => openRecords(n)}
                   className="px-3 py-1.5 rounded-lg border border-line text-sm font-extrabold hover:bg-surface-soft">
@@ -368,18 +383,20 @@ export default function WeatherNoticesClient() {
                   className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-extrabold text-ink-muted">첨부 사진</label>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => editPhotoRef.current?.click()}
-                    className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
-                    📷 {editPhoto ? '사진 변경' : '사진 첨부'}
-                  </button>
-                  {editPhoto && (
-                    <div className="flex items-center gap-2">
+                <label className="text-sm font-extrabold text-ink-muted">첨부 사진 (최대 3장)</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {editPhotos.map((src, i) => (
+                    <div key={i} className="flex items-center gap-1">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={editPhoto} alt="첨부사진" className="w-12 h-12 object-cover rounded border border-line" />
-                      <button type="button" onClick={() => setEditPhoto(null)} className="text-sm font-bold text-danger hover:underline">삭제</button>
+                      <img src={src} alt={`첨부사진 ${i + 1}`} className="w-12 h-12 object-cover rounded border border-line" />
+                      <button type="button" onClick={() => setEditPhotos(editPhotos.filter((_, j) => j !== i))} className="text-sm font-bold text-danger hover:underline">삭제</button>
                     </div>
+                  ))}
+                  {editPhotos.length < 3 && (
+                    <button type="button" onClick={() => editPhotoRef.current?.click()}
+                      className="px-3 py-1.5 rounded-lg border border-line text-sm font-bold hover:bg-surface-soft flex items-center gap-1.5">
+                      📷 사진 추가
+                    </button>
                   )}
                 </div>
                 <input ref={editPhotoRef} type="file" accept="image/*" className="hidden"
@@ -389,7 +406,7 @@ export default function WeatherNoticesClient() {
                     e.target.value = '';
                     try {
                       const data = await compressPhoto(file);
-                      setEditPhoto(data);
+                      setEditPhotos((prev) => [...prev, data].slice(0, 3));
                     } catch (err) {
                       setEditError(err instanceof Error ? err.message : '사진 처리 오류');
                     }

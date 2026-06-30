@@ -22,7 +22,7 @@ const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap')
 const DEFAULT_LAT = 37.5665;
 const DEFAULT_LNG = 126.9780;
 
-type Type = 'PICKUP_MISS' | 'ILLEGAL_DUMP' | 'ODOR_NOISE' | 'OTHER';
+type Type = 'PICKUP_MISS' | 'ILLEGAL_DUMP' | 'ODOR_NOISE' | 'BULKY_WASTE' | 'OTHER';
 
 type GpsState =
   | { kind: 'idle' }
@@ -31,10 +31,11 @@ type GpsState =
   | { kind: 'error'; message: string };
 
 const TYPES: { id: Type; label: string; color: string }[] = [
-  { id: 'PICKUP_MISS',  label: '수거 미비', color: 'bg-red-100 text-danger border-red-200' },
-  { id: 'ILLEGAL_DUMP', label: '불법투기', color: 'bg-amber-100 text-warn border-amber-200' },
-  { id: 'ODOR_NOISE',   label: '악취/소음', color: 'bg-blue-100 text-info border-blue-200' },
-  { id: 'OTHER',        label: '기타',     color: 'bg-slate-100 text-ink-muted border-slate-200' },
+  { id: 'PICKUP_MISS',  label: '수거 미비',   color: 'bg-red-100 text-danger border-red-200' },
+  { id: 'ILLEGAL_DUMP', label: '불법투기',     color: 'bg-amber-100 text-warn border-amber-200' },
+  { id: 'ODOR_NOISE',   label: '악취/소음',   color: 'bg-blue-100 text-info border-blue-200' },
+  { id: 'BULKY_WASTE',  label: '대형폐기물',  color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  { id: 'OTHER',        label: '기타',         color: 'bg-slate-100 text-ink-muted border-slate-200' },
 ];
 
 export default function ComplaintClient({ coworkers = [] }: { coworkers?: { id: string; name: string }[] }) {

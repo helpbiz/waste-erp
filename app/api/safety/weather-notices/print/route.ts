@@ -61,6 +61,7 @@ export async function GET(req: Request) {
       alertLabel: ALERT_LABEL[n.alertType] ?? n.alertType,
       title: n.title,
       content: n.content ?? null,
+      noticePhoto: n.noticePhoto ?? null,
       createdBy: n.creator.name,
       photoCount: n.photos.length,
       photos: n.photos.map((p) => ({

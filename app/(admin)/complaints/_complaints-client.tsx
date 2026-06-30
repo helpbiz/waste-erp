@@ -45,6 +45,7 @@ export type Row = {
   resolvedAt: string | null;
   complainantPhone: string | null;
   requestImage: string | null;
+  completionImage: string | null;
   contractorId: string | null;
 };
 
@@ -450,6 +451,23 @@ export default function ComplaintsClient({
                           <img src={src} alt={`현장사진 ${i + 1}`} className="w-16 h-16 object-cover rounded-md border border-line hover:opacity-80 transition" />
                         </button>
                       ))}
+                    </div>
+                  );
+                })()}
+                {c.completionImage && (() => {
+                  let imgs: string[] = [];
+                  try { imgs = JSON.parse(c.completionImage); if (!Array.isArray(imgs)) imgs = [c.completionImage]; }
+                  catch { imgs = [c.completionImage]; }
+                  return (
+                    <div className="mt-2">
+                      <span className="text-[0.6875rem] font-extrabold text-emerald-700">처리 완료 사진</span>
+                      <div className="flex gap-1.5 mt-1 flex-wrap">
+                        {imgs.map((src, i) => (
+                          <button key={i} onClick={() => setLightboxSrc(src)}>
+                            <img src={src} alt={`완료사진 ${i + 1}`} className="w-16 h-16 object-cover rounded-md border-2 border-emerald-400 hover:opacity-80 transition" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   );
                 })()}

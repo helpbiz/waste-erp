@@ -35,7 +35,7 @@ type Photo = {
 
 type Notice = {
   id: string; noticeDate: string; alertType: string; alertLabel: string;
-  title: string; content: string | null; createdBy: string; photoCount: number;
+  title: string; content: string | null; noticePhoto: string | null; createdBy: string; photoCount: number;
   photos: Photo[];
 };
 
@@ -167,6 +167,19 @@ export default function WeatherPrintClient({
                 <div className="wn-notice-title">{n.title}</div>
                 {n.content && <div className="wn-notice-content">{n.content}</div>}
                 <div className="wn-notice-meta">등록자: {n.createdBy} · 기록 {n.photoCount}명</div>
+                {n.noticePhoto && (() => {
+                  let photos: string[] = [];
+                  try { const p = JSON.parse(n.noticePhoto!); photos = Array.isArray(p) ? p : [n.noticePhoto!]; }
+                  catch { photos = [n.noticePhoto!]; }
+                  return (
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                      {photos.map((src, i) => (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img key={i} src={src} alt={`공지사진 ${i + 1}`} style={{ width: '72px', height: '54px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 근로자 기록 테이블 */}

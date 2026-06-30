@@ -56,7 +56,7 @@ export async function resolveReportData(
   const summary = Array.from(groups.entries()).map(([category, total]) => ({
     category,
     label: labelsFromSpec[category] ?? category,
-    totalTon: round3(total),
+    totalTon: Math.round(total * 1000),  // kg 단위로 변환
   }));
 
   const rows = intakes.map((i, idx) => ({
@@ -66,11 +66,11 @@ export async function resolveReportData(
     facilityName: i.facility?.name ?? null,
     disposalSiteName: i.disposalSite?.name ?? null,
     materialCategory: i.materialCategory,
-    weightTon: round3(Number(i.weightTon)),
+    weightTon: Math.round(Number(i.weightTon) * 1000),  // kg 단위로 변환
     note: i.note,
   }));
 
-  const totalWeight = round3(rows.reduce((s, r) => s + r.weightTon, 0));
+  const totalWeight = rows.reduce((s, r) => s + r.weightTon, 0);
 
   return {
     header: {

@@ -16,7 +16,7 @@ export function ReportSummaryCards({
           <div key={s.category} className="report-summary__card">
             <div className="report-summary__label">{s.label}</div>
             <div className="report-summary__value">
-              {fmt3(s.totalTon)}
+              {fmtWeight(s.totalTon)}
               <span className="report-summary__unit">{unit}</span>
             </div>
           </div>
@@ -24,7 +24,7 @@ export function ReportSummaryCards({
         <div className="report-summary__card report-summary__card--total">
           <div className="report-summary__label">합계</div>
           <div className="report-summary__value">
-            {fmt3(data.totals.weightTon)}
+            {fmtWeight(data.totals.weightTon)}
             <span className="report-summary__unit">{unit}</span>
           </div>
         </div>
@@ -33,6 +33,6 @@ export function ReportSummaryCards({
   );
 }
 
-function fmt3(n: number): string {
-  return n.toFixed(3);
+function fmtWeight(n: number): string {
+  return Number.isInteger(n) ? n.toString() : n.toFixed(3);
 }

@@ -13,7 +13,7 @@
   "summary": {
     "type": "cards",
     "groupBy": "materialCategory",
-    "metric": { "field": "weightTon", "agg": "sum", "unit": "t" },
+    "metric": { "field": "weightTon", "agg": "sum", "unit": "kg" },
     "labels": {
       "GENERAL": "생활",
       "FOOD": "음식물",
@@ -33,7 +33,7 @@
       { "label": "처리시설", "field": "facility.name", "fallback": "—", "width": "18%" },
       { "label": "반입장소", "field": "disposal_site.name", "fallback": "—", "width": "18%" },
       { "label": "성상",     "field": "materialCategory", "labelMap": "summary.labels", "width": "11%" },
-      { "label": "중량(t)",  "field": "weightTon",   "format": "0.000", "align": "right", "width": "11%" },
+      { "label": "중량(kg)", "field": "weightTon",   "format": "0",     "align": "right", "width": "11%" },
       { "label": "비고",     "field": "note",        "width": "17%" }
     ],
     "footer": { "label": "합계", "totals": [{ "field": "weightTon", "agg": "sum" }] }
