@@ -45,7 +45,7 @@ export default async function ComplaintsPage({
         locationAddress: true, locationLat: true, locationLng: true,
         reportedAt: true, dueDate: true, resolveNote: true, resolvedAt: true,
         complainantPhone: true, citizenName: true, contractorId: true,
-        requestImage: true, zoneId: true,
+        requestImage: true, completionImage: true, zoneId: true,
         reporter: { select: { id: true, name: true } },
         assignee: { select: { id: true, name: true } },
         zone: { select: { zoneName: true, contractor: { select: { companyName: true } } } },
@@ -78,6 +78,7 @@ export default async function ComplaintsPage({
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
     complainantPhone: c.complainantPhone ?? null,
     requestImage: c.requestImage ?? null,
+    completionImage: c.completionImage ?? null,
     contractorId: c.contractorId?.toString() ?? null,
   }));
 
