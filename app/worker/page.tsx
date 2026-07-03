@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { getTodayAttendance } from '@/lib/attendance';
 import { formatHmKst } from '@/lib/dates';
 import { hasFeature } from '@/lib/features';
+import { PunchButtons } from './_punch-buttons';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,18 @@ export default async function WorkerHomePage() {
             </span>
           )}
         </div>
+      </div>
+
+      {/* 출근 / 퇴근 버튼 */}
+      <div className="bg-surface border border-line rounded-xl px-3 py-3 shadow-card">
+        <div className="text-[0.6875rem] font-extrabold text-ink-muted mb-2">출퇴근 등록</div>
+        <PunchButtons
+          workerName={session.name}
+          initial={{
+            checkInTime: me?.checkInTime ? new Date(me.checkInTime).toISOString() : null,
+            checkOutTime: me?.checkOutTime ? new Date(me.checkOutTime).toISOString() : null,
+          }}
+        />
       </div>
 
       {/* 기타 메뉴 그리드 — auto-fit: 화면 폭에 따라 자동 컬럼 증가

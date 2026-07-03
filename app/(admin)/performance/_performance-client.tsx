@@ -355,10 +355,13 @@ function IntakeTab({ canEdit, vehicles }: {
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
-            title="해당 일자 일일 처리실적 일보 PDF 다운로드 (Module 6에서 활성화 예정)"
+            title="해당 일자 일일 처리실적 일보 PDF 다운로드"
           >
             📄 일보 PDF 출력
           </a>
+        )}
+        {items.length > 0 && (
+          <IntakeExcelButton from={from} to={to} />
         )}
         {canEdit && (
           <button onClick={() => setShowCreate(true)}
@@ -698,6 +701,37 @@ function KCard({ label, value, tone = 'default' }: { label: string; value: strin
       <div className="text-[0.625rem] font-mono font-extrabold uppercase">{label}</div>
       <div className="text-xl font-black mt-1">{value}</div>
     </div>
+  );
+}
+
+function IntakeExcelButton({ from, to }: { from: string; to: string }) {
+  const [loading, setLoading] = useState(false);
+  async function download() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/recycling-intake/export?from=${from}&to=${to}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `반입실적_${from}_${to}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }
+  return (
+    <button
+      onClick={download}
+      disabled={loading}
+      className="px-4 py-1.5 rounded text-sm font-extrabold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+      {loading ? '생성 중…' : '기간 엑셀'}
+    </button>
   );
 }
 

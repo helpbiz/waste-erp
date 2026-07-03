@@ -15,7 +15,6 @@ type Props = {
 
 const WORKER_TABS: BottomTabItem[] = [
   { href: '/worker', label: '홈', icon: 'home', exact: true },
-  { href: '/worker/punch', label: '출퇴근', icon: 'clock' },
   { href: '/worker/complaint', label: '민원', icon: 'camera' },
   { href: '/worker/safety', label: '안전', icon: 'shield' },
   { href: '/worker/performance', label: '실적', icon: 'chart' },

@@ -25,7 +25,7 @@ type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: 
 type ContractorOpt = { id: string; name: string };
 
 export default function AttendanceClient({
-  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '',
+  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '', shiftStart = null,
 }: {
   date: string;
   rows: Row[];
@@ -34,6 +34,7 @@ export default function AttendanceClient({
   selfRecord?: SelfRecord;
   contractorOpts?: ContractorOpt[];
   selectedContractorId?: string;
+  shiftStart?: string | null;
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -196,13 +197,14 @@ export default function AttendanceClient({
               <th className="px-3 py-2 text-left">직원</th>
               <th className="px-3 py-2 text-left">출근</th>
               <th className="px-3 py-2 text-left">퇴근</th>
-              <th className="px-3 py-2 text-left">상태</th>
+              <th className="px-3 py-2 text-left">근태상태</th>
+              <th className="px-3 py-2 text-left">결재상태</th>
               {canManage && <th className="px-3 py-2 text-left">액션</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {rows.length === 0 && (
-              <tr><td colSpan={canManage ? 5 : 4} className="px-3 py-10 text-center text-ink-faint">근로자가 없습니다.</td></tr>
+              <tr><td colSpan={canManage ? 6 : 5} className="px-3 py-10 text-center text-ink-faint">근로자가 없습니다.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.workerId} className={`hover:bg-slate-50 ${!r.checkInTime ? 'bg-amber-50/30' : ''}`}>
@@ -216,6 +218,9 @@ export default function AttendanceClient({
                   {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-ink-faint">—</span>}
                 </td>
                 <td className="px-3 py-2">
+                  <AttendanceStatusChip row={r} date={date} shiftStart={shiftStart} />
+                </td>
+                <td className="px-3 py-2">
                   {r.status ? (
                     <span className={`text-sm font-extrabold px-2 py-0.5 rounded border-2 ${
                       r.status === 'APPROVED' ? 'bg-emerald-200 text-emerald-900 border-emerald-600' :
@@ -223,7 +228,7 @@ export default function AttendanceClient({
                       r.status === 'ADJUSTED' ? 'bg-blue-200 text-blue-900 border-blue-500' :
                       'bg-amber-200 text-amber-900 border-amber-500'
                     }`}>{STATUS_LABEL[r.status]}</span>
-                  ) : <span className="text-sm font-mono text-ink-faint">미기록</span>}
+                  ) : <span className="text-sm font-mono text-ink-faint">—</span>}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2">
@@ -1207,6 +1212,83 @@ function AdjustmentsTab({ defaultMonth }: { defaultMonth: string }) {
       {total === null && !loading && (
         <div className="text-center py-10 text-sm text-ink-muted">기간을 선택하고 조회 버튼을 눌러주세요.</div>
       )}
+    </div>
+  );
+}
+
+/* ─────────────── 근태 상태 칩 ─────────────── */
+
+type AttendanceStatus =
+  | 'NORMAL'
+  | 'EARLY_ARRIVAL'
+  | 'LATE'
+  | 'MISSING_IN'
+  | 'MISSING_OUT'
+  | 'ABSENT'
+  | 'INSUFFICIENT';
+
+const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; cls: string }> = {
+  NORMAL:        { label: '정상출근',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  EARLY_ARRIVAL: { label: '조기출근',   cls: 'bg-blue-100 text-blue-800 border-blue-300' },
+  LATE:          { label: '지각',       cls: 'bg-red-100 text-red-800 border-red-300' },
+  MISSING_IN:    { label: '출근미등록', cls: 'bg-amber-100 text-amber-800 border-amber-300' },
+  MISSING_OUT:   { label: '퇴근미등록', cls: 'bg-orange-100 text-orange-800 border-orange-300' },
+  ABSENT:        { label: '결근',       cls: 'bg-red-200 text-red-900 border-red-400' },
+  INSUFFICIENT:  { label: '근무시간부족', cls: 'bg-purple-100 text-purple-800 border-purple-300' },
+};
+
+const STANDARD_WORK_HOURS = 8;
+
+function extractHHMM(iso: string): string {
+  const d = new Date(iso);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return `${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null): AttendanceStatus[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const isPast = date < today;
+
+  if (isPast && !row.checkInTime && !row.checkOutTime) return ['ABSENT'];
+  if (!row.checkInTime) return ['MISSING_IN'];
+
+  const statuses: AttendanceStatus[] = [];
+
+  if (shiftStart) {
+    const [sH, sM] = shiftStart.split(':').map(Number);
+    const checkInHHMM = extractHHMM(row.checkInTime);
+    const [iH, iM] = checkInHHMM.split(':').map(Number);
+    const shiftMin   = sH * 60 + sM;
+    const checkInMin = iH * 60 + iM;
+    if (checkInMin < shiftMin - 10)       statuses.push('EARLY_ARRIVAL');
+    else if (checkInMin > shiftMin)        statuses.push('LATE');
+    else                                   statuses.push('NORMAL');
+  } else {
+    statuses.push(row.workType === 'EARLY' ? 'EARLY_ARRIVAL' : 'NORMAL');
+  }
+
+  if (isPast && !row.checkOutTime) { statuses.push('MISSING_OUT'); return statuses; }
+
+  if (row.checkOutTime) {
+    const ms = new Date(row.checkOutTime).getTime() - new Date(row.checkInTime).getTime();
+    if (ms / 3600000 < STANDARD_WORK_HOURS) statuses.push('INSUFFICIENT');
+  }
+
+  return statuses;
+}
+
+function AttendanceStatusChip({ row, date, shiftStart }: { row: Row; date: string; shiftStart: string | null }) {
+  const statuses = getAttendanceStatuses(row, date, shiftStart);
+  return (
+    <div className="flex flex-wrap gap-1">
+      {statuses.map((s) => {
+        const cfg = ATTENDANCE_STATUS_CONFIG[s];
+        return (
+          <span key={s} className={`text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap ${cfg.cls}`}>
+            {cfg.label}
+          </span>
+        );
+      })}
     </div>
   );
 }

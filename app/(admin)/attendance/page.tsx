@@ -92,6 +92,18 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       })
     : null;
 
+  /* 근태 판정용 출근 기준시각 — 업체 첫 번째 활성 제한 규칙의 checkInUntil (HH:MM KST) */
+  let shiftStart: string | null = null;
+  if (session.contractorId || pickedContractorId) {
+    const cid = pickedContractorId ?? BigInt(session.contractorId!);
+    const restriction = await prisma.punchRestriction.findFirst({
+      where: { contractorId: cid, active: true, checkInUntil: { not: null } },
+      orderBy: { sortOrder: 'asc' },
+      select: { checkInUntil: true },
+    });
+    shiftStart = restriction?.checkInUntil ?? null;
+  }
+
   return (
     <AttendanceClient
       date={dateStr}
@@ -100,6 +112,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
       contractorOpts={contractorOpts}
       selectedContractorId={pickedContractorId?.toString() ?? ''}
+      shiftStart={shiftStart}
       selfRecord={adminSelfRecord ? {
         recordId: adminSelfRecord.id.toString(),
         checkInTime: adminSelfRecord.checkInTime?.toISOString() ?? null,

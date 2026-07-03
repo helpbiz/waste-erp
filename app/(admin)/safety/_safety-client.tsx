@@ -130,15 +130,15 @@ export default function SafetyClient({
   async function handleExport() {
     setExporting(true);
     try {
-      const from = `${new Date().getFullYear()}-01-01`;
-      const to   = todayLocalStr();
+      const from = dateFrom || `${new Date().getFullYear()}-01-01`;
+      const to   = dateTo   || todayLocalStr();
       const res  = await fetch(`/api/safety/reports/export?from=${from}&to=${to}`);
       if (!res.ok) return;
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `안전보건보고서_${to}.xlsx`;
+      a.download = `안전보건보고서_${from}_${to}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch { /* ignore */ }
@@ -381,7 +381,7 @@ export default function SafetyClient({
             <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            {exporting ? '생성 중…' : '보고서 Excel'}
+            {exporting ? '생성 중…' : `보고서 Excel (${dateFrom || '전체'} ~ ${dateTo || '오늘'})`}
           </button>
           <span className="text-sm text-ink-faint">Open-Meteo 기반 · 월별 최고/최저 기온 + 폭염·고위험일 집계</span>
         </div>
