@@ -14,7 +14,7 @@ export const BRAND = {
   /** Thank You 슬라이드 브랜드 라인. */
   brandLine: 'CleanERP · 공비Lab',
   /** 서비스 접속 URL (도메인은 현행 유지 — 추후 변경 시 여기만 수정). */
-  serviceUrl: 'wci.helpbiz.kr',
+  serviceUrl: 'www.cleanerp.kr',
   /** 영업 문의 이메일. */
   contactEmail: 'contact@helpbiz.kr',
   /** 영업 문의 전화. */

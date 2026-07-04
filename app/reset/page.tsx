@@ -2,7 +2,7 @@
  * /reset — 캐시·SW 강제 초기화 페이지
  *
  * 사용자가 모바일에서 화면이 갱신되지 않을 때 직접 접속:
- *   https://wci.helpbiz.kr/reset
+ *   https://www.cleanerp.kr/reset
  *
  * 동작:
  *   1. Service Worker 모두 unregister

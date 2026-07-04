@@ -146,7 +146,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
   }
 
   async function copyCredentials() {
-    const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+    const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://www.cleanerp.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
 
     /* Strategy 1: 모던 Clipboard API (HTTPS / localhost / 보안 컨텍스트 필수) */
     if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
@@ -613,7 +613,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                 <p className="text-sm text-ink-faint mt-1">아래 정보를 안전한 채널로 위탁업체 대표에게 전달하세요.</p>
               </div>
               <div className="bg-slate-50 border border-line rounded-md px-3 py-3 space-y-1.5 text-sm font-mono relative">
-                <div><b className="text-ink-muted">접속 URL:</b> <span className="text-accent">https://wci.helpbiz.kr/login</span></div>
+                <div><b className="text-ink-muted">접속 URL:</b> <span className="text-accent">https://www.cleanerp.kr/login</span></div>
                 <div><b className="text-ink-muted">아이디:</b> {data.adminUsername}</div>
                 <div><b className="text-ink-muted">임시 PW:</b> <code className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">{data.adminPassword}</code></div>
                 <div><b className="text-ink-muted">회사:</b> {data.companyName} ({data.businessNo})</div>
@@ -749,7 +749,7 @@ function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual
    HTTP 접속 + execCommand 거부된 환경 대응. */
 function ManualCopyArea({ data }: { data: WizardData }) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+  const text = `CleanERP 접속 정보\n────────────────\n접속 URL: https://www.cleanerp.kr/login\n아이디: ${data.adminUsername}\n임시 PW: ${data.adminPassword}\n회사: ${data.companyName} (${data.businessNo})\n계약 상태: SETUP\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
   useEffect(() => {
     /* 마운트 시 자동 select — 사용자가 Ctrl+C 만 누르면 됨 */
     if (ref.current) {

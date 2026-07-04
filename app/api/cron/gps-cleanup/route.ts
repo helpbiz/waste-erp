@@ -6,7 +6,7 @@
  *
  * 외부 cron (K8s CronJob 또는 GitHub Actions)에서 매일 03:30 KST 호출 권장.
  *   curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
- *        https://wci.helpbiz.kr/api/cron/gps-cleanup
+ *        https://www.cleanerp.kr/api/cron/gps-cleanup
  *
  * Body (optional): { retentionDays?: number, dryRun?: boolean }
  *   기본 retentionDays=90, dryRun=false

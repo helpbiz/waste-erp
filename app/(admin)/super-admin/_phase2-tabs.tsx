@@ -570,7 +570,7 @@ export function OrgTreeTab() {
 function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassword: string; role: string; name: string }; onClose: () => void }) {
   const [copyOk, setCopyOk] = useState(false);
   const [showManual, setShowManual] = useState(false);
-  const text = `CleanERP 신규 ${ROLE_LABEL[info.role] ?? info.role} 계정\n────────────────\n접속 URL: https://wci.helpbiz.kr/login\n이름: ${info.name}\n아이디: ${info.username}\n임시 PW: ${info.tempPassword}\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
+  const text = `CleanERP 신규 ${ROLE_LABEL[info.role] ?? info.role} 계정\n────────────────\n접속 URL: https://www.cleanerp.kr/login\n이름: ${info.name}\n아이디: ${info.username}\n임시 PW: ${info.tempPassword}\n\n※ 첫 로그인 후 비밀번호를 변경해 주세요.`;
 
   async function copy() {
     /* Strategy 1: 모던 Clipboard API (HTTPS / localhost) */

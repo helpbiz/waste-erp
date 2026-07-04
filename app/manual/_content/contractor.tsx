@@ -27,7 +27,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
     lead: '회사관리자 콘솔로 무엇을 할 수 있는지 한눈에 보여드립니다. 대표·팀장 모두 이 안내서로 시작하실 수 있습니다.',
     intro: '본 매뉴얼은 회사관리자(CONTRACTOR_ADMIN)와 일반관리자(INTERNAL_ADMIN) 두 직책 모두를 위한 통합 안내서입니다. 일부 기능(휴가 2차 결재·회사정보 수정·권한 매트릭스)은 회사관리자만 가능하며, 그 외는 두 직책 동일하게 작동합니다.',
     hero: (
-      <DesktopShot url="wci.helpbiz.kr/dashboard" active="메인 대시보드" caption="회사관리자 콘솔 — 사이드바 + 메인 대시보드.">
+      <DesktopShot url="www.cleanerp.kr/dashboard" active="메인 대시보드" caption="회사관리자 콘솔 — 사이드바 + 메인 대시보드.">
         <div className="mock-h2">메인 대시보드</div>
         <div className="mock-kpi-grid">
           <KpiCardMock label="출근현황" value="26 / 30" sub="정시 24" tone="success" />
@@ -55,7 +55,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
     steps: [
       {
         title: '데스크톱 브라우저(크롬·엣지 권장)에서 접속합니다',
-        body: '주소창에 wci.helpbiz.kr 을 입력하시면 로그인 화면이 나옵니다. 모바일에서도 사용 가능하지만 결재·일괄 등록 등은 데스크톱이 편합니다.',
+        body: '주소창에 www.cleanerp.kr 을 입력하시면 로그인 화면이 나옵니다. 모바일에서도 사용 가능하지만 결재·일괄 등록 등은 데스크톱이 편합니다.',
       },
       { title: '아이디·임시 비밀번호로 로그인 후 새 비밀번호로 변경', body: '운영팀이 알려드린 아이디(예: HQ001)와 임시 비밀번호로 처음 로그인하시고, 본인만 아는 새 비밀번호로 변경합니다. 이후 모든 로그인은 새 비밀번호로 하시면 됩니다.' },
       {
@@ -117,7 +117,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '사이드바에서 "민원관리"를 누릅니다',
         body: '뱃지 숫자(미처리 건수)가 함께 표시됩니다. 클릭하시면 민원 목록이 열립니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/complaints" active="민원관리" caption="민원 목록 — 상태·유형·기한별 필터링 가능.">
+          <DesktopShot url="www.cleanerp.kr/complaints" active="민원관리" caption="민원 목록 — 상태·유형·기한별 필터링 가능.">
             <div className="mock-h2">민원 관리</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
               <ButtonMock label="+ 민원 등록" variant="primary" fullWidth={false} />
@@ -154,7 +154,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"근태관리" 메뉴에서 일자를 선택합니다',
         body: '달력에서 조회할 날짜를 선택하시면 그날의 직원별 출퇴근 기록이 표시됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/attendance" active="근태관리" caption="일자별 직원 근태 + 정상·지각·결근·조정필요 4종 상태.">
+          <DesktopShot url="www.cleanerp.kr/attendance" active="근태관리" caption="일자별 직원 근태 + 정상·지각·결근·조정필요 4종 상태.">
             <div className="mock-h2">근태 현황 — 2026.05.02</div>
             <div className="mock-kpi-grid">
               <KpiCardMock label="정상" value="24" tone="success" />
@@ -193,7 +193,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"차량관리" 메뉴에서 보유 차량을 등록합니다',
         body: '차량번호·종류·톤수·연식·구매일을 입력하시면 자동으로 ACTIVE 상태로 등록됩니다. 차량 일괄 import용 CSV 양식도 제공됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/vehicles" active="차량관리" caption="보유 차량 + 운행 상태 + 정비 이력.">
+          <DesktopShot url="www.cleanerp.kr/vehicles" active="차량관리" caption="보유 차량 + 운행 상태 + 정비 이력.">
             <div className="mock-h2">차량 관리</div>
             <div style={{ display: 'flex', gap: 6 }}>
               <ButtonMock label="+ 차량 등록" variant="primary" fullWidth={false} />
@@ -233,7 +233,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: 'NOC 56" 운영센터 화면에서 6개 영역을 동시 확인',
         body: '대형 모니터(56" 4K) 환경이라면 출근·운행·민원·수집량·안전·알림 6개 영역을 한 화면에서 모두 모니터링하실 수 있습니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/noc" active="실시간 차량조회" caption="56″ 4K 운영센터 — 6개 영역 동시 모니터링.">
+          <DesktopShot url="www.cleanerp.kr/noc" active="실시간 차량조회" caption="56″ 4K 운영센터 — 6개 영역 동시 모니터링.">
             <div className="mock-h2">NOC 운영센터</div>
             <div className="mock-kpi-grid">
               <KpiCardMock label="출근" value="26 / 30" tone="success" />
@@ -262,7 +262,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"산업안전보건" 메뉴에서 미검토 보고를 확인합니다',
         body: '근로자가 새로 제출한 안전 보고가 뱃지 숫자로 표시됩니다. 일일점검·아차사고·재해 발생 3종을 한 화면에서 모두 확인하실 수 있습니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/safety" active="산업안전보건" caption="안전 보고 검토 + TBM 작성.">
+          <DesktopShot url="www.cleanerp.kr/safety" active="산업안전보건" caption="안전 보고 검토 + TBM 작성.">
             <div className="mock-h2">산업안전보건</div>
             <TableMock
               headers={['일자', '제출자', '유형', '심각도', '상태']}
@@ -293,7 +293,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"날씨관리대장" 메뉴를 선택하고 날짜를 지정합니다',
         body: '산업안전보건 메뉴 하위에 있습니다. 날짜를 선택하면 그날 등록된 공지를 기반으로 근로자별 기상 안전 기록이 조회됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/weather-log" active="날씨관리대장" caption="날짜 선택 → 근로자별 기상 안전 기록 조회.">
+          <DesktopShot url="www.cleanerp.kr/weather-log" active="날씨관리대장" caption="날짜 선택 → 근로자별 기상 안전 기록 조회.">
             <div className="mock-h2">날씨관리대장</div>
             <FormRowMock label="조회 날짜" value="2026-06-01" type="header" />
             <TableMock
@@ -329,7 +329,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"사용자관리" 메뉴 → "근로자 목록" 탭에서 직원을 등록합니다',
         body: '신규 직원의 이름·전화·생년월일·직책을 입력하시면 직원번호와 임시 비밀번호가 자동 발급됩니다. 임시 비번을 직원에게 카카오톡으로 전달하시면 됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/users" active="사용자관리" caption="근로자 목록 + 휴가 신청 두 탭.">
+          <DesktopShot url="www.cleanerp.kr/users" active="사용자관리" caption="근로자 목록 + 휴가 신청 두 탭.">
             <div className="mock-h2">사용자 관리</div>
             <div style={{ display: 'flex', gap: 6 }}>
               <ButtonMock label="+ 신규 직원" variant="primary" fullWidth={false} />
@@ -389,7 +389,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '"통계/보고서" 메뉴를 누릅니다',
         body: '날짜 범위·지자체·보고서 유형 3가지를 선택하시면 자동으로 통계가 표시됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/reports" active="통계/보고서" caption="지자체별 양식으로 즉시 출력.">
+          <DesktopShot url="www.cleanerp.kr/reports" active="통계/보고서" caption="지자체별 양식으로 즉시 출력.">
             <div className="mock-h2">월간 보고서 — 2026.04</div>
             <FormRowMock label="지자체" value="용산구청" type="header" />
             <FormRowMock label="총 수집량" value="432.8 t" />
@@ -421,7 +421,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '대상층(audience)을 신중히 선택합니다',
         body: 'ALL(전체) / ADMIN(관리자급만) / WORKER(근로자급만) / OWNER(대표급만) 중 선택. 근로자에게 보낼 공지는 WORKER로, 팀장 회의용은 ADMIN으로 분리하시는 것을 권장드립니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/announcements" active="공지사항" caption="대상층·긴급도·만료일 3가지를 항상 함께 설정.">
+          <DesktopShot url="www.cleanerp.kr/announcements" active="공지사항" caption="대상층·긴급도·만료일 3가지를 항상 함께 설정.">
             <div className="mock-h2">신규 공지 작성</div>
             <FormRowMock label="제목" placeholder="예: 5월 3일 차량 정기점검 일정 안내" type="input" />
             <FormRowMock label="대상" value="WORKER (근로자급)" />
@@ -452,7 +452,7 @@ export const CONTRACTOR_CHAPTERS: ChapterData[] = [
         title: '대형폐기물 자동연동 — "빼기" 앱 연동',
         body: '시민이 "빼기" 앱으로 신청한 대형폐기물 수거 요청을 자동으로 민원으로 import합니다. 매일 정해진 시간에 자동 실행되며, 수동 import도 가능합니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/bulky-waste" active="대형폐기물 설정" caption="빼기 앱 자동 연동 — 시간대 + 행정동 필터.">
+          <DesktopShot url="www.cleanerp.kr/bulky-waste" active="대형폐기물 설정" caption="빼기 앱 자동 연동 — 시간대 + 행정동 필터.">
             <div className="mock-h2">대형폐기물 자동연동</div>
             <FormRowMock label="빼기 계정" value="용산구청 환경과" />
             <FormRowMock label="자동 import" value={<StatusChipMock label="활성화" tone="success" />} />

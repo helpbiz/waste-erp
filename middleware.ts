@@ -134,7 +134,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   /* Let's Encrypt HTTP-01 ACME challenge — middleware에서 직접 응답
-     라우터가 wci.helpbiz.kr → cleanerp-app:3001 직접 포워딩하므로 nginx 거치지 않음.
+     라우터가 www.cleanerp.kr → cleanerp-app:3001 직접 포워딩하므로 nginx 거치지 않음.
      ACME_CHALLENGES env JSON으로 토큰→응답 매핑.
      예: ACME_CHALLENGES='{"abc123":"abc123.xyz789"}' */
   if (pathname.startsWith('/.well-known/acme-challenge/')) {

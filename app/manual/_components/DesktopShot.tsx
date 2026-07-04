@@ -5,7 +5,7 @@ import SidebarMock from './SidebarMock';
     width 520px (관리자 매뉴얼 inline 표시용). */
 
 export default function DesktopShot({
-  url = 'wci.helpbiz.kr/dashboard',
+  url = 'www.cleanerp.kr/dashboard',
   active,
   variant = 'admin',
   caption,

@@ -31,7 +31,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     lead: '지자체관리자 콘솔로 무엇을 보실 수 있는지 한눈에 정리해 드립니다. 모든 데이터는 본인 지자체 산하 위탁업체로 자동 격리되어 표시됩니다.',
     intro: '본 매뉴얼은 시·군·구 환경과 또는 시설관리공단 등 관할 위탁업체를 감독·평가하는 지자체 직원을 위한 안내서입니다. 콘솔은 조회·다운로드·공지 작성에 최적화되어 있으며, 위탁업체 데이터의 직접 수정·삭제는 불가합니다.',
     hero: (
-      <DesktopShot url="wci.helpbiz.kr/dashboard" active="메인 대시보드" variant="muni" caption="지자체관리자 콘솔 — navy 사이드바, 관할 위탁업체 종합 현황.">
+      <DesktopShot url="www.cleanerp.kr/dashboard" active="메인 대시보드" variant="muni" caption="지자체관리자 콘솔 — navy 사이드바, 관할 위탁업체 종합 현황.">
         <div className="mock-h2">메인 대시보드 — 용산구청</div>
         <div className="mock-kpi-grid">
           <KpiCardMock label="관할 위탁업체" value="3" sub="용산청소·한남환경·이태원위생" />
@@ -57,7 +57,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
     title: '처음 로그인 + 콘솔 둘러보기',
     lead: '운영팀(공비Lab)이 발급한 임시 비밀번호로 처음 들어가신 뒤, 본인만 아는 새 비밀번호로 변경합니다. 메뉴 구조는 회사관리자 콘솔과 비슷하지만 등록·수정 버튼이 없는 조회 전용입니다.',
     steps: [
-      { title: '데스크톱 브라우저로 wci.helpbiz.kr 에 접속합니다', body: '크롬·엣지·사파리 모두 지원합니다. 모바일에서도 사용 가능하지만 표·차트 조회는 데스크톱이 편합니다.' },
+      { title: '데스크톱 브라우저로 www.cleanerp.kr 에 접속합니다', body: '크롬·엣지·사파리 모두 지원합니다. 모바일에서도 사용 가능하지만 표·차트 조회는 데스크톱이 편합니다.' },
       { title: '아이디·임시 비밀번호로 로그인 후 새 비밀번호로 변경합니다', body: '운영팀이 알려드린 아이디(예: MUNI001)와 임시 비밀번호로 로그인 후 본인만 아는 비밀번호로 변경합니다. 영문·숫자 포함 8자 이상 권장.' },
       {
         title: '개인정보 수집 동의서를 읽고 동의합니다',
@@ -179,7 +179,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '날짜 필터와 업체 탭으로 조회 범위를 먼저 설정합니다',
         body: '민원 목록 상단에 날짜 기간 입력란과 빠른 버튼(이번달 / 전월 / 최근3개월)이 표시됩니다. 업체 탭에서 "전체 업체" 또는 특정 위탁업체를 선택하면 해당 업체 민원만 필터링됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/complaints" active="민원관리" variant="muni" caption="날짜 필터 + 업체 탭 — 기간·업체별 민원 조회.">
+          <DesktopShot url="www.cleanerp.kr/complaints" active="민원관리" variant="muni" caption="날짜 필터 + 업체 탭 — 기간·업체별 민원 조회.">
             <div className="mock-h2">민원 관리</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <FormRowMock label="기간" value="2026-05-01 ~ 2026-05-31" />
@@ -199,7 +199,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"민원관리" 메뉴에서 민원 목록을 봅니다',
         body: '관할 모든 위탁업체의 민원이 시간순으로 표시됩니다. 위탁업체별·유형별·기한초과 등으로 필터링 가능하며, 업체(구역) 형식으로 구역 정보도 함께 표시됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/complaints" active="민원관리" variant="muni" caption="관할 위탁업체 민원 통합 조회.">
+          <DesktopShot url="www.cleanerp.kr/complaints" active="민원관리" variant="muni" caption="관할 위탁업체 민원 통합 조회.">
             <div className="mock-h2">민원 목록</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <ButtonMock label="+ 민원 입력 (시민 대신)" variant="primary" fullWidth={false} highlighted />
@@ -236,7 +236,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '날짜 필터와 업체 탭으로 조회 범위를 설정합니다',
         body: '안전 보고 목록 상단에 기간 입력란과 빠른 버튼(이번달 / 전월 / 최근3개월), 업체 탭 필터가 나타납니다. 탭 전환 시 보고 목록·통계가 해당 업체 기준으로 갱신됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/safety" active="산업안전보건" variant="muni" caption="날짜·업체 필터 — 기간·업체별 안전 보고 조회.">
+          <DesktopShot url="www.cleanerp.kr/safety" active="산업안전보건" variant="muni" caption="날짜·업체 필터 — 기간·업체별 안전 보고 조회.">
             <div className="mock-h2">산업안전보건</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <FormRowMock label="기간" value="2026-05-01 ~ 2026-05-31" />
@@ -256,7 +256,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"산업안전보건" 메뉴에서 보고 목록을 봅니다',
         body: '일자·업체·심각도별로 안전 보고가 정리됩니다. 중상·사망 발생 시 빨간색으로 강조되며 MOL(고용노동부) 보고 상태도 함께 표시됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/safety" active="산업안전보건" variant="muni" caption="관할 위탁업체 안전 보고 통합 조회.">
+          <DesktopShot url="www.cleanerp.kr/safety" active="산업안전보건" variant="muni" caption="관할 위탁업체 안전 보고 통합 조회.">
             <div className="mock-h2">안전 보고 목록</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <ButtonMock label="Excel" variant="secondary" fullWidth={false} />
@@ -298,7 +298,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"근태관리" — 업체 탭 필터로 원하는 업체만 조회합니다',
         body: '근태 화면 상단에 업체 탭(전체 업체 / 개별 업체)이 표시됩니다. 날짜(월)를 변경해도 선택한 contractorId 탭이 그대로 유지되어 같은 업체의 다른 월을 연속으로 비교할 수 있습니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/attendance" active="근태관리" variant="muni" caption="업체 탭 필터 — 날짜 변경 시에도 선택 업체 유지.">
+          <DesktopShot url="www.cleanerp.kr/attendance" active="근태관리" variant="muni" caption="업체 탭 필터 — 날짜 변경 시에도 선택 업체 유지.">
             <div className="mock-h2">근태 — 2026.05</div>
             <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
               <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
@@ -341,7 +341,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '업체 탭 필터로 원하는 업체 차량만 조회합니다',
         body: '화면 상단의 업체 탭(전체 업체 / 개별 업체)에서 탭을 선택하면 지도 마커와 차량 목록이 해당 업체 차량만 표시됩니다. 여러 위탁업체 차량이 섞여 있을 때 특히 유용합니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/vehicles/live" active="실시간 차량조회" variant="muni" caption="업체 탭 필터 — 선택 업체 차량만 지도에 표시.">
+          <DesktopShot url="www.cleanerp.kr/vehicles/live" active="실시간 차량조회" variant="muni" caption="업체 탭 필터 — 선택 업체 차량만 지도에 표시.">
             <div className="mock-h2">실시간 차량조회</div>
             <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
               <ButtonMock label="전체 업체" variant="primary" fullWidth={false} highlighted />
@@ -377,7 +377,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"날씨관리대장" 메뉴에서 기록 목록을 봅니다',
         body: '근로자가 현장에서 입력한 기상 기록이 날짜순으로 표시됩니다. 직원명·기록시간·체감온도·조치사항·담당자 정보가 열로 정리됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/weather-log" active="날씨관리대장" variant="muni" caption="근로자 기상 안전 기록 조회 — 공지 등록 불가, 조회 전용.">
+          <DesktopShot url="www.cleanerp.kr/weather-log" active="날씨관리대장" variant="muni" caption="근로자 기상 안전 기록 조회 — 공지 등록 불가, 조회 전용.">
             <div className="mock-h2">날씨관리대장</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <ButtonMock label="Excel (텍스트)" variant="secondary" fullWidth={false} highlighted />
@@ -418,7 +418,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"통계/보고서" 메뉴에서 기간을 선택합니다',
         body: '날짜 범위를 달력에서 골라주세요. 기본값은 지난 달 1일 ~ 말일입니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/reports" active="통계/보고서" variant="muni" caption="통합(전체) 또는 위탁업체 개별 선택 후 출력.">
+          <DesktopShot url="www.cleanerp.kr/reports" active="통계/보고서" variant="muni" caption="통합(전체) 또는 위탁업체 개별 선택 후 출력.">
             <div className="mock-h2">월간 보고서 — 2026.04</div>
             <FormRowMock label="기간" value="2026-04-01 ~ 2026-04-30" />
             <FormRowMock label="대상" value="📊 통합 (관할 전체) ▼" />
@@ -450,7 +450,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"공지사항" 메뉴에서 "+ 신규 공지"를 누릅니다',
         body: '제목·본문·대상층·긴급도·만료일을 입력 후 게시하시면 즉시 발송됩니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/announcements" active="공지사항" variant="muni" caption="관할 위탁업체 일괄 공지 — MUNI 고유 mutate 권한.">
+          <DesktopShot url="www.cleanerp.kr/announcements" active="공지사항" variant="muni" caption="관할 위탁업체 일괄 공지 — MUNI 고유 mutate 권한.">
             <div className="mock-h2">신규 공지 작성</div>
             <FormRowMock label="제목" placeholder="예: 5월 환경의 날 행사 안내" type="input" />
             <FormRowMock label="대상" value="MUNI (관할 전체)" />
@@ -479,7 +479,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '"관제모드 설정" 메뉴에서 현재 구성을 확인합니다',
         body: '메뉴가 보이지 않으면 해당 기능이 본인 지자체 프리셋에 포함되지 않은 경우입니다. 운영팀에 활성화 요청 부탁드립니다.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/settings/kiosk" active="관제모드 설정" variant="muni" caption="지자체 전용 관제 화면 설정 — 위탁업체 설정과 독립.">
+          <DesktopShot url="www.cleanerp.kr/settings/kiosk" active="관제모드 설정" variant="muni" caption="지자체 전용 관제 화면 설정 — 위탁업체 설정과 독립.">
             <div className="mock-h2">관제모드 설정 — 용산구청</div>
             <FormRowMock label="표시 레이아웃" value="4분할 ▼" />
             <FormRowMock label="자동 전환 간격" value="30초 ▼" />
@@ -518,7 +518,7 @@ export const MUNI_CHAPTERS: ChapterData[] = [
         title: '도장(서명) 등록 — 보고서 결재용',
         body: '월간 보고서 등에 결재가 필요한 경우 본인 서명을 한 번 등록해 두시면 자동 사용됩니다. 한 번 등록한 서명은 본인이 직접 변경하실 수 없으니 신중히 그려주세요.',
         screenshot: (
-          <DesktopShot url="wci.helpbiz.kr/users/me" variant="muni" caption="본인 프로필 — 비밀번호·사진·서명·연락처.">
+          <DesktopShot url="www.cleanerp.kr/users/me" variant="muni" caption="본인 프로필 — 비밀번호·사진·서명·연락처.">
             <div className="mock-h2">내 프로필</div>
             <FormRowMock label="이름" value="김환경" type="header" />
             <FormRowMock label="소속" value="용산구청 환경과" />
