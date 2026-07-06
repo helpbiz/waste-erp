@@ -118,6 +118,8 @@ function isPublic(path: string): boolean {
   if (path.startsWith('/api/citizen/')) return true;
   /* Cron 엔드포인트 — Bearer 토큰 별도 검증 */
   if (path.startsWith('/api/cron/')) return true;
+  /* dealer-channel 2026-07-06 — 예비고객 데모 매직링크. 토큰 자체가 인증 수단(라우트 내부에서 검증) */
+  if (path.startsWith('/api/demo-access/')) return true;
   /* PWA 정적 자산 — 인증 불필요 */
   if (path === '/manifest.json' || path === '/sw.js') return true;
   if (path.startsWith('/icons/')) return true;

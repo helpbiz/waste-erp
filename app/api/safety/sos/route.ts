@@ -84,7 +84,7 @@ export async function POST(req: Request) {
   ];
 
   /* SMS 발송 (provider 추상화 — 환경변수로 SIMULATION/SOLAPI 전환) */
-  const provider = getSmsProvider();
+  const provider = getSmsProvider({ isDemo: session.isDemo === true });
   const locText =
     b.locationAddress
       ? `\n위치: ${b.locationAddress}`

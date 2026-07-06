@@ -17,12 +17,15 @@ import { encryptField, decryptField, maskValue } from '@/lib/crypto';
 export const runtime = 'nodejs';
 
 const Create = z.object({
-  username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9_-]+$/),
+  /* dealer-channel Design §3.1 — 이메일 형태 username(예: dealer@cleanerp.kr) 지원을 위해 @/. 허용 */
+  username: z.string().trim().min(3).max(50).regex(/^[a-zA-Z0-9_.@-]+$/),
   password: z.string().min(6).max(100),
   name: z.string().trim().min(1).max(50),
-  role: z.enum(['SUPER_ADMIN', 'MUNI_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'WORKER']),
+  role: z.enum(['SUPER_ADMIN', 'MUNI_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'WORKER', 'DEALER']),
   contractorId: z.string().optional().nullable(),
   municipalityId: z.string().optional().nullable(),
+  /* dealer-channel Design §3.1 확장 — DEALER 전용 표시용 라벨 */
+  dealerCompany: z.string().trim().max(100).optional().nullable(),
   phone: z.string().regex(/^01[0-9]-?\d{3,4}-?\d{4}$/).optional().nullable(),
   employeeNo: z.string().trim().max(30).optional().nullable(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).optional(),
@@ -81,6 +84,7 @@ export async function GET(req: Request) {
       contractorId: true, municipalityId: true, phone: true, employeeNo: true,
       birthDate: true, hireDate: true, lastLogin: true, createdAt: true,
       isFacilityOperator: true,
+      dealerCompany: true,
       primaryFacility: { select: { id: true, name: true, type: true } },
     },
   });
@@ -96,6 +100,7 @@ export async function GET(req: Request) {
       municipalityId: u.municipalityId?.toString() ?? null,
       phone: u.phone,
       employeeNo: u.employeeNo,
+      dealerCompany: u.dealerCompany,
       birthDate: u.birthDate?.toISOString().slice(0, 10) ?? null,
       hireDate: u.hireDate?.toISOString().slice(0, 10) ?? null,
       lastLogin: u.lastLogin?.toISOString() ?? null,
@@ -129,6 +134,11 @@ export async function POST(req: Request) {
   /* SUPER_ADMIN 등록은 SUPER_ADMIN만 */
   if (b.role === 'SUPER_ADMIN' && session.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+  }
+  /* dealer-channel Design §3.1 — DEALER 등록도 SUPER_ADMIN만(셀프가입 없음, 기존 원칙 그대로). 조직 소속 X */
+  if (b.role === 'DEALER') {
+    if (session.role !== 'SUPER_ADMIN') return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    contractorId = null;
   }
   /* MUNI_ADMIN — 위탁업체 admin도 본인 위탁업체의 지자체 산하로 등록 가능 */
   let municipalityIdForMuni: bigint | null = null;
@@ -189,7 +199,7 @@ export async function POST(req: Request) {
       name: b.name,
       role: b.role,
       contractorId,
-      municipalityId: municipalityIdForMuni ?? (b.municipalityId ? BigInt(b.municipalityId) : null),
+      municipalityId: b.role === 'DEALER' ? null : (municipalityIdForMuni ?? (b.municipalityId ? BigInt(b.municipalityId) : null)),
       phone: normPhone(b.phone),
       employeeNo: b.employeeNo ?? null,
       status: b.status ?? 'ACTIVE',
@@ -207,6 +217,7 @@ export async function POST(req: Request) {
       departmentId,
       rank: b.rank ?? null,
       primaryFacilityId: b.primaryFacilityId ? BigInt(b.primaryFacilityId) : null,
+      dealerCompany: b.role === 'DEALER' ? (b.dealerCompany ?? null) : null,
     },
   });
 

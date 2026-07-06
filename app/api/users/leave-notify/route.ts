@@ -10,6 +10,7 @@
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { Role } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
 import { userScope, canManageUsers, recommendedAnnualLeaveDays, leaveRemaining } from '@/lib/users';
@@ -28,7 +29,7 @@ type Candidate = {
   remaining: number;
 };
 
-async function findCandidates(session: { role: 'SUPER_ADMIN' | 'MUNI_ADMIN' | 'CONTRACTOR_ADMIN' | 'INTERNAL_ADMIN' | 'WORKER'; contractorId: string | null; municipalityId: string | null }, year: number): Promise<Candidate[]> {
+async function findCandidates(session: { role: Role; contractorId: string | null; municipalityId: string | null }, year: number): Promise<Candidate[]> {
   const workers = await prisma.user.findMany({
     where: { ...userScope(session), role: 'WORKER', status: 'ACTIVE' },
     include: { leaveBalances: { where: { year }, take: 1 } },
@@ -127,7 +128,7 @@ export async function POST(req: Request) {
     provider: 'NONE', sent: 0, failed: 0, details: [],
   };
   if (!dryRun && recipients.length > 0) {
-    const provider = getSmsProvider();
+    const provider = getSmsProvider({ isDemo: session.isDemo === true });
     smsResult = await provider.send(recipients, tpl);
   }
 

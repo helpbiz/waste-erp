@@ -26,6 +26,9 @@ export type SessionPayload = {
   name: string;
   /* 개인정보 수집·이용 동의 — null이면 /consent 강제 이동 */
   consentedAt: string | null;
+  /* dealer-channel Design §7 — 데모 테넌트(isDemo=true) 계정 로그인 시 true.
+     실운영 데이터 접근 없음(격리는 contractorId 스코핑이 담당), SMS no-op 판단 등에만 사용. */
+  isDemo?: boolean;
 };
 
 export const CURRENT_PRIVACY_VERSION = 'v1.0-2026-04';
@@ -38,11 +41,11 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   return bcrypt.compare(plain, hash);
 }
 
-export async function issueSession(payload: SessionPayload): Promise<string> {
+export async function issueSession(payload: SessionPayload, ttlSec: number = SESSION_TTL_SEC): Promise<string> {
   const token = await new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_TTL_SEC}s`)
+    .setExpirationTime(`${ttlSec}s`)
     .sign(SECRET);
 
   /* secure flag — prod 기본값 true. E2E/CI 에서 http localhost로 테스트 시 COOKIE_SECURE=false 로 우회 */
@@ -52,7 +55,7 @@ export async function issueSession(payload: SessionPayload): Promise<string> {
     secure,
     sameSite: 'strict',
     path: '/',
-    maxAge: SESSION_TTL_SEC,
+    maxAge: ttlSec,
   });
   return token;
 }

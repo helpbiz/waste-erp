@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     phone: w.phone ?? null,
   }));
 
-  const provider = getSmsProvider();
+  const provider = getSmsProvider({ isDemo: session.isDemo === true });
   let result;
   try {
     result = await provider.send(recipients, b.message);

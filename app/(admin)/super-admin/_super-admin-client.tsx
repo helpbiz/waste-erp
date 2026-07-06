@@ -8,6 +8,7 @@ import OnboardingWizardModal from './_onboarding-wizard';
 import { PRESETS, type PresetKey } from '@/lib/permission-presets';
 import { UsersGlobalTab, SystemStatsTab, AuditLogTab, OrgTreeTab, ContractorTrashTab } from './_phase2-tabs';
 import ContractorFeaturesTab from './_features-tab';
+import LeadsTab from './_leads-tab';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { DateRangePresets } from '@/components/ui/date-range-presets';
 
@@ -66,7 +67,7 @@ type Aggregate = {
   } | null;
 };
 
-type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'facility-ops' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features' | 'data-reset';
+type SuperTab = 'munis' | 'policies' | 'aggregate' | 'gis' | 'company' | 'facilities' | 'facility-ops' | 'users-global' | 'system' | 'audit' | 'org-tree' | 'contractor-trash' | 'features' | 'data-reset' | 'leads';
 
 export default function SuperAdminClient() {
   const [tab, setTab] = useState<SuperTab>(() => {
@@ -135,6 +136,7 @@ export default function SuperAdminClient() {
         <Tab active={tab === 'contractor-trash'} onClick={() => setTab('contractor-trash')}>🗑 위탁업체 삭제·복구</Tab>
         <Tab active={tab === 'features'} onClick={() => setTab('features')}>🎛 회사별 기능 권한</Tab>
         <Tab active={tab === 'data-reset'} onClick={() => setTab('data-reset')}>🗑️ 테스트 데이터 초기화</Tab>
+        <Tab active={tab === 'leads'} onClick={() => setTab('leads')}>🤝 딜러 리드 승인</Tab>
       </div>
 
       {tab === 'munis' && <MunicipalitiesTab />}
@@ -151,6 +153,7 @@ export default function SuperAdminClient() {
       {tab === 'contractor-trash' && <ContractorTrashTab />}
       {tab === 'features' && <ContractorFeaturesTab />}
       {tab === 'data-reset' && <DataResetTab />}
+      {tab === 'leads' && <LeadsTab />}
     </div>
   );
 }

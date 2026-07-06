@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { verifyPassword, issueSession } from '@/lib/auth';
+import { DEMO_SESSION_TTL_SEC } from '@/lib/types/dealer';
 
 export const runtime = 'nodejs'; // bcrypt 사용
 
@@ -22,7 +23,10 @@ export async function POST(req: Request) {
   }
 
   const { username, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { username } });
+  const user = await prisma.user.findUnique({
+    where: { username },
+    include: { contractor: { select: { isDemo: true } } },
+  });
 
   if (!user || user.status !== 'ACTIVE') {
     /* 동일 메시지로 사용자 존재 여부 노출 방지 */
@@ -89,14 +93,21 @@ export async function POST(req: Request) {
   }
 
   /* 성공 — 카운트 + 잠금 모두 리셋 */
-  await issueSession({
-    userId: user.id.toString(),
-    role: user.role,
-    contractorId: user.contractorId?.toString() ?? null,
-    municipalityId: user.municipalityId?.toString() ?? null,
-    name: user.name,
-    consentedAt: user.privacyConsentAt?.toISOString() ?? null,
-  });
+  /* dealer-channel Design §7 — 데모 테넌트 계정은 짧은 TTL(45분)로 발급, 격리는
+     기존 contractorId 스코핑이 그대로 담당(세션 자체는 실계정과 동일 구조) */
+  const isDemo = user.contractor?.isDemo === true;
+  await issueSession(
+    {
+      userId: user.id.toString(),
+      role: user.role,
+      contractorId: user.contractorId?.toString() ?? null,
+      municipalityId: user.municipalityId?.toString() ?? null,
+      name: user.name,
+      consentedAt: user.privacyConsentAt?.toISOString() ?? null,
+      isDemo,
+    },
+    isDemo ? DEMO_SESSION_TTL_SEC : undefined,
+  );
 
   await prisma.user.update({
     where: { id: user.id },
@@ -120,8 +131,9 @@ export async function POST(req: Request) {
 
   /* Role 기반 랜딩 페이지.
      사용자 요청 2026-05-01: WORKER → /worker, 그 외 admin 모두 → /dashboard (메인 대시보드).
-     기존엔 /complaints (민원관리) 였으나 첫 화면은 종합 KPI dashboard 가 자연스럽다는 결정. */
-  const redirectTo = user.role === 'WORKER' ? '/worker' : '/dashboard';
+     기존엔 /complaints (민원관리) 였으나 첫 화면은 종합 KPI dashboard 가 자연스럽다는 결정.
+     dealer-channel Design §5.1 — DEALER는 dashboard 접근권이 없으므로 리드 페이지로. */
+  const redirectTo = user.role === 'WORKER' ? '/worker' : user.role === 'DEALER' ? '/dealer/leads' : '/dashboard';
 
   return NextResponse.json({
     ok: true,

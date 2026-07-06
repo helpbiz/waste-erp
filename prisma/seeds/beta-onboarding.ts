@@ -242,6 +242,23 @@ async function main() {
     }
   }
 
+  /* dealer-channel Design §8.5 Seed Data Requirements — e2e/dealer-channel.spec.ts 용 DEALER 계정 */
+  await prisma.user.upsert({
+    where: { username: 'dealer1' },
+    update: { status: 'ACTIVE', privacyConsentAt: new Date() },
+    create: {
+      username: 'dealer1',
+      passwordHash: hash,
+      role: 'DEALER',
+      name: 'E2E 테스트 딜러',
+      contractorId: null,
+      municipalityId: null,
+      status: 'ACTIVE',
+      privacyConsentAt: new Date(),
+    },
+  });
+  console.log('  ✓ DEALER: dealer1');
+
   console.log('\n✅ 베타 onboarding 시드 완료');
   console.log('───────────────────────────────────────');
   console.log('로그인 계정 (비밀번호: changeme1234!)');
@@ -252,6 +269,7 @@ async function main() {
   console.log('  • company2    — (주)파주환경 관리자');
   console.log('  • worker1a/b  — 강남 작업자 (1a 는 기동반)');
   console.log('  • worker2a    — 파주 작업자');
+  console.log('  • dealer1     — 딜러(dealer-channel Design §8.5, e2e 테스트용)');
 }
 
 main()

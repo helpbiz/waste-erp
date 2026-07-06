@@ -16,6 +16,9 @@ export const ROLE_RANK: Record<Role, number> = {
   CONTRACTOR_ADMIN: 60,
   INTERNAL_ADMIN: 40,
   WORKER: 10,
+  // dealer-channel Design §3.1 — 자원 생성권 없음, 리드 등록·데모 발급 전용 최소권한.
+  // 기존 5개 role 랭크·순서는 무수정.
+  DEALER: 5,
 };
 
 export const READ_ONLY_ROLES: Role[] = ['MUNI_ADMIN'];
@@ -63,7 +66,11 @@ export type Module =
   | 'payroll.settle'
   | 'report.view'
   | 'safety.input'
-  | 'safety.manage';
+  | 'safety.manage'
+  // dealer-channel Design §3.1 — DEALER 전용 최소권한 모듈. 기존 항목은 무수정.
+  | 'lead.create'
+  | 'lead.read.own'
+  | 'demo.provision';
 
 const MODULE_ACCESS: Record<Module, Role[]> = {
   'municipality.manage': ['SUPER_ADMIN'],
@@ -80,6 +87,9 @@ const MODULE_ACCESS: Record<Module, Role[]> = {
   'report.view':         ['SUPER_ADMIN', 'MUNI_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'],
   'safety.input':        ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'WORKER'],
   'safety.manage':       ['CONTRACTOR_ADMIN', 'INTERNAL_ADMIN'],
+  'lead.create':         ['DEALER'],
+  'lead.read.own':       ['DEALER'],
+  'demo.provision':      ['DEALER'],
 };
 
 export function canAccessModule(role: Role, mod: Module): boolean {

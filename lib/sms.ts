@@ -33,6 +33,28 @@ export interface SmsProvider {
   send(recipients: SmsRecipient[], message: string): Promise<SmsResult>;
 }
 
+/**
+ * dealer-channel Design §7 Security Considerations — 데모(isDemo) 테넌트에서는
+ * 실제 SMS/알림톡을 절대 발송하지 않는다(자유입력 데모에 실PII가 섞여 들어올 위험 대응).
+ * 발송 없이 no-op 처리만 하고 감사 목적의 로그성 결과를 반환.
+ */
+class DemoNoOpProvider implements SmsProvider {
+  name = 'DEMO_NOOP';
+  async send(recipients: SmsRecipient[], _message: string): Promise<SmsResult> {
+    return {
+      provider: this.name,
+      sent: 0,
+      failed: 0,
+      details: recipients.map((r) => ({
+        recipientType: r.type,
+        recipientName: r.name,
+        ok: true,
+        messageId: 'demo-noop',
+      })),
+    };
+  }
+}
+
 class SimulationProvider implements SmsProvider {
   name = 'SIMULATION';
   async send(recipients: SmsRecipient[], _message: string): Promise<SmsResult> {
@@ -254,7 +276,10 @@ class KakaoAlimtalkProvider implements SmsProvider {
   }
 }
 
-export function getSmsProvider(): SmsProvider {
+export function getSmsProvider(opts?: { isDemo?: boolean }): SmsProvider {
+  /* dealer-channel Design §7 — 데모 스코프는 env(SMS_PROVIDER)와 무관하게 항상 no-op */
+  if (opts?.isDemo) return new DemoNoOpProvider();
+
   const p = (process.env.SMS_PROVIDER ?? 'simulation').toLowerCase();
   if (p === 'solapi') return new SolapiProvider();
   if (p === 'kakao')  return new KakaoAlimtalkProvider();

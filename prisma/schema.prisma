@@ -18,6 +18,7 @@ enum Role {
   CONTRACTOR_ADMIN
   INTERNAL_ADMIN
   WORKER
+  DEALER // dealer-channel Design §3.1 — 리드 등록·데모 발급만 가능, 자원 생성권 없음
 }
 
 enum MunicipalityStatus {
@@ -30,6 +31,13 @@ enum ContractorStatus {
   SETUP
   ACTIVE
   EXPIRED
+}
+
+// dealer-channel Design §3.1
+enum LeadStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum UserStatus {
@@ -181,6 +189,10 @@ model Municipality {
   createdAt DateTime           @default(now()) @map("created_at")
   createdBy BigInt?            @map("created_by")
 
+  // dealer-channel Design §3.1 — 데모 샌드박스 격리·정리용(격리 자체는 기존 contractorId/municipalityId 스코핑이 담당, 이 플래그는 라벨링·정리 대상 식별 전용)
+  isDemo        Boolean   @default(false) @map("is_demo")
+  demoExpiresAt DateTime? @map("demo_expires_at")
+
   contractors         Contractor[]
   adminDongs          AdminDong[]
   accessPolicy        MuniAccessPolicy?
@@ -188,6 +200,7 @@ model Municipality {
   treatmentFacilities WasteTreatmentFacility[]
 
   @@index([region, status])
+  @@index([isDemo, demoExpiresAt])
   @@map("municipalities")
 }
 
@@ -213,7 +226,15 @@ model Contractor {
   garageLng      Decimal?         @map("garage_lng") @db.Decimal(11, 7)
   createdAt      DateTime         @default(now()) @map("created_at")
 
+  // dealer-channel Design §3.1 — 영업 귀속(정산용) + 데모 격리·정리
+  dealerId      BigInt?   @map("dealer_id")
+  isDemo        Boolean   @default(false) @map("is_demo")
+  demoExpiresAt DateTime? @map("demo_expires_at")
+  // 2026-07-06 — 예비고객이 딜러 개입 없이 바로 접속하는 매직링크. isDemo=true인 경우만 값 존재.
+  demoAccessToken String? @unique @map("demo_access_token")
+
   municipality       Municipality            @relation(fields: [municipalityId], references: [id])
+  dealerCommissions   DealerCommission[]
   cleaningZones      CleaningZone[]
   adminDongs         AdminDong[]
   users              User[]
@@ -247,7 +268,57 @@ model Contractor {
   workerZones         WorkerZone[]
 
   @@index([municipalityId])
+  @@index([dealerId])
+  @@index([isDemo, demoExpiresAt])
   @@map("contractors")
+}
+
+/// dealer-channel Design §3.1 — 딜러가 등록하는 잠재고객 리드. SUPER_ADMIN 승인 시
+/// ProvisioningService 를 통해 실제 Municipality+Contractor+CONTRACTOR_ADMIN 계정으로 전환된다.
+model Lead {
+  id              BigInt     @id @default(autoincrement())
+  dealerId        BigInt     @map("dealer_id")
+  prospectName    String     @map("prospect_name") @db.VarChar(100)
+  prospectContact String?    @map("prospect_contact") @db.VarChar(50)
+  referralCode    String     @unique @map("referral_code") @db.VarChar(30)
+  status          LeadStatus @default(PENDING)
+  memo            String?    @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at")
+  reviewedAt      DateTime?  @map("reviewed_at")
+  reviewedBy      BigInt?    @map("reviewed_by")
+  // 승인 후 생성된 Contractor 역참조 (contractor.dealerId 로도 귀속되지만, 리드→결과물 추적용으로 별도 보관)
+  contractorId    BigInt?    @map("contractor_id")
+
+  // 2026-07-06 승인플로우 간소화 — 딜러가 리드 등록/보강 시점에 입력, SUPER_ADMIN은 승인 시 검토·확정만.
+  // adminPassword는 절대 여기 저장하지 않음(백도어 방지) — 승인 시 시스템이 자동생성.
+  municipalityName     String? @map("municipality_name") @db.VarChar(100)
+  municipalityCode     String? @map("municipality_code") @db.VarChar(20)
+  municipalityRegion   String? @map("municipality_region") @db.VarChar(50)
+  contractorName       String? @map("contractor_name") @db.VarChar(100)
+  contractorBusinessNo String? @map("contractor_business_no") @db.VarChar(20)
+  adminUsername        String? @map("admin_username") @db.VarChar(50)
+  adminName            String? @map("admin_name") @db.VarChar(50)
+
+  dealer User @relation(fields: [dealerId], references: [id])
+
+  @@index([dealerId, status])
+  @@map("leads")
+}
+
+/// dealer-channel Design §3.1 — 커미션 자리 예약(컬럼만, UI/자동정산 로직 없음).
+/// 기존 "정산"(지자체-위탁업체 원가정산)과 용어·개념이 다르므로 별도 모델로 분리.
+model DealerCommission {
+  id             BigInt   @id @default(autoincrement())
+  dealerId       BigInt   @map("dealer_id")
+  contractorId   BigInt   @map("contractor_id")
+  commissionRate Decimal  @default(0) @map("commission_rate") @db.Decimal(5, 4)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  dealer     User       @relation(fields: [dealerId], references: [id])
+  contractor Contractor @relation(fields: [contractorId], references: [id])
+
+  @@index([dealerId])
+  @@map("dealer_commissions")
 }
 
 /// 사용자별 WebPush 구독 — 백그라운드 푸시 수신용.
@@ -337,6 +408,9 @@ model User {
   name           String     @db.VarChar(50)
   phone          String?    @db.VarChar(20)
   employeeNo     String?    @map("employee_no") @db.VarChar(30)
+  // dealer-channel Design §3.1 확장 — DEALER role 전용 표시용 라벨(순수 문자열, 그룹 단위
+  // 쿼터·정산·조회 권한 없음. 실제 그룹 집계가 필요해지면 별도 DealerGroup 모델로 승격)
+  dealerCompany  String?    @map("dealer_company") @db.VarChar(100)
   status         UserStatus @default(PENDING)
   lastLogin      DateTime?  @map("last_login")
   createdAt      DateTime   @default(now()) @map("created_at")
@@ -423,6 +497,9 @@ model User {
   payslipsApproved           PayslipRecord[]      @relation("PayslipApprover")
   payrollPoliciesApproving   PayrollPolicy[]      @relation("PayrollPolicyApprover")
   workerZones                WorkerZone[]
+  // dealer-channel Design §3.1 — role=DEALER 인 User가 등록하는 리드·커미션
+  leadsSubmitted             Lead[]
+  dealerCommissions          DealerCommission[]
 
   @@index([contractorId])
   @@index([role])
