@@ -16,10 +16,23 @@ import { resolveDemoAccessToken } from '@/lib/services/dealer/demo-lifecycle-ser
 
 export const runtime = 'nodejs';
 
+/**
+ * nginx가 내부 컨테이너 바인딩 주소(0.0.0.0:3000 등)가 아니라 실제 공개 도메인으로
+ * 리다이렉트하도록, req.url 대신 프록시가 전달하는 헤더로 origin을 재구성한다.
+ * (2026-07-06 실제 프로덕션에서 발견 — req.url 그대로 쓰면 내부 주소로 리다이렉트되어
+ * 예비고객 브라우저가 접속 불가능한 사고가 있었음)
+ */
+function resolvePublicOrigin(req: Request): string {
+  const proto = req.headers.get('x-forwarded-proto') ?? new URL(req.url).protocol.replace(':', '');
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? new URL(req.url).host;
+  return `${proto}://${host}`;
+}
+
 export async function GET(req: Request, { params }: { params: { token: string } }) {
+  const origin = resolvePublicOrigin(req);
   const resolved = await resolveDemoAccessToken(params.token);
   if (!resolved) {
-    return NextResponse.redirect(new URL('/login?error=demo_link_invalid', req.url));
+    return NextResponse.redirect(new URL('/login?error=demo_link_invalid', origin));
   }
   const { contractor, adminUser } = resolved;
 
@@ -49,5 +62,5 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     },
   }).catch(() => null);
 
-  return NextResponse.redirect(new URL('/dashboard', req.url));
+  return NextResponse.redirect(new URL('/dashboard', origin));
 }
