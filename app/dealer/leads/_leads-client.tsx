@@ -148,6 +148,15 @@ export default function LeadsClient() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-4 text-xl font-bold">리드 등록</h1>
+
+      <a
+        href="/dealer/help"
+        className="mb-4 flex items-center gap-2 rounded-xl border-2 border-blue-300 bg-blue-50 p-4 text-blue-900 hover:bg-blue-100"
+      >
+        <span className="text-2xl">📖</span>
+        <span className="font-bold">처음이신가요? 사용법을 먼저 보세요 (클릭)</span>
+      </a>
+
       <p className="mb-4 text-sm text-ink-muted">
         먼저 시스템을 소개하고, 예비고객이 &ldquo;테스트해보고 싶다&rdquo;고 하면 아래 회사정보를 입력해 주세요
         (지금 몰라도 나중에 리드 목록에서 &ldquo;정보 입력&rdquo;으로 이어서 채울 수 있습니다).
