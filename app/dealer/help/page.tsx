@@ -49,6 +49,11 @@ export default async function DealerHelpPage() {
           💡 <b>안심하세요</b>: 이 주소는 <b>연습용 화면</b>이에요. 진짜 정보가 아니라서 아무렇게나 눌러봐도 괜찮아요.
           또 <b>14일 뒤에는 저절로 없어지니까</b> 따로 정리 안 하셔도 돼요.
         </div>
+        <div className="mt-4 rounded-xl bg-white p-4 text-sm">
+          🗑 <b>데모는 최대 3개까지만 만들 수 있어요.</b> 다 써서 새로 못 만든다면, 목록에서 필요 없어진
+          데모 옆의 <b>&ldquo;지금 삭제&rdquo;</b>를 누르세요. 14일을 기다리지 않고 바로 지워지고,
+          지운 즉시 새 데모를 다시 만들 수 있어요.
+        </div>
       </section>
 
       <section className="rounded-2xl border-4 border-green-300 bg-green-50 p-6">
@@ -107,6 +112,10 @@ export default async function DealerHelpPage() {
           <div>
             <dt className="font-bold">Q. 지자체(시/군/구) 담당자를 만나요. 뭘 보여줘요?</dt>
             <dd className="text-ink-muted"><a href="/dealer/demo" className="font-bold text-blue-700 underline">영업 데모</a>에서 <b>&ldquo;지자체 모드 데모 (회사 3곳)&rdquo;</b>를 누르세요. 회사가 여러 곳이어도 한눈에 관리하는 화면을 바로 보여줄 수 있어요.</dd>
+          </div>
+          <div>
+            <dt className="font-bold">Q. 데모가 3개 다 차서 새로 못 만들어요.</dt>
+            <dd className="text-ink-muted"><a href="/dealer/demo" className="font-bold text-blue-700 underline">영업 데모</a> 목록에서 이제 안 쓰는 데모 옆의 <b>&ldquo;지금 삭제&rdquo;</b>를 누르세요. 바로 자리가 비워져서 새 데모를 만들 수 있어요.</dd>
           </div>
         </dl>
       </section>
