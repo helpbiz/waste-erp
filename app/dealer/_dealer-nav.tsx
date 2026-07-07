@@ -7,6 +7,7 @@ const LINKS = [
   { href: '/dealer/help', label: '📖 사용법' },
   { href: '/dealer/leads', label: '리드 등록' },
   { href: '/dealer/demo', label: '영업 데모' },
+  { href: '/dealer/profile', label: '🔑 내 계정' },
 ];
 
 export default function DealerNav() {

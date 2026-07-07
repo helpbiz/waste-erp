@@ -92,6 +92,10 @@ export default async function DealerHelpPage() {
             <dd className="text-ink-muted">회사(관리자)한테 전화하세요. 새로 만들어줘요.</dd>
           </div>
           <div>
+            <dt className="font-bold">Q. 비밀번호를 바꾸고 싶어요.</dt>
+            <dd className="text-ink-muted">위쪽 메뉴에서 <a href="/dealer/profile" className="font-bold text-blue-700 underline">🔑 내 계정</a>을 누르면 직접 바꿀 수 있어요.</dd>
+          </div>
+          <div>
             <dt className="font-bold">Q. 뭘 눌러야 할지 모르겠어요.</dt>
             <dd className="text-ink-muted">괜찮아요! 이 페이지 맨 위로 다시 올라가서, 파란색(🅰️)부터 하나씩 눌러보세요.</dd>
           </div>
