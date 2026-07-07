@@ -310,6 +310,43 @@ async function seedDemoData(contractorId: bigint): Promise<void> {
   await prisma.complaint.createMany({ data: complaintRows });
 }
 
+/**
+ * 딜러가 필요 없어진 단독 회사 데모를 만료를 기다리지 않고 즉시 삭제해 쿼터 슬롯을 회수한다.
+ * cleanupExpiredDemos()와 동일한 삭제 로직(deleteDemoContractorData/deleteDemoMunicipalityIfEmpty)을
+ * 재사용 — 소유 딜러 검증만 추가.
+ */
+export async function deleteDemoNow(contractorId: bigint, dealerId: bigint): Promise<void> {
+  const contractor = await prisma.contractor.findUnique({ where: { id: contractorId } });
+  if (!contractor || contractor.dealerId !== dealerId || !contractor.isDemo) throw new DemoNotFoundError();
+
+  await prisma.$transaction(async (tx) => {
+    await deleteDemoContractorData(tx, contractorId);
+    await deleteDemoMunicipalityIfEmpty(tx, contractor.municipalityId);
+  });
+}
+
+/** 지자체 모드 그룹 데모 즉시 삭제 — 산하 위탁업체 전부 + MUNI_ADMIN 계정 + 지자체까지 한 번에 정리 */
+export async function deleteMunicipalityDemoNow(municipalityId: bigint, dealerId: bigint): Promise<void> {
+  const municipality = await prisma.municipality.findUnique({ where: { id: municipalityId } });
+  if (!municipality || municipality.createdBy !== dealerId || !municipality.isDemo) throw new DemoNotFoundError();
+
+  const contractors = await prisma.contractor.findMany({
+    where: { municipalityId, isDemo: true },
+    select: { id: true },
+  });
+
+  for (const c of contractors) {
+    await prisma.$transaction(async (tx) => {
+      await deleteDemoContractorData(tx, c.id);
+      await deleteDemoMunicipalityIfEmpty(tx, municipalityId);
+    });
+  }
+  // 산하 위탁업체가 애초에 0개였던 경우(이론상 없음, 방어) — 지자체만 남아있으면 마저 정리
+  await prisma.$transaction(async (tx) => {
+    await deleteDemoMunicipalityIfEmpty(tx, municipalityId);
+  });
+}
+
 export type CleanupResult = { dryRun: boolean; contractorsDeleted: number };
 
 /**

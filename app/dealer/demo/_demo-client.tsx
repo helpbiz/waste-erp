@@ -70,6 +70,7 @@ export default function DemoClient() {
   const [justCreatedMuni, setJustCreatedMuni] = useState<ProvisionMunicipalityResult | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -140,6 +141,22 @@ export default function DemoClient() {
     setRegenerating(municipalityId);
     const res = await fetch(`/api/dealer/demo/municipality/${municipalityId}/regenerate-link`, { method: 'POST' });
     setRegenerating(null);
+    if (res.ok) await load();
+  }
+
+  async function deleteNow(contractorId: string) {
+    if (!confirm('이 데모를 지금 바로 삭제할까요? 되돌릴 수 없습니다.')) return;
+    setDeleting(contractorId);
+    const res = await fetch(`/api/dealer/demo/${contractorId}`, { method: 'DELETE' });
+    setDeleting(null);
+    if (res.ok) await load();
+  }
+
+  async function deleteMunicipalityNow(municipalityId: string) {
+    if (!confirm('이 지자체 모드 데모(회사 전부)를 지금 바로 삭제할까요? 되돌릴 수 없습니다.')) return;
+    setDeleting(municipalityId);
+    const res = await fetch(`/api/dealer/demo/municipality/${municipalityId}`, { method: 'DELETE' });
+    setDeleting(null);
     if (res.ok) await load();
   }
 
@@ -237,6 +254,14 @@ export default function DemoClient() {
                     >
                       {regenerating === item.municipalityId ? '재발급 중…' : '링크 재발급'}
                     </button>
+                    <button
+                      onClick={() => deleteMunicipalityNow(item.municipalityId)}
+                      disabled={deleting === item.municipalityId}
+                      title="필요 없어졌으면 지금 바로 삭제해서 데모 슬롯을 회수합니다"
+                      className="whitespace-nowrap rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
+                    >
+                      {deleting === item.municipalityId ? '삭제 중…' : '지금 삭제'}
+                    </button>
                   </div>
                 )}
               </li>
@@ -269,6 +294,14 @@ export default function DemoClient() {
                       className="whitespace-nowrap rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-50"
                     >
                       {regenerating === item.contractorId ? '재발급 중…' : '링크 재발급'}
+                    </button>
+                    <button
+                      onClick={() => deleteNow(item.contractorId)}
+                      disabled={deleting === item.contractorId}
+                      title="필요 없어졌으면 지금 바로 삭제해서 데모 슬롯을 회수합니다"
+                      className="whitespace-nowrap rounded border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-50"
+                    >
+                      {deleting === item.contractorId ? '삭제 중…' : '지금 삭제'}
                     </button>
                   </div>
                 )}
