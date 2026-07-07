@@ -13,6 +13,7 @@ type Item = {
   reporter: string; assignee: string | null;
   zoneName: string | null; resolveNote: string | null;
   resolvedAt: string | null; complainantPhone: string | null;
+  photosBefore: string[]; photosAfter: string[];
 };
 
 export default function ComplaintsPrintClient({
@@ -67,6 +68,7 @@ export default function ComplaintsPrintClient({
                 <th className="border border-slate-300 px-2 py-2 text-center font-extrabold w-16">담당자</th>
                 <th className="border border-slate-300 px-2 py-2 text-center font-extrabold w-28">완료일시</th>
                 <th className="border border-slate-300 px-2 py-2 text-left font-extrabold min-w-[120px]">처리 내용</th>
+                <th className="border border-slate-300 px-2 py-2 text-center font-extrabold w-32">사진</th>
               </tr>
             </thead>
             <tbody>
@@ -84,6 +86,33 @@ export default function ComplaintsPrintClient({
                     {c.resolvedAt ? fmt(c.resolvedAt) : '—'}
                   </td>
                   <td className="border border-slate-300 px-2 py-1.5 whitespace-pre-wrap">{c.resolveNote ?? '—'}</td>
+                  <td className="border border-slate-300 px-1 py-1 align-top">
+                    {c.photosBefore.length > 0 && (
+                      <div className="mb-1">
+                        <div className="text-[0.6rem] font-bold text-slate-500 mb-0.5">접수 전</div>
+                        <div className="flex flex-wrap gap-1">
+                          {c.photosBefore.map((src, i) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={i} src={src} alt={`접수 전 ${i + 1}`} className="w-14 h-14 object-cover rounded border border-slate-200" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {c.photosAfter.length > 0 && (
+                      <div>
+                        <div className="text-[0.6rem] font-bold text-slate-500 mb-0.5">처리 후</div>
+                        <div className="flex flex-wrap gap-1">
+                          {c.photosAfter.map((src, i) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={i} src={src} alt={`처리 후 ${i + 1}`} className="w-14 h-14 object-cover rounded border border-slate-200" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {c.photosBefore.length === 0 && c.photosAfter.length === 0 && (
+                      <span className="text-slate-300 text-[0.65rem]">없음</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

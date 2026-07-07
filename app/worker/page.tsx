@@ -239,7 +239,7 @@ function MenuCard({
 }
 
 function todayLabel() {
-  const d = new Date();
+  const d = new Date(Date.now() + 9 * 60 * 60 * 1000); // UTC → KST
   const days = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+  return `${d.getUTCFullYear()}년 ${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${days[d.getUTCDay()]})`;
 }

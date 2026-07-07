@@ -11,6 +11,11 @@ const STATUS_LABEL: Record<string, string> = {
   COMPLETED: '완료', REJECTED: '반려',
 };
 
+const TYPE_LABEL: Record<string, string> = {
+  PICKUP_MISS: '수거 미비', ILLEGAL_DUMP: '불법투기', ODOR_NOISE: '악취/소음',
+  BULKY_WASTE: '대형폐기물', OTHER: '기타',
+};
+
 export default async function ComplaintsPrintPage({
   searchParams,
 }: {
@@ -39,7 +44,7 @@ export default async function ComplaintsPrintPage({
   const items = rows.map((c, idx) => ({
     no: idx + 1,
     id: c.id.toString(),
-    type: c.type,
+    type: TYPE_LABEL[c.type] ?? c.type,
     status: STATUS_LABEL[c.status] ?? c.status,
     description: c.description ?? '',
     locationAddress: c.locationAddress ?? '',
@@ -51,6 +56,8 @@ export default async function ComplaintsPrintPage({
     resolveNote: c.resolveNote ?? null,
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
     complainantPhone: c.complainantPhone ?? null,
+    photosBefore: Array.isArray(c.photosBefore) ? (c.photosBefore as string[]) : [],
+    photosAfter: Array.isArray(c.photosAfter) ? (c.photosAfter as string[]) : [],
   }));
 
   const fromStr = from.toISOString().slice(0, 10);

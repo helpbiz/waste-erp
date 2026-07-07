@@ -20,12 +20,13 @@ export default async function VehiclePrintPage({ searchParams }: { searchParams:
   const vehicleId = searchParams.vehicleId;
   const autoprint = searchParams.autoprint === '1';
 
-  /* 출력과 엑셀 export가 동일한 범위를 보여주도록 vehicleLogWhere 단일화 */
+  /* 출력은 제출 완료(SUBMITTED/APPROVED)만 표시 — 임시저장(DRAFT) 제외 */
   const logWhere = {
     ...vehicleLogWhere(session),
     logDate: date,
     ...(vehicleId ? { vehicleId: BigInt(vehicleId) } : {}),
   };
+  (logWhere as Record<string, unknown>).status = { in: ['SUBMITTED', 'APPROVED'] };
 
   const FUEL_LABEL: Record<string, string> = {
     DIESEL: '경유', LPG: 'LPG', ELECTRIC: '전기', CNG: 'CNG', GASOLINE: '휘발유',

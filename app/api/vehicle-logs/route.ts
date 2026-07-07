@@ -107,17 +107,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'date_not_today' }, { status: 422 });
   }
 
-  /* 1일 1회 제출 제한 — 해당 날짜에 SUBMITTED/APPROVED 기록이 있으면 중복 차단 */
+  /* 당일 기존 기록 확인 — SUBMITTED/APPROVED이면 차단, DRAFT이면 재사용(네트워크 재시도 대응) */
   const todayLog = await prisma.vehicleLog.findFirst({
-    where: {
-      vehicleId: vehicle.id,
-      logDate,
-      status: { in: ['SUBMITTED', 'APPROVED'] },
-    },
+    where: { vehicleId: vehicle.id, logDate },
     select: { id: true, status: true },
+    orderBy: { id: 'desc' },
   });
   if (todayLog) {
-    return NextResponse.json({ error: 'duplicate_log_today', status: todayLog.status }, { status: 409 });
+    if (todayLog.status === 'SUBMITTED' || todayLog.status === 'APPROVED') {
+      return NextResponse.json({ error: 'duplicate_log_today', status: todayLog.status }, { status: 409 });
+    }
+    /* DRAFT가 이미 있으면 새로 생성하지 않고 기존 반환 (중복 방지) */
+    return NextResponse.json({
+      ok: true,
+      log: { id: todayLog.id.toString(), status: todayLog.status, logDate: logDate.toISOString().slice(0, 10) },
+    });
   }
 
   const log = await prisma.vehicleLog.create({

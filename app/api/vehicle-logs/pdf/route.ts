@@ -38,11 +38,13 @@ export async function GET(req: Request) {
   }
 
   const date = new Date(dateStr);
+  /* PDF 출력은 제출 완료(SUBMITTED/APPROVED)만 포함 */
   const logWhere = {
     ...vehicleLogWhere(session),
     logDate: date,
     ...(vehicleIdParam ? { vehicleId: BigInt(vehicleIdParam) } : {}),
   };
+  (logWhere as Record<string, unknown>).status = { in: ['SUBMITTED', 'APPROVED'] };
 
   try {
     const logs = await prisma.vehicleLog.findMany({
