@@ -25,7 +25,7 @@ export default async function DealerHelpPage() {
           </li>
           <li className="flex gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white">2</span>
-            <span><b>&ldquo;데모 즉시 발급&rdquo;</b> 버튼을 눌러요. (몇 초만 기다리면 돼요)</span>
+            <span>버튼 두 개 중 하나를 눌러요. (몇 초만 기다리면 돼요)</span>
           </li>
           <li className="flex gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white">3</span>
@@ -40,6 +40,11 @@ export default async function DealerHelpPage() {
             <span>고객님이 그 주소를 누르면 — 끝! 비밀번호 없이 바로 구경할 수 있어요.</span>
           </li>
         </ol>
+        <div className="mt-4 rounded-xl bg-white p-4 text-sm space-y-2">
+          <p><b>어떤 버튼을 눌러야 하나요?</b></p>
+          <p>🏢 <b>&ldquo;데모 즉시 발급 (회사 1곳)&rdquo;</b> — 청소업체 사장님께 보여줄 때. 가짜 회사 1곳이 만들어져요.</p>
+          <p>🏛 <b>&ldquo;지자체 모드 데모 (회사 3곳)&rdquo;</b> — 시청·군청·구청 담당자께 보여줄 때. 가짜 회사 3곳이 한 번에 만들어지고, 그 3곳을 <b>한눈에 모아 보는 화면</b>까지 같이 보여줄 수 있어요.</p>
+        </div>
         <div className="mt-4 rounded-xl bg-white p-4 text-sm">
           💡 <b>안심하세요</b>: 이 주소는 <b>연습용 화면</b>이에요. 진짜 정보가 아니라서 아무렇게나 눌러봐도 괜찮아요.
           또 <b>14일 뒤에는 저절로 없어지니까</b> 따로 정리 안 하셔도 돼요.
@@ -98,6 +103,10 @@ export default async function DealerHelpPage() {
           <div>
             <dt className="font-bold">Q. 뭘 눌러야 할지 모르겠어요.</dt>
             <dd className="text-ink-muted">괜찮아요! 이 페이지 맨 위로 다시 올라가서, 파란색(🅰️)부터 하나씩 눌러보세요.</dd>
+          </div>
+          <div>
+            <dt className="font-bold">Q. 지자체(시/군/구) 담당자를 만나요. 뭘 보여줘요?</dt>
+            <dd className="text-ink-muted"><a href="/dealer/demo" className="font-bold text-blue-700 underline">영업 데모</a>에서 <b>&ldquo;지자체 모드 데모 (회사 3곳)&rdquo;</b>를 누르세요. 회사가 여러 곳이어도 한눈에 관리하는 화면을 바로 보여줄 수 있어요.</dd>
           </div>
         </dl>
       </section>
