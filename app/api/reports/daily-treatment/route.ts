@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { readSession } from '@/lib/auth';
 import { loadReportTemplate } from '@/lib/report/template-loader';
 import { resolveReportData } from '@/lib/report/data-resolver';
+import { prisma } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -30,8 +31,14 @@ export async function GET(req: Request) {
   if (session.role === 'SUPER_ADMIN') {
     contractorId = contractorIdQ || session.contractorId;
   } else if (session.role === 'MUNI_ADMIN') {
-    /* MUNI_ADMIN은 자기 관할 contractor 중 1곳 contractorId 필수 */
+    /* MUNI_ADMIN은 자기 관할 contractor 중 1곳 contractorId 필수 — 관할 소속 검증(org-chart와 동일 패턴) */
     if (!contractorIdQ) return NextResponse.json({ error: 'contractor_required' }, { status: 400 });
+    const cid = (() => { try { return BigInt(contractorIdQ); } catch { return null; } })();
+    if (!cid) return NextResponse.json({ error: 'invalid_contractor_id' }, { status: 400 });
+    const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { municipalityId: true } });
+    if (!c || c.municipalityId.toString() !== session.municipalityId) {
+      return NextResponse.json({ error: 'forbidden_contractor' }, { status: 403 });
+    }
     contractorId = contractorIdQ;
   } else if (session.contractorId) {
     contractorId = session.contractorId;

@@ -192,6 +192,8 @@ model Municipality {
   // dealer-channel Design §3.1 — 데모 샌드박스 격리·정리용(격리 자체는 기존 contractorId/municipalityId 스코핑이 담당, 이 플래그는 라벨링·정리 대상 식별 전용)
   isDemo        Boolean   @default(false) @map("is_demo")
   demoExpiresAt DateTime? @map("demo_expires_at")
+  // 2026-07-08 — 지자체 모드 그룹 데모(MUNI_ADMIN 데모 계정) 전용 매직링크 토큰. isDemo=true일 때만 값 존재.
+  demoAccessToken String? @unique @map("demo_access_token")
 
   contractors         Contractor[]
   adminDongs          AdminDong[]
@@ -504,6 +506,8 @@ model User {
   @@index([contractorId])
   @@index([role])
   @@index([primaryFacilityId])
+  // dealer-channel — 데모 지자체 정리(cleanup)가 municipalityId+role로 MUNI_ADMIN 데모 계정을 조회함
+  @@index([municipalityId])
   @@map("users")
 }
 

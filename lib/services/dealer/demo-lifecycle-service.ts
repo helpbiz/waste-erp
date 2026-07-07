@@ -10,7 +10,11 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { provision, type ProvisionResult } from './provisioning-service';
 import { deleteDemoContractorData, deleteDemoMunicipalityIfEmpty } from '@/lib/demo/table-order';
-import { DEALER_DEMO_QUOTA, DEMO_TTL_DAYS } from '@/lib/types/dealer';
+import { DEALER_DEMO_QUOTA, DEMO_TTL_DAYS, MUNI_DEMO_COMPANY_COUNT } from '@/lib/types/dealer';
+
+function randomSuffix(len = 12): string {
+  return randomBytes(len).toString('hex').slice(0, len);
+}
 
 export class DemoNotFoundError extends Error {
   constructor() { super('demo_not_found'); }
@@ -20,9 +24,16 @@ export class DemoQuotaExceededError extends Error {
   constructor() { super('demo_quota_exceeded'); }
 }
 
+/**
+ * 딜러당 활성 데모 개수 — Contractor가 아니라 "데모 지자체(Municipality)" 단위로 센다.
+ * 단독 회사 데모(무니1:회사1)와 지자체 모드 그룹 데모(무니1:회사3)를 동일하게 "1"로 카운트해
+ * 쿼터가 자연히 통일된다(에이전트팀 검토 권고). Municipality.createdBy는 dealer-channel
+ * 경로에서만 dealerId가 세팅되므로(provision()/provisionMunicipalityDemo() 실측 확인)
+ * isDemo=true 범위 안에서는 안전하게 dealerId로 취급 가능.
+ */
 export async function countActiveDemos(dealerId: bigint): Promise<number> {
-  return prisma.contractor.count({
-    where: { dealerId, isDemo: true, demoExpiresAt: { gt: new Date() } },
+  return prisma.municipality.count({
+    where: { createdBy: dealerId, isDemo: true, demoExpiresAt: { gt: new Date() } },
   });
 }
 
@@ -58,24 +69,152 @@ export async function listActiveDemos(dealerId: bigint) {
   });
 }
 
+export type ProvisionMunicipalityDemoResult = {
+  municipalityId: bigint;
+  contractorIds: bigint[];
+  adminUsername: string;
+  generatedPassword: string;
+  demoAccessToken: string;
+  expiresAt: string;
+};
+
+/**
+ * 지자체 모드 그룹 데모 — 가상 지자체 1개 + 가상 위탁업체 MUNI_DEMO_COMPANY_COUNT개 +
+ * MUNI_ADMIN 데모 계정 1개를 한 번에 만들어 3개 회사를 통합 모니터링하는 실제
+ * MUNI_ADMIN 대시보드를 시연할 수 있게 한다(에이전트팀 조건부 승인, 2026-07-08).
+ *
+ * 절대 제약: 관리자 계정 role은 반드시 MUNI_ADMIN — SUPER_ADMIN 부여 코드 경로 신설 금지
+ * (provisioning-service.ts의 기존 CONTRACTOR_ADMIN 하드코딩 원칙과 동일하게 적용).
+ * 지자체 생성 트랜잭션과 각 회사의 데이터 시딩(seedDemoData)은 분리한다 — 시딩까지
+ * 하나의 긴 트랜잭션에 묶으면 실서비스와 같은 DB의 락 점유 시간이 길어짐(DB 안정성 검토 권고).
+ */
+export async function provisionMunicipalityDemo(dealerId: bigint): Promise<ProvisionMunicipalityDemoResult> {
+  const activeCount = await countActiveDemos(dealerId);
+  if (activeCount >= DEALER_DEMO_QUOTA) throw new DemoQuotaExceededError();
+
+  const suffix = Date.now().toString(36).slice(-6);
+  const demoExpiresAt = new Date(Date.now() + DEMO_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const demoAccessToken = randomBytes(32).toString('base64url');
+  const generatedPassword = randomSuffix(12);
+  const adminUsername = `muni_demo_${suffix}`;
+
+  const created = await prisma.$transaction(async (tx) => {
+    const municipality = await tx.municipality.create({
+      data: {
+        name: `데모지자체-${suffix}`,
+        code: `DEMO-M-${randomSuffix(10)}`,
+        status: 'ACTIVE',
+        createdBy: dealerId,
+        isDemo: true,
+        demoExpiresAt,
+        demoAccessToken,
+      },
+    });
+
+    await tx.muniAccessPolicy.create({ data: { municipalityId: municipality.id, updatedBy: dealerId } });
+
+    await tx.user.create({
+      data: {
+        municipalityId: municipality.id,
+        username: adminUsername,
+        passwordHash: await hashPassword(generatedPassword),
+        role: 'MUNI_ADMIN', // 절대 SUPER_ADMIN 아님 — provisioning-service.ts와 동일한 하드코딩 원칙
+        name: '데모 지자체관리자',
+        status: 'ACTIVE',
+      },
+    });
+
+    const contractorIds: bigint[] = [];
+    for (let i = 1; i <= MUNI_DEMO_COMPANY_COUNT; i += 1) {
+      await tx.wasteTreatmentFacility.create({
+        data: {
+          municipalityId: municipality.id,
+          type: 'OTHER',
+          name: `데모위탁업체${i}-${suffix} (데모 기본시설)`,
+          active: true,
+        },
+      });
+      const contractor = await tx.contractor.create({
+        data: {
+          municipalityId: municipality.id,
+          companyName: `데모위탁업체${i}-${suffix}`,
+          businessNo: `DEMO-${randomSuffix(12)}`,
+          status: 'ACTIVE',
+          dealerId,
+          isDemo: true,
+          demoExpiresAt,
+        },
+      });
+      contractorIds.push(contractor.id);
+    }
+
+    return { municipalityId: municipality.id, contractorIds };
+  });
+
+  for (const contractorId of created.contractorIds) {
+    await seedDemoData(contractorId);
+  }
+
+  return {
+    municipalityId: created.municipalityId,
+    contractorIds: created.contractorIds,
+    adminUsername,
+    generatedPassword,
+    demoAccessToken,
+    expiresAt: demoExpiresAt.toISOString(),
+  };
+}
+
+export async function listActiveMunicipalityDemos(dealerId: bigint) {
+  const municipalities = await prisma.municipality.findMany({
+    where: { createdBy: dealerId, isDemo: true },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, name: true, demoExpiresAt: true, createdAt: true, demoAccessToken: true,
+      contractors: { where: { isDemo: true }, select: { id: true, companyName: true } },
+    },
+  });
+  return municipalities;
+}
+
 /**
  * 2026-07-06 — 예비고객이 딜러 개입 없이 바로 접속하는 매직링크 토큰 검증.
  * isDemo=true + 만료 전인 Contractor만 매칭, 해당 데모의 CONTRACTOR_ADMIN 계정을 함께 반환한다.
+ *
+ * 2026-07-08 — 지자체 모드 그룹 데모 확장: 토큰이 Contractor 것이 아니면 Municipality
+ * 것인지 확인한다(둘 다 32바이트 랜덤이라 충돌 사실상 불가능). Municipality 쪽은
+ * isDemo + 미만료 + role==='MUNI_ADMIN' 3중 가드를 동일하게 적용(보안 상담 권고).
  */
 export async function resolveDemoAccessToken(token: string) {
   const contractor = await prisma.contractor.findUnique({
     where: { demoAccessToken: token },
     select: { id: true, isDemo: true, demoExpiresAt: true },
   });
-  if (!contractor || !contractor.isDemo) return null;
-  if (!contractor.demoExpiresAt || contractor.demoExpiresAt < new Date()) return null;
+  if (contractor) {
+    if (!contractor.isDemo) return null;
+    if (!contractor.demoExpiresAt || contractor.demoExpiresAt < new Date()) return null;
+    const adminUser = await prisma.user.findFirst({
+      where: { contractorId: contractor.id, role: 'CONTRACTOR_ADMIN' },
+    });
+    if (!adminUser || adminUser.status !== 'ACTIVE') return null;
+    return { kind: 'contractor' as const, contractor, adminUser };
+  }
 
-  const adminUser = await prisma.user.findFirst({
-    where: { contractorId: contractor.id, role: 'CONTRACTOR_ADMIN' },
+  const municipality = await prisma.municipality.findUnique({
+    where: { demoAccessToken: token },
+    select: { id: true, isDemo: true, demoExpiresAt: true },
   });
-  if (!adminUser || adminUser.status !== 'ACTIVE') return null;
+  if (municipality) {
+    if (!municipality.isDemo) return null;
+    if (!municipality.demoExpiresAt || municipality.demoExpiresAt < new Date()) return null;
+    const adminUser = await prisma.user.findFirst({
+      where: { municipalityId: municipality.id, role: 'MUNI_ADMIN' },
+    });
+    if (!adminUser || adminUser.status !== 'ACTIVE') return null;
+    return { kind: 'municipality' as const, municipality, adminUser };
+  }
 
-  return { contractor, adminUser };
+  return null;
 }
 
 /** 링크 유출 시 딜러가 직접 재발급(구 링크는 즉시 무효화) */
@@ -85,6 +224,16 @@ export async function regenerateDemoAccessToken(contractorId: bigint, dealerId: 
 
   const token = randomBytes(32).toString('base64url');
   await prisma.contractor.update({ where: { id: contractorId }, data: { demoAccessToken: token } });
+  return token;
+}
+
+/** 지자체 모드 그룹 데모용 매직링크 재발급 — Municipality.createdBy로 소유 딜러 검증 */
+export async function regenerateMunicipalityDemoAccessToken(municipalityId: bigint, dealerId: bigint): Promise<string> {
+  const municipality = await prisma.municipality.findUnique({ where: { id: municipalityId } });
+  if (!municipality || municipality.createdBy !== dealerId || !municipality.isDemo) throw new DemoNotFoundError();
+
+  const token = randomBytes(32).toString('base64url');
+  await prisma.municipality.update({ where: { id: municipalityId }, data: { demoAccessToken: token } });
   return token;
 }
 

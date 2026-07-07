@@ -36,6 +36,14 @@ export async function GET(req: Request) {
     if (!contractorIdQ) {
       return new Response(JSON.stringify({ error: 'contractor_required' }), { status: 400, headers: { 'content-type': 'application/json' } });
     }
+    const cid = (() => { try { return BigInt(contractorIdQ); } catch { return null; } })();
+    if (!cid) {
+      return new Response(JSON.stringify({ error: 'invalid_contractor_id' }), { status: 400, headers: { 'content-type': 'application/json' } });
+    }
+    const c = await prisma.contractor.findUnique({ where: { id: cid }, select: { municipalityId: true } });
+    if (!c || c.municipalityId.toString() !== session.municipalityId) {
+      return new Response(JSON.stringify({ error: 'forbidden_contractor' }), { status: 403, headers: { 'content-type': 'application/json' } });
+    }
     contractorId = contractorIdQ;
   } else if (session.contractorId) {
     contractorId = session.contractorId;

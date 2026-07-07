@@ -11,10 +11,12 @@ export const runtime = 'nodejs';
 
 function contractorScope(session: { role: string; contractorId: string | null; municipalityId: string | null }) {
   if (session.role === 'SUPER_ADMIN') return {} as Prisma.RecyclingCenterIntakeWhereInput;
-  if (session.contractorId) return { contractorId: BigInt(session.contractorId) };
+  // MUNI_ADMIN을 먼저 확인 — lib/scopes.ts와 동일한 순서. contractorId가 실수로 함께 세팅돼도
+  // municipality 스코프가 우선되도록(방어심층, 데모 MUNI_ADMIN 계정 도입 전 정렬).
   if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
     return { contractor: { municipalityId: BigInt(session.municipalityId) } };
   }
+  if (session.contractorId) return { contractorId: BigInt(session.contractorId) };
   return { id: BigInt(-1) };
 }
 

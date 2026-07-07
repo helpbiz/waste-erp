@@ -62,8 +62,13 @@ export function toDealerCommissionDTO(c: DealerCommission): DealerCommissionDTO 
   };
 }
 
-/** 딜러당 동시 활성 데모(만료 전) 상한 — Plan Open Q1 기본값. Design §7.1 Q1. */
+/** 딜러당 동시 활성 데모(만료 전) 상한 — Plan Open Q1 기본값. Design §7.1 Q1.
+ *  단독 회사 데모(무니1:회사1)와 지자체 모드 그룹 데모(무니1:회사3)를 구분하지 않고
+ *  "활성 데모 지자체(Municipality) 개수" 기준으로 통일 카운트한다. */
 export const DEALER_DEMO_QUOTA = 3;
+
+/** 지자체 모드 그룹 데모에 함께 만드는 가상 위탁업체 수 — 2026-07-08 추가 */
+export const MUNI_DEMO_COMPANY_COUNT = 3;
 
 /** 데모 테넌트 기본 TTL(일) — Design §7.1 Q3 기본값 */
 export const DEMO_TTL_DAYS = 14;

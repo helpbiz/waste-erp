@@ -94,10 +94,29 @@ export async function deleteDemoContractorData(tx: Tx, contractorId: bigint): Pr
 
 /**
  * 해당 Municipality 산하에 (이 데모 외) 다른 Contractor가 없으면 Municipality도 함께 정리.
+ *
+ * ⚠️ 2026-07-08 — User.municipalityId는 @relation 미선언(DB FK 없음) 컬럼이라, MUNI_ADMIN
+ * 데모 계정을 여기서 지우지 않으면 municipality 삭제가 에러 없이 조용히 성공하고 해당
+ * User row(비밀번호 해시 포함)만 municipality_id가 가리키는 대상 없이 영구 고아로 남는다
+ * (에이전트팀 검토로 확인된 실제 위험 — FK violation이 아니라 "조용한 성공"이라 더 위험).
  */
 export async function deleteDemoMunicipalityIfEmpty(tx: Tx, municipalityId: bigint): Promise<void> {
   const remaining = await tx.contractor.count({ where: { municipalityId } });
   if (remaining > 0) return;
+
+  const municipality = await tx.municipality.findUnique({ where: { id: municipalityId }, select: { isDemo: true } });
+  if (!municipality?.isDemo) return; // 안전장치: 데모 지자체가 아니면 절대 삭제하지 않음
+
+  const muniAdminIds = (
+    await tx.user.findMany({ where: { municipalityId, role: 'MUNI_ADMIN' }, select: { id: true } })
+  ).map((u) => u.id);
+  if (muniAdminIds.length > 0) {
+    await tx.user.updateMany({ where: { id: { in: muniAdminIds } }, data: { activeSignatureId: null } });
+    await tx.signature.deleteMany({ where: { userId: { in: muniAdminIds } } });
+    await tx.webPushSubscription.deleteMany({ where: { userId: { in: muniAdminIds } } });
+    await tx.user.deleteMany({ where: { id: { in: muniAdminIds } } });
+  }
+
   await tx.muniAccessPolicy.deleteMany({ where: { municipalityId } });
   await tx.wasteTreatmentFacility.deleteMany({ where: { municipalityId } });
   await tx.municipality.delete({ where: { id: municipalityId } });
