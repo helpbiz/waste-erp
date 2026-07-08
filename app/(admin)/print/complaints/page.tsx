@@ -41,6 +41,15 @@ export default async function ComplaintsPrintPage({
     orderBy: { reportedAt: 'asc' },
   });
 
+  /* requestImage/completionImage는 단일 data URL 또는 JSON 배열 문자열 두 가지 형식 */
+  function parseImages(raw: string | null): string[] {
+    if (!raw) return [];
+    if (raw.startsWith('[')) {
+      try { return JSON.parse(raw) as string[]; } catch { return []; }
+    }
+    return [raw];
+  }
+
   const items = rows.map((c, idx) => ({
     no: idx + 1,
     id: c.id.toString(),
@@ -56,8 +65,8 @@ export default async function ComplaintsPrintPage({
     resolveNote: c.resolveNote ?? null,
     resolvedAt: c.resolvedAt?.toISOString() ?? null,
     complainantPhone: c.complainantPhone ?? null,
-    photosBefore: Array.isArray(c.photosBefore) ? (c.photosBefore as string[]) : [],
-    photosAfter: Array.isArray(c.photosAfter) ? (c.photosAfter as string[]) : [],
+    photosBefore: parseImages(c.requestImage),
+    photosAfter: parseImages(c.completionImage),
   }));
 
   const fromStr = from.toISOString().slice(0, 10);
