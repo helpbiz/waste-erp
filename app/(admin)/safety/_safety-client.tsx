@@ -59,6 +59,8 @@ export default function SafetyClient({
   todayChecklist,
   weather,
   tbm,
+  schedules = [],
+  selectedScheduleId = '',
   alertWorkers,
   meName,
   meSignatureUrl,
@@ -76,6 +78,8 @@ export default function SafetyClient({
   todayChecklist: number;
   weather: WeatherSnapshot;
   tbm: TbmInfo | null;
+  schedules?: Array<{ id: string; label: string; timeOfDay: string }>;
+  selectedScheduleId?: string;
   alertWorkers: WorkerOpt[];
   meName: string | null;
   meSignatureUrl: string | null;
@@ -102,6 +106,16 @@ export default function SafetyClient({
     if (to)   p.set('to', to);
     const c = cid !== undefined ? cid : selectedContractorId;
     if (c) p.set('contractorId', c);
+    if (selectedScheduleId) p.set('scheduleId', selectedScheduleId);
+    router.push(`/safety?${p.toString()}`);
+  }
+
+  function switchSchedule(scheduleId: string) {
+    const p = new URLSearchParams();
+    if (dateFrom) p.set('from', dateFrom);
+    if (dateTo)   p.set('to', dateTo);
+    if (selectedContractorId) p.set('contractorId', selectedContractorId);
+    if (scheduleId) p.set('scheduleId', scheduleId);
     router.push(`/safety?${p.toString()}`);
   }
 
@@ -210,6 +224,7 @@ export default function SafetyClient({
         body: JSON.stringify({
           topic: tbmTopic.trim(),
           content: tbmContent.trim() || undefined,
+          scheduleId: selectedScheduleId || undefined,
           department: tbmDept.trim() || undefined,
           photoDataUrl: tbmPhoto || undefined,
           leader:       tbmLeader.trim()       || undefined,
@@ -316,6 +331,27 @@ export default function SafetyClient({
               }`}
             >
               {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {schedules.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-extrabold text-ink-muted">TBM 시간대</span>
+          <button
+            onClick={() => switchSchedule('')}
+            className={`px-3 py-1 rounded-full text-sm font-bold ${!selectedScheduleId ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'}`}
+          >
+            기본
+          </button>
+          {schedules.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => switchSchedule(s.id)}
+              className={`px-3 py-1 rounded-full text-sm font-bold ${selectedScheduleId === s.id ? 'bg-accent text-white' : 'bg-surface border border-line text-ink-muted hover:bg-surface-soft'}`}
+            >
+              {s.label} ({s.timeOfDay})
             </button>
           ))}
         </div>

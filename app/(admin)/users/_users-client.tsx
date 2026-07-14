@@ -588,7 +588,10 @@ function EditUserModal({ user, positions, departments, onClose }: {
       onClose();
       router.refresh();
     } else {
-      alert('실패: ' + (await res.json().catch(() => ({}))).error);
+      const errBody = await res.json().catch(() => ({}));
+      alert(errBody.error === 'tbm_manager_limit_reached'
+        ? 'TBM 작성 권한은 업체당 최대 10명까지만 지정할 수 있습니다.'
+        : '실패: ' + errBody.error);
     }
   }
 
@@ -720,7 +723,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
               </button>
               <span className="text-sm text-ink">
                 {form.isTbmManager
-                  ? <strong className="text-teal-700">활성 — TBM 작성·수정 가능 (최대 2명 권고)</strong>
+                  ? <strong className="text-teal-700">활성 — TBM 작성·수정 가능 (업체당 최대 10명)</strong>
                   : <span className="text-ink-muted">비활성 — TBM 작성 불가</span>
                 }
               </span>

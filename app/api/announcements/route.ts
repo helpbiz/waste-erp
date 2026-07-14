@@ -104,6 +104,16 @@ export async function GET(req: Request) {
     : [];
   const authorMap = new Map(authors.map((a) => [a.id.toString(), a]));
 
+  /* 현재 사용자의 읽음 여부 배치 조회 */
+  const myUserId = BigInt(session.userId);
+  const readRows = items.length > 0
+    ? await prisma.announcementRead.findMany({
+        where: { userId: myUserId, announcementId: { in: items.map((i) => i.id) } },
+        select: { announcementId: true },
+      })
+    : [];
+  const readSet = new Set(readRows.map((r) => r.announcementId.toString()));
+
   return NextResponse.json({
     items: items.map((a) => ({
       id: a.id.toString(),
@@ -111,6 +121,7 @@ export async function GET(req: Request) {
       body: a.body,
       severity: a.severity,
       audience: a.audience,
+      readByMe: readSet.has(a.id.toString()),
       pinned: a.pinned,
       publishedAt: a.publishedAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),

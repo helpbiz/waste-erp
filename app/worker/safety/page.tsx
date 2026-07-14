@@ -33,16 +33,20 @@ export default async function SafetyWorkerPage() {
     ? { region: contractorInfo.garageAddress }
     : undefined;
 
-  const [todayChecklist, tbm, weather, me, facilities, userDetail] = await Promise.all([
+  const [todayChecklist, tbmList, weather, me, facilities, userDetail] = await Promise.all([
     prisma.safetyReport.findFirst({
       where: { reportedBy: BigInt(session.userId), reportDate: today, reportType: 'DAILY_CHECKLIST' },
     }),
     !isAvac && contractorBigId
-      ? prisma.tbmSession.findFirst({
+      ? prisma.tbmSession.findMany({
           where: { contractorId: contractorBigId, facilityId: null, sessionDate: today },
-          include: { signatures: true },
+          include: {
+            signatures: true,
+            schedule: { select: { label: true, sortOrder: true } },
+            audience: { select: { workerId: true } },
+          },
         })
-      : Promise.resolve(null),
+      : Promise.resolve([]),
     fetchWeatherCached(weatherLocation),
     prisma.user.findUnique({
       where: { id: BigInt(session.userId) },
@@ -62,27 +66,46 @@ export default async function SafetyWorkerPage() {
     }),
   ]);
 
-  const tbmSigned = !!tbm?.signatures.some((s) => s.workerId.toString() === session.userId);
+  /* 서명대상 프리셋이 있으면 그 대상만, 없으면 전체 대상(기존 동작) — 스케줄 순서로 정렬 */
+  const visibleTbmList = tbmList
+    .filter((t) => t.audience.length === 0 || t.audience.some((a) => a.workerId.toString() === session.userId))
+    .sort((a, b) => (a.schedule?.sortOrder ?? -1) - (b.schedule?.sortOrder ?? -1));
 
-  let tbmContentText: string | null = tbm?.content ?? null;
-  let tbmPhotoDataUrl: string | null = null;
-  let tbmLeader: string | null = null;
-  let tbmLocation: string | null = null;
-  let tbmHazards: string | null = null;
-  let tbmPreWorkCheck: string | null = null;
-  if (tbm?.content) {
-    try {
-      const p = JSON.parse(tbm.content);
-      if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
-        tbmContentText  = p.text         ?? null;
-        tbmPhotoDataUrl = p.photoDataUrl ?? null;
-        tbmLeader       = p.leader       ?? null;
-        tbmLocation     = p.location     ?? null;
-        tbmHazards      = p.hazards      ?? null;
-        tbmPreWorkCheck = p.preWorkCheck ?? null;
-      }
-    } catch {}
-  }
+  const tbmSessions = visibleTbmList.map((t) => {
+    let contentText: string | null = t.content ?? null;
+    let photoDataUrl: string | null = null;
+    let leader: string | null = null;
+    let location: string | null = null;
+    let hazards: string | null = null;
+    let preWorkCheck: string | null = null;
+    if (t.content) {
+      try {
+        const p = JSON.parse(t.content);
+        if (p && typeof p === 'object' && ('text' in p || 'photoDataUrl' in p)) {
+          contentText  = p.text         ?? null;
+          photoDataUrl = p.photoDataUrl ?? null;
+          leader       = p.leader       ?? null;
+          location     = p.location     ?? null;
+          hazards      = p.hazards      ?? null;
+          preWorkCheck = p.preWorkCheck ?? null;
+        }
+      } catch {}
+    }
+    return {
+      id: t.id.toString(),
+      topic: t.topic,
+      content: contentText,
+      photoDataUrl,
+      leader,
+      location,
+      hazards,
+      preWorkCheck,
+      signed: t.signatures.some((s) => s.workerId.toString() === session.userId),
+      signCount: t.signatures.length,
+      scheduleId: t.scheduleId?.toString() ?? null,
+      scheduleLabel: t.schedule?.label ?? null,
+    };
+  });
 
   const [guardianName, guardianPhone] = await Promise.all([
     decryptField(me?.emergencyContact ?? null).catch(() => null),
@@ -95,10 +118,7 @@ export default async function SafetyWorkerPage() {
       submitted={!!todayChecklist}
       submittedAt={todayChecklist?.createdAt.toISOString() ?? null}
       allChecked={todayChecklist?.allChecked ?? false}
-      tbm={tbm
-        ? { id: tbm.id.toString(), topic: tbm.topic, content: tbmContentText, photoDataUrl: tbmPhotoDataUrl, leader: tbmLeader, location: tbmLocation, hazards: tbmHazards, preWorkCheck: tbmPreWorkCheck, signed: tbmSigned, signCount: tbm.signatures.length }
-        : null
-      }
+      tbmSessions={tbmSessions}
       weather={weather}
       guardian={{ name: guardianName, phone: guardianPhone }}
       isAvac={isAvac}

@@ -10,7 +10,7 @@ type Signer  = { workerId: string; name: string; employeeNo: string | null; sign
 type Session = {
   id: string; sessionDate: string; topic: string; content: string | null;
   photoDataUrl: string | null; department: string | null; createdBy: string;
-  signCount: number; signers: Signer[];
+  signCount: number; signers: Signer[]; audienceWorkerIds: string[] | null;
 };
 
 export default function TbmPrintClient({
@@ -117,9 +117,12 @@ export default function TbmPrintClient({
                 const dow  = DOW[date.getUTCDay()];
                 const dateLabel = `${y}년 ${mm}월 ${dd}일 (${dow})`;
 
-                /* 미서명자 계산 */
+                /* 미서명자 계산 — 서명대상 프리셋이 있으면 그 대상만, 없으면 전사 워커 기준(기존 동작) */
                 const signerIds = new Set(s.signers.map((sig) => sig.workerId));
-                const unsigned  = workers.filter((w) => !signerIds.has(w.id));
+                const sessionWorkers = s.audienceWorkerIds
+                  ? workers.filter((w) => s.audienceWorkerIds!.includes(w.id))
+                  : workers;
+                const unsigned = sessionWorkers.filter((w) => !signerIds.has(w.id));
 
                 return (
                   <article key={s.id} className="tbm-sheet border-2 border-slate-700 mb-6">

@@ -20,7 +20,7 @@ const Body = z.object({
   vehicleId: z.string(),
   facilityId: z.string().nullable().optional(),
   disposalSiteId: z.string().nullable().optional(),
-  materialCategory: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD']),
+  materialCategory: z.string().trim().min(1).max(20),
   weightTon: z.number().min(0).max(99_999),
   note: z.string().max(500).optional(),
 });
@@ -98,6 +98,13 @@ export async function POST(req: Request) {
   }
   const b = parsed.data;
   const contractorId = BigInt(session.contractorId);
+
+  /* 성상 가시범위 검증 — 관리자가 등록한 활성 성상만 허용 */
+  const category = await prisma.intakeMaterialCategory.findFirst({
+    where: { contractorId, label: b.materialCategory, isActive: true },
+    select: { id: true },
+  });
+  if (!category) return NextResponse.json({ error: 'invalid_material_category' }, { status: 400 });
 
   /* 차량 가시범위 검증 */
   const bVehicleId = parseId(b.vehicleId);

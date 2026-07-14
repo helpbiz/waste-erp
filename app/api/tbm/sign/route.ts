@@ -18,6 +18,7 @@ const Body = z.object({
     .max(500_000, '500KB 초과 — 더 짧게 서명해 주세요')
     .optional(),
   facilityId: z.string().optional(), // AVAC: 시설별 TBM 서명 시 전달
+  scheduleId: z.string().optional(), // 1일 최대 5회 시간지정 TBM 슬롯 — 미전달 시 레거시 단일 세션(scheduleId=null)
 });
 
 export async function POST(req: Request) {
@@ -34,15 +35,21 @@ export async function POST(req: Request) {
 
   const today = todayKstDate();
   const facilityId = parseId(parsed.data.facilityId ?? null);
+  const scheduleId = parseId(parsed.data.scheduleId ?? null);
 
   const tbm = await prisma.tbmSession.findFirst({
     where: {
       contractorId: BigInt(session.contractorId),
       facilityId,
+      scheduleId,
       sessionDate: today,
     },
+    include: { audience: { select: { workerId: true } } },
   });
   if (!tbm) return NextResponse.json({ error: 'no_session_today' }, { status: 404 });
+  if (tbm.audience.length > 0 && !tbm.audience.some((a) => a.workerId.toString() === session.userId)) {
+    return NextResponse.json({ error: 'not_in_audience' }, { status: 403 });
+  }
 
   try {
     const sig = await prisma.tbmSignature.create({

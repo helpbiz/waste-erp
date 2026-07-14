@@ -253,7 +253,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   if (b.isFacilityOperator !== undefined) data.isFacilityOperator = b.isFacilityOperator;
   if (b.isNoticeManager !== undefined) data.isNoticeManager = b.isNoticeManager;
-  if (b.isTbmManager !== undefined) data.isTbmManager = b.isTbmManager;
+  if (b.isTbmManager !== undefined) {
+    if (b.isTbmManager) {
+      const target = await prisma.user.findUnique({ where: { id }, select: { contractorId: true, isTbmManager: true } });
+      if (target?.contractorId && !target.isTbmManager) {
+        const count = await prisma.user.count({
+          where: { contractorId: target.contractorId, isTbmManager: true },
+        });
+        if (count >= 10) {
+          return NextResponse.json({ error: 'tbm_manager_limit_reached', limit: 10 }, { status: 409 });
+        }
+      }
+    }
+    data.isTbmManager = b.isTbmManager;
+  }
   if (b.isComplaintManager !== undefined) data.isComplaintManager = b.isComplaintManager;
   if (b.isPayrollManager !== undefined) data.isPayrollManager = b.isPayrollManager;
 

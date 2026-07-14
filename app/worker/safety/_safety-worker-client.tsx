@@ -9,7 +9,11 @@ import { hapticSuccess, hapticError, hapticHeavy } from '@/lib/haptics';
 
 type ChecklistDef = { key: string; label: string };
 type ItemState = ChecklistDef & { ok: boolean; reason: string };
-type TbmInfo = { id: string; topic: string; content: string | null; photoDataUrl: string | null; leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null; signed: boolean; signCount: number };
+type TbmInfo = {
+  id: string; topic: string; content: string | null; photoDataUrl: string | null;
+  leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
+  signed: boolean; signCount: number; scheduleId: string | null; scheduleLabel: string | null;
+};
 export type FacilityOption = { id: string; name: string };
 
 const ICONS: Record<string, string> = {
@@ -22,7 +26,7 @@ export default function SafetyWorkerClient({
   submitted,
   submittedAt,
   allChecked,
-  tbm: tbmProp,
+  tbmSessions: tbmSessionsProp,
   weather,
   guardian,
   isAvac = false,
@@ -38,7 +42,7 @@ export default function SafetyWorkerClient({
   submitted: boolean;
   submittedAt: string | null;
   allChecked: boolean;
-  tbm: TbmInfo | null;
+  tbmSessions: TbmInfo[];
   weather: WeatherSnapshot;
   guardian: { name: string | null; phone: string | null };
   isAvac?: boolean;
@@ -60,8 +64,6 @@ export default function SafetyWorkerClient({
   const [address, setAddress] = useState('');
   const [sosArmed, setSosArmed] = useState(false);
   const [sosResult, setSosResult] = useState<{ recipients: number; reportId: string; provider: string } | null>(null);
-  const [tbmSignaturePad, setTbmSignaturePad] = useState<string | null>(null);
-  const [tbmShowPad, setTbmShowPad] = useState(false);
 
   // 날씨 안전 공지
   const [weatherNotices, setWeatherNotices] = useState<{ id: string; alertLabel: string; alertType: string; title: string; content: string | null; photoCount: number }[]>([]);
@@ -123,33 +125,37 @@ export default function SafetyWorkerClient({
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(
     isAvac && facilities.length === 1 ? facilities[0].id : null
   );
-  const [avacTbm, setAvacTbm] = useState<TbmInfo | null>(null);
+  const [avacTbmSessions, setAvacTbmSessions] = useState<TbmInfo[]>([]);
   const [avacTbmLoading, setAvacTbmLoading] = useState(false);
   const [avacNotices, setAvacNotices] = useState<{ id: string; title: string; body: string; severity: string; pinned: boolean }[]>([]);
 
-  const tbm = (isAvac || (isFacilityOperator && operatorFacility)) ? avacTbm : tbmProp;
+  const tbmSessions = (isAvac || (isFacilityOperator && operatorFacility)) ? avacTbmSessions : tbmSessionsProp;
 
   async function loadAvacTbm(facilityId: string) {
     setAvacTbmLoading(true);
-    setAvacTbm(null);
+    setAvacTbmSessions([]);
     try {
       const res = await fetch(`/api/tbm/today?facilityId=${facilityId}`);
       if (!res.ok) return;
       const data = await res.json();
-      if (data.session) {
-        setAvacTbm({
-          id: data.session.id,
-          topic: data.session.topic,
-          content: data.session.content,
-          photoDataUrl: data.session.photoDataUrl ?? null,
-          leader:       data.session.leader       ?? null,
-          location:     data.session.location     ?? null,
-          hazards:      data.session.hazards      ?? null,
-          preWorkCheck: data.session.preWorkCheck ?? null,
-          signed: data.signed,
-          signCount: data.session.signCount,
-        });
-      }
+      setAvacTbmSessions((data.sessions ?? []).map((s: {
+        id: string; topic: string; content: string | null; photoDataUrl: string | null;
+        leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
+        signed: boolean; signCount: number; scheduleId: string | null; scheduleLabel: string | null;
+      }) => ({
+        id: s.id,
+        topic: s.topic,
+        content: s.content,
+        photoDataUrl: s.photoDataUrl ?? null,
+        leader:       s.leader       ?? null,
+        location:     s.location     ?? null,
+        hazards:      s.hazards      ?? null,
+        preWorkCheck: s.preWorkCheck ?? null,
+        signed: s.signed,
+        signCount: s.signCount,
+        scheduleId: s.scheduleId ?? null,
+        scheduleLabel: s.scheduleLabel ?? null,
+      })));
     } finally {
       setAvacTbmLoading(false);
     }
@@ -164,8 +170,6 @@ export default function SafetyWorkerClient({
 
   function selectFacility(fId: string) {
     setSelectedFacilityId(fId);
-    setTbmShowPad(false);
-    setTbmSignaturePad(null);
     loadAvacTbm(fId);
     loadAvacNotices(fId);
   }
@@ -345,38 +349,27 @@ export default function SafetyWorkerClient({
     }
   }
 
-  async function signTbm() {
-    if (!tbmSignaturePad) {
-      toast.error('서명을 먼저 그려주세요.');
-      return;
+  async function signTbm(scheduleId: string | null, signatureData: string) {
+    const body: Record<string, unknown> = { signatureData };
+    if (isAvac && selectedFacilityId) body.facilityId = selectedFacilityId;
+    if (scheduleId) body.scheduleId = scheduleId;
+    const res = await fetch('/api/tbm/sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(data?.error === 'already_signed' ? '이미 서명했습니다.' : (data?.error === 'no_session_today' ? '오늘 TBM 세션이 등록되지 않았습니다.' : '서명 실패'));
+      return false;
     }
-    setBusy(true);
-    try {
-      const body: Record<string, unknown> = { signatureData: tbmSignaturePad };
-      if (isAvac && selectedFacilityId) body.facilityId = selectedFacilityId;
-      const res = await fetch('/api/tbm/sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data?.error === 'already_signed' ? '이미 서명했습니다.' : (data?.error === 'no_session_today' ? '오늘 TBM 세션이 등록되지 않았습니다.' : '서명 실패'));
-        return;
-      }
-      toast.success(`✓ TBM 서명 완료 — "${data.sessionTopic}"`);
-      setTbmSignaturePad(null);
-      setTbmShowPad(false);
-      if (isAvac && selectedFacilityId) {
-        await loadAvacTbm(selectedFacilityId);
-      } else {
-        router.refresh();
-      }
-    } catch {
-      toast.error('네트워크 오류');
-    } finally {
-      setBusy(false);
+    toast.success(`✓ TBM 서명 완료 — "${data.sessionTopic}"`);
+    if (isAvac && selectedFacilityId) {
+      await loadAvacTbm(selectedFacilityId);
+    } else {
+      router.refresh();
     }
+    return true;
   }
 
   return (
@@ -431,65 +424,13 @@ export default function SafetyWorkerClient({
         </section>
       )}
 
-      {/* TBM 서명판 */}
-      {(!isAvac || (selectedFacilityId && !avacTbmLoading)) && tbm ? (
-        <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
-          <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center gap-2">
-            <span className="text-xl">📋</span>
-            <div className="flex-1">
-              <div className="text-base font-extrabold text-ink">오늘 TBM (안전교육)</div>
-              <div className="text-sm font-semibold text-ink-mid mt-0.5">{tbm.signCount}명 서명 완료</div>
-            </div>
-            <a href="/worker/safety/tbm-history"
-              className="text-sm font-bold text-accent hover:underline">
-              📋 나의 TBM이력 보기
-            </a>
-            {tbm.signed && <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border-2 border-green-300">✓ 서명 완료</span>}
-          </header>
-          <div className="p-4">
-            <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
-            {(tbm.leader || tbm.location || tbm.hazards || tbm.preWorkCheck) && (
-              <div className="bg-slate-50 border border-line rounded-lg px-3 py-2 mb-3 space-y-1 text-sm">
-                {tbm.leader && <div><span className="font-extrabold text-ink-muted">리더:</span> <span className="font-semibold text-ink">{tbm.leader}</span></div>}
-                {tbm.location && <div><span className="font-extrabold text-ink-muted">장소:</span> <span className="font-semibold text-ink">{tbm.location}</span></div>}
-                {tbm.hazards && <div><span className="font-extrabold text-ink-muted">위험요인:</span> <span className="font-semibold text-ink">{tbm.hazards}</span></div>}
-                {tbm.preWorkCheck && <div><span className="font-extrabold text-ink-muted">작업전 안전점검:</span> <span className="font-semibold text-ink">{tbm.preWorkCheck}</span></div>}
-              </div>
-            )}
-            {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
-            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="w-full rounded-lg max-h-52 object-contain bg-slate-50 border border-line mb-3" />}
-            {!tbm.signed && !tbmShowPad && (
-              /* P1: CTA 14px → 16px (text-base) min-h-14 */
-              <button
-                onClick={() => setTbmShowPad(true)}
-                className="w-full min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98]"
-              >
-                ✍ TBM 서명하기
-              </button>
-            )}
-            {!tbm.signed && tbmShowPad && (
-              <div className="space-y-3 mt-2">
-                <div className="text-sm font-extrabold text-ink">아래 영역에 서명해 주세요 (마우스/터치 모두 가능)</div>
-                <SignaturePad onChange={setTbmSignaturePad} disabled={busy} />
-                <div className="flex gap-2">
-                  <button
-                    onClick={signTbm}
-                    disabled={busy || !tbmSignaturePad}
-                    className="flex-1 min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {busy ? '제출 중…' : '서명 제출'}
-                  </button>
-                  <button
-                    onClick={() => { setTbmShowPad(false); setTbmSignaturePad(null); }}
-                    className="min-h-14 px-4 py-3 rounded-lg border-2 border-line-strong text-ink text-base font-bold active:scale-95"
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+      {/* TBM 서명판 — 1일 최대 5회 시간지정 TBM 지원, 세션별 독립 서명 */}
+      {(!isAvac || (selectedFacilityId && !avacTbmLoading)) && tbmSessions.length > 0 ? (
+        <div className="space-y-3">
+          {tbmSessions.map((s) => (
+            <TbmSignCard key={s.id} tbm={s} onSign={(signatureData) => signTbm(s.scheduleId, signatureData)} />
+          ))}
+        </div>
       ) : (
         // AVAC + 시설 미선택 상태에선 안내 생략 (위에서 별도 표시)
         (!isAvac || (selectedFacilityId && !avacTbmLoading)) && (
@@ -916,6 +857,84 @@ export default function SafetyWorkerClient({
         </section>
       )}
     </div>
+  );
+}
+
+function TbmSignCard({ tbm, onSign }: { tbm: TbmInfo; onSign: (signatureData: string) => Promise<boolean> }) {
+  const [showPad, setShowPad] = useState(false);
+  const [signaturePad, setSignaturePad] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!signaturePad) return;
+    setBusy(true);
+    try {
+      const ok = await onSign(signaturePad);
+      if (ok) { setSignaturePad(null); setShowPad(false); }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+      <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center gap-2">
+        <span className="text-xl">📋</span>
+        <div className="flex-1">
+          <div className="text-base font-extrabold text-ink">
+            {tbm.scheduleLabel ? `${tbm.scheduleLabel} TBM` : '오늘 TBM'} (안전교육)
+          </div>
+          <div className="text-sm font-semibold text-ink-mid mt-0.5">{tbm.signCount}명 서명 완료</div>
+        </div>
+        <a href="/worker/safety/tbm-history"
+          className="text-sm font-bold text-accent hover:underline">
+          📋 나의 TBM이력 보기
+        </a>
+        {tbm.signed && <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-green-100 text-success border-2 border-green-300">✓ 서명 완료</span>}
+      </header>
+      <div className="p-4">
+        <div className="text-lg font-extrabold text-ink mb-2">{tbm.topic}</div>
+        {(tbm.leader || tbm.location || tbm.hazards || tbm.preWorkCheck) && (
+          <div className="bg-slate-50 border border-line rounded-lg px-3 py-2 mb-3 space-y-1 text-sm">
+            {tbm.leader && <div><span className="font-extrabold text-ink-muted">리더:</span> <span className="font-semibold text-ink">{tbm.leader}</span></div>}
+            {tbm.location && <div><span className="font-extrabold text-ink-muted">장소:</span> <span className="font-semibold text-ink">{tbm.location}</span></div>}
+            {tbm.hazards && <div><span className="font-extrabold text-ink-muted">위험요인:</span> <span className="font-semibold text-ink">{tbm.hazards}</span></div>}
+            {tbm.preWorkCheck && <div><span className="font-extrabold text-ink-muted">작업전 안전점검:</span> <span className="font-semibold text-ink">{tbm.preWorkCheck}</span></div>}
+          </div>
+        )}
+        {tbm.content && <p className="text-base font-semibold text-ink-mid leading-relaxed mb-3 whitespace-pre-wrap">{tbm.content}</p>}
+        {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="w-full rounded-lg max-h-52 object-contain bg-slate-50 border border-line mb-3" />}
+        {!tbm.signed && !showPad && (
+          <button
+            onClick={() => setShowPad(true)}
+            className="w-full min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98]"
+          >
+            ✍ TBM 서명하기
+          </button>
+        )}
+        {!tbm.signed && showPad && (
+          <div className="space-y-3 mt-2">
+            <div className="text-sm font-extrabold text-ink">아래 영역에 서명해 주세요 (마우스/터치 모두 가능)</div>
+            <SignaturePad onChange={setSignaturePad} disabled={busy} />
+            <div className="flex gap-2">
+              <button
+                onClick={submit}
+                disabled={busy || !signaturePad}
+                className="flex-1 min-h-14 py-3 rounded-lg bg-info text-white text-base font-black shadow-card active:scale-[0.98] disabled:opacity-50"
+              >
+                {busy ? '제출 중…' : '서명 제출'}
+              </button>
+              <button
+                onClick={() => { setShowPad(false); setSignaturePad(null); }}
+                className="min-h-14 px-4 py-3 rounded-lg border-2 border-line-strong text-ink text-base font-bold active:scale-95"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

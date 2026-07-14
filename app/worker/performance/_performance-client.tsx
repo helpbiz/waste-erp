@@ -21,14 +21,16 @@ const WASTE_MATERIALS = [
   { code: 'STYROFOAM',     label: '스티로폼',    emoji: '⬜' },
 ];
 
-const INTAKE_CATEGORIES = [
-  { code: 'GENERAL',   label: '일반',    emoji: '🗑' },
-  { code: 'FOOD',      label: '음식물',  emoji: '🍎' },
-  { code: 'RECYCLING', label: '재활용',  emoji: '♻️' },
-  { code: 'WOOD',      label: '폐목재',  emoji: '🪵' },
-];
+/* @deprecated 과거 저장된 영문 코드(GENERAL/FOOD/RECYCLING/WOOD) 표시용 — 성상은 이제 관리자가 직접 관리(IntakeMaterialCategory) */
+const LEGACY_INTAKE_LABEL: Record<string, string> = {
+  GENERAL: '일반', FOOD: '음식물', RECYCLING: '재활용', WOOD: '폐목재',
+};
 
-type Vehicle = { id: string; vehicleNo: string; vehicleType: string };
+type Vehicle = { id: string; vehicleNo: string; vehicleType: string; departmentId: string | null };
+
+type DeptOpt = { id: string; name: string };
+
+type IntakeCategory = { id: string; label: string };
 
 type DisposalSite = { id: string; name: string; address: string | null };
 
@@ -55,12 +57,13 @@ type OpsRecord = {
 
 type Props = {
   vehicles: Vehicle[];
+  departments?: DeptOpt[];
   isFacilityOperator?: boolean;
   primaryFacility?: { id: string; name: string } | null;
   opsHistory?: OpsRecord[];
 };
 
-export default function PerformanceClient({ vehicles, isFacilityOperator = false, primaryFacility = null, opsHistory = [] }: Props) {
+export default function PerformanceClient({ vehicles, departments = [], isFacilityOperator = false, primaryFacility = null, opsHistory = [] }: Props) {
   const showOps = isFacilityOperator && !!primaryFacility;
   const [tab, setTab] = useState<'waste' | 'intake' | 'ops'>(showOps ? 'ops' : 'waste');
 
@@ -93,7 +96,7 @@ export default function PerformanceClient({ vehicles, isFacilityOperator = false
       </div>
 
       {tab === 'waste' && <WasteTab />}
-      {tab === 'intake' && <IntakeTab vehicles={vehicles} />}
+      {tab === 'intake' && <IntakeTab vehicles={vehicles} departments={departments} />}
       {tab === 'ops' && showOps && <OpsHistoryTab facility={primaryFacility!} records={opsHistory} />}
     </div>
   );
@@ -275,21 +278,23 @@ function WasteTab() {
 }
 
 const MAT_LABEL: Record<string, string> = Object.fromEntries(WASTE_MATERIALS.map((m) => [m.code, m.label]));
-const CAT_LABEL: Record<string, string> = Object.fromEntries(INTAKE_CATEGORIES.map((m) => [m.code, m.label]));
 
 /* ────────────────  반입실적 — 차량 단위 입력  ──────────────── */
 
-function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
+function IntakeTab({ vehicles, departments }: { vehicles: Vehicle[]; departments: DeptOpt[] }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<IntakeRecord[]>([]);
   const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [categories, setCategories] = useState<IntakeCategory[]>([]);
+  const [deptId, setDeptId] = useState<string>('');
+  const filteredVehicles = deptId ? vehicles.filter((v) => v.departmentId === deptId) : vehicles;
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? '');
   const [time, setTime] = useState(() => {
     const d = new Date();
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
-  const [category, setCategory] = useState<string>('GENERAL');
+  const [category, setCategory] = useState<string>('');
   const [weight, setWeight] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -301,7 +306,23 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
       .then((r) => r.json())
       .then((d) => setDisposalSites(d.items ?? []))
       .catch(() => {});
+    fetch('/api/worker/intake-categories')
+      .then((r) => r.json())
+      .then((d) => {
+        const list: IntakeCategory[] = d.items ?? [];
+        setCategories(list);
+        setCategory((prev) => prev || list[0]?.label || '');
+      })
+      .catch(() => {});
   }, []);
+
+  /* 부서 필터 변경 시 선택 차량이 목록에서 벗어나면 첫 차량으로 재설정 */
+  useEffect(() => {
+    if (!filteredVehicles.some((v) => v.id === vehicleId)) {
+      setVehicleId(filteredVehicles[0]?.id ?? '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deptId]);
 
   function load() {
     fetch(`/api/recycling-intake?from=${date}&to=${date}`)
@@ -337,7 +358,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
         return;
       }
       const v = vehicles.find((x) => x.id === vehicleId);
-      setSuccess(`${v?.vehicleNo} ${CAT_LABEL[category]} ${weight}kg 저장됨`);
+      setSuccess(`${v?.vehicleNo} ${category} ${weight}kg 저장됨`);
       setWeight('');
       setNote('');
       load();
@@ -378,16 +399,56 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
           <div className="text-sm text-warn font-bold p-3 bg-amber-50 rounded">⚠️ 등록된 차량이 없습니다. 관리자에게 문의하세요.</div>
         ) : (
           <div className="space-y-2.5">
+            {departments.length > 0 && (
+              <Field label="부서">
+                <select
+                  value={deptId}
+                  onChange={(e) => setDeptId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
+                >
+                  <option value="">— 전체 부서 —</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
+            {categories.length > 0 && (
+              <Field label="성상">
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategory(c.label)}
+                      className={`px-3 py-2.5 rounded-lg border-2 text-sm font-extrabold flex items-center justify-center gap-2 active:scale-95 transition ${
+                        category === c.label
+                          ? 'border-accent bg-accent-soft text-accent'
+                          : 'border-line bg-surface text-ink hover:bg-surface-soft'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
+
             <Field label="차량">
-              <select
-                value={vehicleId}
-                onChange={(e) => setVehicleId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
-              >
-                {vehicles.map((v) => (
-                  <option key={v.id} value={v.id}>{v.vehicleNo} ({v.vehicleType})</option>
-                ))}
-              </select>
+              {filteredVehicles.length === 0 ? (
+                <div className="text-sm text-warn font-bold p-2.5 bg-amber-50 rounded-lg">해당 부서에 배정된 차량이 없습니다.</div>
+              ) : (
+                <select
+                  value={vehicleId}
+                  onChange={(e) => setVehicleId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
+                >
+                  {filteredVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{v.vehicleNo} ({v.vehicleType})</option>
+                  ))}
+                </select>
+              )}
             </Field>
 
             <div className="grid grid-cols-2 gap-2">
@@ -412,26 +473,6 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                 />
               </Field>
             </div>
-
-            <Field label="성상">
-              <div className="grid grid-cols-2 gap-2">
-                {INTAKE_CATEGORIES.map((c) => (
-                  <button
-                    key={c.code}
-                    type="button"
-                    onClick={() => setCategory(c.code)}
-                    className={`px-3 py-2.5 rounded-lg border-2 text-sm font-extrabold flex items-center justify-center gap-2 active:scale-95 transition ${
-                      category === c.code
-                        ? 'border-accent bg-accent-soft text-accent'
-                        : 'border-line bg-surface text-ink hover:bg-surface-soft'
-                    }`}
-                  >
-                    <span>{c.emoji}</span>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            </Field>
 
             {disposalSites.length > 0 && (
               <Field label="반입장소">
@@ -479,7 +520,7 @@ function IntakeTab({ vehicles }: { vehicles: Vehicle[] }) {
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-ink-muted w-12 flex-shrink-0">{it.intakeTime?.slice(0, 5) ?? '--:--'}</span>
                   <span className="font-extrabold text-ink truncate flex-1">{it.vehicleNo}</span>
-                  <span className="text-sm font-bold text-emerald-700 flex-shrink-0">{CAT_LABEL[it.materialCategory] ?? it.materialCategory}</span>
+                  <span className="text-sm font-bold text-emerald-700 flex-shrink-0">{LEGACY_INTAKE_LABEL[it.materialCategory] ?? it.materialCategory}</span>
                   <span className="font-mono font-black text-accent flex-shrink-0">{Math.round(Number(it.weightTon) * 1000)}kg</span>
                 </div>
                 {it.disposalSiteName && (

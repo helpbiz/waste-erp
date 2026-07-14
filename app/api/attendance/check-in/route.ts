@@ -88,15 +88,15 @@ export async function POST(req: Request) {
         if (r.checkInUntil && kstHHMM > r.checkInUntil) {
           return NextResponse.json({ error: 'punch_too_late', allowUntil: r.checkInUntil, rule: r.name }, { status: 403 });
         }
-        if (r.requireLocation && r.lat != null && r.lng != null && r.radiusMeters) {
-          const dist = haversineM(rawLat, rawLng, Number(r.lat), Number(r.lng));
-          if (dist > r.radiusMeters) {
+        if (r.requireLocationCheckIn && r.checkInLat != null && r.checkInLng != null && r.checkInRadiusMeters) {
+          const dist = haversineM(rawLat, rawLng, Number(r.checkInLat), Number(r.checkInLng));
+          if (dist > r.checkInRadiusMeters) {
             return NextResponse.json({
               error: 'outside_allowed_location',
               rule: r.name,
-              location: r.locationLabel ?? '지정 장소',
+              location: r.checkInLocationLabel ?? '지정 장소',
               distanceM: Math.round(dist),
-              allowedRadiusM: r.radiusMeters,
+              allowedRadiusM: r.checkInRadiusMeters,
             }, { status: 403 });
           }
         }

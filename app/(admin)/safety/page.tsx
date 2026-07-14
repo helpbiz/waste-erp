@@ -13,7 +13,7 @@ export type ContractorOpt = { id: string; name: string };
 export default async function SafetyPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string; contractorId?: string; from?: string; to?: string };
+  searchParams?: { tab?: string; contractorId?: string; from?: string; to?: string; scheduleId?: string };
 }) {
   const session = (await readSession())!;
   const today = todayKstDate();
@@ -61,6 +61,18 @@ export default async function SafetyPage({
   };
   const scopedContractorId = pickedContractorId ?? (session.contractorId ? BigInt(session.contractorId) : null);
 
+  /* TBM 시간 슬롯 — 1일 최대 5회 등록 지원 */
+  const tbmSchedules = scopedContractorId
+    ? await prisma.tbmSchedule.findMany({
+        where: { contractorId: scopedContractorId, isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+        select: { id: true, label: true, timeOfDay: true },
+      })
+    : [];
+  const selectedScheduleId = searchParams?.scheduleId && tbmSchedules.some((s) => s.id.toString() === searchParams.scheduleId)
+    ? searchParams.scheduleId
+    : '';
+
   const [items, todayWorkers, todayChecklist, tbm, workersList] = await Promise.all([
     prisma.safetyReport.findMany({
       where: baseWhere,
@@ -88,10 +100,14 @@ export default async function SafetyPage({
       : Promise.resolve(0),
     scopedContractorId
       ? prisma.tbmSession.findFirst({
-          where: { contractorId: scopedContractorId, facilityId: null, sessionDate: today },
+          where: {
+            contractorId: scopedContractorId, facilityId: null, sessionDate: today,
+            scheduleId: selectedScheduleId ? BigInt(selectedScheduleId) : null,
+          },
           include: {
             signatures: { include: { worker: { select: { id: true, name: true, employeeNo: true } } } },
             creator: { select: { name: true } },
+            audience: { select: { workerId: true } },
           },
         })
       : Promise.resolve(null),
@@ -202,13 +218,19 @@ export default async function SafetyPage({
               signCount: tbm.signatures.length,
               createdBy: tbm.creator.name,
               signedWorkers: tbm.signatures.map((s) => ({ id: s.worker.id.toString(), name: s.worker.name, employeeNo: s.worker.employeeNo })),
-              unsignedWorkers: workersList
+              /* 서명대상 프리셋(TbmSessionAudience)이 있으면 그 대상만, 없으면 전사 워커 기준(기존 동작) */
+              unsignedWorkers: (tbm.audience.length > 0
+                ? workersList.filter((w) => tbm.audience.some((a) => a.workerId === w.id))
+                : workersList
+              )
                 .filter((w) => !tbm.signatures.find((s) => s.worker.id === w.id))
                 .map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: null })),
             };
           })()
         : null
       }
+      schedules={tbmSchedules.map((s) => ({ id: s.id.toString(), label: s.label, timeOfDay: s.timeOfDay }))}
+      selectedScheduleId={selectedScheduleId}
       alertWorkers={workersList.map((w) => ({ id: w.id.toString(), name: w.name }))}
       meName={me?.name ?? null}
       meSignatureUrl={meSignatureUrl}

@@ -58,6 +58,7 @@ export async function GET(req: Request) {
         include: { worker: { select: { id: true, name: true, employeeNo: true } } },
         orderBy: { signedAt: 'asc' },
       },
+      audience: { select: { workerId: true } },
     },
     orderBy: { sessionDate: 'asc' },
   }),
@@ -90,6 +91,8 @@ export async function GET(req: Request) {
         department: s.department ?? null,
         createdBy: s.creator.name,
         signCount: s.signatures.length,
+        /// 서명대상 프리셋이 있으면 그 workerId 목록만, 없으면 null(=전사 대상, 기존 동작)
+        audienceWorkerIds: s.audience.length > 0 ? s.audience.map((a) => a.workerId.toString()) : null,
         signers: s.signatures.map((sig) => ({
           workerId: sig.worker.id.toString(),
           name: sig.worker.name,

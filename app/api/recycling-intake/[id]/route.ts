@@ -14,7 +14,7 @@ const Patch = z.object({
   intakeDate: z.string().optional(),
   intakeTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   facilityId: z.string().nullable().optional(),
-  materialCategory: z.enum(['GENERAL', 'FOOD', 'RECYCLING', 'WOOD']).optional(),
+  materialCategory: z.string().trim().min(1).max(20).optional(),
   weightTon: z.number().min(0).max(99_999).optional(),
   note: z.string().max(500).nullable().optional(),
 });
@@ -39,7 +39,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const data: Record<string, unknown> = {};
   if (b.intakeDate !== undefined) data.intakeDate = new Date(b.intakeDate);
   if (b.intakeTime !== undefined) data.intakeTime = b.intakeTime;
-  if (b.materialCategory !== undefined) data.materialCategory = b.materialCategory;
+  if (b.materialCategory !== undefined) {
+    const category = await prisma.intakeMaterialCategory.findFirst({
+      where: { contractorId: BigInt(session.contractorId), label: b.materialCategory, isActive: true },
+      select: { id: true },
+    });
+    if (!category) return NextResponse.json({ error: 'invalid_material_category' }, { status: 400 });
+    data.materialCategory = b.materialCategory;
+  }
   if (b.weightTon !== undefined) data.weightTon = b.weightTon;
   if (b.note !== undefined) data.note = b.note;
   if (b.facilityId !== undefined) {

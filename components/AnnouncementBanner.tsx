@@ -7,8 +7,8 @@
  * - 사운드 + 진동 + Notification API
  * - 30초 폴링 — 신규 공지 발생 시 popup 다시 노출
  * - CRITICAL 은 dismiss 안 됨 (확인 강제)
- * - INFO/WARNING 은 [확인] 으로 dismiss → localStorage 저장
- * - dismissed 30일 후 자동 만료 (재공지 가능)
+ * - INFO/WARNING 은 [확인] 으로 서버(AnnouncementRead)에 읽음 기록 — 기기/브라우저 무관하게 영구 보존.
+ *   확인한 공지는 다시 뜨지 않고, 새 공지가 등록됐을 때만 재노출된다.
  */
 import { useEffect, useRef, useState } from 'react';
 import { loadVoiceSettings, speakAnnouncement } from '@/lib/voice-settings';
@@ -24,6 +24,7 @@ type Announcement = {
   publishedAt: string;
   authorName: string;
   authorRole?: string | null;
+  readByMe: boolean;
 };
 
 const SEV_TONE: Record<string, string> = {
@@ -44,44 +45,17 @@ const SEV_LABEL: Record<string, string> = {
   CRITICAL: '긴급',
 };
 
-const DISMISSED_KEY = 'cleanerp:dismissed-announcements:v2';
-
-type DismissedRecord = Record<string, number>; // id → timestamp ms
-
-function loadDismissed(): DismissedRecord {
-  try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as DismissedRecord;
-    /* 30일 경과 자동 만료 */
-    const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
-    const filtered: DismissedRecord = {};
-    for (const [id, ts] of Object.entries(parsed)) {
-      if (ts > cutoff) filtered[id] = ts;
-    }
-    return filtered;
-  } catch {
-    return {};
-  }
-}
-
-function saveDismissed(rec: DismissedRecord) {
-  try { localStorage.setItem(DISMISSED_KEY, JSON.stringify(rec)); } catch { /* */ }
-}
-
 export default function AnnouncementBanner() {
   const [items, setItems] = useState<Announcement[]>([]);
-  const [dismissed, setDismissed] = useState<DismissedRecord>({});
   const [popupOpen, setPopupOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  /* 마운트 — dismissed 로드 + 사운드 객체 + 첫 fetch */
+  /* 마운트 — 사운드 객체 + 첫 fetch */
   useEffect(() => {
     setMounted(true);
-    setDismissed(loadDismissed());
     try {
       const beep = 'data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' +
         'pvT19fX19fX18BBAAA///5/wAAAAD///nA==';
@@ -133,8 +107,7 @@ export default function AnnouncementBanner() {
           }
         } else {
           /* 첫 fetch — 미확인 공지 1개 이상이면 popup 자동 오픈 */
-          const dis = loadDismissed();
-          const visible = nextItems.filter((a) => a.severity === 'CRITICAL' || !dis[a.id]);
+          const visible = nextItems.filter((a) => a.severity === 'CRITICAL' || !a.readByMe);
           if (visible.length > 0) {
             /* 사운드 1회 재생 — 사용자 환영 */
             setTimeout(() => {
@@ -174,25 +147,24 @@ export default function AnnouncementBanner() {
   }, []);
 
   function dismissOne(id: string) {
-    const next = { ...dismissed, [id]: Date.now() };
-    setDismissed(next);
-    saveDismissed(next);
+    setItems((prev) => prev.map((a) => (a.id === id ? { ...a, readByMe: true } : a)));
+    fetch(`/api/announcements/${id}/read`, { method: 'POST' }).catch(() => {});
   }
 
   function confirmAll() {
-    const next = { ...dismissed };
-    visible.forEach((a) => {
-      if (a.severity !== 'CRITICAL') next[a.id] = Date.now();
+    const targets = visible.filter((a) => a.severity !== 'CRITICAL');
+    const ids = new Set(targets.map((a) => a.id));
+    setItems((prev) => prev.map((a) => (ids.has(a.id) ? { ...a, readByMe: true } : a)));
+    targets.forEach((a) => {
+      fetch(`/api/announcements/${a.id}/read`, { method: 'POST' }).catch(() => {});
     });
-    setDismissed(next);
-    saveDismissed(next);
     /* CRITICAL 만 남았는지 확인 */
     const stillCritical = visible.some((a) => a.severity === 'CRITICAL');
     if (!stillCritical) setPopupOpen(false);
   }
 
   /* 표시 대상 계산 */
-  const visible = items.filter((a) => a.severity === 'CRITICAL' || !dismissed[a.id]);
+  const visible = items.filter((a) => a.severity === 'CRITICAL' || !a.readByMe);
 
   /* CRITICAL 우선 정렬 */
   visible.sort((a, b) => {

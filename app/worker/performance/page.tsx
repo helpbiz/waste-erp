@@ -16,11 +16,16 @@ export default async function WorkerPerformancePage() {
     select: { isFacilityOperator: true, primaryFacilityId: true, primaryFacility: { select: { id: true, name: true } } },
   });
 
-  const [vehicles, opsHistory] = await Promise.all([
+  const [vehicles, departments, opsHistory] = await Promise.all([
     prisma.vehicle.findMany({
       where: { contractorId: BigInt(session.contractorId), status: 'ACTIVE' },
-      select: { id: true, vehicleNo: true, vehicleType: true },
+      select: { id: true, vehicleNo: true, vehicleType: true, driver: { select: { departmentId: true } } },
       orderBy: { vehicleNo: 'asc' },
+    }),
+    prisma.department.findMany({
+      where: { contractorId: BigInt(session.contractorId), active: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
     }),
     userDetail?.isFacilityOperator && userDetail.primaryFacilityId
       ? prisma.facilityDailyOps.findMany({
@@ -37,7 +42,9 @@ export default async function WorkerPerformancePage() {
         id: v.id.toString(),
         vehicleNo: v.vehicleNo,
         vehicleType: v.vehicleType,
+        departmentId: v.driver?.departmentId?.toString() ?? null,
       }))}
+      departments={departments.map((d) => ({ id: d.id.toString(), name: d.name }))}
       isFacilityOperator={userDetail?.isFacilityOperator ?? false}
       primaryFacility={
         userDetail?.primaryFacility

@@ -13,11 +13,16 @@ export type RestrictionRow = {
   checkInUntil: string | null;
   checkOutFrom: string | null;
   checkOutUntil: string | null;
-  requireLocation: boolean;
-  lat: number | null;
-  lng: number | null;
-  radiusMeters: number | null;
-  locationLabel: string | null;
+  requireLocationCheckIn: boolean;
+  checkInLat: number | null;
+  checkInLng: number | null;
+  checkInRadiusMeters: number | null;
+  checkInLocationLabel: string | null;
+  requireLocationCheckOut: boolean;
+  checkOutLat: number | null;
+  checkOutLng: number | null;
+  checkOutRadiusMeters: number | null;
+  checkOutLocationLabel: string | null;
   allowedDays: number[] | null;
   active: boolean;
   sortOrder: number;
@@ -159,9 +164,14 @@ export default function PunchRestrictionsClient({
                       : <span className="text-ink-faint">—</span>}
                   </td>
                   <td className="px-4 py-2.5">
-                    {r.requireLocation && r.lat != null
-                      ? <span className="text-sm font-bold text-accent">{r.locationLabel ?? '지정 좌표'} ({r.radiusMeters}m)</span>
-                      : <span className="text-ink-faint text-sm">—</span>}
+                    <div className="flex flex-col gap-0.5">
+                      {r.requireLocationCheckIn && r.checkInLat != null
+                        ? <span className="text-[0.6875rem] font-bold text-accent">출근: {r.checkInLocationLabel ?? '지정 좌표'} ({r.checkInRadiusMeters}m)</span>
+                        : <span className="text-[0.6875rem] text-ink-faint">출근: —</span>}
+                      {r.requireLocationCheckOut && r.checkOutLat != null
+                        ? <span className="text-[0.6875rem] font-bold text-accent">퇴근: {r.checkOutLocationLabel ?? '지정 좌표'} ({r.checkOutRadiusMeters}m)</span>
+                        : <span className="text-[0.6875rem] text-ink-faint">퇴근: —</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 font-bold text-sm text-ink">
                     {r.allowedDays && r.allowedDays.length > 0
@@ -244,11 +254,16 @@ function RestrictionFormModal({
   const [checkInUntil, setCheckInUntil] = useState(initial?.checkInUntil ?? '');
   const [checkOutFrom, setCheckOutFrom] = useState(initial?.checkOutFrom ?? '');
   const [checkOutUntil, setCheckOutUntil] = useState(initial?.checkOutUntil ?? '');
-  const [requireLocation, setRequireLocation] = useState(initial?.requireLocation ?? false);
-  const [lat, setLat] = useState(initial?.lat != null ? String(initial.lat) : '');
-  const [lng, setLng] = useState(initial?.lng != null ? String(initial.lng) : '');
-  const [radius, setRadius] = useState(initial?.radiusMeters != null ? String(initial.radiusMeters) : '200');
-  const [locationLabel, setLocationLabel] = useState(initial?.locationLabel ?? '');
+  const [requireLocationCheckIn, setRequireLocationCheckIn] = useState(initial?.requireLocationCheckIn ?? false);
+  const [checkInLat, setCheckInLat] = useState(initial?.checkInLat != null ? String(initial.checkInLat) : '');
+  const [checkInLng, setCheckInLng] = useState(initial?.checkInLng != null ? String(initial.checkInLng) : '');
+  const [checkInRadius, setCheckInRadius] = useState(initial?.checkInRadiusMeters != null ? String(initial.checkInRadiusMeters) : '200');
+  const [checkInLocationLabel, setCheckInLocationLabel] = useState(initial?.checkInLocationLabel ?? '');
+  const [requireLocationCheckOut, setRequireLocationCheckOut] = useState(initial?.requireLocationCheckOut ?? false);
+  const [checkOutLat, setCheckOutLat] = useState(initial?.checkOutLat != null ? String(initial.checkOutLat) : '');
+  const [checkOutLng, setCheckOutLng] = useState(initial?.checkOutLng != null ? String(initial.checkOutLng) : '');
+  const [checkOutRadius, setCheckOutRadius] = useState(initial?.checkOutRadiusMeters != null ? String(initial.checkOutRadiusMeters) : '200');
+  const [checkOutLocationLabel, setCheckOutLocationLabel] = useState(initial?.checkOutLocationLabel ?? '');
   const [allowedDays, setAllowedDays] = useState<number[]>(initial?.allowedDays ?? []);
   const [active, setActive] = useState(initial?.active ?? true);
   const [busy, setBusy] = useState(false);
@@ -265,11 +280,16 @@ function RestrictionFormModal({
       checkInUntil: blockAll ? '00:00' : (checkInUntil || null),
       checkOutFrom: blockAll ? null : (checkOutFrom || null),
       checkOutUntil: blockAll ? '00:00' : (checkOutUntil || null),
-      requireLocation,
-      lat: requireLocation && lat ? Number(lat) : null,
-      lng: requireLocation && lng ? Number(lng) : null,
-      radiusMeters: requireLocation && radius ? Number(radius) : null,
-      locationLabel: requireLocation && locationLabel ? locationLabel : null,
+      requireLocationCheckIn,
+      checkInLat: requireLocationCheckIn && checkInLat ? Number(checkInLat) : null,
+      checkInLng: requireLocationCheckIn && checkInLng ? Number(checkInLng) : null,
+      checkInRadiusMeters: requireLocationCheckIn && checkInRadius ? Number(checkInRadius) : null,
+      checkInLocationLabel: requireLocationCheckIn && checkInLocationLabel ? checkInLocationLabel : null,
+      requireLocationCheckOut,
+      checkOutLat: requireLocationCheckOut && checkOutLat ? Number(checkOutLat) : null,
+      checkOutLng: requireLocationCheckOut && checkOutLng ? Number(checkOutLng) : null,
+      checkOutRadiusMeters: requireLocationCheckOut && checkOutRadius ? Number(checkOutRadius) : null,
+      checkOutLocationLabel: requireLocationCheckOut && checkOutLocationLabel ? checkOutLocationLabel : null,
       allowedDays: allowedDays.length > 0 ? allowedDays : null,
       active,
     };
@@ -380,28 +400,58 @@ function RestrictionFormModal({
 
           <div className="border border-line rounded-lg p-4 space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={requireLocation} onChange={(e) => setRequireLocation(e.target.checked)}
+              <input type="checkbox" checked={requireLocationCheckIn} onChange={(e) => setRequireLocationCheckIn(e.target.checked)}
                 className="w-4 h-4 rounded border-2 border-line accent-accent" />
-              <span className="text-sm font-extrabold text-ink">지정 장소 제한 사용</span>
-              <span className="text-sm font-bold text-ink-faint ml-1">(출근·퇴근 모두 적용)</span>
+              <span className="text-sm font-extrabold text-ink">출근 시 지정 장소 제한 사용</span>
             </label>
-            {requireLocation && (
+            {requireLocationCheckIn && (
               <>
                 <Field label="장소 이름 (안내용)">
-                  <input value={locationLabel} onChange={(e) => setLocationLabel(e.target.value)} placeholder="예: 차고지 정문"
+                  <input value={checkInLocationLabel} onChange={(e) => setCheckInLocationLabel(e.target.value)} placeholder="예: 차고지 정문"
                     className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                 </Field>
                 <div className="grid grid-cols-3 gap-2">
                   <Field label="위도">
-                    <input type="number" step="0.0001" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="37.4979"
+                    <input type="number" step="0.0001" value={checkInLat} onChange={(e) => setCheckInLat(e.target.value)} placeholder="37.4979"
                       className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                   <Field label="경도">
-                    <input type="number" step="0.0001" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="127.0276"
+                    <input type="number" step="0.0001" value={checkInLng} onChange={(e) => setCheckInLng(e.target.value)} placeholder="127.0276"
                       className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                   <Field label="허용 반경(m)">
-                    <input type="number" min={10} max={5000} value={radius} onChange={(e) => setRadius(e.target.value)} placeholder="200"
+                    <input type="number" min={10} max={5000} value={checkInRadius} onChange={(e) => setCheckInRadius(e.target.value)} placeholder="200"
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+                  </Field>
+                </div>
+                <p className="text-sm font-mono text-ink-muted">지정 좌표를 모르면 Google Maps에서 우클릭 → 좌표 복사</p>
+              </>
+            )}
+          </div>
+
+          <div className="border border-line rounded-lg p-4 space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={requireLocationCheckOut} onChange={(e) => setRequireLocationCheckOut(e.target.checked)}
+                className="w-4 h-4 rounded border-2 border-line accent-accent" />
+              <span className="text-sm font-extrabold text-ink">퇴근 시 지정 장소 제한 사용</span>
+            </label>
+            {requireLocationCheckOut && (
+              <>
+                <Field label="장소 이름 (안내용)">
+                  <input value={checkOutLocationLabel} onChange={(e) => setCheckOutLocationLabel(e.target.value)} placeholder="예: 차고지 정문"
+                    className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+                </Field>
+                <div className="grid grid-cols-3 gap-2">
+                  <Field label="위도">
+                    <input type="number" step="0.0001" value={checkOutLat} onChange={(e) => setCheckOutLat(e.target.value)} placeholder="37.4979"
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+                  </Field>
+                  <Field label="경도">
+                    <input type="number" step="0.0001" value={checkOutLng} onChange={(e) => setCheckOutLng(e.target.value)} placeholder="127.0276"
+                      className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
+                  </Field>
+                  <Field label="허용 반경(m)">
+                    <input type="number" min={10} max={5000} value={checkOutRadius} onChange={(e) => setCheckOutRadius(e.target.value)} placeholder="200"
                       className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-mono font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent" />
                   </Field>
                 </div>

@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   const today = todayKstDate();
   const workerId = BigInt(session.userId);
 
-  /* 출퇴근 제한 규칙 — 관리자는 제외, 출근지와 동일한 위치 제한 적용 */
+  /* 출퇴근 제한 규칙 — 관리자는 제외, 퇴근은 퇴근 전용 위치 제한(requireLocationCheckOut) 적용 */
   if (!isAdminRole(session.role) && session.contractorId) {
     const contractorId = BigInt(session.contractorId);
     const worker = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
@@ -80,19 +80,19 @@ export async function POST(req: Request) {
       if (r.checkOutUntil && kstHHMM > r.checkOutUntil) {
         return NextResponse.json({ error: 'punch_too_late', allowUntil: r.checkOutUntil, rule: r.name }, { status: 403 });
       }
-      /* 출근지와 동일한 위치 제한 적용 */
-      if (r.requireLocation && r.lat != null && r.lng != null && r.radiusMeters) {
+      /* 퇴근 전용 위치 제한 */
+      if (r.requireLocationCheckOut && r.checkOutLat != null && r.checkOutLng != null && r.checkOutRadiusMeters) {
         if (rawLat == null || rawLng == null) {
           return NextResponse.json({ error: 'gps_required' }, { status: 400 });
         }
-        const dist = haversineM(rawLat, rawLng, Number(r.lat), Number(r.lng));
-        if (dist > r.radiusMeters) {
+        const dist = haversineM(rawLat, rawLng, Number(r.checkOutLat), Number(r.checkOutLng));
+        if (dist > r.checkOutRadiusMeters) {
           return NextResponse.json({
             error: 'outside_allowed_location',
             rule: r.name,
-            location: r.locationLabel ?? '지정 장소',
+            location: r.checkOutLocationLabel ?? '지정 장소',
             distanceM: Math.round(dist),
-            allowedRadiusM: r.radiusMeters,
+            allowedRadiusM: r.checkOutRadiusMeters,
           }, { status: 403 });
         }
       }

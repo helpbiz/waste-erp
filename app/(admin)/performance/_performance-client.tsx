@@ -23,13 +23,10 @@ const WASTE_MATERIALS = [
 ];
 const MATERIAL_LABEL: Record<string, string> = Object.fromEntries(WASTE_MATERIALS.map((m) => [m.code, m.label]));
 
-const INTAKE_CATEGORIES = [
-  { code: 'GENERAL',   label: '일반' },
-  { code: 'FOOD',      label: '음식물' },
-  { code: 'RECYCLING', label: '재활용' },
-  { code: 'WOOD',      label: '폐목재' },
-];
-const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(INTAKE_CATEGORIES.map((m) => [m.code, m.label]));
+/* @deprecated 과거 저장된 영문 코드(GENERAL/FOOD/RECYCLING/WOOD) 표시용 — 성상은 이제 관리자가 직접 관리(IntakeMaterialCategory) */
+const CATEGORY_LABEL: Record<string, string> = {
+  GENERAL: '일반', FOOD: '음식물', RECYCLING: '재활용', WOOD: '폐목재',
+};
 
 type DisposalSite = { id: string; name: string; address: string | null };
 
@@ -451,11 +448,12 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
     vehicleId: initial?.vehicleId ?? (vehicles[0]?.id ?? ''),
     facilityId: initial?.facilityId ?? null,  // Design Ref: §3.1.2
     disposalSiteId: initial?.disposalSiteId ?? null,
-    materialCategory: initial?.materialCategory ?? 'GENERAL',
+    materialCategory: initial?.materialCategory ?? '',
     weightTon: initial ? String(Math.round(initial.weightTon * 1000)) : '',
     note: initial?.note ?? '',
   });
   const [disposalSites, setDisposalSites] = useState<DisposalSite[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -463,7 +461,17 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
       .then((r) => r.json())
       .then((d) => setDisposalSites(d.items ?? []))
       .catch(() => {});
-  }, []);
+    fetch('/api/admin/intake-categories')
+      .then((r) => r.json())
+      .then((d) => {
+        const active = (d.items ?? []).filter((c: { isActive: boolean }) => c.isActive);
+        setCategories(active);
+        if (!initial?.materialCategory) {
+          setForm((f) => ({ ...f, materialCategory: f.materialCategory || active[0]?.label || '' }));
+        }
+      })
+      .catch(() => {});
+  }, [initial?.materialCategory]);
 
   async function submit() {
     const w = Number(form.weightTon);
@@ -514,7 +522,10 @@ function IntakeFormModal({ vehicles, initial, onClose, onSaved }: {
             <div className="text-[0.625rem] font-mono font-extrabold text-ink-faint mb-1">성상</div>
             <select value={form.materialCategory} onChange={(e) => setForm({ ...form, materialCategory: e.target.value })}
               className="w-full px-3 py-1.5 rounded border border-line text-sm font-bold">
-              {INTAKE_CATEGORIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+              {form.materialCategory && !categories.some((c) => c.label === form.materialCategory) && (
+                <option value={form.materialCategory}>{CATEGORY_LABEL[form.materialCategory] ?? form.materialCategory}</option>
+              )}
+              {categories.map((c) => <option key={c.id} value={c.label}>{c.label}</option>)}
             </select>
           </div>
           <div>
@@ -654,7 +665,7 @@ function StatsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-surface border border-line rounded p-3">
-                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별 (4종)</div>
+                <div className="text-[0.6875rem] font-extrabold text-ink mb-2">성상별</div>
                 <div className="space-y-1">
                   {intake.byCategory.sort((a, b) => b.weight - a.weight).map((m) => (
                     <BarRow key={m.code} label={CATEGORY_LABEL[m.code] ?? m.code} value={m.weight * 1000} max={intakeMaxByCategory * 1000} suffix="kg" color="bg-emerald-500" />

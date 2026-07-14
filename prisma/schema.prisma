@@ -262,6 +262,8 @@ model Contractor {
   contractorRanks     ContractorRank[]
   vehicleGpsPositions VehicleGpsPosition[]
   disposalSites       DisposalSite[]
+  intakeMaterialCategories IntakeMaterialCategory[]
+  tbmSchedules        TbmSchedule[]
   garages             Garage[]
   payslipRecords      PayslipRecord[]      @relation("ContractorPayslips")
   weatherNotices      WeatherSafetyNotice[]
@@ -482,6 +484,10 @@ model User {
   reviewedSafety         SafetyReport[]          @relation("ReviewedSafety")
   tbmCreated             TbmSession[]            @relation("TbmCreator")
   tbmSignatures          TbmSignature[]          @relation("TbmSigner")
+  tbmAudiencePresetsAsManager TbmManagerAudience[] @relation("TbmManagerAudienceManager")
+  tbmAudiencePresetsAsWorker  TbmManagerAudience[] @relation("TbmManagerAudienceWorker")
+  tbmSessionAudiences         TbmSessionAudience[] @relation("TbmSessionAudienceWorker")
+  announcementReads      AnnouncementRead[]
   healthRecord           HealthRecord?           @relation("HealthSubject")
   suggestionReplies      WorkerSuggestionReply[] @relation("SuggestionReplier")
   facilityOpsCreated     FacilityDailyOps[]      @relation("FacilityOpsCreator")
@@ -799,6 +805,8 @@ model TbmSession {
   facilityId   BigInt?  @map("facility_id")   // NULL = 전사 TBM (비-AVAC); 값 있으면 시설별 TBM
   department   String?  @map("department") @db.VarChar(50)
   sessionDate  DateTime @map("session_date") @db.Date
+  /// 1일 최대 5회 시간지정 TBM — null 이면 미지정(레거시 1일1회) 세션
+  scheduleId   BigInt?  @map("schedule_id")
   topic        String   @db.VarChar(255)
   content      String?  @db.Text
   createdBy    BigInt   @map("created_by")
@@ -806,11 +814,59 @@ model TbmSession {
 
   contractor Contractor              @relation(fields: [contractorId], references: [id])
   facility   WasteTreatmentFacility? @relation("TbmFacility", fields: [facilityId], references: [id])
+  schedule   TbmSchedule?            @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
   creator    User                    @relation("TbmCreator", fields: [createdBy], references: [id])
   signatures TbmSignature[]
+  audience   TbmSessionAudience[]
 
   @@index([contractorId, facilityId, sessionDate])
   @@map("tbm_sessions")
+}
+
+/// TBM 시간 슬롯 — 계약업체당 활성 최대 5개, 하루 여러 차례 TBM 등록에 사용.
+model TbmSchedule {
+  id           BigInt   @id @default(autoincrement())
+  contractorId BigInt   @map("contractor_id")
+  label        String   @db.VarChar(30)   // 예: "오전 TBM", "오후 TBM"
+  timeOfDay    String   @map("time_of_day") @db.VarChar(5) // HH:MM 안내용
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor   @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  sessions   TbmSession[]
+
+  @@unique([contractorId, label])
+  @@map("tbm_schedules")
+}
+
+/// 등록권한자(TBM 매니저)별 서명 대상 근로자 사전 설정 — 공지 등록 시 자동 적용(TbmSessionAudience 로 스냅샷).
+model TbmManagerAudience {
+  id        BigInt @id @default(autoincrement())
+  managerId BigInt @map("manager_id")
+  workerId  BigInt @map("worker_id")
+
+  manager User @relation("TbmManagerAudienceManager", fields: [managerId], references: [id], onDelete: Cascade)
+  worker  User @relation("TbmManagerAudienceWorker", fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([managerId, workerId])
+  @@index([workerId])
+  @@map("tbm_manager_audiences")
+}
+
+/// TBM 세션 생성 시점에 등록권한자의 TbmManagerAudience 프리셋을 스냅샷 — 이후 프리셋이 바뀌어도 이미 등록된 공지의 서명대상은 불변.
+/// 프리셋이 없는 매니저가 등록한 세션은 스냅샷 없음(= 전체 대상, 기존 동작과 동일).
+model TbmSessionAudience {
+  id        BigInt @id @default(autoincrement())
+  sessionId BigInt @map("session_id")
+  workerId  BigInt @map("worker_id")
+
+  session TbmSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  worker  User       @relation("TbmSessionAudienceWorker", fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, workerId])
+  @@index([workerId])
+  @@map("tbm_session_audiences")
 }
 
 model TbmSignature {
@@ -1315,6 +1371,7 @@ model Announcement {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   facility WasteTreatmentFacility? @relation("AnnouncementFacility", fields: [facilityId], references: [id])
+  reads    AnnouncementRead[]
 
   @@index([publishedAt])
   @@index([audience, publishedAt])
@@ -1323,6 +1380,21 @@ model Announcement {
   attachmentUrls String?  @map("attachment_urls")   // JSON 배열 — base64 data URLs (최대 3장)
   @@index([targetUserId])
   @@map("announcements")
+}
+
+/// 공지사항 읽음 추적 — 사용자별 확인 여부를 서버에 저장해 재방문/재로그인 시 반복 팝업 방지.
+model AnnouncementRead {
+  id             BigInt   @id @default(autoincrement())
+  announcementId BigInt   @map("announcement_id")
+  userId         BigInt   @map("user_id")
+  readAt         DateTime @default(now()) @map("read_at")
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@map("announcement_reads")
 }
 
 // ─────────────────── 작업자 익명 건의함 (2026-05-02) ───────────────────
@@ -1483,16 +1555,36 @@ model PunchRestriction {
   checkOutFrom   String?  @map("check_out_from") @db.VarChar(5)
   /// 허용 퇴근 종료 (HH:MM, KST)
   checkOutUntil  String?  @map("check_out_until") @db.VarChar(5)
-  /// 위치 제한 사용 여부
+  /// @deprecated 출근·퇴근 통합 위치 제한 필드 — requireLocationCheckIn/Out 으로 분리됨. 하위호환을 위해 컬럼은 유지.
   requireLocation Boolean @default(false) @map("require_location")
-  /// 허용 GPS 중심 위도
+  /// @deprecated checkInLat 사용
   lat            Decimal? @db.Decimal(10, 7)
-  /// 허용 GPS 중심 경도
+  /// @deprecated checkInLng 사용
   lng            Decimal? @db.Decimal(11, 7)
-  /// 허용 반경 (미터)
+  /// @deprecated checkInRadiusMeters 사용
   radiusMeters   Int?     @map("radius_meters")
-  /// 위치 이름/설명 (예: "차고지", "사무소 앞")
+  /// @deprecated checkInLocationLabel 사용
   locationLabel  String?  @map("location_label") @db.VarChar(100)
+  /// 출근 위치 제한 사용 여부
+  requireLocationCheckIn Boolean @default(false) @map("require_location_check_in")
+  /// 출근 허용 GPS 중심 위도
+  checkInLat            Decimal? @map("check_in_lat") @db.Decimal(10, 7)
+  /// 출근 허용 GPS 중심 경도
+  checkInLng            Decimal? @map("check_in_lng") @db.Decimal(11, 7)
+  /// 출근 허용 반경 (미터)
+  checkInRadiusMeters   Int?     @map("check_in_radius_meters")
+  /// 출근 위치 이름/설명 (예: "차고지", "사무소 앞")
+  checkInLocationLabel  String?  @map("check_in_location_label") @db.VarChar(100)
+  /// 퇴근 위치 제한 사용 여부
+  requireLocationCheckOut Boolean @default(false) @map("require_location_check_out")
+  /// 퇴근 허용 GPS 중심 위도
+  checkOutLat            Decimal? @map("check_out_lat") @db.Decimal(10, 7)
+  /// 퇴근 허용 GPS 중심 경도
+  checkOutLng            Decimal? @map("check_out_lng") @db.Decimal(11, 7)
+  /// 퇴근 허용 반경 (미터)
+  checkOutRadiusMeters   Int?     @map("check_out_radius_meters")
+  /// 퇴근 위치 이름/설명
+  checkOutLocationLabel  String?  @map("check_out_location_label") @db.VarChar(100)
   /// 적용 요일 (JSON 배열, 0=월~6=일, null=매일)
   allowedDays    String?  @map("allowed_days") @db.Text
   sortOrder      Int      @default(0) @map("sort_order")
@@ -1567,6 +1659,22 @@ model DisposalSite {
 
   @@unique([contractorId, name])
   @@map("disposal_sites")
+}
+
+/// 반입입력 성상(폐기물 종류) 마스터 — 관리자가 직접 추가/비활성화.
+/// RecyclingCenterIntake.materialCategory 는 자유 문자열 컬럼이며 이 테이블의 label 값으로 검증된다.
+model IntakeMaterialCategory {
+  id           BigInt  @id @default(autoincrement())
+  contractorId BigInt  @map("contractor_id")
+  label        String  @db.VarChar(20)
+  sortOrder    Int     @default(0) @map("sort_order")
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  contractor Contractor @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@unique([contractorId, label])
+  @@map("intake_material_categories")
 }
 
 /// 급여 정책 — 위탁업체별 연장/야간/휴일 기준시간 설정
