@@ -48,7 +48,7 @@ export default function ComplaintsPrintClient({
       </div>
 
       {/* 인쇄 영역 */}
-      <div className="px-8 py-6">
+      <div className="print-area px-8 py-6">
         <div className="border-t-4 border-double border-slate-800 pt-3 mb-5">
           <h1 className="text-2xl font-black text-center tracking-tight">민 원 처 리 대 장</h1>
           <div className="text-center text-sm font-bold text-slate-600 mt-1">
@@ -132,7 +132,8 @@ export default function ComplaintsPrintClient({
 
       <style>{`
         @media print {
-          @page { size: A4 landscape; margin: 12mm; }
+          /* 좌우 마진 최소화(6mm) — 상하 12mm는 유지, 줄어든 만큼 컨테이너/테이블이 가로로 더 펼쳐짐 */
+          @page { size: A4 landscape; margin: 12mm 6mm; }
 
           /* 화면 조작용 UI 제거 (타이틀 바 · 출력센터/인쇄/닫기 버튼, 사이드바 · 상단바) */
           header, aside, nav, [data-sidebar], .sidebar { display: none !important; }
@@ -141,6 +142,9 @@ export default function ComplaintsPrintClient({
           /* AdminShell 스크롤 컨테이너 해제 → 전체 내용 인쇄 */
           html, body { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
           main, section { overflow: visible !important; height: auto !important; max-height: none !important; padding: 0 !important; }
+
+          /* 인쇄 콘텐츠 좌우 패딩 제거 — @page 여백만으로 폭 확보, 테이블이 가로 최대로 펼쳐지도록 */
+          .print-area { padding-left: 0 !important; padding-right: 0 !important; }
 
           /* 배경색 전부 제거 + 완전한 검은색 텍스트 (토너 절약) */
           * {
