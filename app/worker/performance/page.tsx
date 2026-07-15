@@ -19,7 +19,7 @@ export default async function WorkerPerformancePage() {
   const [vehicles, departments, opsHistory] = await Promise.all([
     prisma.vehicle.findMany({
       where: { contractorId: BigInt(session.contractorId), status: 'ACTIVE' },
-      select: { id: true, vehicleNo: true, vehicleType: true, driver: { select: { departmentId: true } } },
+      select: { id: true, vehicleNo: true, vehicleType: true, departmentId: true, driver: { select: { departmentId: true } } },
       orderBy: { vehicleNo: 'asc' },
     }),
     prisma.department.findMany({
@@ -42,7 +42,8 @@ export default async function WorkerPerformancePage() {
         id: v.id.toString(),
         vehicleNo: v.vehicleNo,
         vehicleType: v.vehicleType,
-        departmentId: v.driver?.departmentId?.toString() ?? null,
+        /* 차량에 직접 등록된 부서 우선, 없으면 운전자 소속 부서로 폴백(기존 배정 유지) */
+        departmentId: (v.departmentId ?? v.driver?.departmentId)?.toString() ?? null,
       }))}
       departments={departments.map((d) => ({ id: d.id.toString(), name: d.name }))}
       isFacilityOperator={userDetail?.isFacilityOperator ?? false}

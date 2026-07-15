@@ -17,7 +17,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
     : today;
   const selectedDateStr = selectedDate.toISOString().slice(0, 10);
 
-  const [vehicles, logs, workers] = await Promise.all([
+  const [vehicles, logs, workers, departments] = await Promise.all([
     prisma.vehicle.findMany({
       where: vehicleWhere(session),
       orderBy: { vehicleNo: 'asc' },
@@ -26,6 +26,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
         driver: { select: { id: true, name: true } },
         passenger1: { select: { id: true, name: true } },
         passenger2: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true } },
       },
     }),
     prisma.vehicleLog.findMany({
@@ -40,6 +41,14 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
     session.contractorId
       ? prisma.user.findMany({
           where: { role: 'WORKER', status: 'ACTIVE', contractorId: BigInt(session.contractorId) },
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        })
+      : Promise.resolve([]),
+    /* 본인 위탁업체 부서 목록 — 차량 부서 dropdown */
+    session.contractorId
+      ? prisma.department.findMany({
+          where: { contractorId: BigInt(session.contractorId), active: true },
           select: { id: true, name: true },
           orderBy: { name: 'asc' },
         })
@@ -65,6 +74,8 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
       passenger1Name: v.passenger1?.name ?? null,
       passenger2Id: v.passenger2Id?.toString() ?? null,
       passenger2Name: v.passenger2?.name ?? null,
+      departmentId: v.departmentId?.toString() ?? null,
+      departmentName: v.department?.name ?? null,
       operationStartDate: v.operationStartDate?.toISOString().slice(0, 10) ?? null,
       initialMileage: v.initialMileage,
       totalMileage: v.totalMileage,
@@ -94,6 +105,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: { d
       vehicles={vehicleRows}
       logs={logRows}
       workers={workers.map((w) => ({ id: w.id.toString(), name: w.name }))}
+      departments={departments.map((d) => ({ id: d.id.toString(), name: d.name }))}
       isManager={isVehicleLogManager(session.role)}
       todayLabel={today.toISOString().slice(0, 10)}
       selectedDate={selectedDateStr}

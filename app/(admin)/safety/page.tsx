@@ -73,7 +73,7 @@ export default async function SafetyPage({
     ? searchParams.scheduleId
     : '';
 
-  const [items, todayWorkers, todayChecklist, tbm, workersList] = await Promise.all([
+  const [items, todayWorkers, todayChecklist, tbmSessions, workersList] = await Promise.all([
     prisma.safetyReport.findMany({
       where: baseWhere,
       orderBy: { createdAt: 'desc' },
@@ -99,18 +99,19 @@ export default async function SafetyPage({
         })
       : Promise.resolve(0),
     scopedContractorId
-      ? prisma.tbmSession.findFirst({
+      ? prisma.tbmSession.findMany({
           where: {
             contractorId: scopedContractorId, facilityId: null, sessionDate: today,
             scheduleId: selectedScheduleId ? BigInt(selectedScheduleId) : null,
           },
+          orderBy: { createdAt: 'asc' },
           include: {
             signatures: { include: { worker: { select: { id: true, name: true, employeeNo: true } } } },
             creator: { select: { name: true } },
             audience: { select: { workerId: true } },
           },
         })
-      : Promise.resolve(null),
+      : Promise.resolve([]),
     /* TBM 대상 워커 — 사무직(excludeFromTbm) 부서 제외, TBM 미서명 계산·알림톡 발송에 사용 */
     scopedContractorId
       ? prisma.user.findMany({
@@ -184,51 +185,50 @@ export default async function SafetyPage({
       todayWorkers={todayWorkers}
       todayChecklist={todayChecklist}
       weather={await fetchWeatherCached(weatherLocation)}
-      tbm={tbm
-        ? (() => {
-            let contentText: string | null = tbm.content;
-            let photoDataUrl: string | null = null;
-            let leader: string | null = null;
-            let location: string | null = null;
-            let hazards: string | null = null;
-            let preWorkCheck: string | null = null;
-            if (tbm.content) {
-              try {
-                const p = JSON.parse(tbm.content);
-                if (p && typeof p === 'object') {
-                  contentText   = p.text         ?? null;
-                  photoDataUrl  = p.photoDataUrl ?? null;
-                  leader        = p.leader       ?? null;
-                  location      = p.location     ?? null;
-                  hazards       = p.hazards      ?? null;
-                  preWorkCheck  = p.preWorkCheck ?? null;
-                }
-              } catch {}
+      tbmList={tbmSessions.map((tbm) => {
+        let contentText: string | null = tbm.content;
+        let photoDataUrl: string | null = null;
+        let leader: string | null = null;
+        let location: string | null = null;
+        let hazards: string | null = null;
+        let preWorkCheck: string | null = null;
+        if (tbm.content) {
+          try {
+            const p = JSON.parse(tbm.content);
+            if (p && typeof p === 'object') {
+              contentText   = p.text         ?? null;
+              photoDataUrl  = p.photoDataUrl ?? null;
+              leader        = p.leader       ?? null;
+              location      = p.location     ?? null;
+              hazards       = p.hazards      ?? null;
+              preWorkCheck  = p.preWorkCheck ?? null;
             }
-            return {
-              id: tbm.id.toString(),
-              topic: tbm.topic,
-              content: contentText,
-              photoDataUrl,
-              leader,
-              location,
-              hazards,
-              preWorkCheck,
-              department: tbm.department ?? null,
-              signCount: tbm.signatures.length,
-              createdBy: tbm.creator.name,
-              signedWorkers: tbm.signatures.map((s) => ({ id: s.worker.id.toString(), name: s.worker.name, employeeNo: s.worker.employeeNo })),
-              /* 서명대상 프리셋(TbmSessionAudience)이 있으면 그 대상만, 없으면 전사 워커 기준(기존 동작) */
-              unsignedWorkers: (tbm.audience.length > 0
-                ? workersList.filter((w) => tbm.audience.some((a) => a.workerId === w.id))
-                : workersList
-              )
-                .filter((w) => !tbm.signatures.find((s) => s.worker.id === w.id))
-                .map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: null })),
-            };
-          })()
-        : null
-      }
+          } catch {}
+        }
+        return {
+          id: tbm.id.toString(),
+          topic: tbm.topic,
+          content: contentText,
+          photoDataUrl,
+          leader,
+          location,
+          hazards,
+          preWorkCheck,
+          department: tbm.department ?? null,
+          signCount: tbm.signatures.length,
+          createdBy: tbm.creator.name,
+          createdByUserId: tbm.createdBy.toString(),
+          createdAt: tbm.createdAt.toISOString(),
+          signedWorkers: tbm.signatures.map((s) => ({ id: s.worker.id.toString(), name: s.worker.name, employeeNo: s.worker.employeeNo })),
+          /* 서명대상 프리셋(TbmSessionAudience)이 있으면 그 대상만, 없으면 전사 워커 기준(기존 동작) */
+          unsignedWorkers: (tbm.audience.length > 0
+            ? workersList.filter((w) => tbm.audience.some((a) => a.workerId === w.id))
+            : workersList
+          )
+            .filter((w) => !tbm.signatures.find((s) => s.worker.id === w.id))
+            .map((w) => ({ id: w.id.toString(), name: w.name, employeeNo: null })),
+        };
+      })}
       schedules={tbmSchedules.map((s) => ({ id: s.id.toString(), label: s.label, timeOfDay: s.timeOfDay }))}
       selectedScheduleId={selectedScheduleId}
       alertWorkers={workersList.map((w) => ({ id: w.id.toString(), name: w.name }))}

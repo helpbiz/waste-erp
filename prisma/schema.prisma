@@ -663,17 +663,20 @@ model Vehicle {
   operationStartDate DateTime? @map("operation_start_date") @db.Date
   initialMileage     Int?      @map("initial_mileage") // 등록 시 odometer
   totalMileage       Int?      @map("total_mileage") // 자동 갱신 = initial + sum approved logs
+  departmentId       BigInt?   @map("department_id")
 
   contractor  Contractor              @relation(fields: [contractorId], references: [id])
   driver      User?                   @relation("VehicleDriver",     fields: [driverId],     references: [id], onDelete: SetNull)
   passenger1  User?                   @relation("VehiclePassenger1", fields: [passenger1Id], references: [id], onDelete: SetNull)
   passenger2  User?                   @relation("VehiclePassenger2", fields: [passenger2Id], references: [id], onDelete: SetNull)
+  department  Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   logs        VehicleLog[]
   intakes     RecyclingCenterIntake[] @relation("VehicleIntake")
   gpsPosition VehicleGpsPosition?
 
   @@unique([contractorId, vehicleNo])
   @@index([driverId])
+  @@index([departmentId])
   @@map("vehicles")
 }
 
@@ -1026,6 +1029,7 @@ model Department {
   users             User[]
   workerSuggestions WorkerSuggestion[]
   punchRestrictions PunchRestriction[]
+  vehicles          Vehicle[]
 
   @@unique([contractorId, parentId, name])
   @@index([contractorId])

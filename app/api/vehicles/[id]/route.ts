@@ -31,6 +31,7 @@ const PatchBody = z.object({
   passenger2Id: z.union([z.string(), z.number()]).nullable().optional(),
   operationStartDate: z.string().nullable().optional(),
   initialMileage: z.number().int().min(0).max(9_999_999).nullable().optional(),
+  departmentId: z.union([z.string(), z.number()]).nullable().optional(),
   /* totalMileage는 직접 수정 불가 — 운행일지 승인 시 자동 누적 */
 });
 
@@ -88,6 +89,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'duplicate_crew_member', message: '운전자/동승자 1/2 는 모두 다른 사람이어야 합니다.' }, { status: 400 });
   }
 
+  /* 부서 검증 — 본인 위탁업체 소속 부서만 */
+  if (b.departmentId != null) {
+    const dept = await prisma.department.findFirst({ where: { id: BigInt(b.departmentId), contractorId: targetContractorId } });
+    if (!dept) return NextResponse.json({ error: 'invalid_department' }, { status: 400 });
+  }
+
   /* initialMileage 변경 시 totalMileage 자동 재계산 */
   let newTotal: number | undefined = undefined;
   if (b.initialMileage !== undefined && b.initialMileage !== target.initialMileage) {
@@ -124,6 +131,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       }),
       ...(b.initialMileage !== undefined && { initialMileage: b.initialMileage }),
       ...(newTotal !== undefined && { totalMileage: newTotal }),
+      ...(b.departmentId !== undefined && { departmentId: b.departmentId === null ? null : BigInt(b.departmentId) }),
     },
   });
 

@@ -12,6 +12,7 @@ type TbmInfo = {
   id: string; topic: string; content: string | null; photoDataUrl: string | null;
   leader: string | null; location: string | null; hazards: string | null; preWorkCheck: string | null;
   department: string | null; signCount: number; createdBy: string;
+  createdByUserId: string; createdAt: string;
   signedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
   unsignedWorkers: Array<{ id: string; name: string; employeeNo: string | null }>;
 };
@@ -58,7 +59,7 @@ export default function SafetyClient({
   todayWorkers,
   todayChecklist,
   weather,
-  tbm,
+  tbmList,
   schedules = [],
   selectedScheduleId = '',
   alertWorkers,
@@ -77,7 +78,7 @@ export default function SafetyClient({
   todayWorkers: number;
   todayChecklist: number;
   weather: WeatherSnapshot;
-  tbm: TbmInfo | null;
+  tbmList: TbmInfo[];
   schedules?: Array<{ id: string; label: string; timeOfDay: string }>;
   selectedScheduleId?: string;
   alertWorkers: WorkerOpt[];
@@ -160,15 +161,16 @@ export default function SafetyClient({
   }
   const [reviewStatus, setReviewStatus] = useState<'REVIEWED' | 'MOL_REPORTED' | 'RESOLVED'>('REVIEWED');
   const [note, setNote] = useState('');
+  const latestTbm = tbmList[tbmList.length - 1] ?? null;
   const [tbmEdit, setTbmEdit] = useState(false);
-  const [tbmTopic, setTbmTopic] = useState(tbm?.topic ?? '');
-  const [tbmContent, setTbmContent] = useState(tbm?.content ?? '');
-  const [tbmDept, setTbmDept] = useState(tbm?.department ?? '');
-  const [tbmPhoto, setTbmPhoto] = useState<string | null>(tbm?.photoDataUrl ?? null);
-  const [tbmLeader, setTbmLeader] = useState(tbm?.leader ?? '');
-  const [tbmLocation, setTbmLocation] = useState(tbm?.location ?? '');
-  const [tbmHazards, setTbmHazards] = useState(tbm?.hazards ?? '');
-  const [tbmPreWorkCheck, setTbmPreWorkCheck] = useState(tbm?.preWorkCheck ?? '');
+  const [tbmTopic, setTbmTopic] = useState(latestTbm?.topic ?? '');
+  const [tbmContent, setTbmContent] = useState(latestTbm?.content ?? '');
+  const [tbmDept, setTbmDept] = useState(latestTbm?.department ?? '');
+  const [tbmPhoto, setTbmPhoto] = useState<string | null>(latestTbm?.photoDataUrl ?? null);
+  const [tbmLeader, setTbmLeader] = useState(latestTbm?.leader ?? '');
+  const [tbmLocation, setTbmLocation] = useState(latestTbm?.location ?? '');
+  const [tbmHazards, setTbmHazards] = useState(latestTbm?.hazards ?? '');
+  const [tbmPreWorkCheck, setTbmPreWorkCheck] = useState(latestTbm?.preWorkCheck ?? '');
 
   const filtered = useMemo(() => {
     if (tab === 'ALL') return rows;
@@ -361,7 +363,7 @@ export default function SafetyClient({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <WeatherWidget w={weather} />
         <TbmWidget
-          tbm={tbm}
+          tbmList={tbmList}
           isManager={isManager}
           editing={tbmEdit}
           topic={tbmTopic}
@@ -380,16 +382,16 @@ export default function SafetyClient({
           onLocationChange={setTbmLocation}
           onHazardsChange={setTbmHazards}
           onPreWorkCheckChange={setTbmPreWorkCheck}
-          onEdit={() => {
+          onEdit={(entry) => {
             setTbmEdit(true);
-            setTbmTopic(tbm?.topic ?? '');
-            setTbmContent(tbm?.content ?? '');
-            setTbmDept(tbm?.department ?? '');
-            setTbmPhoto(tbm?.photoDataUrl ?? null);
-            setTbmLeader(tbm?.leader ?? '');
-            setTbmLocation(tbm?.location ?? '');
-            setTbmHazards(tbm?.hazards ?? '');
-            setTbmPreWorkCheck(tbm?.preWorkCheck ?? '');
+            setTbmTopic(entry?.topic ?? '');
+            setTbmContent(entry?.content ?? '');
+            setTbmDept(entry?.department ?? '');
+            setTbmPhoto(entry?.photoDataUrl ?? null);
+            setTbmLeader(entry?.leader ?? '');
+            setTbmLocation(entry?.location ?? '');
+            setTbmHazards(entry?.hazards ?? '');
+            setTbmPreWorkCheck(entry?.preWorkCheck ?? '');
           }}
           onCancel={() => setTbmEdit(false)}
           onSave={saveTbm}
@@ -481,13 +483,17 @@ export default function SafetyClient({
               </div>
             </DailySection>
 
-            {/* TBM */}
+            {/* TBM — 당일 등록된 건 전부 순서대로 */}
             <DailySection title="📋 오늘 TBM 안전교육">
-              {tbm ? (
-                <div className="space-y-1 text-sm">
-                  <div><span className="font-bold">주제:</span> {tbm.topic}</div>
-                  {tbm.content && <div><span className="font-bold">내용:</span> <span className="whitespace-pre-wrap">{tbm.content}</span></div>}
-                  <div><span className="font-bold">서명자:</span> {tbm.signCount}명</div>
+              {tbmList.length > 0 ? (
+                <div className="space-y-2 text-sm">
+                  {tbmList.map((t) => (
+                    <div key={t.id} className="pb-2 border-b border-line last:border-0 last:pb-0">
+                      <div><span className="font-bold">주제:</span> {t.topic}</div>
+                      {t.content && <div><span className="font-bold">내용:</span> <span className="whitespace-pre-wrap">{t.content}</span></div>}
+                      <div><span className="font-bold">서명자:</span> {t.signCount}명 · <span className="text-ink-faint">등록: {t.createdBy}</span></div>
+                    </div>
+                  ))}
                 </div>
               ) : <div className="text-sm text-ink-faint">등록된 TBM 없음</div>}
             </DailySection>
@@ -815,12 +821,12 @@ function WeatherWidget({ w }: { w: WeatherSnapshot }) {
 }
 
 function TbmWidget({
-  tbm, isManager, editing, topic, content, dept, photo, leader, location, hazards, preWorkCheck,
+  tbmList, isManager, editing, topic, content, dept, photo, leader, location, hazards, preWorkCheck,
   onTopicChange, onContentChange, onDeptChange, onPhotoChange,
   onLeaderChange, onLocationChange, onHazardsChange, onPreWorkCheckChange,
   onEdit, onCancel, onSave, busy,
 }: {
-  tbm: TbmInfo | null;
+  tbmList: TbmInfo[];
   isManager: boolean;
   editing: boolean;
   topic: string;
@@ -839,7 +845,7 @@ function TbmWidget({
   onLocationChange: (s: string) => void;
   onHazardsChange: (s: string) => void;
   onPreWorkCheckChange: (s: string) => void;
-  onEdit: () => void;
+  onEdit: (entry?: TbmInfo) => void;
   onCancel: () => void;
   onSave: () => void;
   busy: boolean;
@@ -867,7 +873,11 @@ function TbmWidget({
       <header className="px-4 py-3 bg-surface-soft border-b-2 border-line flex items-center justify-between gap-2">
         <div className="text-sm font-extrabold text-ink">📋 오늘 TBM 안전교육</div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {tbm && !editing && <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">{tbm.signCount}명 서명</span>}
+          {tbmList.length > 0 && !editing && (
+            <span className="px-2.5 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-blue-100 text-info border border-blue-200">
+              {tbmList.length > 1 ? `${tbmList.length}건 등록` : `${tbmList[0].signCount}명 서명`}
+            </span>
+          )}
           {isManager && !editing && (
             <>
               <a href="/safety/tbm-print" className="px-2 py-0.5 rounded text-[0.625rem] font-extrabold border border-slate-400 text-ink-faint hover:bg-slate-100 print:hidden">
@@ -913,76 +923,90 @@ function TbmWidget({
               <button onClick={onCancel} className="px-4 py-2 rounded-md border border-line text-sm font-bold">취소</button>
             </div>
           </div>
-        ) : tbm ? (
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
-              {tbm.department && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-slate-100 text-ink-muted border">{tbm.department}</span>}
-            </div>
-            {(tbm.leader || tbm.location) && (
-              <div className="flex gap-3 mt-1.5 text-sm font-semibold text-ink-muted">
-                {tbm.leader && <span>리더: <span className="text-ink font-bold">{tbm.leader}</span></span>}
-                {tbm.location && <span>장소: <span className="text-ink font-bold">{tbm.location}</span></span>}
-              </div>
-            )}
-            {tbm.hazards && (
-              <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-900">
-                <span className="font-extrabold">위험요인: </span>{tbm.hazards}
-              </div>
-            )}
-            {tbm.preWorkCheck && (
-              <div className="mt-1 px-2 py-1.5 rounded bg-green-50 border border-green-200 text-sm font-semibold text-green-900">
-                <span className="font-extrabold">작업전 안전점검: </span>{tbm.preWorkCheck}
-              </div>
-            )}
-            {tbm.content && <p className="text-sm font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
-            {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-contain bg-slate-50 border border-line" />}
-            <div className="flex items-center justify-between mt-2.5">
-              <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
-              {isManager && <button onClick={onEdit} className="text-sm font-extrabold text-accent hover:underline">수정</button>}
-            </div>
+        ) : tbmList.length > 0 ? (
+          <div className="space-y-3">
+            {tbmList.map((tbm, i) => (
+              <div key={tbm.id} className={i > 0 ? 'pt-3 border-t border-line' : undefined}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {tbmList.length > 1 && (
+                    <span className="text-[0.625rem] font-mono font-extrabold text-ink-faint">
+                      #{i + 1} · {new Date(tbm.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  <div className="text-base font-extrabold text-ink">{tbm.topic}</div>
+                  {tbm.department && <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-mono font-extrabold bg-slate-100 text-ink-muted border">{tbm.department}</span>}
+                </div>
+                {(tbm.leader || tbm.location) && (
+                  <div className="flex gap-3 mt-1.5 text-sm font-semibold text-ink-muted">
+                    {tbm.leader && <span>리더: <span className="text-ink font-bold">{tbm.leader}</span></span>}
+                    {tbm.location && <span>장소: <span className="text-ink font-bold">{tbm.location}</span></span>}
+                  </div>
+                )}
+                {tbm.hazards && (
+                  <div className="mt-1 px-2 py-1.5 rounded bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-900">
+                    <span className="font-extrabold">위험요인: </span>{tbm.hazards}
+                  </div>
+                )}
+                {tbm.preWorkCheck && (
+                  <div className="mt-1 px-2 py-1.5 rounded bg-green-50 border border-green-200 text-sm font-semibold text-green-900">
+                    <span className="font-extrabold">작업전 안전점검: </span>{tbm.preWorkCheck}
+                  </div>
+                )}
+                {tbm.content && <p className="text-sm font-semibold text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{tbm.content}</p>}
+                {tbm.photoDataUrl && <img src={tbm.photoDataUrl} alt="TBM 사진" className="mt-2 w-full rounded-md max-h-48 object-contain bg-slate-50 border border-line" />}
+                <div className="flex items-center justify-between mt-2.5">
+                  <div className="text-[0.6875rem] font-mono font-bold text-ink-faint">등록: {tbm.createdBy}</div>
+                  {isManager && <button onClick={() => onEdit(tbm)} className="text-sm font-extrabold text-accent hover:underline">수정</button>}
+                </div>
 
-            {/* 서명자 / 미서명자 리스트 */}
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="bg-emerald-50 border border-emerald-300 rounded p-2">
-                <div className="text-[0.625rem] font-mono font-extrabold text-emerald-800 mb-1">
-                  ✓ 서명 완료 ({tbm.signedWorkers.length}명)
-                </div>
-                <div className="max-h-[80px] overflow-y-auto">
-                  {tbm.signedWorkers.length === 0
-                    ? <span className="text-[0.625rem] text-ink-faint">없음</span>
-                    : (
-                      <div className="flex flex-wrap gap-1">
-                        {tbm.signedWorkers.map((w) => (
-                          <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-emerald-300">{w.name}</span>
-                        ))}
-                      </div>
-                    )}
+                {/* 서명자 / 미서명자 리스트 */}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="bg-emerald-50 border border-emerald-300 rounded p-2">
+                    <div className="text-[0.625rem] font-mono font-extrabold text-emerald-800 mb-1">
+                      ✓ 서명 완료 ({tbm.signedWorkers.length}명)
+                    </div>
+                    <div className="max-h-[80px] overflow-y-auto">
+                      {tbm.signedWorkers.length === 0
+                        ? <span className="text-[0.625rem] text-ink-faint">없음</span>
+                        : (
+                          <div className="flex flex-wrap gap-1">
+                            {tbm.signedWorkers.map((w) => (
+                              <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-emerald-300">{w.name}</span>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-300 rounded p-2">
+                    <div className="text-[0.625rem] font-mono font-extrabold text-amber-800 mb-1">
+                      ⚠ 미서명 ({tbm.unsignedWorkers.length}명)
+                    </div>
+                    <div className="max-h-[80px] overflow-y-auto">
+                      {tbm.unsignedWorkers.length === 0
+                        ? <span className="text-[0.625rem] text-emerald-700 font-bold">전원 서명 완료</span>
+                        : (
+                          <div className="flex flex-wrap gap-1">
+                            {tbm.unsignedWorkers.map((w) => (
+                              <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-amber-300">{w.name}</span>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="bg-amber-50 border border-amber-300 rounded p-2">
-                <div className="text-[0.625rem] font-mono font-extrabold text-amber-800 mb-1">
-                  ⚠ 미서명 ({tbm.unsignedWorkers.length}명)
-                </div>
-                <div className="max-h-[80px] overflow-y-auto">
-                  {tbm.unsignedWorkers.length === 0
-                    ? <span className="text-[0.625rem] text-emerald-700 font-bold">전원 서명 완료</span>
-                    : (
-                      <div className="flex flex-wrap gap-1">
-                        {tbm.unsignedWorkers.map((w) => (
-                          <span key={w.id} className="text-[0.625rem] font-bold px-1.5 py-0.5 bg-white rounded border border-amber-300">{w.name}</span>
-                        ))}
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
+            ))}
+            {isManager && (
+              <button onClick={() => onEdit()} className="w-full px-4 py-2 rounded-md border-2 border-dashed border-line text-sm font-extrabold text-ink-muted hover:bg-slate-50">
+                + 새 TBM 등록
+              </button>
+            )}
           </div>
         ) : (
           <div className="text-center py-2">
             <p className="text-sm font-bold text-ink-muted mb-2">오늘 TBM 세션이 등록되지 않았습니다.</p>
             {isManager && (
-              <button onClick={onEdit} className="px-4 py-2 rounded-md bg-info text-white text-sm font-extrabold hover:bg-blue-700">
+              <button onClick={() => onEdit()} className="px-4 py-2 rounded-md bg-info text-white text-sm font-extrabold hover:bg-blue-700">
                 + TBM 세션 등록
               </button>
             )}

@@ -29,6 +29,7 @@ const PostBody = z.object({
   operationStartDate: z.string().nullable().optional(), // 'YYYY-MM-DD' or ISO
   initialMileage: z.number().int().min(0).max(9_999_999).optional(),
   contractorId: z.union([z.string(), z.number()]).optional(), // SUPER만
+  departmentId: z.union([z.string(), z.number()]).nullable().optional(),
 });
 
 export async function GET(req: Request) {
@@ -62,6 +63,7 @@ export async function GET(req: Request) {
       driverId: v.driverId?.toString() ?? null,
       passenger1Id: v.passenger1Id?.toString() ?? null,
       passenger2Id: v.passenger2Id?.toString() ?? null,
+      departmentId: v.departmentId?.toString() ?? null,
       registrationDate: v.registrationDate?.toISOString().slice(0, 10) ?? null,
       updatedAt: v.updatedAt.toISOString().slice(0, 10),
       operationStartDate: v.operationStartDate?.toISOString().slice(0, 10) ?? null,
@@ -127,6 +129,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'duplicate_crew_member', message: '운전자/동승자 1/2 는 모두 다른 사람이어야 합니다.' }, { status: 400 });
   }
 
+  /* 부서 검증 — 본인 위탁업체 소속 부서만 */
+  let departmentId: bigint | null = null;
+  if (b.departmentId != null) {
+    const dept = await prisma.department.findFirst({ where: { id: BigInt(b.departmentId), contractorId } });
+    if (!dept) return NextResponse.json({ error: 'invalid_department' }, { status: 400 });
+    departmentId = dept.id;
+  }
+
   const data: Prisma.VehicleCreateInput = {
     contractor: { connect: { id: contractorId } },
     vehicleNo: b.vehicleNo,
@@ -143,6 +153,7 @@ export async function POST(req: Request) {
     ...(driverId ? { driver: { connect: { id: driverId } } } : {}),
     ...(passenger1Id ? { passenger1: { connect: { id: passenger1Id } } } : {}),
     ...(passenger2Id ? { passenger2: { connect: { id: passenger2Id } } } : {}),
+    ...(departmentId ? { department: { connect: { id: departmentId } } } : {}),
   };
 
   let created: Awaited<ReturnType<typeof prisma.vehicle.create>>;

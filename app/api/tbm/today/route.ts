@@ -204,14 +204,24 @@ export async function POST(req: Request) {
     if (opScope.primaryFacilityId) facilityId = opScope.primaryFacilityId;
   }
 
-  // upsert: findFirst + update or create (@@unique 제거로 Prisma upsert 불가)
+  /* 같은 날짜/시간대/부서/시설의 최신 세션 — 있어도 무조건 덮어쓰지 않는다.
+     본인이 작성했고 아직 서명이 하나도 없는 경우에만 "수정"(update), 그 외(다른 작성자이거나
+     이미 서명이 있는 경우)에는 새 세션을 생성해 그날 작성된 건이 전부 누적되도록 한다. */
   const existing = await prisma.tbmSession.findFirst({
     where: { contractorId, facilityId, sessionDate: today, department, scheduleId },
+    orderBy: { createdAt: 'desc' },
   });
 
-  const tbm = existing
+  const existingSignatureCount = existing
+    ? await prisma.tbmSignature.count({ where: { sessionId: existing.id } })
+    : 0;
+  const canEditInPlace = !!existing
+    && existing.createdBy === BigInt(session.userId)
+    && existingSignatureCount === 0;
+
+  const tbm = canEditInPlace
     ? await prisma.tbmSession.update({
-        where: { id: existing.id },
+        where: { id: existing!.id },
         data: { topic: parsed.data.topic, content: contentToStore },
       })
     : await prisma.tbmSession.create({
@@ -228,7 +238,7 @@ export async function POST(req: Request) {
       });
 
   /* 신규 세션 생성 시 등록권한자(작성자)의 서명대상 프리셋을 스냅샷 — 프리셋 없으면 전체 대상(기존 동작) 유지 */
-  if (!existing) {
+  if (!canEditInPlace) {
     const preset = await prisma.tbmManagerAudience.findMany({
       where: { managerId: BigInt(session.userId) },
       select: { workerId: true },

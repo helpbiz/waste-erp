@@ -133,7 +133,52 @@ export default function ComplaintsPrintClient({
       <style>{`
         @media print {
           @page { size: A4 landscape; margin: 12mm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+          /* 화면 조작용 UI 제거 (타이틀 바 · 출력센터/인쇄/닫기 버튼, 사이드바 · 상단바) */
+          header, aside, nav, [data-sidebar], .sidebar { display: none !important; }
+          .print\\:hidden { display: none !important; }
+
+          /* AdminShell 스크롤 컨테이너 해제 → 전체 내용 인쇄 */
+          html, body { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+          main, section { overflow: visible !important; height: auto !important; max-height: none !important; padding: 0 !important; }
+
+          /* 배경색 전부 제거 + 완전한 검은색 텍스트 (토너 절약) */
+          * {
+            background: white !important;
+            background-color: white !important;
+            color: #000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* 테이블 가로 폭 100% 고정 분배 */
+          table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+          thead { display: table-header-group; }
+          th, td {
+            border: 1px solid #000 !important;
+            font-size: 8pt !important;
+            word-break: break-all !important;
+            overflow-wrap: break-word !important;
+          }
+
+          /* 컬럼 순서: No·유형·상태·주소·민원내용·접수일시·접수자·담당자·완료일시·처리내용·사진 */
+          th:nth-child(1),  td:nth-child(1)  { width: 3%; }
+          th:nth-child(2),  td:nth-child(2)  { width: 5%; }
+          th:nth-child(3),  td:nth-child(3)  { width: 5%; }
+          th:nth-child(4),  td:nth-child(4)  { width: 15%; }
+          th:nth-child(5),  td:nth-child(5)  { width: 20%; }
+          th:nth-child(6),  td:nth-child(6)  { width: 9%; }
+          th:nth-child(7),  td:nth-child(7)  { width: 6%; }
+          th:nth-child(8),  td:nth-child(8)  { width: 6%; }
+          th:nth-child(9),  td:nth-child(9)  { width: 9%; }
+          th:nth-child(10), td:nth-child(10) { width: 15%; }
+          th:nth-child(11), td:nth-child(11) { width: 7%; }
+
+          /* 사진 축소 — 페이지 넘침 방지 */
+          img { max-width: 60px !important; max-height: 60px !important; width: auto !important; height: auto !important; }
+
+          /* 행 중간에서 페이지가 잘리지 않도록 */
+          tr { page-break-inside: avoid !important; break-inside: avoid !important; }
         }
       `}</style>
     </div>

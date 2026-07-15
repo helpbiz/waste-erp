@@ -9,9 +9,20 @@
 # 환경변수:
 #   BACKUP_DIR     — 저장 경로 (기본: $HOME/wci-backups)
 #   RETENTION_DAYS — 보관 일수 (기본: 14)
-#   DATABASE_URL   — postgres 연결 (없으면 docker compose exec 시도)
+#   DATABASE_URL   — postgres 연결 (없으면 cleanerp-postgres 컨테이너에 docker exec 시도)
+#
+# 2026-07-15: docker compose exec 방식은 이 호스트의 실제 cleanerp-postgres 컨테이너가
+# docker-compose.prod.yml이 정의하는 "postgres" 서비스와 매칭되지 않아(컨테이너가 compose
+# 라벨 없이 별도 생성됨 — docker-compose.yml의 "db" 서비스도 다른 컨테이너) 항상 실패했다.
+# cleanerp-app이 실제로 연결하는 컨테이너 이름(DATABASE_URL 호스트명)을 그대로 사용한다.
 
 set -euo pipefail
+
+# cron은 스크립트 파일 위치가 아니라 $HOME 등 임의 cwd에서 실행하므로,
+# 아래 .env.prod/docker-compose.prod.yml 상대경로가 깨지지 않도록 항상 프로젝트 루트로 이동한다.
+# (2026-07-07 이후 9일간 이 문제로 백업이 전부 빈 파일로 실패했던 원인)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
 BACKUP_DIR="${BACKUP_DIR:-$HOME/wci-backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
@@ -25,13 +36,28 @@ LOG="${BACKUP_DIR}/backup.log"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] backup start → $OUT" | tee -a "$LOG"
 
+DB_CONTAINER="${DB_CONTAINER:-cleanerp-postgres}"
+
 if [ -n "${DATABASE_URL:-}" ]; then
   pg_dump --no-owner --no-acl --clean --if-exists "$DATABASE_URL" | gzip > "$OUT"
 else
-  # docker compose 시도 — cleanerp-postgres 컨테이너 가정
-  docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T postgres \
+  docker exec "$DB_CONTAINER" \
     sh -c 'pg_dump --no-owner --no-acl --clean --if-exists -U "$POSTGRES_USER" "$POSTGRES_DB"' \
     | gzip > "$OUT"
+fi
+
+# 빈 덤프(예: pg_dump/docker exec 조용히 실패해 gzip이 빈 스트림만 받은 경우)를
+# 정상 백업으로 착각하지 않도록 무결성 + 최소 크기 검증 후에만 성공 처리한다.
+if ! gzip -t "$OUT" 2>/dev/null; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] backup FAILED — corrupt gzip → $OUT" | tee -a "$LOG"
+  rm -f "$OUT"
+  exit 1
+fi
+BYTES="$(zcat "$OUT" | wc -c)"
+if [ "$BYTES" -lt 1000 ]; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] backup FAILED — dump too small (${BYTES} bytes), pg_dump likely failed silently → $OUT" | tee -a "$LOG"
+  rm -f "$OUT"
+  exit 1
 fi
 
 SIZE="$(du -h "$OUT" | cut -f1)"

@@ -39,6 +39,8 @@ export type VehicleRow = {
   passenger1Name: string | null;
   passenger2Id: string | null;
   passenger2Name: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
   operationStartDate: string | null; // 'YYYY-MM-DD'
   initialMileage: number | null;
   totalMileage: number | null;
@@ -47,6 +49,7 @@ export type VehicleRow = {
 };
 
 export type WorkerOpt = { id: string; name: string };
+export type DeptOpt = { id: string; name: string };
 
 export type LogRow = {
   id: string;
@@ -73,6 +76,7 @@ export default function VehiclesClient({
   vehicles,
   logs,
   workers,
+  departments,
   isManager,
   todayLabel,
   selectedDate,
@@ -80,6 +84,7 @@ export default function VehiclesClient({
   vehicles: VehicleRow[];
   logs: LogRow[];
   workers: WorkerOpt[];
+  departments: DeptOpt[];
   isManager: boolean;
   todayLabel: string;
   selectedDate?: string;
@@ -239,6 +244,7 @@ export default function VehiclesClient({
             const peopleParts: string[] = [];
             if (v.driverName) peopleParts.push(`🚛 ${v.driverName}`);
             if (passengers) peopleParts.push(`👥 ${passengers}`);
+            if (v.departmentName) peopleParts.push(`🏢 ${v.departmentName}`);
             const peopleStr = peopleParts.join(' · ');
             const isClickable = isManager && v.status !== 'RETIRED';
 
@@ -418,6 +424,7 @@ export default function VehiclesClient({
         <VehicleFormModal
           initial={editing === 'NEW' ? null : editing}
           workers={workers}
+          departments={departments}
           onCancel={() => { setEditing(null); setSaveError(null); }}
           errorMsg={saveError}
           onSubmit={async (body) => {
@@ -531,6 +538,7 @@ type VehicleFormPayload = {
   driverId: string | null;
   passenger1Id: string | null;
   passenger2Id: string | null;
+  departmentId: string | null;
   operationStartDate: string | null;
   initialMileage: number | null;
 };
@@ -538,6 +546,7 @@ type VehicleFormPayload = {
 function VehicleFormModal({
   initial,
   workers,
+  departments,
   onCancel,
   onSubmit,
   onDelete,
@@ -546,6 +555,7 @@ function VehicleFormModal({
 }: {
   initial: VehicleRow | null;
   workers: WorkerOpt[];
+  departments: DeptOpt[];
   onCancel: () => void;
   onSubmit: (body: Partial<VehicleFormPayload>) => Promise<boolean>;
   onDelete?: () => void;
@@ -576,6 +586,7 @@ function VehicleFormModal({
   const [driverId, setDriverId] = useState<string>(initial?.driverId ?? '');
   const [passenger1Id, setPassenger1Id] = useState<string>(initial?.passenger1Id ?? '');
   const [passenger2Id, setPassenger2Id] = useState<string>(initial?.passenger2Id ?? '');
+  const [departmentId, setDepartmentId] = useState<string>(initial?.departmentId ?? '');
   const [opStart, setOpStart] = useState<string>(initial?.operationStartDate ?? '');
   const [initialMileage, setInitialMileage] = useState<string>(
     initial?.initialMileage != null ? String(initial.initialMileage) : ''
@@ -600,6 +611,7 @@ function VehicleFormModal({
       driverId: driverId || null,
       passenger1Id: passenger1Id || null,
       passenger2Id: passenger2Id || null,
+      departmentId: departmentId || null,
       operationStartDate: opStart || null,
       initialMileage: initialMileage ? Number(initialMileage) : null,
     };
@@ -706,6 +718,14 @@ function VehicleFormModal({
                 <option value="">— 미지정 —</option>
                 {workers.map((w) => (
                   <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="부서" hint="실적관리 조회 기준">
+              <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
+                <option value="">— 미지정 —</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </Field>
