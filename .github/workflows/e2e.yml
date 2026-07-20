@@ -36,7 +36,7 @@ env:
   DATABASE_URL: postgresql://ci-user:ci-test@localhost:5432/waste_erp_ci
   JWT_SECRET: ci-dummy-secret-32chars-padding-x
   KMS_PROVIDER: local
-  KMS_LOCAL_KEY: ci-dummy-kms-key-32chars-padding
+  KMS_LOCAL_KEY: 8TGTAevwQWQ1kzveIRg87wybrDr8JJ8vcqCdqLXBPYo=  # CI 전용 dummy, base64 디코드 시 정확히 32바이트여야 함(lib/kms.ts 검증)
   CRON_SECRET: ci-dummy-cron-secret
   SMS_PROVIDER: simulation
   WEATHER_PROVIDER: open-meteo
