@@ -107,20 +107,93 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   }
 
-  /* ── 일반(위탁업체·슈퍼·근로자) 메뉴 ────────────────────────────────────── */
+  /* ── SUPER_ADMIN 전용 메뉴: 시스템관리 / 일반업무(테넌트 조회) 분리 ────────
+     2026-07-20 결정 (security-architect 상담): SUPER는 여전히 전 테넌트
+     mutate가 가능하나(과잉설계 방지 위해 하드 차단은 보류), 사이드바에서
+     "플랫폼 시스템관리"와 "테넌트 일반업무"를 시각적으로 분리해 운영자가
+     지금 보는 화면이 특정 회사 데이터라는 걸 인지하도록 한다. */
+  if (session.role === 'SUPER_ADMIN') {
+    const superGroups = [
+      {
+        group: '🛡 시스템관리',
+        items: [
+          { href: '/dashboard', label: '메인 대시보드' },
+          { href: '/dashboard/wall', label: '🖥 관제 모드 (풀스크린)', newTab: true },
+          { href: '/dashboard/wall/settings', label: '🛠 관제 모드 설정' },
+          { href: '/noc', label: '🌐 글로벌 NOC', newTab: true },
+          { href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' },
+        ],
+      },
+      {
+        group: '일반업무 (테넌트 데이터)',
+        items: [
+          { href: '/complaints', label: '민원관리', badge: pendingComplaints > 0 ? String(pendingComplaints) : undefined },
+          { href: '/safety', label: '산업안전보건', badge: pendingSafety > 0 ? String(pendingSafety) : undefined },
+          { href: '/safety/weather-notices', label: '🌡 날씨관리대장' },
+          { href: '/health', label: '건강기록카드' },
+          { href: '/suggestions', label: '🗳 익명 건의함' },
+          { href: '/approvals', label: '📋 결재관리', badge: pendingApprovals > 0 ? String(pendingApprovals) : undefined },
+          { href: '/attendance', label: '근태관리' },
+          { href: '/payroll', label: '💰 급여관리' },
+          { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
+          { href: '/vehicles', label: '차량관리' },
+          { href: '/performance', label: '실적관리' },
+          { href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' },
+          { href: '/reports', label: '통계/보고서' },
+          { href: '/print', label: '🖨 출력 센터' },
+        ],
+      },
+      {
+        group: '일반업무 설정',
+        items: [
+          { href: '/announcements', label: '📢 공지사항' },
+          { href: '/users', label: '사용자관리' },
+          { href: '/import', label: '📥 일괄 업로드' },
+          { href: '/settings/disposal-sites', label: '🏭 반입장소 설정' },
+          { href: '/settings/intake-categories', label: '♻️ 반입 성상 설정' },
+          { href: '/settings/tbm-schedules', label: '⏰ TBM 시간 설정' },
+          { href: '/settings/tbm-audience', label: '👥 TBM 서명대상 설정' },
+          { href: '/settings/zones', label: '🗺 담당구역 설정' },
+          { href: '/settings/worker-zones', label: '👷 작업자 담당구역' },
+          { href: '/bulky-waste', label: '대형폐기물 설정' },
+        ],
+      },
+      {
+        group: 'HELP',
+        items: [
+          { href: '/profile', label: '🔑 비밀번호 변경' },
+          { href: '/manual/contractor', label: '📘 사용 가이드', newTab: true },
+        ],
+      },
+    ];
+
+    return (
+      <ToastProvider>
+        <AdminShell
+          session={{ role: session.role, name: session.name }}
+          groups={superGroups}
+          pageTitle="메인 대시보드"
+          canMutate={canMutate(session.role)}
+        >
+          {children}
+        </AdminShell>
+      </ToastProvider>
+    );
+  }
+
+  /* ── 일반(위탁업체·근로자) 메뉴 ──────────────────────────────────────────
+     SUPER_ADMIN 은 위에서 이미 분기 완료, 이 아래는 CONTRACTOR_ADMIN /
+     INTERNAL_ADMIN / WORKER(관리자 권한) 전용이므로 관련 SUPER 분기 제거됨. */
   const groups = [
     {
       group: 'OVERVIEW',
       items: [
         { href: '/dashboard', label: '메인 대시보드' },
-        ...(session.role === 'SUPER_ADMIN' || feNocAccess
+        ...(feNocAccess
           ? [
               { href: '/dashboard/wall', label: '🖥 관제 모드 (풀스크린)', newTab: true },
               { href: '/dashboard/wall/settings', label: '🛠 관제 모드 설정' },
             ]
-          : []),
-        ...(session.role === 'SUPER_ADMIN'
-          ? [{ href: '/noc', label: '🌐 글로벌 NOC', newTab: true }]
           : []),
       ],
     },
@@ -162,9 +235,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               ...(feSkipForSuperOrMuni || feAnnouncements
                 ? [{ href: '/announcements', label: '📢 공지사항' }]
                 : []),
-              ...(session.role !== 'SUPER_ADMIN'
-                ? [{ href: '/settings/info', label: '🏢 회사 정보 설정' }]
-                : []),
+              { href: '/settings/info', label: '🏢 회사 정보 설정' },
               { href: '/users', label: '사용자관리' },
               { href: '/import', label: '📥 일괄 업로드' },
               { href: '/settings/disposal-sites', label: '🏭 반입장소 설정' },
@@ -174,9 +245,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               { href: '/settings/zones', label: '🗺 담당구역 설정' },
               { href: '/settings/worker-zones', label: '👷 작업자 담당구역' },
               { href: '/bulky-waste', label: '대형폐기물 설정' },
-              ...(session.role === 'SUPER_ADMIN'
-                ? [{ href: '/super-admin', label: '슈퍼관리자 콘솔', badge: 'ADMIN' }]
-                : []),
             ],
           },
         ]
