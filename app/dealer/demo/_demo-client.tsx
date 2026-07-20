@@ -179,7 +179,7 @@ export default function DemoClient() {
           onClick={onProvisionMunicipality}
           disabled={provisioning || provisioningMuni || quotaReached}
           title="가상 지자체 1개 + 가상 위탁업체 3개를 만들어 지자체 통합관제 화면을 시연합니다"
-          className="rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50"
+          className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50"
         >
           {provisioningMuni ? '발급 중…' : '지자체 모드 데모 발급 (회사 3곳)'}
         </button>

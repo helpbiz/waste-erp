@@ -211,7 +211,7 @@ export default function BulkyWasteClient({
           <div className="text-sm font-extrabold text-emerald-900 mb-2">🚀 자동반영 / 처리완료 즉시 실행 (수동)</div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => runManual('import')} disabled={running !== null}
-              className="px-4 py-2 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+              className="px-4 py-2 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
               {running === 'import' ? '실행 중…' : '📥 자동반영 확인 (import 즉시 실행)'}
             </button>
             <button onClick={() => runManual('resolve')} disabled={running !== null}

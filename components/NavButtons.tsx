@@ -22,7 +22,7 @@ type Props = {
 
 const COLOR: Record<NavApp, string> = {
   kakaomap: 'bg-yellow-400 hover:bg-yellow-500 text-ink-muted',
-  nmap: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+  nmap: 'bg-emerald-500 hover:bg-emerald-700 text-white',
   tmap: 'bg-rose-500 hover:bg-rose-600 text-white',
 };
 

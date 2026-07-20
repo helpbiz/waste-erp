@@ -539,7 +539,7 @@ export default function LiveVehiclesClient({
                 className="ml-1 px-2 py-1 rounded border border-line w-20 font-mono font-bold" />
             </label>
             <button onClick={runOptimize} disabled={routeBusy}
-              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
               {routeBusy ? '계산 중…' : '🚀 미처리 민원으로 경로 최적화'}
             </button>
             {routeStats && (

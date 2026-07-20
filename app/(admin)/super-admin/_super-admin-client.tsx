@@ -106,7 +106,7 @@ export default function SuperAdminClient() {
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95 transition"
+          className="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold shadow-md active:scale-95 transition"
           title="회사 정보 + 지자체 + 권한 + 관리자 계정을 5단계로 한 번에 개설"
         >
           ＋ 신규 위탁업체 개설
@@ -344,7 +344,7 @@ function MunicipalitiesTab() {
           </button>
           <button
             onClick={() => setCreating(true)}
-            className="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700"
+            className="px-3 py-1.5 rounded-md bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800"
           >
             + 지자체 신규 등록
           </button>
@@ -974,7 +974,7 @@ function CompanyInfoTab() {
                 placeholder="서울시 강남구 역삼동 123-45 차고지"
                 className="flex-1 px-3 py-1.5 rounded border border-line text-sm" />
               <button onClick={geocode} disabled={geoBusy || !form.garageAddress}
-                className="px-3 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+                className="px-3 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
                 {geoBusy ? '변환…' : '📍 좌표 변환'}
               </button>
             </div>
@@ -1362,7 +1362,7 @@ function AggregateTab() {
             {loading ? '조회 중…' : '🔍 조회'}
           </button>
           <button onClick={printNow} disabled={!data}
-            className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+            className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
             🖨 일괄 출력
           </button>
           <button
@@ -1847,7 +1847,7 @@ function GisConfigTab() {
           <div className="text-[0.6875rem] text-ink-faint">저장 후 위 ContractorId 기준으로 실제 API를 호출해 응답 JSON을 확인합니다.</div>
           <div className="flex gap-2 items-center">
             <button onClick={probe} disabled={probing || !targetCid}
-              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0">
+              className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 shrink-0">
               {probing ? '조회 중…' : 'API 테스트'}
             </button>
             {!targetCid && <span className="text-[0.6875rem] text-ink-faint">위에서 ContractorId를 입력하세요</span>}
@@ -2788,7 +2788,7 @@ function ExportSubtab({ facilities }: { facilities: FacilityItem[] }) {
         <button
           type="button"
           onClick={downloadExcel}
-          className="px-5 py-2.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 min-h-[44px]"
+          className="px-5 py-2.5 rounded bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 min-h-[44px]"
         >
           📥 Excel 다운로드 (.xlsx)
         </button>

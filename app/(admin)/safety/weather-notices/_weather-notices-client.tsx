@@ -279,7 +279,7 @@ export default function WeatherNoticesClient() {
         <span className="text-sm font-mono text-ink-muted">{notices.length}건</span>
         <a
           href={`/safety/weather-notices/print?from=${filterDate}&to=${filterDate}`}
-          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 ml-auto"
+          className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 ml-auto"
         >
           🖨 일자별 출력
         </a>
@@ -444,7 +444,7 @@ export default function WeatherNoticesClient() {
                   📊 Excel (텍스트)
                 </button>
                 <button onClick={() => handleExport(selectedNotice.id, true)} disabled={exporting}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50">
+                  className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50">
                   {exporting ? '생성 중…' : '📊 Excel (이미지 포함)'}
                 </button>
                 <button onClick={() => setSelectedNotice(null)} className="text-2xl font-bold text-ink-muted px-1">×</button>

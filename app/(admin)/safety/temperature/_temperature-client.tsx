@@ -109,7 +109,7 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
             </a>
             <button
               onClick={() => window.print()}
-              className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+              className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800"
             >
               🖨 인쇄
             </button>
@@ -229,9 +229,9 @@ export default function TemperatureClient({ initialYearMonth }: { initialYearMon
                             <span className="text-sm text-slate-300">미래</span>
                           ) : day.hazard && day.hazard !== 'NORMAL' ? (
                             <span className={`inline-block px-1.5 py-0.5 rounded text-sm font-extrabold ${
-                              day.hazard === 'HIGH_RISK' ? 'bg-red-500 text-white' :
-                              day.hazard === 'HEAT_WAVE' ? 'bg-orange-400 text-white' :
-                              'bg-sky-500 text-white'
+                              day.hazard === 'HIGH_RISK' ? 'bg-red-700 text-white' :
+                              day.hazard === 'HEAT_WAVE' ? 'bg-orange-700 text-white' :
+                              'bg-sky-700 text-white'
                             }`}>
                               {HAZARD_LABEL[day.hazard]}
                             </span>

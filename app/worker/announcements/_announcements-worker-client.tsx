@@ -99,7 +99,7 @@ export default function WorkerAnnouncementsClient({ isNoticeManager }: { isNotic
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-extrabold border border-current/40 px-1.5 py-0.5 rounded">{wx.alertLabel}</span>
                     {responded ? (
-                      <span className="text-[0.625rem] font-extrabold bg-emerald-600 text-white px-1.5 py-0.5 rounded">✓ 대응완료</span>
+                      <span className="text-[0.625rem] font-extrabold bg-emerald-700 text-white px-1.5 py-0.5 rounded">✓ 대응완료</span>
                     ) : (
                       <span className="text-[0.625rem] font-extrabold bg-red-600 text-white px-1.5 py-0.5 rounded">! 대응필요</span>
                     )}

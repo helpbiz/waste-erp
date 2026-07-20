@@ -93,7 +93,7 @@ export default function SuggestionsAdminClient({ canMutate, role }: { canMutate:
         <div className="flex gap-2">
           <button
             onClick={() => { window.location.href = '/api/admin/suggestions/export'; }}
-            className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+            className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-700 text-white hover:bg-emerald-800"
           >
             📊 엑셀 다운로드
           </button>

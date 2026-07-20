@@ -538,7 +538,7 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                 <button
                   disabled={busyId === c.id}
                   onClick={() => setCompleteModal({ id: c.id, mode: 'complete' })}
-                  className="px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
+                  className="px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 hover:bg-emerald-800 text-white active:scale-95 disabled:opacity-50 min-h-[40px]"
                 >
                   ✓ 처리 완료
                 </button>
@@ -703,7 +703,7 @@ function CompleteModal({
         <div className="px-5 py-3 border-t border-line bg-slate-50 flex justify-end gap-2">
           <button onClick={onClose} disabled={busy} className="px-3 py-1.5 rounded border border-line text-sm font-bold">취소</button>
           <button onClick={submit} disabled={busy} className={`px-4 py-1.5 rounded text-white text-sm font-extrabold disabled:opacity-50 ${
-            mode === 'complete' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+            mode === 'complete' ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-rose-600 hover:bg-rose-700'
           }`}>
             {busy ? '처리 중…' : mode === 'complete' ? '✓ 완료' : '✕ 반려'}
           </button>

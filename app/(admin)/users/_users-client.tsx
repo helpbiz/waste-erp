@@ -696,7 +696,7 @@ function EditUserModal({ user, positions, departments, onClose }: {
                 role="switch"
                 aria-checked={form.isNoticeManager}
                 onClick={() => setForm({ ...form, isNoticeManager: !form.isNoticeManager })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isNoticeManager ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.isNoticeManager ? 'bg-emerald-700' : 'bg-slate-300'}`}
               >
                 <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isNoticeManager ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
@@ -1324,7 +1324,7 @@ function LeaveTab({
             {canManage && (
               <>
                 <button onClick={onBulkGrant}
-                  className="ml-auto px-2.5 py-1 rounded text-[0.625rem] font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+                  className="ml-auto px-2.5 py-1 rounded text-[0.625rem] font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
                   일괄 부여
                 </button>
                 <button onClick={onGrant} disabled={!selected}
@@ -2074,7 +2074,7 @@ function ReportTab() {
           {loading ? '조회 중…' : '조회'}
         </button>
         <a href={`/api/leave-requests/export?${buildQuery('xlsx')}`}
-          className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+          className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
           📊 엑셀 다운로드
         </a>
         <a href={`/api/leave-requests/export?${buildQuery('csv')}`}
@@ -2201,7 +2201,7 @@ function BarRow({ label, value, max, suffix, sub, color = 'bg-accent' }: {
     <div className="flex items-center gap-2">
       <div className="w-[100px] text-sm font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-5 overflow-hidden">
-        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-white`} style={{ width: `${pct}%` }}>
+        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-ink`} style={{ width: `${pct}%` }}>
           {value}{suffix}
         </div>
       </div>
@@ -2602,7 +2602,7 @@ function BulkGrantModal({ year, onClose }: { year: number; onClose: () => void }
       <div className="flex justify-end gap-2 mt-5">
         <button onClick={onClose} className="px-4 py-1.5 rounded text-sm font-bold bg-white border border-line">닫기</button>
         <button disabled={saving} onClick={submit}
-          className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+          className="px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50">
           {saving ? '부여 중…' : '일괄 부여 실행'}
         </button>
       </div>

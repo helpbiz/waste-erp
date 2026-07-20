@@ -351,7 +351,7 @@ function IntakeTab({ canEdit, vehicles }: {
             href={`/api/reports/daily-treatment/pdf?date=${from}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700"
+            className="px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800"
             title="해당 일자 일일 처리실적 일보 PDF 다운로드"
           >
             📄 일보 PDF 출력
@@ -612,7 +612,7 @@ function StatsTab() {
         <button onClick={load}
           className="px-4 py-1.5 rounded text-sm font-extrabold bg-accent text-white hover:bg-accent-strong">조회</button>
         <button onClick={printNow}
-          className="ml-auto px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+          className="ml-auto px-4 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
           🖨 출력
         </button>
       </div>
@@ -753,7 +753,7 @@ function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: str
     <div className="flex items-center gap-2">
       <div className="w-[90px] text-[0.6875rem] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-5 overflow-hidden">
-        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
+        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.625rem] font-mono font-extrabold text-ink`} style={{ width: `${Math.max(2, pct)}%` }}>
           {value.toFixed(2)}{suffix}
         </div>
       </div>

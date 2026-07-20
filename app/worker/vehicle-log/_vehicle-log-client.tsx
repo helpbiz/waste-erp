@@ -775,7 +775,7 @@ export default function VehicleLogClient({
                         className={`px-2.5 py-1 rounded-md text-[0.6875rem] font-extrabold transition active:scale-95 border ${
                           val === opt
                             ? opt === '양호' || opt === '예'
-                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              ? 'bg-emerald-700 text-white border-emerald-600'
                               : opt === '이상' || opt === '아니오'
                               ? 'bg-amber-500 text-white border-amber-500'
                               : 'bg-red-600 text-white border-red-600'

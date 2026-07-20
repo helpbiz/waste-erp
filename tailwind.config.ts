@@ -10,7 +10,7 @@ const config: Config = {
         sidebar: '#1e3a5f',
         surface: { DEFAULT: '#ffffff', alt: '#f8fafc', soft: '#f1f5f9' },
         line: { DEFAULT: '#cbd5e1', strong: '#64748b' },
-        accent: { DEFAULT: '#0e7490', light: '#06b6d4', soft: '#cffafe' },
+        accent: { DEFAULT: '#0c6a84', light: '#06b6d4', soft: '#cffafe' },
         ink: { DEFAULT: '#000000', mid: '#0f172a', muted: '#1e293b', faint: '#475569' },
         warn: '#b45309',
         danger: '#b91c1c',

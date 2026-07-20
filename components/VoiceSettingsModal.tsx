@@ -150,7 +150,7 @@ export default function VoiceSettingsModal({ onClose }: { onClose: () => void })
               <button
                 onClick={() => previewAnnouncement('MUNI_ADMIN')}
                 disabled={!supported}
-                className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold active:scale-95 disabled:opacity-40"
+                className="px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold active:scale-95 disabled:opacity-40"
               >
                 🏛 지자체 공지
               </button>

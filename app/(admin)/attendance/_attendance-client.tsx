@@ -130,8 +130,9 @@ export default function AttendanceClient({
           </button>
           {isToday && (
             <>
-              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[0.6875rem] font-extrabold border border-green-300 animate-pulse">
-                ● 실시간
+              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[0.6875rem] font-extrabold border border-green-300">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse mr-1 align-middle" />
+                실시간
               </span>
               <button
                 onClick={() => { router.refresh(); setLastRefresh(new Date()); }}
@@ -1042,7 +1043,7 @@ function AdminPunchWidget({ selfRecord, onSuccess }: { selfRecord: SelfRecord; o
       <div className="flex gap-2 ml-auto">
         {!selfRecord?.checkInTime && (
           <button onClick={() => punchAction('/api/attendance/check-in')} disabled={busy}
-            className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 disabled:opacity-50 active:scale-95 transition">
+            className="px-4 py-2 rounded-lg bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 active:scale-95 transition">
             {busy ? '처리 중…' : '출근'}
           </button>
         )}
@@ -1130,7 +1131,7 @@ function AdjustmentsTab({ defaultMonth }: { defaultMonth: string }) {
           <a
             href={`/api/attendance/adjustments/export?startDate=${startDate}&endDate=${endDate}`}
             download
-            className="px-4 py-1.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700 flex items-center gap-1.5"
+            className="px-4 py-1.5 rounded bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 flex items-center gap-1.5"
           >
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

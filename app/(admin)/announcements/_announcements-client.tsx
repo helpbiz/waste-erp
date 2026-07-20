@@ -133,7 +133,7 @@ export default function AnnouncementsClient({
             </button>
             <button
               onClick={() => setCreateOpen(true)}
-              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-md active:scale-95"
+              className="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold shadow-md active:scale-95"
             >
               ＋ 일반 공지 작성
             </button>

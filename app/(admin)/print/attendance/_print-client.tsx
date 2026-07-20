@@ -68,7 +68,7 @@ export default function AttendancePrintClient({
         <span className="text-sm font-bold text-ink flex-shrink-0">{TITLE}</span>
         <button
           onClick={() => window.print()}
-          className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 flex-shrink-0"
+          className="ml-auto px-5 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 flex-shrink-0"
         >
           🖨 인쇄
         </button>

@@ -622,7 +622,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
                   type="button"
                   onClick={copyCredentials}
                   className={`mt-1 w-full px-2.5 py-1.5 rounded text-sm font-extrabold transition ${
-                    copyOk ? 'bg-emerald-600 text-white' : 'bg-accent hover:bg-cyan-800 text-white'
+                    copyOk ? 'bg-emerald-700 text-white' : 'bg-accent hover:bg-cyan-800 text-white'
                   }`}
                 >
                   {copyOk ? '✓ 복사됨!' : '📋 클립보드 복사 (메일/메신저 붙여넣기용)'}
@@ -687,7 +687,7 @@ export default function OnboardingWizardModal({ onClose, onCreated }: { onClose:
               <button
                 type="button"
                 onClick={close}
-                className="px-4 py-1.5 rounded bg-emerald-600 text-white text-sm font-extrabold hover:bg-emerald-700"
+                className="px-4 py-1.5 rounded bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800"
               >
                 닫기
               </button>
@@ -728,7 +728,7 @@ function ChecklistItem({ auto, manual, label, detail }: { auto?: boolean; manual
   return (
     <li className="flex items-start gap-1.5">
       <span className={`flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded text-[0.5625rem] font-mono font-black ${
-        auto ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-400 text-ink-faint'
+        auto ? 'bg-emerald-700 text-white' : 'bg-white border border-slate-400 text-ink-faint'
       }`}>
         {auto ? '✓' : '□'}
       </span>

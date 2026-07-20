@@ -629,7 +629,7 @@ function BarRow({ label, value, max, suffix, color = 'bg-accent' }: { label: str
     <div className="flex items-center gap-2">
       <div className="w-[120px] text-[0.625rem] font-bold text-ink truncate">{label}</div>
       <div className="flex-1 bg-slate-100 rounded-sm h-4 overflow-hidden">
-        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.5625rem] font-mono font-extrabold text-white`} style={{ width: `${Math.max(2, pct)}%` }}>
+        <div className={`h-full ${color} flex items-center justify-end pr-1.5 text-[0.5625rem] font-mono font-extrabold text-ink`} style={{ width: `${Math.max(2, pct)}%` }}>
           {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(2) : value}{suffix}
         </div>
       </div>

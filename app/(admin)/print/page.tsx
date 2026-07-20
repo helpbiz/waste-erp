@@ -88,7 +88,7 @@ export default function PrintHubPage() {
               🖨 화면 출력
             </a>
             <a href={`/vehicles/print?date=${vDate}&autoprint=1`} target="_blank" rel="noopener"
-              className="flex-1 text-center px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+              className="flex-1 text-center px-3 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
               🖨 화면 인쇄
             </a>
           </div>
@@ -113,7 +113,7 @@ export default function PrintHubPage() {
             </div>
           </div>
           <a href={`/api/vehicle-logs/export?from=${vExFrom}&to=${vExTo}`}
-            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
             ⬇ Excel 다운로드
           </a>
         </Card>
@@ -170,7 +170,7 @@ export default function PrintHubPage() {
             </select>
           </div>
           <a href={`/api/leave-requests/export?from=${lFrom}&to=${lTo}&format=${lFmt}`}
-            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+            className="w-full text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
             ⬇ {lFmt === 'xlsx' ? 'Excel' : 'CSV'} 다운로드
           </a>
         </Card>
@@ -208,7 +208,7 @@ export default function PrintHubPage() {
               🖨 화면 출력
             </a>
             <a href={`/api/complaints/export?from=${cFrom}&to=${cTo}${cStatus ? `&status=${cStatus}` : ''}&format=xlsx`}
-              className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+              className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 transition-colors">
               ⬇ Excel
             </a>
           </div>

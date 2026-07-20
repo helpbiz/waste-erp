@@ -503,7 +503,7 @@ function IntakeTab({ vehicles, departments }: { vehicles: Vehicle[]; departments
               type="button"
               onClick={save}
               disabled={saving || !vehicleId || !weight}
-              className="w-full py-3 rounded-xl bg-emerald-600 text-white text-base font-black shadow-card active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-emerald-700 text-white text-base font-black shadow-card active:scale-[0.99] disabled:opacity-50"
             >
               {saving ? '저장 중…' : '🚚 반입실적 저장'}
             </button>

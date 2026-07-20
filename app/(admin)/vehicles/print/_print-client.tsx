@@ -429,7 +429,7 @@ export default function VehiclePrintClient({
           조회
         </button>
         <button onClick={handlePrint}
-          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
           🖨 인쇄
         </button>
         <button onClick={handlePdfDownload} disabled={pdfLoading || logs.length === 0}

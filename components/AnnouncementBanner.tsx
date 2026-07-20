@@ -253,7 +253,7 @@ export default function AnnouncementBanner() {
           </span>
           <button
             onClick={confirmAll}
-            className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold active:scale-95"
+            className="px-4 py-1.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold active:scale-95"
           >
             {hasCritical ? '✓ 일반 공지만 확인' : '✓ 모두 확인'}
           </button>

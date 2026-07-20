@@ -121,7 +121,7 @@ export function UsersGlobalTab() {
           잠금만
         </label>
         <button onClick={() => { setPage(1); load(); }} className="ml-auto px-3 py-1.5 rounded bg-accent text-white text-sm font-extrabold">검색</button>
-        <button onClick={() => setCreateOpen(true)} className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold shadow-sm">
+        <button onClick={() => setCreateOpen(true)} className="px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold shadow-sm">
           ＋ 신규 사용자 등록
         </button>
       </div>
@@ -618,7 +618,7 @@ function CreatedInfoBox({ info, onClose }: { info: { username: string; tempPassw
         <button
           onClick={copy}
           className={`px-2.5 py-1 rounded text-sm font-extrabold transition ${
-            copyOk ? 'bg-emerald-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            copyOk ? 'bg-emerald-700 text-white' : 'bg-emerald-700 hover:bg-emerald-800 text-white'
           }`}
         >
           {copyOk ? '✓ 복사됨!' : '📋 클립보드 복사 (메일/메신저용)'}
@@ -1052,7 +1052,7 @@ export function ContractorTrashTab() {
                           <button
                             disabled={busy === c.id}
                             onClick={() => restore(c)}
-                            className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 mr-1 disabled:opacity-50"
+                            className="px-2 py-1 rounded text-[0.6875rem] font-extrabold bg-emerald-700 text-white hover:bg-emerald-800 mr-1 disabled:opacity-50"
                           >
                             ↩ 복구
                           </button>

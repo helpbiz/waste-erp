@@ -149,7 +149,7 @@ export default async function WorkerHomePage() {
           {/* 📘 사용법 — /manual/worker 새 탭 (PWA 셸 유지) */}
           <MenuCard
             href="/manual/worker"
-            color="bg-emerald-600"
+            color="bg-emerald-700"
             title="사용법"
             desc="처음 쓰는 분도 막힘없이"
             iconPath="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
@@ -175,7 +175,7 @@ export default async function WorkerHomePage() {
             {isNoticeMgr && (
               <MenuCard
                 href="/announcements"
-                color="bg-emerald-600"
+                color="bg-emerald-700"
                 title="공지사항"
                 desc="작성·수정·삭제"
                 iconPath="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"

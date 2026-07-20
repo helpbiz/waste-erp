@@ -79,7 +79,7 @@ export default function TbmPrintClient({
           조회
         </button>
         <button onClick={() => window.print()}
-          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-600 text-white hover:bg-emerald-700">
+          className="ml-auto px-5 py-1.5 rounded text-sm font-extrabold bg-emerald-700 text-white hover:bg-emerald-800">
           🖨 인쇄
         </button>
         <button onClick={handleExcel}
