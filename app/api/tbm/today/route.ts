@@ -237,17 +237,20 @@ export async function POST(req: Request) {
         },
       });
 
-  /* 신규 세션 생성 시 등록권한자(작성자)의 서명대상 프리셋을 스냅샷 — 프리셋 없으면 전체 대상(기존 동작) 유지 */
-  if (!canEditInPlace) {
-    const preset = await prisma.tbmManagerAudience.findMany({
-      where: { managerId: BigInt(session.userId) },
-      select: { workerId: true },
+  /* 등록권한자(작성자)의 서명대상 프리셋을 세션에 스냅샷 — 신규 생성이든 제자리 수정이든 이 시점엔
+     항상 서명 0건(canEditInPlace 조건 또는 신규 생성)이므로 매번 최신 프리셋으로 재동기화해도 안전.
+     2026-07-20 수정: 기존엔 신규 생성 시에만 스냅샷해서, 세션 생성 후 관리자가 프리셋을 바꿔도
+     이미 만들어진 오늘 세션에는 반영되지 않아 "설정했는데 전체 인원이 조회됨" 문제가 있었음.
+     프리셋 없으면 전체 대상(기존 동작) 유지하기 위해 스냅샷은 비워둠(기존 행 삭제만). */
+  await prisma.tbmSessionAudience.deleteMany({ where: { sessionId: tbm.id } });
+  const preset = await prisma.tbmManagerAudience.findMany({
+    where: { managerId: BigInt(session.userId) },
+    select: { workerId: true },
+  });
+  if (preset.length > 0) {
+    await prisma.tbmSessionAudience.createMany({
+      data: preset.map((p) => ({ sessionId: tbm.id, workerId: p.workerId })),
     });
-    if (preset.length > 0) {
-      await prisma.tbmSessionAudience.createMany({
-        data: preset.map((p) => ({ sessionId: tbm.id, workerId: p.workerId })),
-      });
-    }
   }
 
   await prisma.auditLog.create({

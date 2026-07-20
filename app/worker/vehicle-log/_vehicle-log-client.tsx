@@ -302,7 +302,7 @@ export default function VehicleLogClient({
   };
 
   return (
-    <div className="pb-36">
+    <div className={result?.ok ? 'pb-8' : ''} style={result?.ok ? undefined : { paddingBottom: 'calc(env(safe-area-inset-bottom) * 2 + 176px)' }}>
       {/* 헤더 */}
       <div className="px-4 pt-4 pb-2 flex items-center gap-3">
         <Link href="/worker" className="text-accent text-2xl font-extrabold">←</Link>

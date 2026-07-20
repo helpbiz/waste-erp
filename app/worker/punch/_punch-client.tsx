@@ -118,7 +118,7 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
   }
 
   return (
-    <div className="px-4 py-4 pb-24 space-y-4">
+    <div className="px-4 py-4 space-y-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) * 2 + 176px)' }}>
       <div className="px-1">
         <h1 className="text-2xl font-black text-ink">출퇴근 등록</h1>
         <div className="font-mono text-base font-bold text-ink-muted mt-1">{fmtClock(now)}</div>

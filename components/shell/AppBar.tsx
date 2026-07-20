@@ -57,7 +57,7 @@ export function AppBar({
 
   return (
     <header
-      className={`${bgCls} flex-shrink-0 z-10`}
+      className={`${bgCls} flex-shrink-0`}
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="px-3 h-14 flex items-center gap-2">
