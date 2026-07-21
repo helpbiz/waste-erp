@@ -596,12 +596,16 @@ function VehicleFormModal({
   const crewIds = [driverId, passenger1Id, passenger2Id].filter(Boolean);
   const hasDuplicateCrew = new Set(crewIds).size !== crewIds.length;
 
-  const validNo = /^\d{2,3}[가-힣]\d{4}$/.test(vehicleNo.trim());
+  /* 차량번호를 안 건드렸으면(레거시로 저장된 비정형 번호 포함) 형식 검사 생략 —
+     그래야 "82구2836(A)" 같은 과거 데이터도 부서 등 다른 필드는 저장 가능.
+     실제로 번호를 새로 입력/변경할 때만 정규식 강제. */
+  const vehicleNoUnchanged = isEdit && vehicleNo.trim() === initial!.vehicleNo;
+  const validNo = vehicleNoUnchanged || /^\d{2,3}[가-힣]\d{4}$/.test(vehicleNo.trim());
   const canSubmit = validNo && !busy && !hasDuplicateCrew;
 
   async function handleSave() {
     const body: Partial<VehicleFormPayload> = {
-      vehicleNo: vehicleNo.trim(),
+      ...(vehicleNoUnchanged ? {} : { vehicleNo: vehicleNo.trim() }),
       vehicleType,
       vehicleTon: vehicleTon.trim() || null,
       capacityTon: capacityTon ? Number(capacityTon) : null,
