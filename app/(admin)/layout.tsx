@@ -136,6 +136,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/attendance', label: '근태관리' },
           { href: '/payroll', label: '💰 급여관리' },
           { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
+          { href: '/settings/shift-policies', label: '⏱ 근무유형 인정시간 설정' },
           { href: '/vehicles', label: '차량관리' },
           { href: '/performance', label: '실적관리' },
           { href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' },
@@ -218,6 +219,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           ? [{ href: '/payroll', label: '💰 급여관리' }]
           : []),
         { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
+        { href: '/settings/shift-policies', label: '⏱ 근무유형 인정시간 설정' },
         { href: '/vehicles', label: '차량관리' },
         { href: '/performance', label: '실적관리' },
         ...(feSkipForSuperOrMuni || feLiveVehicles

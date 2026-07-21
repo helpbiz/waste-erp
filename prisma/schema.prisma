@@ -63,6 +63,13 @@ enum WorkType {
   ON_DUTY // 당직
 }
 
+/// 근태 인정시간 정책의 근무시간대 구분 — ShiftPolicy 전용, 급여계산용 WorkType과는 별개 개념
+enum ShiftType {
+  DAY // 주간
+  NIGHT // 야간
+  DAWN // 새벽
+}
+
 enum AttendanceStatus {
   PENDING
   APPROVED
@@ -242,6 +249,7 @@ model Contractor {
   users              User[]
   departments        Department[]
   punchRestrictions  PunchRestriction[]
+  shiftPolicies      ShiftPolicy[]
   approvalPolicies   ApprovalPolicy[]
   bulkyWasteConfig   BulkyWasteConfig?
   liveTrackingConfig LiveTrackingConfig?
@@ -500,6 +508,8 @@ model User {
   weatherSafetyPhotos        WeatherSafetyPhoto[]  @relation("WorkerWeatherPhotos")
   vehiclePdfArchives         VehiclePdfArchive[]   @relation("VehiclePdfCreator")
   punchRestrictionsCreated   PunchRestriction[]   @relation("PunchRestrictionCreator")
+  shiftPoliciesCreated       ShiftPolicy[]        @relation("ShiftPolicyCreator")
+  shiftPoliciesAsWorker      ShiftPolicy[]        @relation("ShiftPolicyWorker")
   payslips                   PayslipRecord[]      @relation("WorkerPayslips")
   payslipsCreated            PayslipRecord[]      @relation("PayslipCreator")
   payslipsApproved           PayslipRecord[]      @relation("PayslipApprover")
@@ -554,11 +564,17 @@ model AttendanceRecord {
   zoneId       BigInt?          @map("zone_id")
   facilityId   BigInt?          @map("facility_id")  // P2 (Hot-fix 2026-05-02): 시설 단위 근태 집계
   status       AttendanceStatus @default(PENDING)
+  /// 체크인 시점에 적용된 ShiftPolicy(근무유형별 인정시간) — 2026-07-21 결정: 정책이 나중에
+  /// 바뀌어도 이미 찍힌 기록은 소급 재판정하지 않으므로, 판정 결과 자체를 여기 스냅샷으로 저장한다.
+  shiftPolicyId BigInt?  @map("shift_policy_id")
+  isLate        Boolean  @default(false) @map("is_late")
+  isEarlyLeave  Boolean  @default(false) @map("is_early_leave")
   createdAt    DateTime         @default(now()) @map("created_at")
 
   worker      User                   @relation(fields: [workerId], references: [id])
   contractor  Contractor             @relation(fields: [contractorId], references: [id])
   zone        CleaningZone?          @relation(fields: [zoneId], references: [id])
+  shiftPolicy ShiftPolicy?           @relation(fields: [shiftPolicyId], references: [id], onDelete: SetNull)
   facility    WasteTreatmentFacility? @relation("AttendanceFacility", fields: [facilityId], references: [id], onDelete: SetNull)
   adjustments AttendanceAdjustment[]
 
@@ -1029,6 +1045,7 @@ model Department {
   users             User[]
   workerSuggestions WorkerSuggestion[]
   punchRestrictions PunchRestriction[]
+  shiftPolicies     ShiftPolicy[]
   vehicles          Vehicle[]
 
   @@unique([contractorId, parentId, name])
@@ -1604,6 +1621,46 @@ model PunchRestriction {
   @@index([contractorId, active])
   @@index([contractorId, departmentId])
   @@map("punch_restrictions")
+}
+
+/// 근무유형(주간/야간/새벽)별 출퇴근 인정시간 정책 — 회사 전체(departmentId·workerId 둘 다 null) /
+/// 부서·팀(Department 트리 그대로 사용, workerId null) / 개인(workerId 지정) 3단계 계층.
+/// 적용 우선순위: 개인 > 부서 > 회사 전체. 정책 변경은 소급 재판정하지 않고 이후 체크인부터 적용(2026-07-21 결정).
+model ShiftPolicy {
+  id             BigInt    @id @default(autoincrement())
+  contractorId   BigInt    @map("contractor_id")
+  departmentId   BigInt?   @map("department_id")
+  workerId       BigInt?   @map("worker_id")
+  shiftType      ShiftType @map("shift_type")
+  name           String    @db.VarChar(80)
+  /// 출근 인정 시작 (HH:MM, KST) — 이 시각 이전 출근은 조기로 간주
+  checkInRecognizeFrom  String? @map("check_in_recognize_from") @db.VarChar(5)
+  /// 출근 인정 종료 (HH:MM, KST) — 이 시각 초과 출근은 지각으로 간주
+  checkInRecognizeUntil String? @map("check_in_recognize_until") @db.VarChar(5)
+  /// 퇴근 인정 시작 (HH:MM, KST)
+  checkOutRecognizeFrom  String? @map("check_out_recognize_from") @db.VarChar(5)
+  /// 퇴근 인정 종료 (HH:MM, KST) — 이 시각 이전 퇴근은 조퇴로 간주
+  checkOutRecognizeUntil String? @map("check_out_recognize_until") @db.VarChar(5)
+  /// 야간근무 전용: true면 퇴근 인정시간이 "익일" 기준(전일 출근 → 다음날 퇴근 인정)
+  checkOutNextDay Boolean @default(false) @map("check_out_next_day")
+  /// 이 정책이 휴무로 간주하는 요일 (JSON 배열, 0=월~6=일, null=휴무 없음). 주말 휴무는 [5,6]
+  offDays        String?  @db.Text @map("off_days")
+  sortOrder      Int      @default(0) @map("sort_order")
+  active         Boolean  @default(true)
+  createdBy      BigInt?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  contractor Contractor  @relation(fields: [contractorId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  worker     User?       @relation("ShiftPolicyWorker", fields: [workerId], references: [id], onDelete: Cascade)
+  creator    User?       @relation("ShiftPolicyCreator", fields: [createdBy], references: [id])
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([contractorId, departmentId, workerId, shiftType])
+  @@index([contractorId, active])
+  @@index([contractorId, workerId])
+  @@map("shift_policies")
 }
 
 /// 급여명세서 레코드 — 월별 근로자별 급여 내역.

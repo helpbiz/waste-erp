@@ -7,6 +7,7 @@ import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
 import { hasFeature } from '@/lib/features';
+import { isEarlyLeaveByPolicy } from '@/lib/shift-policy';
 
 export const runtime = 'nodejs';
 
@@ -123,9 +124,17 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
+
+  /* 출근 시 매치된 정책(있다면)의 퇴근 인정시간 기준으로 조퇴 판정 — 야간(익일 퇴근 인정)도
+     시각(시:분)만 비교하므로 날짜가 넘어가도 그대로 적용됨. 2026-07-21 결정: 소급 재판정 없음. */
+  const shiftPolicy = record.shiftPolicyId
+    ? await prisma.shiftPolicy.findUnique({ where: { id: record.shiftPolicyId } })
+    : null;
+  const isEarlyLeave = shiftPolicy ? isEarlyLeaveByPolicy(shiftPolicy, now) : false;
+
   const updated = await prisma.attendanceRecord.update({
     where: { id: record.id },
-    data: { checkOutTime: now, checkOutLat: lat, checkOutLng: lng },
+    data: { checkOutTime: now, checkOutLat: lat, checkOutLng: lng, isEarlyLeave },
   });
 
   await writeAudit(req, session, {
@@ -141,6 +150,7 @@ export async function POST(req: Request) {
       id: updated.id.toString(),
       checkInTime: updated.checkInTime?.toISOString() ?? null,
       checkOutTime: updated.checkOutTime?.toISOString() ?? null,
+      isEarlyLeave: updated.isEarlyLeave,
     },
   });
 }

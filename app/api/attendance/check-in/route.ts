@@ -8,6 +8,7 @@ import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
 import { hasFeature } from '@/lib/features';
 import { getPayrollPolicy } from '@/lib/payroll-policy';
+import { resolveShiftPolicies, matchPolicyForCheckIn, isLateByPolicy } from '@/lib/shift-policy';
 
 export const runtime = 'nodejs';
 
@@ -132,6 +133,13 @@ export async function POST(req: Request) {
   const isNightCheckin = kstHour >= ns || kstHour < ne;
   const autoWorkType = isNightCheckin ? 'NIGHT' : 'NORMAL';
 
+  /* 근무유형별 인정시간 정책(개인>부서>회사) 적용 — 매치되는 정책이 있으면 그 창을 기준으로
+     지각 여부를 판정해 이 시점에 스냅샷 저장(2026-07-21, 정책이 나중에 바뀌어도 소급 재판정 안 함) */
+  const workerRow = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
+  const shiftPolicies = await resolveShiftPolicies(contractorId, workerId, workerRow?.departmentId ?? null);
+  const matchedPolicy = matchPolicyForCheckIn(shiftPolicies, now);
+  const isLate = matchedPolicy ? isLateByPolicy(matchedPolicy, now) : false;
+
   const record = await prisma.attendanceRecord.upsert({
     where: { workerId_workDate: { workerId, workDate: today } },
     create: {
@@ -144,11 +152,15 @@ export async function POST(req: Request) {
       workType: autoWorkType,
       zoneId: (zoneId !== undefined && zoneId !== '') ? BigInt(zoneId) : null,
       status: 'PENDING',
+      shiftPolicyId: matchedPolicy?.id ?? null,
+      isLate,
     },
     update: {
       checkInTime: now,
       checkInLat: lat,
       checkInLng: lng,
+      shiftPolicyId: matchedPolicy?.id ?? null,
+      isLate,
     },
   });
 
@@ -166,6 +178,7 @@ export async function POST(req: Request) {
       checkInTime: record.checkInTime?.toISOString() ?? null,
       workType: record.workType,
       status: record.status,
+      isLate: record.isLate,
     },
   });
 }
