@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { parseId } from '@/lib/ids';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
+import { todayKstDate } from '@/lib/dates';
 
 export const runtime = 'nodejs';
 
@@ -85,5 +86,27 @@ export async function PUT(req: Request) {
       : []),
   ]);
 
-  return NextResponse.json({ ok: true, count: workerIds.length });
+  /* 2026-07-21 수정: 프리셋 저장이 "오늘" 이미 생성된 세션엔 반영 안 돼 관리자 체감상
+     "저장해도 변경사항이 적용 안 됨"이 되던 문제 — 오늘 이 등록권한자가 만든 세션의
+     서명대상도 즉시 동기화한다. 서명 여부와 무관하게 안전(대상 목록=조회/서명 가능 범위일
+     뿐, 이미 기록된 tbm_signatures 는 이 테이블과 무관해 손대지 않음). */
+  const todaysSessions = await prisma.tbmSession.findMany({
+    where: { contractorId, createdBy: managerId, sessionDate: todayKstDate() },
+    select: { id: true },
+  });
+  if (todaysSessions.length > 0) {
+    const sessionIds = todaysSessions.map((s) => s.id);
+    await prisma.$transaction([
+      prisma.tbmSessionAudience.deleteMany({ where: { sessionId: { in: sessionIds } } }),
+      ...(workerIds.length > 0
+        ? sessionIds.map((sessionId) =>
+            prisma.tbmSessionAudience.createMany({
+              data: workerIds.map((workerId) => ({ sessionId, workerId })),
+            })
+          )
+        : []),
+    ]);
+  }
+
+  return NextResponse.json({ ok: true, count: workerIds.length, syncedSessions: todaysSessions.length });
 }
