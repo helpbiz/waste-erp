@@ -7,7 +7,7 @@ import { roundCoord } from '@/lib/geo';
 import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
 import { hasFeature } from '@/lib/features';
-import { isEarlyLeaveByPolicy } from '@/lib/shift-policy';
+import { classifyCheckOut } from '@/lib/shift-policy';
 
 export const runtime = 'nodejs';
 
@@ -130,11 +130,11 @@ export async function POST(req: Request) {
   const shiftPolicy = record.shiftPolicyId
     ? await prisma.shiftPolicy.findUnique({ where: { id: record.shiftPolicyId } })
     : null;
-  const isEarlyLeave = shiftPolicy ? isEarlyLeaveByPolicy(shiftPolicy, now) : false;
+  const checkOutStatus = shiftPolicy ? classifyCheckOut(shiftPolicy, now) : null;
 
   const updated = await prisma.attendanceRecord.update({
     where: { id: record.id },
-    data: { checkOutTime: now, checkOutLat: lat, checkOutLng: lng, isEarlyLeave },
+    data: { checkOutTime: now, checkOutLat: lat, checkOutLng: lng, checkOutStatus },
   });
 
   await writeAudit(req, session, {
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       id: updated.id.toString(),
       checkInTime: updated.checkInTime?.toISOString() ?? null,
       checkOutTime: updated.checkOutTime?.toISOString() ?? null,
-      isEarlyLeave: updated.isEarlyLeave,
+      checkOutStatus: updated.checkOutStatus,
     },
   });
 }

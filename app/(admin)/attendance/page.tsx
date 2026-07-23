@@ -71,6 +71,8 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       workType: r?.workType ?? null,
       zoneName: r?.zone?.zoneName ?? null,
       status: r?.status ?? null,
+      checkInStatus: (r?.checkInStatus === 'DELAYED' ? null : r?.checkInStatus) ?? null,
+      checkOutStatus: (r?.checkOutStatus === 'LATE' ? null : r?.checkOutStatus) ?? null,
     };
   });
 

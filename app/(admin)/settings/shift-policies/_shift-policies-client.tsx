@@ -18,6 +18,7 @@ export type ShiftPolicyRow = {
   checkOutRecognizeUntil: string | null;
   checkOutNextDay: boolean;
   offDays: number[] | null;
+  dayOfWeekOverride: number | null;
   active: boolean;
   sortOrder: number;
 };
@@ -99,7 +100,14 @@ export default function ShiftPoliciesClient({
               {list.map((r) => (
                 <tr key={r.id} className={r.active ? '' : 'opacity-50'}>
                   <td className="px-3 py-2 font-bold text-ink-muted">{r.workerName ?? r.departmentName ?? '회사 전체'}</td>
-                  <td className="px-3 py-2 font-extrabold text-ink">{r.name}</td>
+                  <td className="px-3 py-2 font-extrabold text-ink">
+                    {r.name}
+                    {r.dayOfWeekOverride != null && (
+                      <span className="ml-1.5 text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/30">
+                        {DAY_LABELS[r.dayOfWeekOverride]}요일 전용
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 font-bold text-ink">{SHIFT_LABEL[r.shiftType]}</td>
                   <td className="px-3 py-2 font-mono font-bold text-ink">
                     {r.checkInRecognizeFrom || r.checkInRecognizeUntil
@@ -206,6 +214,9 @@ function ShiftPolicyFormModal({
   const [checkOutUntil, setCheckOutUntil] = useState(initial?.checkOutRecognizeUntil ?? '');
   const [checkOutNextDay, setCheckOutNextDay] = useState(initial?.checkOutNextDay ?? false);
   const [offDays, setOffDays] = useState<number[]>(initial?.offDays ?? []);
+  const [dayOverride, setDayOverride] = useState<string>(
+    initial?.dayOfWeekOverride != null ? String(initial.dayOfWeekOverride) : ''
+  );
   const [active, setActive] = useState(initial?.active ?? true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -226,6 +237,7 @@ function ShiftPolicyFormModal({
       checkOutRecognizeFrom: checkOutFrom || null,
       checkOutRecognizeUntil: checkOutUntil || null,
       checkOutNextDay,
+      dayOfWeekOverride: dayOverride === '' ? null : Number(dayOverride),
       offDays: offDays.length > 0 ? offDays : null,
       active,
     };
@@ -297,6 +309,22 @@ function ShiftPolicyFormModal({
               <option value="NIGHT">야간근무</option>
               <option value="DAWN">새벽근무</option>
             </select>
+          </Field>
+
+          <Field label="적용 요일 (특정 요일만 다른 인정시간을 쓸 때 선택 — 예: 토요일만 단축 근무)">
+            <select value={dayOverride} onChange={(e) => setDayOverride(e.target.value)}
+              className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent">
+              <option value="">매일 (기본 정책)</option>
+              {DAY_LABELS.map((label, d) => (
+                <option key={d} value={d}>{label}요일 전용</option>
+              ))}
+            </select>
+            {dayOverride !== '' && (
+              <p className="text-[0.6875rem] text-ink-muted font-bold mt-1">
+                이 정책은 {DAY_LABELS[Number(dayOverride)]}요일에만 적용되고, 다른 요일은 같은 근무유형의
+                "매일 (기본 정책)"이 적용됩니다. 기본 정책도 함께 등록해두세요.
+              </p>
+            )}
           </Field>
 
           <div className="grid grid-cols-2 gap-3">

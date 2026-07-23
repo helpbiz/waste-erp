@@ -37,7 +37,12 @@ export async function POST(req: Request) {
   const facilityId = parseId(parsed.data.facilityId ?? null);
   const scheduleId = parseId(parsed.data.scheduleId ?? null);
 
-  const tbm = await prisma.tbmSession.findFirst({
+  /* 2026-07-23 수정: 같은 날짜/시설/슬롯에 서로 다른 등록권한자가 department 구분 없이
+     각자 세션을 만들면 동일 조건(facilityId·scheduleId·sessionDate)의 세션이 여러 건 존재할
+     수 있다. 예전엔 findFirst로 아무거나 하나를 골라, 그 세션의 서명대상이 아닌 워커는
+     실제로는 자기 팀 세션이 따로 있는데도 not_in_audience/no_session_today로 실패했음
+     (2026-07-21~22 실사용자 보고). 이 워커가 실제 서명대상인 세션을 우선으로 찾는다. */
+  const candidates = await prisma.tbmSession.findMany({
     where: {
       contractorId: BigInt(session.contractorId),
       facilityId,
@@ -45,11 +50,13 @@ export async function POST(req: Request) {
       sessionDate: today,
     },
     include: { audience: { select: { workerId: true } } },
+    orderBy: { createdAt: 'desc' },
   });
+  const tbm =
+    candidates.find((s) => s.audience.some((a) => a.workerId.toString() === session.userId)) ??
+    candidates.find((s) => s.audience.length === 0) ??
+    null;
   if (!tbm) return NextResponse.json({ error: 'no_session_today' }, { status: 404 });
-  if (tbm.audience.length > 0 && !tbm.audience.some((a) => a.workerId.toString() === session.userId)) {
-    return NextResponse.json({ error: 'not_in_audience' }, { status: 403 });
-  }
 
   try {
     const sig = await prisma.tbmSignature.create({

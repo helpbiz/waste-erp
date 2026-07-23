@@ -48,6 +48,7 @@ export default async function ShiftPoliciesPage() {
     checkOutRecognizeUntil: r.checkOutRecognizeUntil,
     checkOutNextDay: r.checkOutNextDay,
     offDays: r.offDays ? JSON.parse(r.offDays) : null,
+    dayOfWeekOverride: r.dayOfWeekOverride,
     active: r.active,
     sortOrder: r.sortOrder,
   }));

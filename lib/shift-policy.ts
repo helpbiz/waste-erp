@@ -1,6 +1,8 @@
 /**
  * 근무유형(주간/야간/새벽)별 출퇴근 인정시간 정책 — 회사 전체 / 부서(팀) / 개인 3단계.
  * 적용 우선순위: 개인에 활성 정책이 하나라도 있으면 개인 것만 사용, 없으면 부서, 그마저 없으면 회사 전체.
+ * 같은 scope·shiftType 안에서도 dayOfWeekOverride(0=월~6=일)로 특정 요일(예: 토요일) 전용
+ * 인정시간을 따로 둘 수 있음 — 해당 요일 오버라이드가 있으면 그걸, 없으면 기본(override=null)을 쓴다.
  * 2026-07-21 결정: 정책 변경은 소급 재판정하지 않음 — 이 모듈은 항상 "지금 이 순간" 판정에만 쓴다.
  */
 import { prisma } from '@/lib/db';
@@ -16,7 +18,10 @@ export type ShiftPolicyRow = {
   checkOutRecognizeUntil: string | null;
   checkOutNextDay: boolean;
   offDays: string | null;
+  dayOfWeekOverride: number | null;
 };
+
+export type RecognitionStatus = 'EARLY' | 'NORMAL' | 'LATE' | 'DELAYED';
 
 function hhmmToMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);
@@ -44,45 +49,74 @@ export async function resolveShiftPolicies(
   });
 }
 
-/** 이 정책 기준으로 해당 요일(0=월~6=일)이 휴무인지 */
-export function isOffDay(policy: Pick<ShiftPolicyRow, 'offDays'>, kstDayOfWeek: number): boolean {
-  if (!policy.offDays) return false;
+/** 이 정책 그룹(같은 scope) 기준으로 해당 요일이 휴무인지 — offDays는 dayOfWeekOverride 무관하게 같은 shiftType 기본행에 설정 */
+export function isOffDay(policies: ShiftPolicyRow[], kstDayOfWeek: number): boolean {
+  const base = policies.find((p) => p.offDays);
+  if (!base?.offDays) return false;
   try {
-    const days: number[] = JSON.parse(policy.offDays);
+    const days: number[] = JSON.parse(base.offDays);
     return days.includes(kstDayOfWeek);
   } catch {
     return false;
   }
 }
 
-/** 체크인 시각이 어느 정책의 출근 인정창 안에 드는지 찾는다(자정 걸침 창 지원) */
-export function matchPolicyForCheckIn(policies: ShiftPolicyRow[], checkInAt: Date): ShiftPolicyRow | null {
-  const mins = minutesOfDayKst(checkInAt);
+/** 같은 shiftType 안에서 오늘 요일에 맞는 "유효 정책"을 고른다 — 오버라이드 우선, 없으면 기본(null) */
+function effectivePoliciesForToday(policies: ShiftPolicyRow[], kstDayOfWeek: number): ShiftPolicyRow[] {
+  const byShiftType = new Map<string, ShiftPolicyRow[]>();
   for (const p of policies) {
-    if (!p.checkInRecognizeFrom || !p.checkInRecognizeUntil) continue;
-    const from = hhmmToMinutes(p.checkInRecognizeFrom);
-    const until = hhmmToMinutes(p.checkInRecognizeUntil);
-    if (from <= until) {
-      if (mins >= from && mins <= until) return p;
-    } else if (mins >= from || mins <= until) {
-      return p;
-    }
+    const list = byShiftType.get(p.shiftType) ?? [];
+    list.push(p);
+    byShiftType.set(p.shiftType, list);
   }
-  return null;
-}
-
-/** 매치된 정책의 출근 인정 종료시각 초과 시 지각 */
-export function isLateByPolicy(policy: ShiftPolicyRow, checkInAt: Date): boolean {
-  if (!policy.checkInRecognizeUntil) return false;
-  return minutesOfDayKst(checkInAt) > hhmmToMinutes(policy.checkInRecognizeUntil);
+  const effective: ShiftPolicyRow[] = [];
+  for (const list of byShiftType.values()) {
+    const override = list.find((p) => p.dayOfWeekOverride === kstDayOfWeek);
+    const base = list.find((p) => p.dayOfWeekOverride == null);
+    if (override) effective.push(override);
+    else if (base) effective.push(base);
+  }
+  return effective;
 }
 
 /**
- * 매치된 정책의 퇴근 인정 시작시각 미달 시 조퇴.
- * NIGHT + checkOutNextDay=true 인 정책은 퇴근이 "익일"에 일어나는 게 정상이므로,
- * 호출측(체크아웃 API)에서 실제 경과일수를 확인해 다음날 퇴근이면 이 함수로 그 시각만 비교하면 된다.
+ * 이 워커에게 적용할 "오늘의 유효 정책"을 고른다(요일 오버라이드 반영).
+ * 근무유형이 여러 개 설정돼 있으면(예: 낮/밤 교대 가능) 실제 체크인 시각이 속하는 인정창을 우선,
+ * 어느 창에도 안 들면(조기/지각) 창이 정의된 첫 유효 정책을 기본 판정 기준으로 사용한다.
  */
-export function isEarlyLeaveByPolicy(policy: ShiftPolicyRow, checkOutAt: Date): boolean {
-  if (!policy.checkOutRecognizeFrom) return false;
-  return minutesOfDayKst(checkOutAt) < hhmmToMinutes(policy.checkOutRecognizeFrom);
+export function matchPolicyForCheckIn(policies: ShiftPolicyRow[], checkInAt: Date): ShiftPolicyRow | null {
+  const effective = effectivePoliciesForToday(policies, kstDayOfWeekOf(checkInAt));
+  const withWindow = effective.filter((p) => p.checkInRecognizeFrom && p.checkInRecognizeUntil);
+  if (withWindow.length === 0) return null;
+
+  const mins = minutesOfDayKst(checkInAt);
+  for (const p of withWindow) {
+    const from = hhmmToMinutes(p.checkInRecognizeFrom!);
+    const until = hhmmToMinutes(p.checkInRecognizeUntil!);
+    const inWindow = from <= until ? mins >= from && mins <= until : mins >= from || mins <= until;
+    if (inWindow) return p;
+  }
+  return withWindow[0];
+}
+
+function kstDayOfWeekOf(d: Date): number {
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return (kst.getUTCDay() + 6) % 7; // 0=월 ~ 6=일
+}
+
+/** 체크인 판정 — 인정 시작 이전=조기, 종료 초과=지각, 그 사이=정상 */
+export function classifyCheckIn(policy: ShiftPolicyRow, checkInAt: Date): RecognitionStatus {
+  const mins = minutesOfDayKst(checkInAt);
+  if (policy.checkInRecognizeFrom && mins < hhmmToMinutes(policy.checkInRecognizeFrom)) return 'EARLY';
+  if (policy.checkInRecognizeUntil && mins > hhmmToMinutes(policy.checkInRecognizeUntil)) return 'LATE';
+  return 'NORMAL';
+}
+
+/** 체크아웃 판정 — 인정 시작 이전=조기(조퇴), 종료 초과=지연, 그 사이=정상.
+ * 야간(checkOutNextDay) 여부와 무관하게 시:분만 비교(호출측이 이미 올바른 날짜의 기록을 다루고 있다는 전제). */
+export function classifyCheckOut(policy: ShiftPolicyRow, checkOutAt: Date): RecognitionStatus {
+  const mins = minutesOfDayKst(checkOutAt);
+  if (policy.checkOutRecognizeFrom && mins < hhmmToMinutes(policy.checkOutRecognizeFrom)) return 'EARLY';
+  if (policy.checkOutRecognizeUntil && mins > hhmmToMinutes(policy.checkOutRecognizeUntil)) return 'DELAYED';
+  return 'NORMAL';
 }

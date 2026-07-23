@@ -70,6 +70,14 @@ enum ShiftType {
   DAWN // 새벽
 }
 
+/// 인정시간 판정 결과 — 체크인엔 EARLY/NORMAL/LATE, 체크아웃엔 EARLY/NORMAL/DELAYED 사용
+enum RecognitionStatus {
+  EARLY // 조기
+  NORMAL // 정상
+  LATE // 지각 (체크인 전용)
+  DELAYED // 지연 (체크아웃 전용)
+}
+
 enum AttendanceStatus {
   PENDING
   APPROVED
@@ -567,8 +575,10 @@ model AttendanceRecord {
   /// 체크인 시점에 적용된 ShiftPolicy(근무유형별 인정시간) — 2026-07-21 결정: 정책이 나중에
   /// 바뀌어도 이미 찍힌 기록은 소급 재판정하지 않으므로, 판정 결과 자체를 여기 스냅샷으로 저장한다.
   shiftPolicyId BigInt?  @map("shift_policy_id")
-  isLate        Boolean  @default(false) @map("is_late")
-  isEarlyLeave  Boolean  @default(false) @map("is_early_leave")
+  /// 2026-07-23: 단순 지각 여부(Boolean)에서 조기/정상/지각 3상태로 확장(사용자 요청 매트릭스 반영)
+  checkInStatus  RecognitionStatus? @map("check_in_status")
+  /// 조기/정상/지연 3상태 (DELAYED=퇴근 인정시간 초과)
+  checkOutStatus RecognitionStatus? @map("check_out_status")
   createdAt    DateTime         @default(now()) @map("created_at")
 
   worker      User                   @relation(fields: [workerId], references: [id])
@@ -1645,6 +1655,10 @@ model ShiftPolicy {
   checkOutNextDay Boolean @default(false) @map("check_out_next_day")
   /// 이 정책이 휴무로 간주하는 요일 (JSON 배열, 0=월~6=일, null=휴무 없음). 주말 휴무는 [5,6]
   offDays        String?  @db.Text @map("off_days")
+  /// 2026-07-23 추가: 특정 요일(0=월~6=일) 전용 인정시간 오버라이드. null=기본(요일 무관) 정책.
+  /// 같은 scope·shiftType에 dayOverride=null(기본) + dayOverride=5(토요일 전용) 처럼 공존 가능 —
+  /// 해당 요일에 맞는 오버라이드가 있으면 그걸 쓰고, 없으면 기본(null) 정책을 쓴다.
+  dayOfWeekOverride Int? @map("day_of_week_override")
   sortOrder      Int      @default(0) @map("sort_order")
   active         Boolean  @default(true)
   createdBy      BigInt?  @map("created_by")
@@ -1657,7 +1671,7 @@ model ShiftPolicy {
   creator    User?       @relation("ShiftPolicyCreator", fields: [createdBy], references: [id])
   attendanceRecords AttendanceRecord[]
 
-  @@unique([contractorId, departmentId, workerId, shiftType])
+  @@unique([contractorId, departmentId, workerId, shiftType, dayOfWeekOverride])
   @@index([contractorId, active])
   @@index([contractorId, workerId])
   @@map("shift_policies")

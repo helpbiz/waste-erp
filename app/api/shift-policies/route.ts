@@ -24,6 +24,7 @@ const Create = z.object({
   checkOutRecognizeUntil: z.string().regex(TimeRegex).optional().nullable(),
   checkOutNextDay: z.boolean().optional(),
   offDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
+  dayOfWeekOverride: z.number().int().min(0).max(6).optional().nullable(),
   active: z.boolean().optional(),
 });
 
@@ -69,6 +70,7 @@ export async function GET(req: Request) {
       checkOutRecognizeUntil: r.checkOutRecognizeUntil,
       checkOutNextDay: r.checkOutNextDay,
       offDays: r.offDays ? JSON.parse(r.offDays) : null,
+      dayOfWeekOverride: r.dayOfWeekOverride,
       active: r.active,
       sortOrder: r.sortOrder,
       createdAt: r.createdAt.toISOString(),
@@ -100,6 +102,17 @@ export async function POST(req: Request) {
     if (!worker) return NextResponse.json({ error: 'worker_not_found' }, { status: 404 });
   }
 
+  const dup = await prisma.shiftPolicy.findFirst({
+    where: {
+      contractorId,
+      departmentId: b.departmentId ? BigInt(b.departmentId) : null,
+      workerId: b.workerId ? BigInt(b.workerId) : null,
+      shiftType: b.shiftType,
+      dayOfWeekOverride: b.dayOfWeekOverride ?? null,
+    },
+  });
+  if (dup) return NextResponse.json({ error: 'duplicate_policy', message: '같은 스코프·근무유형·적용요일 정책이 이미 있습니다. 기존 정책을 수정해주세요.' }, { status: 409 });
+
   const row = await prisma.shiftPolicy.create({
     data: {
       contractorId,
@@ -113,6 +126,7 @@ export async function POST(req: Request) {
       checkOutRecognizeUntil: b.checkOutRecognizeUntil ?? null,
       checkOutNextDay: b.checkOutNextDay ?? false,
       offDays: b.offDays ? JSON.stringify(b.offDays) : null,
+      dayOfWeekOverride: b.dayOfWeekOverride ?? null,
       active: b.active ?? true,
       createdBy: BigInt(session.userId),
     },

@@ -22,6 +22,7 @@ const Patch = z.object({
   checkOutRecognizeUntil: z.string().regex(TimeRegex).optional().nullable(),
   checkOutNextDay: z.boolean().optional(),
   offDays: z.array(z.number().int().min(0).max(6)).optional().nullable(),
+  dayOfWeekOverride: z.number().int().min(0).max(6).optional().nullable(),
   active: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
@@ -52,6 +53,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(b.checkOutRecognizeUntil !== undefined && { checkOutRecognizeUntil: b.checkOutRecognizeUntil }),
       ...(b.checkOutNextDay !== undefined && { checkOutNextDay: b.checkOutNextDay }),
       ...(b.offDays !== undefined && { offDays: b.offDays ? JSON.stringify(b.offDays) : null }),
+      ...(b.dayOfWeekOverride !== undefined && { dayOfWeekOverride: b.dayOfWeekOverride }),
       ...(b.active !== undefined && { active: b.active }),
       ...(b.sortOrder !== undefined && { sortOrder: b.sortOrder }),
     },

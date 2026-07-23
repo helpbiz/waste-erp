@@ -8,7 +8,7 @@ import { todayKstDate } from '@/lib/dates';
 import { writeAudit } from '@/lib/audit';
 import { hasFeature } from '@/lib/features';
 import { getPayrollPolicy } from '@/lib/payroll-policy';
-import { resolveShiftPolicies, matchPolicyForCheckIn, isLateByPolicy } from '@/lib/shift-policy';
+import { resolveShiftPolicies, matchPolicyForCheckIn, classifyCheckIn } from '@/lib/shift-policy';
 
 export const runtime = 'nodejs';
 
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
   const workerRow = await prisma.user.findUnique({ where: { id: workerId }, select: { departmentId: true } });
   const shiftPolicies = await resolveShiftPolicies(contractorId, workerId, workerRow?.departmentId ?? null);
   const matchedPolicy = matchPolicyForCheckIn(shiftPolicies, now);
-  const isLate = matchedPolicy ? isLateByPolicy(matchedPolicy, now) : false;
+  const checkInStatus = matchedPolicy ? classifyCheckIn(matchedPolicy, now) : null;
 
   const record = await prisma.attendanceRecord.upsert({
     where: { workerId_workDate: { workerId, workDate: today } },
@@ -153,14 +153,14 @@ export async function POST(req: Request) {
       zoneId: (zoneId !== undefined && zoneId !== '') ? BigInt(zoneId) : null,
       status: 'PENDING',
       shiftPolicyId: matchedPolicy?.id ?? null,
-      isLate,
+      checkInStatus,
     },
     update: {
       checkInTime: now,
       checkInLat: lat,
       checkInLng: lng,
       shiftPolicyId: matchedPolicy?.id ?? null,
-      isLate,
+      checkInStatus,
     },
   });
 
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
       checkInTime: record.checkInTime?.toISOString() ?? null,
       workType: record.workType,
       status: record.status,
-      isLate: record.isLate,
+      checkInStatus: record.checkInStatus,
     },
   });
 }

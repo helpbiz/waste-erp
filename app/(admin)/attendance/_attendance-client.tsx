@@ -18,6 +18,9 @@ type Row = {
   positionLabel: string | null; departmentName: string | null;
   recordId: string | null; checkInTime: string | null; checkOutTime: string | null;
   workType: string | null; zoneName: string | null; status: string | null;
+  /** 근무유형별 인정시간 정책(개인/부서/회사)이 매치된 기록만 값이 있음 — 없으면 구(舊) 방식 fallback */
+  checkInStatus: 'EARLY' | 'NORMAL' | 'LATE' | null;
+  checkOutStatus: 'EARLY' | 'NORMAL' | 'DELAYED' | null;
 };
 
 type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
@@ -1223,6 +1226,8 @@ type AttendanceStatus =
   | 'NORMAL'
   | 'EARLY_ARRIVAL'
   | 'LATE'
+  | 'EARLY_LEAVE'
+  | 'LATE_LEAVE'
   | 'MISSING_IN'
   | 'MISSING_OUT'
   | 'ABSENT'
@@ -1232,6 +1237,8 @@ const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; cls: s
   NORMAL:        { label: '정상출근',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
   EARLY_ARRIVAL: { label: '조기출근',   cls: 'bg-blue-100 text-blue-800 border-blue-300' },
   LATE:          { label: '지각',       cls: 'bg-red-100 text-red-800 border-red-300' },
+  EARLY_LEAVE:   { label: '조퇴',       cls: 'bg-blue-100 text-blue-800 border-blue-300' },
+  LATE_LEAVE:    { label: '퇴근지연',   cls: 'bg-orange-100 text-orange-800 border-orange-300' },
   MISSING_IN:    { label: '출근미등록', cls: 'bg-amber-100 text-amber-800 border-amber-300' },
   MISSING_OUT:   { label: '퇴근미등록', cls: 'bg-orange-100 text-orange-800 border-orange-300' },
   ABSENT:        { label: '결근',       cls: 'bg-red-200 text-red-900 border-red-400' },
@@ -1255,7 +1262,13 @@ function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null
 
   const statuses: AttendanceStatus[] = [];
 
-  if (shiftStart) {
+  /* 2026-07-23: 근무유형별 인정시간 정책(개인/부서/회사)이 이 기록에 실제로 적용됐으면
+     그 판정을 그대로 신뢰 — 정책이 없는(구 방식) 기록만 기존 shiftStart 휴리스틱으로 fallback. */
+  if (row.checkInStatus) {
+    statuses.push(
+      row.checkInStatus === 'EARLY' ? 'EARLY_ARRIVAL' : row.checkInStatus === 'LATE' ? 'LATE' : 'NORMAL'
+    );
+  } else if (shiftStart) {
     const [sH, sM] = shiftStart.split(':').map(Number);
     const checkInHHMM = extractHHMM(row.checkInTime);
     const [iH, iM] = checkInHHMM.split(':').map(Number);
@@ -1270,7 +1283,10 @@ function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null
 
   if (isPast && !row.checkOutTime) { statuses.push('MISSING_OUT'); return statuses; }
 
-  if (row.checkOutTime) {
+  if (row.checkOutStatus) {
+    if (row.checkOutStatus === 'EARLY') statuses.push('EARLY_LEAVE');
+    else if (row.checkOutStatus === 'DELAYED') statuses.push('LATE_LEAVE');
+  } else if (row.checkOutTime && row.checkInTime) {
     const ms = new Date(row.checkOutTime).getTime() - new Date(row.checkInTime).getTime();
     if (ms / 3600000 < STANDARD_WORK_HOURS) statuses.push('INSUFFICIENT');
   }

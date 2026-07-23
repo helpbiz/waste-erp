@@ -101,7 +101,7 @@ export async function getTodayAttendance(session: SessionPayload) {
       status: r?.status ?? 'PENDING',
       /* 근무유형별 인정시간 정책(개인/부서/회사)이 매치된 기록은 그때 스냅샷된 판정을 그대로 신뢰,
          정책이 없던(설정 전) 기록은 기존 전역 임계값(06:00) 기준으로 하위호환 */
-      isLate: r?.shiftPolicyId != null ? r.isLate : (r?.checkInTime ? isLateCheckIn(r.checkInTime) : false),
+      isLate: r?.shiftPolicyId != null ? r.checkInStatus === 'LATE' : (r?.checkInTime ? isLateCheckIn(r.checkInTime) : false),
     };
   });
 

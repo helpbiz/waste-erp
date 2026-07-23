@@ -135,9 +135,13 @@ export async function GET(req: Request) {
     ? allSessions.filter((s) => s.audience.length === 0 || s.audience.some((a) => a.workerId.toString() === session.userId))
     : allSessions;
 
-  const selected = allSessions.find((s) => (s.scheduleId?.toString() ?? null) === (scheduleId?.toString() ?? null)) ?? null;
-  const selectedVisible = selected && (session.role !== 'WORKER' || visibleSessions.includes(selected));
-  const selectedInfo = selectedVisible ? toSessionInfo(selected!) : null;
+  /* 2026-07-23 수정: 같은 날짜/시설/슬롯에 서로 다른 등록권한자가 department 구분 없이
+     각자 세션을 만들면(예: 같은 날 여러 팀이 각자 TBM 등록) allSessions 안에 scheduleId가
+     동일한(대개 null) 세션이 여러 건 존재할 수 있다. 이전엔 allSessions에서 무조건 첫 매치를
+     골라 워커가 실제 속하지 않은 남의 세션이 뽑히는 경우 있었음(서명대상 불일치로 이어짐) —
+     반드시 이 워커가 실제로 볼 수 있는(visibleSessions) 세션 중에서만 선택한다. */
+  const selected = visibleSessions.find((s) => (s.scheduleId?.toString() ?? null) === (scheduleId?.toString() ?? null)) ?? null;
+  const selectedInfo = selected ? toSessionInfo(selected) : null;
 
   return NextResponse.json({
     session: selectedInfo,
