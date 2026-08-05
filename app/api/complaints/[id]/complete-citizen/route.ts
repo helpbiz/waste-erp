@@ -10,7 +10,7 @@ import { parseId } from '@/lib/ids';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
-import { complaintWhere, canTransitionComplaint } from '@/lib/complaints';
+import { complaintWhere, canTransitionComplaint, isComplaintManager } from '@/lib/complaints';
 
 export const runtime = 'nodejs';
 
@@ -23,6 +23,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request', issues: parsed.error.flatten().fieldErrors }, { status: 400 });
@@ -31,11 +35,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const id = parseId(params.id);
   if (id == null) return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
   const target = await prisma.complaint.findFirst({
-    where: { id, ...complaintWhere(session) },
+    where: { id, ...complaintWhere(session, workerIsManager) },
     select: { id: true, status: true, assignedTo: true },
   });
   if (!target) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if (!canTransitionComplaint(session, target)) {
+  if (!canTransitionComplaint(session, target, workerIsManager)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (target.status === 'COMPLETED' || target.status === 'REJECTED') {

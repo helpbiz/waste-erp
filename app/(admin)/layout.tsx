@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const [pendingComplaints, pendingSafety, pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyApprovals] = await Promise.all([
     prisma.complaint.count({
-      where: { ...complaintWhere(session), status: { in: [...PENDING_STATUSES] } },
+      where: { ...complaintWhere(session, isComplaintManagerWorker), status: { in: [...PENDING_STATUSES] } },
     }),
     prisma.safetyReport.count({
       where: { ...safetyWhere(session), status: 'SUBMITTED' },

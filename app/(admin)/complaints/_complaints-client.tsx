@@ -20,7 +20,7 @@ const LocationPickerMap = dynamic(() => import('@/components/LocationPickerMap')
   ),
 });
 
-export type Worker = { id: string; name: string };
+export type Worker = { id: string; name: string; contractorId?: string | null };
 export type WorkerRef = { id: string; name: string };
 export type ContractorOpt = { id: string; name: string };
 export type ZoneOpt = { id: string; name: string };
@@ -64,6 +64,7 @@ export default function ComplaintsClient({
   userId,
   items,
   workers,
+  myContractorId = null,
   contractorOpts,
   zoneOpts = [],
   from: initFrom = '',
@@ -74,6 +75,7 @@ export default function ComplaintsClient({
   userId: string;
   items: Row[];
   workers: Worker[];
+  myContractorId?: string | null;
   contractorOpts: ContractorOpt[];
   zoneOpts?: ZoneOpt[];
   from?: string;
@@ -362,6 +364,8 @@ export default function ComplaintsClient({
         <CreateComplaintModal
           contractorOpts={contractorOpts}
           needsContractorPicker={needsContractorPicker}
+          workers={workers}
+          myContractorId={myContractorId}
           onCancel={() => setOpenCreate(false)}
           onSubmit={async (body) => {
             setBusy(true); setError(null);
@@ -936,18 +940,30 @@ type CType = typeof COMPLAINT_TYPES[number]['id'];
 function CreateComplaintModal({
   contractorOpts,
   needsContractorPicker,
+  workers,
+  myContractorId,
   onCancel,
   onSubmit,
   busy,
 }: {
   contractorOpts: ContractorOpt[];
   needsContractorPicker: boolean;
+  workers: Worker[];
+  myContractorId: string | null;
   onCancel: () => void;
   onSubmit: (body: object) => Promise<boolean>;
   busy: boolean;
 }) {
   const [type, setType] = useState<CType | null>(null);
   const [contractorId, setContractorId] = useState<string>(contractorOpts[0]?.id ?? '');
+  const [assigneeId, setAssigneeId] = useState<string>('');
+
+  /* 담당자 후보 — 위탁업체 선택이 필요한 화면(SUPER/MUNI)은 선택된 업체 소속만,
+     그 외(업체담당자 등)는 본인 업체 소속 전체 */
+  const effectiveContractorId = needsContractorPicker ? contractorId : myContractorId;
+  const assigneeCandidates = effectiveContractorId
+    ? workers.filter((w) => w.contractorId === effectiveContractorId)
+    : [];
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
@@ -1029,6 +1045,7 @@ function CreateComplaintModal({
     if (gps) { body.locationLat = gps.lat; body.locationLng = gps.lng; }
     if (photos.length > 0) body.requestImages = photos;
     if (needsContractorPicker) body.contractorId = contractorId;
+    if (assigneeId) body.assigneeId = assigneeId;
     await onSubmit(body);
   }
 
@@ -1040,7 +1057,7 @@ function CreateComplaintModal({
               <label className="block text-sm font-extrabold text-ink mb-2">위탁업체 선택 *</label>
               <select
                 value={contractorId}
-                onChange={(e) => setContractorId(e.target.value)}
+                onChange={(e) => { setContractorId(e.target.value); setAssigneeId(''); }}
                 className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
               >
                 <option value="">— 위탁업체 선택 —</option>
@@ -1179,6 +1196,22 @@ function CreateComplaintModal({
             </label>
             <MultiPhotoUploader onChange={setPhotos} max={3} />
           </div>
+
+          {assigneeCandidates.length > 0 && (
+            <div>
+              <label className="block text-sm font-extrabold text-ink mb-2">담당자 지정 (선택 — 미선택 시 자동 배정)</label>
+              <select
+                value={assigneeId}
+                onChange={(e) => setAssigneeId(e.target.value)}
+                className="w-full px-3 py-2 rounded-md border-2 border-line text-sm font-bold bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus:border-accent"
+              >
+                <option value="">— 자동 배정 —</option>
+                {assigneeCandidates.map((w) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
       <footer className="px-5 py-3 bg-surface-soft border-t border-line flex justify-end gap-2 sticky bottom-0">

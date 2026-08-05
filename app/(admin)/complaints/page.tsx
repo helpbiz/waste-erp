@@ -82,7 +82,8 @@ export default async function ComplaintsPage({
     contractorId: c.contractorId?.toString() ?? null,
   }));
 
-  /* 매니저(역할 또는 플래그)는 담당자 dropdown 위해 worker 목록 prefetch */
+  /* 매니저(역할 또는 플래그)는 담당자 dropdown 위해 worker 목록 prefetch.
+     SUPER_ADMIN은 회사 무관 전체 목록이므로 contractorId를 함께 내려 등록 시점 필터링에 사용. */
   let workers: Worker[] = [];
   if (isComplaintManager(session.role) || workerIsManager) {
     const ws = await prisma.user.findMany({
@@ -91,10 +92,10 @@ export default async function ComplaintsPage({
         status: 'ACTIVE',
         contractorId: session.contractorId ? BigInt(session.contractorId) : undefined,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, contractorId: true },
       orderBy: { name: 'asc' },
     });
-    workers = ws.map((w) => ({ id: w.id.toString(), name: w.name }));
+    workers = ws.map((w) => ({ id: w.id.toString(), name: w.name, contractorId: w.contractorId?.toString() ?? null }));
   }
 
   /* 입력 시 contractor 선택용 — MUNI/SUPER만 필요, 그 외는 자동 */
@@ -131,6 +132,7 @@ export default async function ComplaintsPage({
       userId={session.userId}
       items={items}
       workers={workers}
+      myContractorId={session.contractorId ?? null}
       contractorOpts={contractorOpts}
       zoneOpts={zoneOpts}
       from={fromStr}

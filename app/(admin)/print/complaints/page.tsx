@@ -1,6 +1,6 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { complaintWhere } from '@/lib/complaints';
+import { complaintWhere, isComplaintManager } from '@/lib/complaints';
 import { ComplaintStatus } from '@prisma/client';
 import ComplaintsPrintClient from './_print-client';
 
@@ -22,6 +22,9 @@ export default async function ComplaintsPrintPage({
   searchParams: { from?: string; to?: string; status?: string };
 }) {
   const session = (await readSession())!;
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
 
   const from = searchParams.from ? new Date(searchParams.from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const to = searchParams.to ? new Date(searchParams.to + 'T23:59:59') : new Date();
@@ -29,7 +32,7 @@ export default async function ComplaintsPrintPage({
 
   const rows = await prisma.complaint.findMany({
     where: {
-      ...complaintWhere(session),
+      ...complaintWhere(session, workerIsManager),
       reportedAt: { gte: from, lte: to },
       ...(statusFilter ? { status: statusFilter as ComplaintStatus } : {}),
     },

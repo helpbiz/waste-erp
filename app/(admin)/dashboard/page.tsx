@@ -8,7 +8,7 @@ import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import MuniAggregatePanel from './_muni-aggregate-panel';
 import MuniChartsPanel from './_muni-charts-panel';
-import { complaintWhere, complaintTypeLabel, PENDING_STATUSES } from '@/lib/complaints';
+import { complaintWhere, complaintTypeLabel, isComplaintManager, PENDING_STATUSES } from '@/lib/complaints';
 import { safetyWhere } from '@/lib/safety';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import { todayKstDate } from '@/lib/dates';
@@ -20,7 +20,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = (await readSession())!;
-  const cWhere = complaintWhere(session);
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+  const cWhere = complaintWhere(session, workerIsManager);
   const aWhere = contractorScopeWhere(session);
   const uWhere = userScope(session);
   const today = todayKstDate();

@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth';
-import { complaintWhere } from '@/lib/complaints';
+import { complaintWhere, isComplaintManager } from '@/lib/complaints';
 import { ComplaintStatus } from '@prisma/client';
 import { applyStandardHeader, addHeaderRow, styleDataRow, makeFilename, xlsxResponse } from '@/lib/excel-utils';
 
@@ -34,6 +34,10 @@ export async function GET(req: Request) {
   const session = await readSession();
   if (!session) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
+  const workerIsManager = !isComplaintManager(session.role) && session.role === 'WORKER'
+    ? ((await prisma.user.findUnique({ where: { id: BigInt(session.userId) }, select: { isComplaintManager: true } }))?.isComplaintManager ?? false)
+    : false;
+
   const url = new URL(req.url);
   const fromStr = url.searchParams.get('from');
   const toStr = url.searchParams.get('to');
@@ -48,7 +52,7 @@ export async function GET(req: Request) {
 
   const rows = await prisma.complaint.findMany({
     where: {
-      ...complaintWhere(session),
+      ...complaintWhere(session, workerIsManager),
       reportedAt: { gte: from, lte: to },
       ...(statusFilter ? { status: statusFilter as ComplaintStatus } : {}),
     },
