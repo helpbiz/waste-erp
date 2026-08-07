@@ -18,6 +18,9 @@ type Row = {
   positionLabel: string | null; departmentName: string | null;
   recordId: string | null; checkInTime: string | null; checkOutTime: string | null;
   workType: string | null; zoneName: string | null; status: string | null;
+  /** 근무유형별 인정시간 정책(개인/부서/회사)이 매치된 기록만 값이 있음 — 없으면 구(舊) 방식 fallback */
+  checkInStatus: 'EARLY' | 'NORMAL' | 'LATE' | null;
+  checkOutStatus: 'EARLY' | 'NORMAL' | 'DELAYED' | null;
 };
 
 type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
@@ -25,7 +28,7 @@ type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: 
 type ContractorOpt = { id: string; name: string };
 
 export default function AttendanceClient({
-  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '',
+  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '', shiftStart = null,
 }: {
   date: string;
   rows: Row[];
@@ -34,6 +37,7 @@ export default function AttendanceClient({
   selfRecord?: SelfRecord;
   contractorOpts?: ContractorOpt[];
   selectedContractorId?: string;
+  shiftStart?: string | null;
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -218,7 +222,7 @@ export default function AttendanceClient({
                   {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-ink-faint">—</span>}
                 </td>
                 <td className="px-3 py-2">
-                  <AttendanceStatusChip row={r} date={date} />
+                  <AttendanceStatusChip row={r} date={date} shiftStart={shiftStart} />
                 </td>
                 <td className="px-3 py-2">
                   {r.status ? (
@@ -1220,32 +1224,78 @@ function AdjustmentsTab({ defaultMonth }: { defaultMonth: string }) {
 
 type AttendanceStatus =
   | 'NORMAL'
+  | 'EARLY_ARRIVAL'
+  | 'LATE'
+  | 'EARLY_LEAVE'
+  | 'LATE_LEAVE'
   | 'MISSING_IN'
   | 'MISSING_OUT'
-  | 'ABSENT';
+  | 'ABSENT'
+  | 'INSUFFICIENT';
 
 const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; cls: string }> = {
   NORMAL:        { label: '정상출근',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  EARLY_ARRIVAL: { label: '조기출근',   cls: 'bg-blue-100 text-blue-800 border-blue-300' },
+  LATE:          { label: '지각',       cls: 'bg-red-100 text-red-800 border-red-300' },
+  EARLY_LEAVE:   { label: '조퇴',       cls: 'bg-blue-100 text-blue-800 border-blue-300' },
+  LATE_LEAVE:    { label: '퇴근지연',   cls: 'bg-orange-100 text-orange-800 border-orange-300' },
   MISSING_IN:    { label: '출근미등록', cls: 'bg-amber-100 text-amber-800 border-amber-300' },
   MISSING_OUT:   { label: '퇴근미등록', cls: 'bg-orange-100 text-orange-800 border-orange-300' },
   ABSENT:        { label: '결근',       cls: 'bg-red-200 text-red-900 border-red-400' },
+  INSUFFICIENT:  { label: '근무시간부족', cls: 'bg-purple-100 text-purple-800 border-purple-300' },
 };
 
-/* 2026-08-05: 조기출근/지각 등 근무유형별 인정시간 판정 제거 — 출퇴근 등록 여부만으로 표시 */
-function getAttendanceStatuses(row: Row, date: string): AttendanceStatus[] {
+const STANDARD_WORK_HOURS = 8;
+
+function extractHHMM(iso: string): string {
+  const d = new Date(iso);
+  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return `${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null): AttendanceStatus[] {
   const today = new Date().toISOString().slice(0, 10);
   const isPast = date < today;
 
   if (isPast && !row.checkInTime && !row.checkOutTime) return ['ABSENT'];
   if (!row.checkInTime) return ['MISSING_IN'];
 
-  const statuses: AttendanceStatus[] = ['NORMAL'];
-  if (isPast && !row.checkOutTime) statuses.push('MISSING_OUT');
+  const statuses: AttendanceStatus[] = [];
+
+  /* 2026-07-23: 근무유형별 인정시간 정책(개인/부서/회사)이 이 기록에 실제로 적용됐으면
+     그 판정을 그대로 신뢰 — 정책이 없는(구 방식) 기록만 기존 shiftStart 휴리스틱으로 fallback. */
+  if (row.checkInStatus) {
+    statuses.push(
+      row.checkInStatus === 'EARLY' ? 'EARLY_ARRIVAL' : row.checkInStatus === 'LATE' ? 'LATE' : 'NORMAL'
+    );
+  } else if (shiftStart) {
+    const [sH, sM] = shiftStart.split(':').map(Number);
+    const checkInHHMM = extractHHMM(row.checkInTime);
+    const [iH, iM] = checkInHHMM.split(':').map(Number);
+    const shiftMin   = sH * 60 + sM;
+    const checkInMin = iH * 60 + iM;
+    if (checkInMin < shiftMin - 10)       statuses.push('EARLY_ARRIVAL');
+    else if (checkInMin > shiftMin)        statuses.push('LATE');
+    else                                   statuses.push('NORMAL');
+  } else {
+    statuses.push(row.workType === 'EARLY' ? 'EARLY_ARRIVAL' : 'NORMAL');
+  }
+
+  if (isPast && !row.checkOutTime) { statuses.push('MISSING_OUT'); return statuses; }
+
+  if (row.checkOutStatus) {
+    if (row.checkOutStatus === 'EARLY') statuses.push('EARLY_LEAVE');
+    else if (row.checkOutStatus === 'DELAYED') statuses.push('LATE_LEAVE');
+  } else if (row.checkOutTime && row.checkInTime) {
+    const ms = new Date(row.checkOutTime).getTime() - new Date(row.checkInTime).getTime();
+    if (ms / 3600000 < STANDARD_WORK_HOURS) statuses.push('INSUFFICIENT');
+  }
+
   return statuses;
 }
 
-function AttendanceStatusChip({ row, date }: { row: Row; date: string }) {
-  const statuses = getAttendanceStatuses(row, date);
+function AttendanceStatusChip({ row, date, shiftStart }: { row: Row; date: string; shiftStart: string | null }) {
+  const statuses = getAttendanceStatuses(row, date, shiftStart);
   return (
     <div className="flex flex-wrap gap-1">
       {statuses.map((s) => {
