@@ -21,6 +21,8 @@ type Row = {
   /** 근무유형별 인정시간 정책(개인/부서/회사)이 매치된 기록만 값이 있음 — 없으면 구(舊) 방식 fallback */
   checkInStatus: 'EARLY' | 'NORMAL' | 'LATE' | null;
   checkOutStatus: 'EARLY' | 'NORMAL' | 'DELAYED' | null;
+  /** 전일 21시대 출근(야간)이 아직 당일 기록 없는 이 근로자에게 이어서 표시된 것인지 */
+  isYesterdayCarryover: boolean;
 };
 
 type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
@@ -28,7 +30,7 @@ type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: 
 type ContractorOpt = { id: string; name: string };
 
 export default function AttendanceClient({
-  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '', shiftStart = null,
+  date, rows, summary, canManage, selfRecord, contractorOpts = [], selectedContractorId = '',
 }: {
   date: string;
   rows: Row[];
@@ -37,7 +39,6 @@ export default function AttendanceClient({
   selfRecord?: SelfRecord;
   contractorOpts?: ContractorOpt[];
   selectedContractorId?: string;
-  shiftStart?: string | null;
 }) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -222,7 +223,7 @@ export default function AttendanceClient({
                   {r.checkOutTime ? <span className="text-accent">{fmtTime(r.checkOutTime)}</span> : <span className="text-ink-faint">—</span>}
                 </td>
                 <td className="px-3 py-2">
-                  <AttendanceStatusChip row={r} date={date} shiftStart={shiftStart} />
+                  <AttendanceStatusChip row={r} date={date} />
                 </td>
                 <td className="px-3 py-2">
                   {r.status ? (
@@ -255,7 +256,9 @@ export default function AttendanceClient({
                         )}
                       </div>
                     ) : (
-                      <span className="text-[0.625rem] font-mono text-ink-faint">출근 전</span>
+                      <span className="text-[0.625rem] font-mono text-ink-faint">
+                        {r.isYesterdayCarryover ? '전일 화면에서 조정' : '출근 전'}
+                      </span>
                     )}
                   </td>
                 )}
@@ -1231,7 +1234,8 @@ type AttendanceStatus =
   | 'MISSING_IN'
   | 'MISSING_OUT'
   | 'ABSENT'
-  | 'INSUFFICIENT';
+  | 'INSUFFICIENT'
+  | 'NIGHT_CHECKIN';
 
 const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; cls: string }> = {
   NORMAL:        { label: '정상출근',   cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
@@ -1243,7 +1247,12 @@ const ATTENDANCE_STATUS_CONFIG: Record<AttendanceStatus, { label: string; cls: s
   MISSING_OUT:   { label: '퇴근미등록', cls: 'bg-orange-100 text-orange-800 border-orange-300' },
   ABSENT:        { label: '결근',       cls: 'bg-red-200 text-red-900 border-red-400' },
   INSUFFICIENT:  { label: '근무시간부족', cls: 'bg-purple-100 text-purple-800 border-purple-300' },
+  /* 전일 화면에서 주간조와 섞여 있을 때 21시대 야간 출근자를 한눈에 구분하기 위한 표식 */
+  NIGHT_CHECKIN: { label: '야간출근(21시대)', cls: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
 };
+
+/** 21시 이후 출근 — 조정 모달의 익일퇴근 자동제안(isLikelyNightShift)과 동일 기준(20시) */
+const NIGHT_CHECKIN_HOUR_KST = 20;
 
 const STANDARD_WORK_HOURS = 8;
 
@@ -1253,7 +1262,7 @@ function extractHHMM(iso: string): string {
   return `${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null): AttendanceStatus[] {
+function getAttendanceStatuses(row: Row, date: string): AttendanceStatus[] {
   const today = new Date().toISOString().slice(0, 10);
   const isPast = date < today;
 
@@ -1263,23 +1272,20 @@ function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null
   const statuses: AttendanceStatus[] = [];
 
   /* 2026-07-23: 근무유형별 인정시간 정책(개인/부서/회사)이 이 기록에 실제로 적용됐으면
-     그 판정을 그대로 신뢰 — 정책이 없는(구 방식) 기록만 기존 shiftStart 휴리스틱으로 fallback. */
+     그 판정을 그대로 신뢰. 정책이 없는(시간 설정 안 된) 사람은 출퇴근 등록 여부만 확인하고
+     조기/지각을 추정하지 않는다 — 2026-08-07: 시간 미설정자를 shiftStart 휴리스틱으로
+     조기출근 오판정하던 문제 수정. */
   if (row.checkInStatus) {
     statuses.push(
       row.checkInStatus === 'EARLY' ? 'EARLY_ARRIVAL' : row.checkInStatus === 'LATE' ? 'LATE' : 'NORMAL'
     );
-  } else if (shiftStart) {
-    const [sH, sM] = shiftStart.split(':').map(Number);
-    const checkInHHMM = extractHHMM(row.checkInTime);
-    const [iH, iM] = checkInHHMM.split(':').map(Number);
-    const shiftMin   = sH * 60 + sM;
-    const checkInMin = iH * 60 + iM;
-    if (checkInMin < shiftMin - 10)       statuses.push('EARLY_ARRIVAL');
-    else if (checkInMin > shiftMin)        statuses.push('LATE');
-    else                                   statuses.push('NORMAL');
   } else {
     statuses.push(row.workType === 'EARLY' ? 'EARLY_ARRIVAL' : 'NORMAL');
   }
+
+  /* 전일 화면에서 주간조와 섞여 21시대 출근자를 구분하기 어려운 문제 개선 — 별도 표식 추가 */
+  const checkInHour = Number(extractHHMM(row.checkInTime).slice(0, 2));
+  if (checkInHour >= NIGHT_CHECKIN_HOUR_KST) statuses.push('NIGHT_CHECKIN');
 
   if (isPast && !row.checkOutTime) { statuses.push('MISSING_OUT'); return statuses; }
 
@@ -1294,8 +1300,18 @@ function getAttendanceStatuses(row: Row, date: string, shiftStart: string | null
   return statuses;
 }
 
-function AttendanceStatusChip({ row, date, shiftStart }: { row: Row; date: string; shiftStart: string | null }) {
-  const statuses = getAttendanceStatuses(row, date, shiftStart);
+function AttendanceStatusChip({ row, date }: { row: Row; date: string }) {
+  /* 전일 21시대 출근 후 아직 당일 기록이 없는 근로자 — 당일 화면에도 이어서 보여주되
+     전일 기록임을 명시(요청 형태: "전일출근(정상) 21:00") */
+  if (row.isYesterdayCarryover && row.checkInTime) {
+    return (
+      <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap bg-indigo-100 text-indigo-800 border-indigo-300">
+        전일출근(정상) {extractHHMM(row.checkInTime)}
+      </span>
+    );
+  }
+
+  const statuses = getAttendanceStatuses(row, date);
   return (
     <div className="flex flex-wrap gap-1">
       {statuses.map((s) => {
