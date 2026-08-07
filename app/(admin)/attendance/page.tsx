@@ -1,6 +1,6 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { todayKstDate } from '@/lib/dates';
+import { todayKstDate, parseKstDateStr } from '@/lib/dates';
 import { contractorScopeWhere } from '@/lib/scopes';
 import { userScope } from '@/lib/users';
 import AttendanceClient from './_attendance-client';
@@ -17,7 +17,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
   const session = (await readSession())!;
   const rawDate = searchParams.date ?? '';
   const dateStr = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : todayKstDate().toISOString().slice(0, 10);
-  const date = new Date(dateStr + 'T00:00:00');
+  const date = parseKstDateStr(dateStr);
 
   /* MUNI_ADMIN 업체 탭 필터 */
   let contractorOpts: ContractorOpt[] = [];
@@ -61,10 +61,13 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       orderBy: { name: 'asc' },
     }),
     /* 전일 21시대 야간 출근자를 당일 화면에도 이어서 표시하기 위한 조회 — 정확히 하루 전(전일)만 대상,
-       전전일 이상은 조회하지 않으므로 자동으로 당일 화면에 노출되지 않는다 */
+       전전일 이상은 조회하지 않으므로 자동으로 당일 화면에 노출되지 않는다.
+       2026-08-07: checkOutTime이 이미 등록된(=퇴근까지 끝나 종료된) 전일 기록은 대상에서 제외 —
+       이 업체는 근로자 다수가 21시~07시 근무가 표준 스케줄이라, 이미 끝난 전일 근무까지 계속
+       이어보이면 "전일 미등록(결석)"이어야 할 사람이 어제 이미 마감된 근무로 덮여 보이는 문제가 있었음. */
     prisma.attendanceRecord.findMany({
-      where: { workDate: yesterday, ...recordScope, checkInTime: { not: null } },
-      select: { id: true, workerId: true, checkInTime: true, checkOutTime: true },
+      where: { workDate: yesterday, ...recordScope, checkInTime: { not: null }, checkOutTime: null },
+      select: { id: true, workerId: true, checkInTime: true, checkOutTime: true, checkInStatus: true, checkOutStatus: true },
     }),
   ]);
 
@@ -80,6 +83,9 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
   const rows = workers.map((w) => {
     const r = recordMap.get(w.id.toString());
     const carry = !r ? carryoverMap.get(w.id.toString()) : undefined;
+    /* 전일출근 이어보임 행은 실제 전일 근태상태(지각/조퇴/퇴근지연 등)를 그대로 반영 —
+       하드코딩된 "정상" 대신 carry 레코드 자신의 checkInStatus/checkOutStatus를 사용 */
+    const source = r ?? carry;
     return {
       workerId: w.id.toString(),
       workerName: w.name,
@@ -87,13 +93,13 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       positionLabel: w.position?.label ?? null,
       departmentName: w.department?.name ?? null,
       recordId: r?.id.toString() ?? null,
-      checkInTime: (r?.checkInTime ?? carry?.checkInTime)?.toISOString() ?? null,
-      checkOutTime: (r?.checkOutTime ?? carry?.checkOutTime)?.toISOString() ?? null,
+      checkInTime: source?.checkInTime?.toISOString() ?? null,
+      checkOutTime: source?.checkOutTime?.toISOString() ?? null,
       workType: r?.workType ?? null,
       zoneName: r?.zone?.zoneName ?? null,
       status: r?.status ?? null,
-      checkInStatus: (r?.checkInStatus === 'DELAYED' ? null : r?.checkInStatus) ?? null,
-      checkOutStatus: (r?.checkOutStatus === 'LATE' ? null : r?.checkOutStatus) ?? null,
+      checkInStatus: (source?.checkInStatus === 'DELAYED' ? null : source?.checkInStatus) ?? null,
+      checkOutStatus: (source?.checkOutStatus === 'LATE' ? null : source?.checkOutStatus) ?? null,
       isYesterdayCarryover: !!carry,
     };
   });
@@ -113,7 +119,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
 
   const adminSelfRecord = (session.role === 'CONTRACTOR_ADMIN' || session.role === 'INTERNAL_ADMIN')
     ? await prisma.attendanceRecord.findUnique({
-        where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: new Date(dateStr + 'T00:00:00') } },
+        where: { workerId_workDate: { workerId: BigInt(session.userId), workDate: date } },
       })
     : null;
 

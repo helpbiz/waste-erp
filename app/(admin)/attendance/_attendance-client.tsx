@@ -1262,6 +1262,24 @@ function extractHHMM(iso: string): string {
   return `${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
 }
 
+/** "YYYY-MM-DD" 하루 전 — UTC 기준으로 계산해 클라이언트 타임존과 무관하게 정확한 날짜를 반환 */
+function prevDateStr(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** 전일출근 이어보임 칩 라벨 — 실제 전일 근태상태(지각/조퇴/퇴근지연 등)에 맞춰 표시.
+ * 체크인 판정(정상/조기출근/지각)만 출근 시각을 함께 표시하고, 체크아웃 판정은 시각 없이 라벨만 표시 —
+ * 여러 배지가 동시에 뜰 때 같은 시각이 반복 노출되어 혼동을 주지 않도록.
+ * MISSING_OUT은 여기 포함하지 않음 — 전일출근 대상은 항상 퇴근 미등록 상태(=아직 근무 중)라
+ * 모든 행에 항상 붙어 의미 없는 잡음이 됨(2026-08-07). */
+const CARRYOVER_LABEL: Partial<Record<AttendanceStatus, string>> = {
+  NORMAL: '정상', EARLY_ARRIVAL: '조기출근', LATE: '지각',
+  EARLY_LEAVE: '조퇴', LATE_LEAVE: '퇴근지연', INSUFFICIENT: '근무시간부족',
+};
+const CARRYOVER_CHECKIN_STATUSES: AttendanceStatus[] = ['NORMAL', 'EARLY_ARRIVAL', 'LATE'];
+
 function getAttendanceStatuses(row: Row, date: string): AttendanceStatus[] {
   const today = new Date().toISOString().slice(0, 10);
   const isPast = date < today;
@@ -1302,12 +1320,18 @@ function getAttendanceStatuses(row: Row, date: string): AttendanceStatus[] {
 
 function AttendanceStatusChip({ row, date }: { row: Row; date: string }) {
   /* 전일 21시대 출근 후 아직 당일 기록이 없는 근로자 — 당일 화면에도 이어서 보여주되
-     전일 기록임을 명시(요청 형태: "전일출근(정상) 21:00") */
+     전일 기록임을 명시. 실제 전일 근태상태(지각/조퇴/퇴근지연 등)를 그대로 반영 —
+     하드코딩된 "정상"이 아니라 그 기록의 실제 판정을 조회(2026-08-07 수정). */
   if (row.isYesterdayCarryover && row.checkInTime) {
+    const carryStatuses = getAttendanceStatuses(row, prevDateStr(date)).filter((s) => CARRYOVER_LABEL[s]);
     return (
-      <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap bg-indigo-100 text-indigo-800 border-indigo-300">
-        전일출근(정상) {extractHHMM(row.checkInTime)}
-      </span>
+      <div className="flex flex-wrap gap-1">
+        {carryStatuses.map((s) => (
+          <span key={s} className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap bg-indigo-100 text-indigo-800 border-indigo-300">
+            전일출근({CARRYOVER_LABEL[s]}){CARRYOVER_CHECKIN_STATUSES.includes(s) ? ` ${extractHHMM(row.checkInTime!)}` : ''}
+          </span>
+        ))}
+      </div>
     );
   }
 
