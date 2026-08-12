@@ -28,6 +28,78 @@ function hhmmToMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
+export type WorkerShiftBadge = {
+  /** 이 근로자의 현재 근무유형 — 개인/부서/회사 정책이 전혀 없으면 null(미설정) */
+  shiftType: 'DAY' | 'NIGHT' | 'DAWN' | null;
+  /** 개인 예외 정책으로 결정된 경우(부서/회사 기본값과 다를 수 있음) */
+  isIndividualOverride: boolean;
+  /** 개인 예외가 없었다면 적용됐을 부서(또는 회사) 기본 근무유형 — 툴팁 문구용 */
+  departmentShiftType: 'DAY' | 'NIGHT' | 'DAWN' | null;
+};
+
+/** 요일 오버라이드가 아닌 "기본" 정책들 중 sortOrder가 가장 앞선 것의 shiftType을 대표값으로 사용.
+ * 근무유형은 "직원 속성"이라 특정 요일(예: 토요일) 전용 오버라이드는 대표값 산정에서 제외한다. */
+function primaryShiftType(
+  policies: { shiftType: 'DAY' | 'NIGHT' | 'DAWN'; dayOfWeekOverride: number | null; sortOrder: number }[]
+): 'DAY' | 'NIGHT' | 'DAWN' | null {
+  const base = policies.filter((p) => p.dayOfWeekOverride == null);
+  if (base.length === 0) return null;
+  return [...base].sort((a, b) => a.sortOrder - b.sortOrder)[0].shiftType;
+}
+
+/** 근태 목록 등에서 여러 근로자의 근무유형 배지를 한 번의 조회로 일괄 계산 — 근로자 수만큼
+ * resolveShiftPolicies를 반복 호출하면 N+1이 되므로, 관련 업체들의 활성 정책 전체를 한 번만
+ * 가져와 메모리에서 개인>부서>회사 우선순위를 적용한다. SUPER_ADMIN/MUNI_ADMIN이 "전체 업체"를
+ * 볼 때는 근로자마다 소속 업체가 다를 수 있어 companyPolicies/departmentId를 업체별로 구분
+ * 해야 한다 — departmentId는 업체 간에 유일하므로 dept 키는 그대로 두되, 회사 전체 기본값만
+ * contractorId로 분리한다(2026-08-12). */
+export async function resolveWorkerShiftBadges(
+  workers: { id: bigint; departmentId: bigint | null; contractorId: bigint | null }[]
+): Promise<Map<string, WorkerShiftBadge>> {
+  const contractorIds = [...new Set(workers.map((w) => w.contractorId).filter((c): c is bigint => c != null))];
+  const all = contractorIds.length
+    ? await prisma.shiftPolicy.findMany({
+        where: { contractorId: { in: contractorIds }, active: true },
+        select: { contractorId: true, workerId: true, departmentId: true, shiftType: true, dayOfWeekOverride: true, sortOrder: true },
+      })
+    : [];
+
+  const individualMap = new Map<string, typeof all>();
+  const deptMap = new Map<string, typeof all>();
+  const companyMap = new Map<string, typeof all>();
+  for (const p of all) {
+    if (p.workerId != null) {
+      const key = p.workerId.toString();
+      individualMap.set(key, [...(individualMap.get(key) ?? []), p]);
+    } else if (p.departmentId != null) {
+      const key = p.departmentId.toString();
+      deptMap.set(key, [...(deptMap.get(key) ?? []), p]);
+    } else {
+      const key = p.contractorId.toString();
+      companyMap.set(key, [...(companyMap.get(key) ?? []), p]);
+    }
+  }
+
+  const result = new Map<string, WorkerShiftBadge>();
+  for (const w of workers) {
+    const wKey = w.id.toString();
+    const individual = individualMap.get(wKey) ?? [];
+    const dept = w.departmentId != null ? deptMap.get(w.departmentId.toString()) ?? [] : [];
+    const company = w.contractorId != null ? companyMap.get(w.contractorId.toString()) ?? [] : [];
+    const companyShiftType = primaryShiftType(company);
+    const departmentShiftType = dept.length > 0 ? primaryShiftType(dept) : companyShiftType;
+
+    if (individual.length > 0) {
+      result.set(wKey, { shiftType: primaryShiftType(individual), isIndividualOverride: true, departmentShiftType });
+    } else if (dept.length > 0) {
+      result.set(wKey, { shiftType: departmentShiftType, isIndividualOverride: false, departmentShiftType });
+    } else {
+      result.set(wKey, { shiftType: companyShiftType, isIndividualOverride: false, departmentShiftType: companyShiftType });
+    }
+  }
+  return result;
+}
+
 /** 개인 > 부서 > 회사 전체 순으로, 가장 구체적인 스코프에서 활성 정책이 있으면 그것만 반환 */
 export async function resolveShiftPolicies(
   contractorId: bigint,

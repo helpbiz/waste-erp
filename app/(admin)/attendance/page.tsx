@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { todayKstDate, parseKstDateStr } from '@/lib/dates';
 import { contractorScopeWhere } from '@/lib/scopes';
 import { userScope } from '@/lib/users';
+import { resolveWorkerShiftBadges } from '@/lib/shift-policy';
 import AttendanceClient from './_attendance-client';
 
 export const dynamic = 'force-dynamic';
@@ -80,6 +81,10 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       .map((r) => [r.workerId.toString(), r])
   );
 
+  const shiftBadges = await resolveWorkerShiftBadges(
+    workers.map((w) => ({ id: w.id, departmentId: w.departmentId, contractorId: w.contractorId }))
+  );
+
   const recordMap = new Map(records.map((r) => [r.workerId.toString(), r]));
   const rows = workers.map((w) => {
     const r = recordMap.get(w.id.toString());
@@ -87,6 +92,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
     /* 전일출근 이어보임 행은 실제 전일 근태상태(지각/조퇴/퇴근지연 등)를 그대로 반영 —
        하드코딩된 "정상" 대신 carry 레코드 자신의 checkInStatus/checkOutStatus를 사용 */
     const source = r ?? carry;
+    const shiftBadge = shiftBadges.get(w.id.toString()) ?? { shiftType: null, isIndividualOverride: false, departmentShiftType: null };
     return {
       workerId: w.id.toString(),
       workerName: w.name,
@@ -102,6 +108,9 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       checkInStatus: (source?.checkInStatus === 'DELAYED' ? null : source?.checkInStatus) ?? null,
       checkOutStatus: (source?.checkOutStatus === 'LATE' ? null : source?.checkOutStatus) ?? null,
       isYesterdayCarryover: !!carry,
+      shiftType: shiftBadge.shiftType,
+      isShiftIndividualOverride: shiftBadge.isIndividualOverride,
+      departmentShiftType: shiftBadge.departmentShiftType,
     };
   });
 

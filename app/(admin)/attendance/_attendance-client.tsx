@@ -23,7 +23,49 @@ type Row = {
   checkOutStatus: 'EARLY' | 'NORMAL' | 'DELAYED' | null;
   /** 전일 21시대 출근(야간)이 아직 당일 기록 없는 이 근로자에게 이어서 표시된 것인지 */
   isYesterdayCarryover: boolean;
+  /** 이 근로자의 근무유형(주간/야간/새벽) — 개인/부서/회사 인정시간 정책이 전혀 없으면 null(미설정) */
+  shiftType: 'DAY' | 'NIGHT' | 'DAWN' | null;
+  /** 개인 예외 정책으로 결정된 경우 true — 부서/회사 기본값과 다를 수 있음 */
+  isShiftIndividualOverride: boolean;
+  /** 개인 예외가 아니었다면 적용됐을 부서(또는 회사) 기본 근무유형 — 툴팁용 */
+  departmentShiftType: 'DAY' | 'NIGHT' | 'DAWN' | null;
 };
+
+/** 근무유형 배지 — 근태상태(초록/노랑/빨강)와 색상축이 겹치지 않도록 채도 낮은 슬레이트/인디고/스카이로 구분,
+ * 크기도 작게 해서 근태상태보다 시각적 우선순위를 낮춘다(2026-08-12, frontend-architect 설계). */
+const SHIFT_BADGE_CONFIG: Record<'DAY' | 'NIGHT' | 'DAWN', { icon: string; label: string; cls: string }> = {
+  DAY:   { icon: '☀', label: '주간', cls: 'bg-slate-100 text-slate-600 border-slate-300' },
+  NIGHT: { icon: '🌙', label: '야간', cls: 'bg-indigo-50 text-indigo-600 border-indigo-200' },
+  DAWN:  { icon: '🌅', label: '새벽', cls: 'bg-sky-50 text-sky-600 border-sky-200' },
+};
+
+function ShiftBadge({ row }: { row: Row }) {
+  if (!row.shiftType) {
+    return (
+      <span
+        title="근무유형 미설정 — 개인/부서/회사 인정시간 정책이 없습니다"
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-dashed border-ink-faint text-ink-faint text-[0.5rem] font-bold shrink-0"
+      >
+        ?
+      </span>
+    );
+  }
+  const cfg = SHIFT_BADGE_CONFIG[row.shiftType];
+  const tooltip = row.isShiftIndividualOverride
+    ? `개인 예외 적용 (부서 기본값은 ${row.departmentShiftType ? SHIFT_BADGE_CONFIG[row.departmentShiftType].label : '미설정'})`
+    : `${cfg.label}근무`;
+  return (
+    <span
+      title={tooltip}
+      className={`relative inline-flex items-center justify-center w-4 h-4 rounded-full border text-[0.5625rem] leading-none shrink-0 ${cfg.cls}`}
+    >
+      {cfg.icon}
+      {row.isShiftIndividualOverride && (
+        <span aria-hidden className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 border border-white" />
+      )}
+    </span>
+  );
+}
 
 type SelfRecord = { recordId: string; checkInTime: string | null; checkOutTime: string | null } | null;
 
@@ -48,6 +90,8 @@ export default function AttendanceClient({
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [exporting, setExporting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [nameQuery, setNameQuery] = useState('');
+  const [shiftFilter, setShiftFilter] = useState<'ALL' | 'DAY' | 'NIGHT' | 'DAWN' | 'UNSET'>('ALL');
 
   async function handleExportExcel() {
     setExporting(true);
@@ -190,13 +234,60 @@ export default function AttendanceClient({
         />
       </div>
 
+      {(() => {
+        /* 근무유형은 "오늘의 이벤트"가 아니라 "직원 속성"이라 별도 KPI 카드보다 필터 옆 인원수 표기로
+           충분하다는 판단(2026-08-12, product-manager) — 관리자 니즈는 "지금 야간조만 보기"라는
+           필터이지 재정렬이 아니므로 정렬 대신 세그먼트 필터로 구현. */
+        const shiftCounts = {
+          ALL: rows.length,
+          DAY: rows.filter((r) => r.shiftType === 'DAY').length,
+          NIGHT: rows.filter((r) => r.shiftType === 'NIGHT').length,
+          DAWN: rows.filter((r) => r.shiftType === 'DAWN').length,
+          UNSET: rows.filter((r) => r.shiftType === null).length,
+        };
+        const shiftFilterOptions: { key: typeof shiftFilter; label: string; count: number }[] = [
+          { key: 'ALL', label: '전체', count: shiftCounts.ALL },
+          { key: 'DAY', label: '☀ 주간', count: shiftCounts.DAY },
+          { key: 'NIGHT', label: '🌙 야간', count: shiftCounts.NIGHT },
+          { key: 'DAWN', label: '🌅 새벽', count: shiftCounts.DAWN },
+          ...(shiftCounts.UNSET > 0 ? [{ key: 'UNSET' as const, label: '미설정', count: shiftCounts.UNSET }] : []),
+        ];
+        return (
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.target.value)}
+              placeholder="이름 검색"
+              aria-label="직원 이름 검색"
+              className="px-3 py-1.5 rounded border border-line bg-white text-sm font-bold w-[140px]"
+            />
+            <div className="flex rounded-lg border border-line overflow-hidden" role="group" aria-label="근무유형 필터">
+              {shiftFilterOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setShiftFilter(opt.key)}
+                  className={`px-2.5 py-1.5 text-[0.75rem] font-extrabold border-r border-line last:border-r-0 whitespace-nowrap transition ${
+                    shiftFilter === opt.key ? 'bg-accent text-white' : 'bg-white text-ink-muted hover:bg-surface-soft'
+                  }`}
+                >
+                  {opt.label} ({opt.count})
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="bg-surface border border-line rounded-lg overflow-hidden shadow-sm">
         <div className="px-4 py-2.5 bg-slate-100 border-b border-line text-sm font-extrabold text-ink">
           근태 일별 현황 ({selectedDate})
         </div>
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="근태 일별 현황 표">
         <table className="w-full min-w-[640px] text-sm">
-          {/* 사용자 요청 2026-04-29: 직원/출근/퇴근/상태만 표시 (부서/직책/유형/구역 컬럼 제거) */}
+          {/* 사용자 요청 2026-04-29: 직원/출근/퇴근/상태만 표시 (부서/직책/유형/구역 컬럼 제거).
+              2026-08-12: 근무유형(주간/야간/새벽)은 "직원 속성"이라 별도 컬럼 대신 직원명 옆
+              인라인 배지로 표시 — 컬럼 추가는 모바일 가로스크롤을 악화시킨다(frontend-architect). */}
           <thead className="bg-slate-50 text-[0.6875rem] font-mono font-extrabold text-ink-muted uppercase tracking-wider">
             <tr>
               <th className="px-3 py-2 text-left">직원</th>
@@ -208,13 +299,29 @@ export default function AttendanceClient({
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.length === 0 && (
-              <tr><td colSpan={canManage ? 6 : 5} className="px-3 py-10 text-center text-ink-faint">근로자가 없습니다.</td></tr>
-            )}
-            {rows.map((r) => (
-              <tr key={r.workerId} className={`hover:bg-slate-50 ${!r.checkInTime ? 'bg-amber-50/30' : ''}`}>
+            {(() => {
+              const q = nameQuery.trim();
+              const filteredRows = rows.filter((r) => {
+                if (shiftFilter !== 'ALL') {
+                  if (shiftFilter === 'UNSET' ? r.shiftType !== null : r.shiftType !== shiftFilter) return false;
+                }
+                if (q && !r.workerName.includes(q)) return false;
+                return true;
+              });
+              if (filteredRows.length === 0) {
+                return (
+                  <tr><td colSpan={canManage ? 6 : 5} className="px-3 py-10 text-center text-ink-faint">
+                    {rows.length === 0 ? '근로자가 없습니다.' : '조건에 맞는 근로자가 없습니다.'}
+                  </td></tr>
+                );
+              }
+              return filteredRows.map((r) => (
+            <tr key={r.workerId} className={`hover:bg-slate-50 ${!r.checkInTime ? 'bg-amber-50/30' : ''}`}>
                 <td className="px-3 py-2">
-                  <div className="font-extrabold text-ink">{r.workerName}</div>
+                  <div className="flex items-center gap-1.5">
+                    <ShiftBadge row={r} />
+                    <div className="font-extrabold text-ink">{r.workerName}</div>
+                  </div>
                 </td>
                 <td className="px-3 py-2 font-mono font-extrabold text-base">
                   {r.checkInTime ? <span className="text-emerald-700">{fmtTime(r.checkInTime)}</span> : <span className="text-amber-600">—</span>}
@@ -263,7 +370,8 @@ export default function AttendanceClient({
                   </td>
                 )}
               </tr>
-            ))}
+              ));
+            })()}
           </tbody>
         </table>
         </div>
