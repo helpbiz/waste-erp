@@ -62,11 +62,12 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
     }),
     /* 전일 21시대 야간 출근자를 당일 화면에도 이어서 표시하기 위한 조회 — 정확히 하루 전(전일)만 대상,
        전전일 이상은 조회하지 않으므로 자동으로 당일 화면에 노출되지 않는다.
-       2026-08-07: checkOutTime이 이미 등록된(=퇴근까지 끝나 종료된) 전일 기록은 대상에서 제외 —
-       이 업체는 근로자 다수가 21시~07시 근무가 표준 스케줄이라, 이미 끝난 전일 근무까지 계속
-       이어보이면 "전일 미등록(결석)"이어야 할 사람이 어제 이미 마감된 근무로 덮여 보이는 문제가 있었음. */
+       2026-08-11: checkOutTime 유무와 무관하게 항상 이어보임 대상으로 포함 — 퇴근까지 끝난 순간
+       이어보임이 사라져 "출근미등록"으로 오표시되던 문제 수정. 퇴근 완료 여부는 클라이언트에서
+       배지로 구분 표시하고(전일출근 vs 퇴근완료), 수정은 항상 전일(실제 workDate) 화면에서만
+       하도록 유지 — 이 근로자들의 recordId가 실제로 존재하는 날이 전일이기 때문. */
     prisma.attendanceRecord.findMany({
-      where: { workDate: yesterday, ...recordScope, checkInTime: { not: null }, checkOutTime: null },
+      where: { workDate: yesterday, ...recordScope, checkInTime: { not: null } },
       select: { id: true, workerId: true, checkInTime: true, checkOutTime: true, checkInStatus: true, checkOutStatus: true },
     }),
   ]);

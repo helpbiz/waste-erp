@@ -104,19 +104,36 @@ function kstDayOfWeekOf(d: Date): number {
   return (kst.getUTCDay() + 6) % 7; // 0=월 ~ 6=일
 }
 
-/** 체크인 판정 — 인정 시작 이전=조기, 종료 초과=지각, 그 사이=정상 */
+/** 체크인 판정 — 인정 시작 이전=조기, 종료 초과=지각, 그 사이=정상.
+ * from > until(예: 20:00~06:00)이면 자정을 넘어가는 인정창으로 보고 matchPolicyForCheckIn과
+ * 동일한 wraparound 판정을 적용한다(2026-08-11: 야간 인정창에서 정상 출근이 지각/조기로
+ * 오판정되던 버그 수정 — 기존엔 이 함수가 wraparound을 몰라 단순 from/until 비교만 했음). */
 export function classifyCheckIn(policy: ShiftPolicyRow, checkInAt: Date): RecognitionStatus {
   const mins = minutesOfDayKst(checkInAt);
-  if (policy.checkInRecognizeFrom && mins < hhmmToMinutes(policy.checkInRecognizeFrom)) return 'EARLY';
-  if (policy.checkInRecognizeUntil && mins > hhmmToMinutes(policy.checkInRecognizeUntil)) return 'LATE';
+  const from = policy.checkInRecognizeFrom ? hhmmToMinutes(policy.checkInRecognizeFrom) : null;
+  const until = policy.checkInRecognizeUntil ? hhmmToMinutes(policy.checkInRecognizeUntil) : null;
+  if (from != null && until != null && from > until) {
+    if (mins >= from || mins <= until) return 'NORMAL';
+    // 인정창 밖(예: 06:00~20:00 사이) — until에 가까우면 창을 놓친 지각, from에 가까우면 너무 이른 조기
+    return mins < (until + from) / 2 ? 'LATE' : 'EARLY';
+  }
+  if (from != null && mins < from) return 'EARLY';
+  if (until != null && mins > until) return 'LATE';
   return 'NORMAL';
 }
 
 /** 체크아웃 판정 — 인정 시작 이전=조기(조퇴), 종료 초과=지연, 그 사이=정상.
- * 야간(checkOutNextDay) 여부와 무관하게 시:분만 비교(호출측이 이미 올바른 날짜의 기록을 다루고 있다는 전제). */
+ * 야간(checkOutNextDay) 여부와 무관하게 시:분만 비교(호출측이 이미 올바른 날짜의 기록을 다루고 있다는 전제).
+ * from > until이면 classifyCheckIn과 동일하게 자정을 넘어가는 인정창으로 처리(2026-08-11). */
 export function classifyCheckOut(policy: ShiftPolicyRow, checkOutAt: Date): RecognitionStatus {
   const mins = minutesOfDayKst(checkOutAt);
-  if (policy.checkOutRecognizeFrom && mins < hhmmToMinutes(policy.checkOutRecognizeFrom)) return 'EARLY';
-  if (policy.checkOutRecognizeUntil && mins > hhmmToMinutes(policy.checkOutRecognizeUntil)) return 'DELAYED';
+  const from = policy.checkOutRecognizeFrom ? hhmmToMinutes(policy.checkOutRecognizeFrom) : null;
+  const until = policy.checkOutRecognizeUntil ? hhmmToMinutes(policy.checkOutRecognizeUntil) : null;
+  if (from != null && until != null && from > until) {
+    if (mins >= from || mins <= until) return 'NORMAL';
+    return mins < (until + from) / 2 ? 'DELAYED' : 'EARLY';
+  }
+  if (from != null && mins < from) return 'EARLY';
+  if (until != null && mins > until) return 'DELAYED';
   return 'NORMAL';
 }

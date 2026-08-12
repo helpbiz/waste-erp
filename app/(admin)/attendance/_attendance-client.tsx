@@ -1272,8 +1272,8 @@ function prevDateStr(dateStr: string): string {
 /** 전일출근 이어보임 칩 라벨 — 실제 전일 근태상태(지각/조퇴/퇴근지연 등)에 맞춰 표시.
  * 체크인 판정(정상/조기출근/지각)만 출근 시각을 함께 표시하고, 체크아웃 판정은 시각 없이 라벨만 표시 —
  * 여러 배지가 동시에 뜰 때 같은 시각이 반복 노출되어 혼동을 주지 않도록.
- * MISSING_OUT은 여기 포함하지 않음 — 전일출근 대상은 항상 퇴근 미등록 상태(=아직 근무 중)라
- * 모든 행에 항상 붙어 의미 없는 잡음이 됨(2026-08-07). */
+ * MISSING_OUT은 여기 포함하지 않음 — 퇴근 완료 여부는 별도 배지(전일출근 칩 옆)로 표시하므로
+ * 중복 노출 방지. */
 const CARRYOVER_LABEL: Partial<Record<AttendanceStatus, string>> = {
   NORMAL: '정상', EARLY_ARRIVAL: '조기출근', LATE: '지각',
   EARLY_LEAVE: '조퇴', LATE_LEAVE: '퇴근지연', INSUFFICIENT: '근무시간부족',
@@ -1321,7 +1321,11 @@ function getAttendanceStatuses(row: Row, date: string): AttendanceStatus[] {
 function AttendanceStatusChip({ row, date }: { row: Row; date: string }) {
   /* 전일 21시대 출근 후 아직 당일 기록이 없는 근로자 — 당일 화면에도 이어서 보여주되
      전일 기록임을 명시. 실제 전일 근태상태(지각/조퇴/퇴근지연 등)를 그대로 반영 —
-     하드코딩된 "정상"이 아니라 그 기록의 실제 판정을 조회(2026-08-07 수정). */
+     하드코딩된 "정상"이 아니라 그 기록의 실제 판정을 조회(2026-08-07 수정).
+     2026-08-11: 퇴근 완료 여부와 무관하게 항상 이 칩을 표시(퇴근 완료 시 "출근미등록"으로
+     떨어져 보이던 문제 수정) — 대신 퇴근 완료 여부를 별도 배지로 구분해, 이미 끝난 전일
+     근무를 "오늘 정상 근무 중"으로 오해하지 않도록 한다. 수정은 항상 전일(실제 workDate)
+     화면에서만 가능 — 이 행의 recordId는 여기 없고 전일 화면에 있다. */
   if (row.isYesterdayCarryover && row.checkInTime) {
     const carryStatuses = getAttendanceStatuses(row, prevDateStr(date)).filter((s) => CARRYOVER_LABEL[s]);
     return (
@@ -1331,6 +1335,15 @@ function AttendanceStatusChip({ row, date }: { row: Row; date: string }) {
             전일출근({CARRYOVER_LABEL[s]}){CARRYOVER_CHECKIN_STATUSES.includes(s) ? ` ${extractHHMM(row.checkInTime!)}` : ''}
           </span>
         ))}
+        {row.checkOutTime ? (
+          <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap bg-slate-100 text-slate-700 border-slate-300">
+            퇴근완료 {extractHHMM(row.checkOutTime)}
+          </span>
+        ) : (
+          <span className="text-[0.625rem] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap bg-amber-100 text-amber-800 border-amber-300">
+            근무중
+          </span>
+        )}
       </div>
     );
   }
