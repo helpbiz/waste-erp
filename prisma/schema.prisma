@@ -19,6 +19,7 @@ enum Role {
   INTERNAL_ADMIN
   WORKER
   DEALER // dealer-channel Design §3.1 — 리드 등록·데모 발급만 가능, 자원 생성권 없음
+  MUNI_USER // muni-user-delegation 2026-08-15 — 지자체 소속 실무자. MUNI_ADMIN과 동일 read-only, 계정관리 권한 없음(피관리 대상)
 }
 
 enum MunicipalityStatus {

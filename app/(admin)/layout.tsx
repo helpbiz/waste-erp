@@ -68,8 +68,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
      사용자 요청 2026-05-01: 첫 로그인 진입을 메인 대시보드로 변경 + 메뉴 첫 항목 추가.
      사용자 요청 2026-05-20: MUNI_ADMIN 전용 메뉴를 완전히 분리 (불필요 메뉴 제거). */
 
-  /* ── MUNI_ADMIN 전용 메뉴 ──────────────────────────────────────────────── */
-  if (session.role === 'MUNI_ADMIN') {
+  /* ── MUNI_ADMIN / MUNI_USER 전용 메뉴 ────────────────────────────────────
+     muni-user-delegation 2026-08-15 — MUNI_USER는 MUNI_ADMIN과 동일한 조회
+     메뉴를 쓰되, 계정관리(지자체사용자 관리)는 MUNI_ADMIN만 접근 가능. */
+  if (session.role === 'MUNI_ADMIN' || session.role === 'MUNI_USER') {
     const muniGroups = [
       {
         group: 'OVERVIEW',
@@ -89,6 +91,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/attendance', label: '근태관리' },
           { href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' as string },
           { href: '/reports', label: '통합/보고서' },
+          ...(session.role === 'MUNI_ADMIN'
+            ? [{ href: '/muni-users', label: '👥 지자체사용자 관리' }]
+            : []),
         ],
       },
     ];

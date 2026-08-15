@@ -1,5 +1,6 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { canManageOperations } from '@/lib/rbac';
 import PerformanceClient from './_performance-client';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export default async function PerformancePage() {
 
   return (
     <PerformanceClient
-      canEdit={session.role !== 'MUNI_ADMIN'}
+      canEdit={canManageOperations(session.role)}
       vehicles={vehicles.map((v) => ({ id: v.id.toString(), vehicleNo: v.vehicleNo, vehicleType: v.vehicleType }))}
     />
   );

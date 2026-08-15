@@ -18,6 +18,7 @@ const ADMIN_ROLES = new Set([
   'CONTRACTOR_ADMIN',
   'INTERNAL_ADMIN',
   'MUNI_ADMIN',
+  'MUNI_USER', // muni-user-delegation 2026-08-15
 ]);
 
 export interface ResolveRouteInput {

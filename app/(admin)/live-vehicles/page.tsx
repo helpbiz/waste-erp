@@ -1,5 +1,6 @@
 import { readSession } from '@/lib/auth';
 import { requireFeature } from '@/lib/feature-guard';
+import { canManageOperations } from '@/lib/rbac';
 import { prisma } from '@/lib/db';
 import LiveVehiclesClient from './_live-vehicles-client';
 
@@ -20,7 +21,7 @@ export default async function LiveVehiclesPage() {
 
   return (
     <LiveVehiclesClient
-      canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
+      canManage={canManageOperations(session.role)}
       isSuperAdmin={session.role === 'SUPER_ADMIN'}
       muniContractorOpts={muniContractorOpts}
     />

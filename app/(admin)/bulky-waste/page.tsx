@@ -1,5 +1,6 @@
 import { readSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { canManageOperations } from '@/lib/rbac';
 import BulkyWasteClient from './_bulky-waste-client';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ export default async function BulkyWastePage() {
 
   return (
     <BulkyWasteClient
-      canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
+      canManage={canManageOperations(session.role)}
       config={config ? {
         id: config.id.toString(),
         ppaegiUsername: config.ppaegiUsername,

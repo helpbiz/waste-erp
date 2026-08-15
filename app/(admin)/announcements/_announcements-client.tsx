@@ -112,9 +112,10 @@ export default function AnnouncementsClient({
            session.role === 'CONTRACTOR_ADMIN' ? '🏢 회사 대표 — 회사 내부 공지 (관리자/근로자/전체)' :
            session.role === 'INTERNAL_ADMIN' ? '👔 관리자 — 회사 내부 공지 (관리자/근로자/전체)' :
            session.role === 'MUNI_ADMIN' ? '🏛 지자체 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' :
+           session.role === 'MUNI_USER' ? '🏛 지자체 담당자 — 산하 회사 broadcast (회사대표/회사+관리자/전체)' :
            session.isNoticeManager ? '📝 공지 담당자 — 회사 내부 공지 작성 가능' : ''}
         </span>
-        {session.role !== 'MUNI_ADMIN' && (
+        {session.role !== 'MUNI_ADMIN' && session.role !== 'MUNI_USER' && (
           <button
             onClick={() => setVoiceOpen(true)}
             className="ml-auto px-3 py-2 rounded-lg border-2 border-purple-300 bg-white hover:bg-purple-50 text-purple-800 text-sm font-extrabold active:scale-95"

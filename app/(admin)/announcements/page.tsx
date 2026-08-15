@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function AnnouncementsPage() {
   const session = await readSession();
   if (!session) redirect('/login?next=/announcements');
-  const POSTERS = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN'];
+  const POSTERS = ['SUPER_ADMIN', 'CONTRACTOR_ADMIN', 'INTERNAL_ADMIN', 'MUNI_ADMIN', 'MUNI_USER'];
 
   /* isNoticeManager 플래그가 있는 근로자도 접근 허용 */
   let isNoticeManager = false;

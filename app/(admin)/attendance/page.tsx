@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { todayKstDate, parseKstDateStr } from '@/lib/dates';
 import { contractorScopeWhere } from '@/lib/scopes';
 import { userScope } from '@/lib/users';
+import { canManageOperations } from '@/lib/rbac';
 import { resolveWorkerShiftBadges } from '@/lib/shift-policy';
 import AttendanceClient from './_attendance-client';
 
@@ -138,7 +139,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: {
       date={dateStr}
       rows={rows}
       summary={summary}
-      canManage={session.role !== 'WORKER' && session.role !== 'MUNI_ADMIN'}
+      canManage={canManageOperations(session.role)}
       contractorOpts={contractorOpts}
       selectedContractorId={pickedContractorId?.toString() ?? ''}
       selfRecord={adminSelfRecord ? {

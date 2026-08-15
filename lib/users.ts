@@ -36,9 +36,25 @@ export function userScope(session: ScopeSession): Prisma.UserWhereInput {
   return { id: BigInt(-1) };
 }
 
-/** 사용자 등록·수정 권한 (mutate) */
+/** 사용자 등록·수정 권한 (mutate) — 위탁업체 직원 대상. MUNI_ADMIN은 포함하지 않음(§7-1 GET-only) */
 export function canManageUsers(role: Role): boolean {
   return role === 'SUPER_ADMIN' || role === 'CONTRACTOR_ADMIN' || role === 'INTERNAL_ADMIN';
+}
+
+/**
+ * muni-user-delegation 2026-08-15 — MUNI_ADMIN이 생성·재설정할 수 있는 대상 범위.
+ * 반드시 이 3조건 AND로만 한정할 것(userScope에 OR로 얹지 말 것 — 위탁업체 전 직원이
+ * 관리대상으로 딸려 들어오는 권한상승 결함이 됨. 2026-08-15 보안검토 결론).
+ */
+export function manageableUserScope(session: ScopeSession): Prisma.UserWhereInput {
+  if (session.role === 'MUNI_ADMIN' && session.municipalityId) {
+    return {
+      role: 'MUNI_USER',
+      municipalityId: BigInt(session.municipalityId),
+      contractorId: null,
+    };
+  }
+  return { id: BigInt(-1) };
 }
 
 /** 근속연수 계산 — 입사일 기준 (오늘 또는 지정일) */

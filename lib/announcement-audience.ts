@@ -38,7 +38,8 @@ export function audienceOptionsForCreator(role: string): AudienceValue[] {
       /* 지자체 직접 지정 금지 — 사용자 요구사항 */
       return ['ADMIN', 'WORKER', 'ALL'];
     case 'MUNI_ADMIN':
-      /* 회사 / 회사+관리자 / 작업자 포함 전체 */
+    case 'MUNI_USER':
+      /* 회사 / 회사+관리자 / 작업자 포함 전체 — muni-user-delegation 2026-08-15: MUNI_ADMIN과 동일 */
       return ['OWNER', 'ADMIN', 'ALL'];
     default:
       return [];
@@ -64,6 +65,7 @@ export function visibleAudiencesForViewer(role: string): AudienceValue[] {
     case 'WORKER':
       return ['ALL', 'WORKER'];
     case 'MUNI_ADMIN':
+    case 'MUNI_USER':
       return ['ALL', 'MUNI'];
     default:
       return ['ALL'];

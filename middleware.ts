@@ -77,7 +77,8 @@ const CONSENT_EXEMPT_PATHS = new Set<string>([
   '/api/auth/me',
 ]);
 
-const READ_ONLY_ROLES = new Set<string>(['MUNI_ADMIN']);
+/* muni-user-delegation 2026-08-15 — MUNI_USER도 MUNI_ADMIN과 동일하게 GET-only(lib/rbac.ts READ_ONLY_ROLES와 이중 등록 필수) */
+const READ_ONLY_ROLES = new Set<string>(['MUNI_ADMIN', 'MUNI_USER']);
 const MUTATING_METHODS = new Set<string>(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
@@ -97,6 +98,11 @@ function isReadOnlyExempt(method: string, path: string): boolean {
   if (method === 'POST' && path === '/api/auth/consent') return true;     // 동의 (사용자 진단 2026-04-29)
   if (method === 'POST' && path === '/api/worker/password') return true;  // 본인 비밀번호 변경
   if (path.startsWith('/api/users/me/')) return true;                     // 본인 계정 관리 (PW/사진/서명)
+  /* muni-user-delegation 2026-08-15 — MUNI_ADMIN이 본인 지자체 소속 MUNI_USER 계정을 생성·재설정.
+     /api/users(전체 위탁업체 직원 대상)는 계속 차단, 이 전용 경로만 예외.
+     실제 대상 role/municipalityId 스코프 검증은 라우트 핸들러(manageableUserScope)가 전담. */
+  if (method === 'POST' && path === '/api/muni-users') return true;
+  if (method === 'POST' && /^\/api\/muni-users\/\d+\/password$/.test(path)) return true;
   /* 공지사항 — MUNI_ADMIN 도 작성/수정/삭제 허용 (사용자 요구사항 2026-05-02).
      실제 audience 정책은 API 핸들러에서 강제 (lib/announcement-audience). */
   if (path === '/api/announcements' && (method === 'POST')) return true;
