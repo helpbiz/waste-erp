@@ -88,11 +88,14 @@ const MUTATING_METHODS = new Set<string>(['POST', 'PUT', 'PATCH', 'DELETE']);
  *  - 개인정보 동의 (POST /api/auth/consent) — 최초 로그인 시 필수, 동의 안 하면 어떤 페이지도 접근 불가
  *  - 비밀번호 변경 (PATCH /api/users/me/password) — 본인 계정 보안
  *  - 본인 프로필 사진/서명 (PATCH/POST /api/users/me/...) — 본인 데이터 한정
+ *  - 비밀번호 변경 (POST /api/worker/password) — 관리자 프로필 화면(AdminProfileClient)이 워커용
+ *    엔드포인트를 재사용함. 지자체관리자도 본인 계정 보안 조치이므로 예외 허용.
  */
 function isReadOnlyExempt(method: string, path: string): boolean {
   if (method === 'POST' && path === '/api/complaints') return true;       // 민원 입력
   if (method === 'POST' && path === '/api/auth/logout') return true;      // 로그아웃
   if (method === 'POST' && path === '/api/auth/consent') return true;     // 동의 (사용자 진단 2026-04-29)
+  if (method === 'POST' && path === '/api/worker/password') return true;  // 본인 비밀번호 변경
   if (path.startsWith('/api/users/me/')) return true;                     // 본인 계정 관리 (PW/사진/서명)
   /* 공지사항 — MUNI_ADMIN 도 작성/수정/삭제 허용 (사용자 요구사항 2026-05-02).
      실제 audience 정책은 API 핸들러에서 강제 (lib/announcement-audience). */
