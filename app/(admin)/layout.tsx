@@ -8,6 +8,7 @@ import { safetyWhere } from '@/lib/safety';
 import { vehicleLogWhere } from '@/lib/vehicle-logs';
 import { contractorScopeWhere } from '@/lib/scopes';
 import { hasFeature } from '@/lib/features';
+import { todayKstDate } from '@/lib/dates';
 import AdminShell from './_admin-shell';
 import { ToastProvider } from '@/components/ui/Toast';
 
@@ -37,7 +38,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const leaveScope = userScope(session);
   const leaveWhere = Object.keys(leaveScope).length > 0 ? { worker: leaveScope } : {};
 
-  const [pendingComplaints, pendingSafety, pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyApprovals] = await Promise.all([
+  const [pendingComplaints, pendingSafety, pendingLeaves, pendingAttendance, pendingVehicleLogs, pendingSafetyApprovals, pendingStaleCheckout] = await Promise.all([
     prisma.complaint.count({
       where: { ...complaintWhere(session, isComplaintManagerWorker), status: { in: [...PENDING_STATUSES] } },
     }),
@@ -48,6 +49,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     isManager ? prisma.attendanceRecord.count({ where: { ...aWhere, status: 'PENDING' } }) : Promise.resolve(0),
     isManager ? prisma.vehicleLog.count({ where: { ...vlWhere, status: 'SUBMITTED' } }) : Promise.resolve(0),
     isManager ? prisma.safetyReport.count({ where: { ...safetyWhere(session), status: 'SUBMITTED' } }) : Promise.resolve(0),
+    /* 퇴근 미마감 방치 건 — 근로자 셀프 마감(7일 lookback)을 놓친 것들, 사이드바에서 바로 알아채도록
+       "근태관리" 뱃지로 노출(2026-08-21, 완전자동마감 대신 관리자 알림+수동마감으로 축소 결정) */
+    isManager
+      ? prisma.attendanceRecord.count({
+          where: { ...aWhere, workDate: { lt: todayKstDate() }, checkInTime: { not: null }, checkOutTime: null },
+        })
+      : Promise.resolve(0),
   ]);
   const pendingApprovals = pendingLeaves + pendingAttendance + pendingVehicleLogs + pendingSafetyApprovals;
 
@@ -88,7 +96,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/complaints', label: '민원관리', badge: pendingComplaints > 0 ? String(pendingComplaints) : undefined },
           { href: '/safety', label: '산업안전보건', badge: pendingSafety > 0 ? String(pendingSafety) : undefined },
           { href: '/safety/weather-notices', label: '🌡 날씨관리대장' },
-          { href: '/attendance', label: '근태관리' },
+          { href: '/attendance', label: '근태관리', badge: pendingStaleCheckout > 0 ? String(pendingStaleCheckout) : undefined },
           { href: '/live-vehicles', label: '실시간 차량조회', badge: 'LIVE' as string },
           { href: '/reports', label: '통합/보고서' },
           ...(session.role === 'MUNI_ADMIN'
@@ -138,7 +146,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/health', label: '건강기록카드' },
           { href: '/suggestions', label: '🗳 익명 건의함' },
           { href: '/approvals', label: '📋 결재관리', badge: pendingApprovals > 0 ? String(pendingApprovals) : undefined },
-          { href: '/attendance', label: '근태관리' },
+          { href: '/attendance', label: '근태관리', badge: pendingStaleCheckout > 0 ? String(pendingStaleCheckout) : undefined },
           { href: '/payroll', label: '💰 급여관리' },
           { href: '/punch-restrictions', label: '출퇴근 제한 설정' },
           { href: '/settings/shift-policies', label: '⏱ 근무유형 인정시간 설정' },
@@ -219,7 +227,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       group: 'OPERATIONS',
       items: [
         { href: '/approvals', label: '📋 결재관리', badge: pendingApprovals > 0 ? String(pendingApprovals) : undefined },
-        { href: '/attendance', label: '근태관리' },
+        { href: '/attendance', label: '근태관리', badge: pendingStaleCheckout > 0 ? String(pendingStaleCheckout) : undefined },
         ...(isInternal && (feSkipForSuperOrMuni || fePayslip)
           ? [{ href: '/payroll', label: '💰 급여관리' }]
           : []),

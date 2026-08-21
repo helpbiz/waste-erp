@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AccessibleConfirmDialog from '@/components/ui/AccessibleConfirmDialog';
+import StaleAttendanceBanner from './_stale-banner';
 import { todayLocalStr } from '@/lib/dates';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -219,6 +220,7 @@ export default function AttendanceClient({
 
       {/* 6 KPI + 일별 테이블 + 모달 — view === 'daily' 에서만 표시 */}
       {view === 'daily' && (<>
+      {canManage && <StaleAttendanceBanner />}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         <KpiCard label="전체" value={summary.total} unit="명" />
         <KpiCard label="출근" value={summary.checkedIn} unit="명" tone="success" />

@@ -55,15 +55,24 @@ export async function getTodayAttendance(session: SessionPayload) {
       include: { worker: true, zone: true },
     });
     let isYesterdayNightRecord = false;
-    /* 야간 근무: 자정 이후에도 어제 출근 기록(퇴근 미등록)이 있으면 그 기록을 현재 상태로 노출 */
+    /* 야간 근무: 자정 이후에도 전날 출근 기록(퇴근 미등록)이 있으면 그 기록을 현재 상태로 노출.
+       하루(-24h)만 보면 방치 기간이 길어질수록(주말을 낀 경우 등) 근로자 화면에서 아예 안 보여
+       셀프 마감 기회를 놓치므로, 최근 7일 이내 가장 최근의 미종료 기록까지 넓혀서 찾는다
+       (2026-08-21: 정확히 -24h만 보던 한계 완화). 그보다 오래된 건은 관리자 "빠른 마감" 화면 대상. */
     if (!me?.checkInTime) {
-      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      const nightRecord = await prisma.attendanceRecord.findUnique({
-        where: { workerId_workDate: { workerId, workDate: yesterday } },
+      const lookbackFrom = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const staleRecord = await prisma.attendanceRecord.findFirst({
+        where: {
+          workerId,
+          workDate: { gte: lookbackFrom, lt: today },
+          checkInTime: { not: null },
+          checkOutTime: null,
+        },
+        orderBy: { workDate: 'desc' },
         include: { worker: true, zone: true },
       });
-      if (nightRecord?.checkInTime && !nightRecord.checkOutTime) {
-        me = nightRecord;
+      if (staleRecord) {
+        me = staleRecord;
         isYesterdayNightRecord = true;
       }
     }

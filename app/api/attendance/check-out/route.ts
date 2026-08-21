@@ -103,14 +103,22 @@ export async function POST(req: Request) {
   let record = await prisma.attendanceRecord.findUnique({
     where: { workerId_workDate: { workerId, workDate: today } },
   });
-  /* 야간 근무: 오늘 기록이 없거나 출근 미등록이면 어제 열린 기록 확인 */
+  /* 야간 근무: 오늘 기록이 없거나 출근 미등록이면 최근 미종료 기록 확인.
+     정확히 -24h만 보던 한계를 완화해 최근 7일 이내 가장 최근 미종료 기록까지 찾는다
+     (2026-08-21, lib/attendance.ts getTodayAttendance와 동일 기준으로 통일). */
   if (!record?.checkInTime) {
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    const nightRecord = await prisma.attendanceRecord.findUnique({
-      where: { workerId_workDate: { workerId, workDate: yesterday } },
+    const lookbackFrom = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const staleRecord = await prisma.attendanceRecord.findFirst({
+      where: {
+        workerId,
+        workDate: { gte: lookbackFrom, lt: today },
+        checkInTime: { not: null },
+        checkOutTime: null,
+      },
+      orderBy: { workDate: 'desc' },
     });
-    if (nightRecord?.checkInTime && !nightRecord.checkOutTime) {
-      record = nightRecord;
+    if (staleRecord) {
+      record = staleRecord;
     }
   }
   if (!record || !record.checkInTime) {

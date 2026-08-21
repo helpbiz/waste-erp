@@ -117,6 +117,53 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
     }
   }
 
+  /** 어제 미마감 기록을 닫고 곧바로 오늘 출근을 등록 — 두 번 탭하지 않도록 한 번에 처리 */
+  async function resolveStaleAndCheckIn() {
+    if (gps.kind !== 'ready') {
+      toast.warning('GPS 위치를 먼저 확인해 주세요.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const outRes = await fetch('/api/attendance/check-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: gps.lat, lng: gps.lng }),
+      });
+      const outData = await outRes.json();
+      if (!outRes.ok) {
+        hapticError();
+        toast.error(translate(outData?.error, outData) ?? '어제 퇴근 처리 중 오류가 발생했습니다.');
+        return;
+      }
+      const inRes = await fetch('/api/attendance/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: gps.lat, lng: gps.lng }),
+      });
+      const inData = await inRes.json();
+      if (!inRes.ok) {
+        hapticError();
+        toast.error('어제 퇴근은 처리됐지만 오늘 출근 등록에 실패했습니다. 다시 시도해 주세요.');
+        router.refresh();
+        return;
+      }
+      hapticSuccess();
+      toast.success('어제 퇴근 마감 + 오늘 출근 등록 완료');
+      setState((s) => ({
+        ...s,
+        checkInTime: inData.record?.checkInTime ?? s.checkInTime,
+        checkOutTime: null,
+      }));
+      router.refresh();
+    } catch {
+      hapticError();
+      toast.error('네트워크 오류가 발생했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="px-4 py-4 space-y-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) * 2 + 176px)' }}>
       <div className="px-1">
@@ -215,28 +262,22 @@ export default function PunchClient({ initial, workerName }: { initial: Initial;
             ⚠️ 어제 퇴근이 등록되지 않았습니다
           </div>
           <div className="text-sm font-semibold text-red-700 leading-relaxed">
-            어제 출근 기록이 미마감 상태입니다.<br />
-            아래 두 가지 중 선택하세요.
+            어제 출근 기록이 미마감 상태입니다.
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => punch(false)}
-              disabled={busy || gps.kind !== 'ready'}
-              className="py-3 rounded-xl bg-amber-500 text-white text-sm font-extrabold active:scale-[0.98] disabled:opacity-50 transition"
-            >
-              {busy ? '처리 중…' : '어제 퇴근 처리'}
-            </button>
-            <button
-              onClick={() => punch(true)}
-              disabled={busy || gps.kind !== 'ready'}
-              className="py-3 rounded-xl bg-success text-white text-sm font-extrabold active:scale-[0.98] disabled:opacity-50 transition"
-            >
-              {busy ? '처리 중…' : '오늘 출근 등록'}
-            </button>
-          </div>
-          <p className="text-[0.625rem] text-red-600 font-semibold">
-            ※ "오늘 출근" 선택 시 어제 퇴근 기록은 관리자가 수동 조정합니다.
-          </p>
+          <button
+            onClick={resolveStaleAndCheckIn}
+            disabled={busy || gps.kind !== 'ready'}
+            className="w-full py-3 rounded-xl bg-success text-white text-sm font-extrabold active:scale-[0.98] disabled:opacity-50 transition"
+          >
+            {busy ? '처리 중…' : '어제 퇴근 마감 + 오늘 출근 등록'}
+          </button>
+          <button
+            onClick={() => punch(true)}
+            disabled={busy || gps.kind !== 'ready'}
+            className="w-full py-2 text-xs font-bold text-red-700 underline disabled:opacity-50"
+          >
+            오늘 출근만 먼저 등록 (어제 기록은 관리자가 나중에 정정)
+          </button>
         </div>
       )}
 
