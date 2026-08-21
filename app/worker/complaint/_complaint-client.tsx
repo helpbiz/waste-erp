@@ -404,6 +404,7 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
   const [busyId, setBusyId] = useState<string | null>(null);
   const [completeModal, setCompleteModal] = useState<{ id: string; mode: 'complete' | 'reject' } | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   function load() {
     setLoading(true);
@@ -425,6 +426,14 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
       const j = await r.json().catch(() => ({}));
       toast.error(`실패: ${j.error ?? 'unknown'}`);
     }
+  }
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   const filtered = items.filter((c) => {
@@ -479,7 +488,20 @@ function InboxPanel({ coworkers = [] }: { coworkers?: { id: string; name: string
                 <div className="text-sm text-ink font-semibold leading-snug">📍 {c.locationAddress}</div>
               )}
               {c.description && (
-                <div className="text-sm text-ink-muted mt-1.5 line-clamp-3 whitespace-pre-wrap">{c.description}</div>
+                <div>
+                  <div className={`text-sm text-ink-muted mt-1.5 whitespace-pre-wrap ${expandedIds.has(c.id) ? '' : 'line-clamp-3'}`}>
+                    {c.description}
+                  </div>
+                  {c.description.length > 60 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(c.id)}
+                      className="text-xs font-bold text-cyan-700 mt-0.5"
+                    >
+                      {expandedIds.has(c.id) ? '접기 ▲' : '더보기 ▼'}
+                    </button>
+                  )}
+                </div>
               )}
               {c.complainantPhone && (
                 <div className="text-sm text-ink-muted mt-1">📞 {c.complainantPhone}</div>

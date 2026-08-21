@@ -142,9 +142,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
   const [published,   setPublished]   = useState<PublishedRecord[]>([]);
   const [expandedId,  setExpandedId]  = useState<string | null>(null);
 
-  function printPayslip(r: PublishedRecord) {
-    const win = window.open('', '_blank');
-    if (!win) { alert('팝업이 차단되었습니다. 브라우저 주소창 우측의 팝업 허용 버튼을 클릭한 후 다시 시도하세요.'); return; }
+  function payslipBodyHtml(r: PublishedRecord) {
     const d = r.data;
     const fmt = (v: number) => v.toLocaleString('ko-KR') + '원';
     const earningRows = sortByTemplate(Object.entries(d.earnings ?? {}) as [string, number][], tmpl?.earnings)
@@ -156,20 +154,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
     const wh = d.workHours;
     const overtimeH = wh ? (wh['연장기본'] ?? wh['overtimeBasic'] ?? 0) + (wh['연장추가'] ?? wh['overtimeExtra'] ?? 0) : 0;
     const nightH    = wh ? (wh['야간기본'] ?? wh['nightBasic'] ?? 0) + (wh['야간추가'] ?? wh['nightExtra'] ?? 0) : 0;
-    win.document.write([
-      '<html><head><meta charset="utf-8"><title>임금명세서</title>',
-      '<style>',
-      'body{font-family:\'맑은 고딕\',sans-serif;padding:20px;font-size:13px}',
-      'h2{font-size:1.1em;margin-bottom:8px}',
-      '.meta{color:#555;margin-bottom:12px;font-size:12px}',
-      'table{width:100%;border-collapse:collapse;margin-bottom:10px}',
-      'td{border:1px solid #ccc;padding:5px 9px}',
-      'thead td{background:#f5f5f5;font-weight:700}',
-      'td.label{width:55%}td.val{text-align:right;font-family:monospace;font-weight:700}',
-      '.net{background:#dbeafe;font-weight:900;font-size:1.05em;padding:8px 9px;border:1px solid #93c5fd}',
-      '.hours{color:#555;font-size:12px;margin-top:4px}',
-      '@media print{body{padding:8px}}',
-      '</style></head><body>',
+    return [
       `<h2>${r.workerName} (${r.yearMonth}) 임금명세서</h2>`,
       '<div class="meta">',
       d.workDays != null ? `출근일수: <b>${d.workDays}일</b>&nbsp;&nbsp;` : '',
@@ -185,14 +170,56 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
       (wh && (overtimeH > 0 || nightH > 0))
         ? `<div class="hours">연장근로: <b>${overtimeH}시간</b>&nbsp;&nbsp;야간근로: <b>${nightH}시간</b></div>`
         : '',
+    ].join('');
+  }
+
+  function printPayslips(records: PublishedRecord[]) {
+    if (records.length === 0) return;
+    const win = window.open('', '_blank');
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 주소창 우측의 팝업 허용 버튼을 클릭한 후 다시 시도하세요.'); return; }
+    const pages = records
+      .map((r, i) => `<section class="payslip${i > 0 ? ' page-break' : ''}">${payslipBodyHtml(r)}</section>`)
+      .join('');
+    win.document.write([
+      '<html><head><meta charset="utf-8"><title>임금명세서</title>',
+      '<style>',
+      'body{font-family:\'맑은 고딕\',sans-serif;padding:20px;font-size:13px}',
+      'h2{font-size:1.1em;margin-bottom:8px}',
+      '.meta{color:#555;margin-bottom:12px;font-size:12px}',
+      'table{width:100%;border-collapse:collapse;margin-bottom:10px}',
+      'td{border:1px solid #ccc;padding:5px 9px}',
+      'thead td{background:#f5f5f5;font-weight:700}',
+      'td.label{width:55%}td.val{text-align:right;font-family:monospace;font-weight:700}',
+      '.net{background:#dbeafe;font-weight:900;font-size:1.05em;padding:8px 9px;border:1px solid #93c5fd}',
+      '.hours{color:#555;font-size:12px;margin-top:4px}',
+      '.page-break{page-break-before:always}',
+      '@media print{body{padding:8px}}',
+      '</style></head><body>',
+      pages,
       '</body></html>',
     ].join(''));
     win.document.close();
     win.print();
   }
+
+  function printPayslip(r: PublishedRecord) {
+    printPayslips([r]);
+  }
   const [loadingList, setLoadingList] = useState(false);
   const [expandRow,   setExpandRow]   = useState<number | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function toggleSelectAll(ids: string[]) {
+    setSelectedIds((prev) => (prev.size === ids.length ? new Set() : new Set(ids)));
+  }
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -410,13 +437,23 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
               {publishedCount > 0 && <span className="ml-2 text-sm font-bold text-success">발송 {publishedCount}명</span>}
               {unpublishedCount > 0 && <span className="ml-2 text-sm font-bold text-warn">미발송 {unpublishedCount}명</span>}
             </h3>
-            {unpublishedCount > 0 && (
-              <button onClick={handlePublish} disabled={busy || publishBlocked}
-                className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
-                title={publishBlocked ? '결재 승인 후 발송 가능합니다' : undefined}>
-                {busy ? '발송 중…' : publishBlocked ? `🔒 결재 필요 (${unapprovedCount}건)` : `📤 미발송 ${unpublishedCount}명 발송`}
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => printPayslips(published.filter((r) => selectedIds.has(r.id)))}
+                  className="px-4 py-2 rounded-md bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 active:scale-95"
+                >
+                  🖨 선택 {selectedIds.size}명 인쇄
+                </button>
+              )}
+              {unpublishedCount > 0 && (
+                <button onClick={handlePublish} disabled={busy || publishBlocked}
+                  className="px-4 py-2 rounded-md bg-green-600 text-white text-sm font-extrabold hover:bg-green-700 active:scale-95 disabled:opacity-50"
+                  title={publishBlocked ? '결재 승인 후 발송 가능합니다' : undefined}>
+                  {busy ? '발송 중…' : publishBlocked ? `🔒 결재 필요 (${unapprovedCount}건)` : `📤 미발송 ${unpublishedCount}명 발송`}
+                </button>
+              )}
+            </div>
           </div>
           {loadingList ? (
             <div className="px-5 py-10 text-center text-ink-muted text-sm">불러오는 중…</div>
@@ -427,6 +464,14 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
               <table className="w-full text-[0.8125rem]">
                 <thead>
                   <tr className="bg-surface-soft border-b-2 border-line-strong">
+                    <th className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={published.length > 0 && selectedIds.size === published.length}
+                        onChange={() => toggleSelectAll(published.map((r) => r.id))}
+                        aria-label="전체 선택"
+                      />
+                    </th>
                     {(needsApproval ? ['이름', '직원번호', '실수령액', '결재', '발송상태', ''] : ['이름', '직원번호', '실수령액', '발송상태', '']).map((h) => (
                       <th key={h} className="text-left px-3 py-2 text-sm font-extrabold text-ink uppercase tracking-wide">{h}</th>
                     ))}
@@ -435,6 +480,14 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                 <tbody>
                   {published.map((r, i) => (<>
                     <tr key={r.id} className={i % 2 === 1 ? 'bg-surface-soft' : ''}>
+                      <td className="px-3 py-2 border-b border-line">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(r.id)}
+                          onChange={() => toggleSelected(r.id)}
+                          aria-label={`${r.workerName} 선택`}
+                        />
+                      </td>
                       <td className="px-3 py-2 border-b border-line font-bold text-ink">{r.workerName}</td>
                       <td className="px-3 py-2 border-b border-line font-mono text-sm text-ink-muted">{r.employeeNo ?? '—'}</td>
                       <td className="px-3 py-2 border-b border-line font-mono font-extrabold text-accent">{fmt(getNetPay(r.data.totals))}</td>
@@ -482,7 +535,7 @@ function SendTab({ ym, approverInfo }: { ym: string; approverInfo: ApproverInfo 
                     </tr>,
                     {expandedId === r.id && (
                       <tr key={r.id + '-detail'}>
-                        <td colSpan={needsApproval ? 6 : 5} className="px-4 py-3 bg-slate-50 border-b border-line">
+                        <td colSpan={needsApproval ? 7 : 6} className="px-4 py-3 bg-slate-50 border-b border-line">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-extrabold text-ink">{r.workerName} ({r.yearMonth}) 임금명세서</span>
                             <button onClick={() => printPayslip(r)} className="text-sm font-extrabold text-emerald-700 hover:underline">🖨 인쇄</button>
